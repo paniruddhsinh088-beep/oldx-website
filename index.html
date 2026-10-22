@@ -134,7 +134,7 @@
     </main>
 
     <!-- Product Details Modal (Buy) -->
-    <div id="productModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/60 z-50 items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
                 <i class="fa-solid fa-xmark"></i>
@@ -160,7 +160,7 @@
     </div>
 
     <!-- Sell Item Form Modal -->
-    <div id="sellModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+    <div id="sellModal" style="display: none;" class="fixed inset-0 bg-black/60 z-50 items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeSellModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
                 <i class="fa-solid fa-xmark"></i>
@@ -224,29 +224,4 @@
                             <option value="Arunachal Pradesh">Arunachal Pradesh</option>
                             <option value="Mizoram">Mizoram</option>
                             <option value="Sikkim">Sikkim</option>
-                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-1">District / City</label>
-                        <select id="sellDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                            <!-- Populated dynamically -->
-                        </select>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark</label>
-                    <input type="text" id="sellVillage" required placeholder="e.g. Village Rampura / Near Bus Stand" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Upload Multiple Images (Photos)</label>
-                    <input type="file" id="sellImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium mb-1">Description</label>
-                    <textarea id="sellDesc" rows="3" required placeholder="Condition, age, reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
-                </div>
-                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-300">
-                    ℹ️ Note: 5% platform fee + ₹99 delivery charge will be automatically added to buyer's final payable amount.
-                </div>
-                <button type
+                            
