@@ -133,32 +133,6 @@
         </div>
     </main>
 
-    <!-- Product Details Modal (Buy) -->
-    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/60 z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold cursor-pointer">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
-                <!-- Images will load here -->
-            </div>
-            <h3 id="modalTitle" class="text-2xl font-bold mb-2">Product Title</h3>
-            <div class="flex items-center gap-3 mb-3">
-                <p id="modalPrice" class="text-primary dark:text-teal-400 text-2xl font-extrabold">₹0</p>
-                <span id="modalOriginalPrice" class="text-gray-400 line-through text-lg"></span>
-            </div>
-            <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
-                <p><strong>Complete Address:</strong> <span id="modalLocation">-</span></p>
-                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
-                <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
-                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
-            </div>
-            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow cursor-pointer">
-                Proceed with Secure Payment
-            </button>
-        </div>
-    </div>
-
     <!-- Sell Item Form Modal -->
     <div id="sellModal" style="display: none;" class="fixed inset-0 bg-black/60 z-50 items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -277,7 +251,7 @@
             "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut", "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Gorakhpur", "Mathura"],
             "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Dewas", "Satna", "Ratlam", "Rewa"],
             "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar"],
-            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Silguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
+            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
             "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Erode", "Vellore", "Thoothukudi", "Dindigul"],
             "Karnataka": ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi", "Kalaburagi", "Davanagere", "Ballari", "Vijayapura", "Shivamogga"],
             "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Kakinada", "Rajahmundry", "Tirupati", "Kadapa", "Anantapur"],
@@ -305,7 +279,7 @@
 
         let products = JSON.parse(localStorage.getItem('oldx_products')) || [
             {
-                id: 1,
+                id: 101,
                 title: "Honda Activa 6G - Well Maintained",
                 category: "vehicles",
                 basePrice: 50000,
@@ -314,8 +288,11 @@
                 discountPercent: 15,
                 location: "Rampura, Ahmedabad, Gujarat",
                 state: "Gujarat",
-                desc: "Good condition, 2 years old, insurance valid.",
-                images: []
+                desc: "Very good condition, 2 years old, all insurance papers valid.",
+                images: [],
+                reviews: [
+                    { name: "Rajesh Patel", rating: 5, comment: "Khub j sari condition ma bike chhe!" }
+                ]
             }
         ];
 
@@ -400,7 +377,7 @@
                 }
 
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between";
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition";
                 card.innerHTML = `
                     <div>
                         <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative overflow-hidden">
@@ -408,8 +385,8 @@
                             ${imgContent}
                         </div>
                         <div class="p-4">
-                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">${p.location}</span>
-                            <h4 class="font-bold text-lg mt-2">${p.title}</h4>
+                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded font-semibold">${p.location}</span>
+                            <h4 class="font-bold text-lg mt-2 line-clamp-1">${p.title}</h4>
                             <div class="flex items-center gap-2 mt-1">
                                 <p class="text-primary dark:text-teal-400 font-extrabold text-xl">${p.finalPriceStr}</p>
                                 ${p.originalPriceStr ? `<span class="text-sm text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
@@ -418,7 +395,7 @@
                         </div>
                     </div>
                     <div class="p-4 pt-0">
-                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
+                        <button onclick="openProductInNewTab(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
                             View Details & Buy
                         </button>
                     </div>
@@ -427,41 +404,135 @@
             });
         }
 
-        function openProductModalById(id) {
+        // Open Product Details in a New Tab
+        function openProductInNewTab(id) {
             const p = products.find(item => item.id === id);
             if(!p) return;
 
-            document.getElementById('modalTitle').innerText = p.title;
-            document.getElementById('modalPrice').innerText = p.finalPriceStr;
-            document.getElementById('modalLocation').innerText = p.location;
-            document.getElementById('modalDesc').innerText = p.desc;
-            
-            const origPriceElem = document.getElementById('modalOriginalPrice');
-            if (p.originalPriceStr) {
-                origPriceElem.innerText = p.originalPriceStr;
-                origPriceElem.classList.remove('hidden');
-            } else {
-                origPriceElem.classList.add('hidden');
+            const newWindow = window.open('', '_blank');
+            if(!newWindow) {
+                alert('Please allow popups for this site to view product details.');
+                return;
             }
 
-            const imgContainer = document.getElementById('modalImagesContainer');
-            imgContainer.innerHTML = "";
+            let imagesHTML = '';
             if(p.images && p.images.length > 0) {
                 p.images.forEach(imgSrc => {
-                    const img = document.createElement('img');
-                    img.src = imgSrc;
-                    img.className = "w-24 h-24 object-cover rounded-lg border dark:border-gray-700 flex-shrink-0";
-                    imgContainer.appendChild(img);
+                    imagesHTML += `<img src="${imgSrc}" class="w-full max-h-96 object-contain rounded-xl border mb-3 bg-gray-100">`;
                 });
             } else {
-                imgContainer.innerHTML = `<p class="text-xs text-gray-400">No images uploaded.</p>`;
+                imagesHTML = `<div class="h-64 bg-gray-200 flex items-center justify-center rounded-xl mb-3"><i class="fa-solid fa-image text-5xl text-gray-400"></i></div>`;
             }
-            
-            document.getElementById('productModal').style.display = 'flex';
-        }
 
-        function closeProductModal() {
-            document.getElementById('productModal').style.display = 'none';
+            let reviewsHTML = '';
+            const reviewsList = p.reviews || [];
+            if(reviewsList.length > 0) {
+                reviewsList.forEach(r => {
+                    let stars = '⭐'.repeat(r.rating);
+                    reviewsHTML += `
+                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-2">
+                            <div class="flex justify-between font-bold text-sm">
+                                <span>${r.name}</span>
+                                <span>${stars}</span>
+                            </div>
+                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${r.comment}</p>
+                        </div>
+                    `;
+                });
+            } else {
+                reviewsHTML = `<p class="text-xs text-gray-400 mb-4">No reviews yet. Be the first to give feedback!</p>`;
+            }
+
+            const pageContent = `
+            <!DOCTYPE html>
+            <html lang="gu">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${p.title} - OldX Details</title>
+                <script src="https://cdn.tailwindcss.com"><\/script>
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+            </head>
+            <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8">
+                <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl">
+                    <button onclick="window.close()" class="mb-4 bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded text-sm font-semibold hover:bg-gray-300">
+                        ← Back / Close
+                    </button>
+                    
+                    <div class="mb-6">
+                        ${imagesHTML}
+                    </div>
+
+                    <h1 class="text-3xl font-extrabold text-primary dark:text-teal-400 mb-2">${p.title}</h1>
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="text-3xl font-black text-teal-700 dark:text-teal-300">${p.finalPriceStr}</span>
+                        ${p.originalPriceStr ? `<span class="text-xl text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
+                        ${p.discountPercent > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">${p.discountPercent}% OFF</span>` : ''}
+                    </div>
+
+                    <div class="space-y-3 border-t border-b py-4 mb-6 dark:border-gray-700 text-sm">
+                        <p><strong>Location:</strong> ${p.location}</p>
+                        <p><strong>Description:</strong> ${p.desc}</p>
+                        <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery: ₹99 Included</p>
+                        <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protection Included (5% Platform Fee)</p>
+                    </div>
+
+                    <button onclick="alert('Redirecting to Razorpay Secure Gateway... Doorstep delivery initiated!')" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow mb-8 cursor-pointer">
+                        Proceed with Secure Payment
+                    </button>
+
+                    <!-- Rating & Feedback Section -->
+                    <div class="border-t dark:border-gray-700 pt-6">
+                        <h3 class="text-xl font-bold mb-3">Customer Ratings & Feedback</h3>
+                        <div id="reviewsContainer" class="mb-6">
+                            ${reviewsHTML}
+                        </div>
+
+                        <!-- Add Review Form -->
+                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl">
+                            <h4 class="font-bold text-sm mb-2">Give Your Feedback & Rating</h4>
+                            <input type="text" id="reviewerName" placeholder="Your Name" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                            <select id="reviewerRating" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                                <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                                <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                                <option value="3">⭐⭐⭐ (3/5)</option>
+                                <option value="2">⭐⭐ (2/5)</option>
+                                <option value="1">⭐ (1/5)</option>
+                            </select>
+                            <textarea id="reviewerComment" placeholder="Write feedback..." class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm" rows="2"></textarea>
+                            <button onclick="submitReview(${p.id})" class="bg-primary hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Submit Feedback</button>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                    function submitReview(productId) {
+                        const name = document.getElementById('reviewerName').value || 'Anonymous';
+                        const rating = parseInt(document.getElementById('reviewerRating').value);
+                        const comment = document.getElementById('reviewerComment').value;
+
+                        if(!comment) {
+                            alert('Please write a feedback comment.');
+                            return;
+                        }
+
+                        let allProds = JSON.parse(localStorage.getItem('oldx_products')) || [];
+                        let prod = allProds.find(item => item.id === productId);
+                        if(prod) {
+                            if(!prod.reviews) prod.reviews = [];
+                            prod.reviews.unshift({ name, rating, comment });
+                            localStorage.setItem('oldx_products', JSON.stringify(allProds));
+                            alert('Thank you for your feedback!');
+                            window.location.reload();
+                        }
+                    }
+                <\/script>
+            </body>
+            </html>
+            `;
+
+            newWindow.document.write(pageContent);
+            newWindow.document.close();
         }
 
         function openSellModal() {
@@ -512,7 +583,7 @@
                             finalizeListing({
                                 id: Date.now(),
                                 title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                                location: locationStr, state, desc, images: imageUrls
+                                location: locationStr, state, desc, images: imageUrls, reviews: []
                             });
                         }
                     }
@@ -522,7 +593,7 @@
                             finalizeListing({
                                 id: Date.now(),
                                 title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                                location: locationStr, state, desc, images: []
+                                location: locationStr, state, desc, images: [], reviews: []
                             });
                         }
                     }
@@ -532,7 +603,7 @@
                 finalizeListing({
                     id: Date.now(),
                     title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                    location: locationStr, state, desc, images: []
+                    location: locationStr, state, desc, images: [], reviews: []
                 });
             }
         }
@@ -542,8 +613,7 @@
             try {
                 localStorage.setItem('oldx_products', JSON.stringify(products));
             } catch (e) {
-                console.warn("Storage limit exceeded, saving without large images.");
-                newProd.images = [];
+                console.warn("Storage limit reached, saving product.");
                 localStorage.setItem('oldx_products', JSON.stringify(products));
             }
             renderProducts();
@@ -551,11 +621,6 @@
             closeSellModal();
             document.querySelector('#sellModal form').reset();
             updateDistricts();
-        }
-
-        function simulateRazorpayPayment() {
-            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & doorstep pickup initiated!');
-            closeProductModal();
         }
 
         const translations = {
