@@ -48,7 +48,7 @@
         </div>
     </header>
 
-    <!-- Hero Banner with Attractive Slogan -->
+    <!-- Hero Banner -->
     <section class="bg-gradient-to-r from-teal-800 to-primary text-white py-12 px-4 text-center">
         <div class="max-w-4xl mx-auto">
             <h2 id="bannerTitle" class="text-3xl md:text-4xl font-extrabold mb-4">
@@ -61,10 +61,36 @@
                 <input type="text" id="searchInput" placeholder="Search laptops, mobiles, cars..." class="px-4 py-3 rounded-lg text-gray-800 w-full md:w-96 focus:outline-none shadow">
                 <select id="stateFilter" class="px-4 py-3 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
                     <option value="">All States / All India (Pan-India)</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                    <option value="Assam">Assam</option>
+                    <option value="Bihar">Bihar</option>
+                    <option value="Chhattisgarh">Chhattisgarh</option>
+                    <option value="Goa">Goa</option>
                     <option value="Gujarat">Gujarat</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Delhi">Delhi</option>
+                    <option value="Haryana">Haryana</option>
+                    <option value="Himachal Pradesh">Himachal Pradesh</option>
+                    <option value="Jharkhand">Jharkhand</option>
                     <option value="Karnataka">Karnataka</option>
+                    <option value="Kerala">Kerala</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Manipur">Manipur</option>
+                    <option value="Meghalaya">Meghalaya</option>
+                    <option value="Mizoram">Mizoram</option>
+                    <option value="Nagaland">Nagaland</option>
+                    <option value="Odisha">Odisha</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Rajasthan">Rajasthan</option>
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
                 </select>
             </div>
         </div>
@@ -78,141 +104,4 @@
                 <i class="fa-solid fa-box text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">All Items</p>
             </div>
-            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                <i class="fa-solid fa-laptop text-2xl text-primary mb-2"></i>
-                <p class="font-medium text-sm">Electronics</p>
-            </div>
-            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                <i class="fa-solid fa-car text-2xl text-primary mb-2"></i>
-                <p class="font-medium text-sm">Vehicles</p>
-            </div>
-            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                <i class="fa-solid fa-mobile text-2xl text-primary mb-2"></i>
-                <p class="font-medium text-sm">Mobiles</p>
-            </div>
-            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                <i class="fa-solid fa-couch text-2xl text-primary mb-2"></i>
-                <p class="font-medium text-sm">Furniture</p>
-            </div>
-            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                <i class="fa-solid fa-building text-2xl text-primary mb-2"></i>
-                <p class="font-medium text-sm">Properties</p>
-            </div>
-        </div>
-
-        <!-- Product Grid -->
-        <h3 class="text-xl font-bold mb-4">Fresh Recommendations Across India</h3>
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <!-- Sample Product Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between">
-                <div>
-                    <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                        <i class="fa-solid fa-image text-4xl text-gray-400"></i>
-                    </div>
-                    <div class="p-4">
-                        <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">Gujarat</span>
-                        <h4 class="font-bold text-lg mt-2">Honda Activa 6G - Well Maintained</h4>
-                        <p class="text-primary dark:text-teal-400 font-extrabold text-xl mt-1">₹55,000</p>
-                    </div>
-                </div>
-                <div class="p-4 pt-0">
-                    <button onclick="openProductModal('Honda Activa 6G', '₹55,000', 'Gujarat', 'Good condition, 2 years old, insurance valid.', 'Ahmedabad')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
-                        View Details & Buy
-                    </button>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Product Details Modal -->
-    <div id="productModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative">
-            <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 id="modalTitle" class="text-2xl font-bold mb-2">Product Title</h3>
-            <p id="modalPrice" class="text-primary dark:text-teal-400 text-xl font-extrabold mb-4">₹0</p>
-            <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
-                <p><strong>Location:</strong> <span id="modalLocation">-</span></p>
-                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
-                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after delivery inspection.</p>
-            </div>
-            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow">
-                Proceed with Secure Payment (₹99 Courier Fee + Escrow)
-            </button>
-        </div>
-    </div>
-
-    <!-- Footer with Contact & Terms -->
-    <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-12 py-8 px-4">
-        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-            <p>&copy; 2026 OldX Marketplace. All rights reserved (Pan-India).</p>
-            <div class="flex space-x-6">
-                <a href="#contact" onclick="alert('Support Email: paniruddhsinh088@gmail.com | Helpline: +91-6354224716')" class="hover:underline">Contact Us</a>
-                <a href="#terms" onclick="alert('Terms & Conditions: All transactions are protected via OldX Escrow system. Courier fee is ₹99.')" class="hover:underline">Terms & Conditions</a>
-                <a href="#privacy" onclick="alert('Privacy Policy: Your data and payments are 100% safe and encrypted.')" class="hover:underline">Privacy Policy</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- JavaScript Logic -->
-    <script>
-        // Dark Mode
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-            const icon = document.getElementById('darkModeIcon');
-            icon.classList.toggle('fa-moon');
-            icon.classList.toggle('fa-sun');
-        }
-
-        // Modal Controls
-        function openProductModal(title, price, state, desc, location) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalPrice').innerText = price;
-            document.getElementById('modalLocation').innerText = location + ", " + state;
-            document.getElementById('modalDesc').innerText = desc;
-            document.getElementById('productModal').classList.remove('hidden');
-        }
-
-        function closeProductModal() {
-            document.getElementById('productModal').classList.add('hidden');
-        }
-
-        function openSellModal() {
-            alert('Sell feature: Fill product details to list your item instantly across India! Contact: 6354224716');
-        }
-
-        function simulateRazorpayPayment() {
-            alert('Redirecting to Razorpay Secure Gateway... Escrow protection enabled!');
-            closeProductModal();
-        }
-
-        // Multi-language Simple Dictionary
-        const translations = {
-            gu: {
-                bannerTitle: "Bharatnu Potanu Trusted Marketplace 🇮🇳",
-                bannerDesc: "Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery."
-            },
-            hi: {
-                bannerTitle: "भारत का अपना भरोसेमंद मार्केटप्लेस 🇮🇳",
-                bannerDesc: "पुराने से लेकर नए कपड़े, गैजेट्स और प्रॉपर्टीज़ पलक झपकते बेचें! पैन-इंडिया एस्क्रो पेमेंट सुरक्षा और होम पिकअप डिलीवरी।"
-            },
-            en: {
-                bannerTitle: "India's Own Trusted C2C Marketplace 🇮🇳",
-                bannerDesc: "Buy & Sell Pre-owned and New Goods Across India with Escrow Payment Protection & Doorstep Pickup."
-            }
-        };
-
-        function changeLanguage(lang) {
-            if(translations[lang]) {
-                document.getElementById('bannerTitle').innerText = translations[lang].bannerTitle;
-                document.getElementById('bannerDesc').innerText = translations[lang].bannerDesc;
-            }
-        }
-
-        function filterCategory(cat) {
-            alert("Filtering category: " + cat);
-        }
-    </script>
-</body>
-</html>
+            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-
