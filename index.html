@@ -133,10 +133,63 @@
         </div>
     </main>
 
+    <!-- Full Screen Product Details Modal -->
+    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
+                <!-- Images will load here -->
+            </div>
+            
+            <h3 id="modalTitle" class="text-2xl font-extrabold mb-2 text-primary dark:text-teal-400">Product Title</h3>
+            <div class="flex items-center gap-3 mb-4">
+                <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300">₹0</p>
+                <span id="modalOriginalPrice" class="text-lg text-gray-400 line-through"></span>
+            </div>
+            
+            <div class="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-4 dark:border-gray-700">
+                <p><strong>Complete Address:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
+                <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
+                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
+            </div>
+
+            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow mb-8 cursor-pointer">
+                Proceed with Secure Payment
+            </button>
+
+            <!-- Ratings & Feedback Section Inside Modal -->
+            <div class="border-t dark:border-gray-700 pt-6">
+                <h3 class="text-xl font-bold mb-3">Customer Ratings & Feedback</h3>
+                <div id="modalReviewsContainer" class="mb-6 space-y-2">
+                    <!-- Reviews will load here -->
+                </div>
+
+                <!-- Add Review Form -->
+                <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl">
+                    <h4 class="font-bold text-sm mb-2">Give Your Feedback & Rating</h4>
+                    <input type="text" id="reviewerName" placeholder="Your Name" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                    <select id="reviewerRating" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                    <textarea id="reviewerComment" placeholder="Write feedback..." class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm" rows="2"></textarea>
+                    <button onclick="submitReview()" class="bg-primary hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Submit Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Sell Item Form Modal -->
-    <div id="sellModal" style="display: none;" class="fixed inset-0 bg-black/60 z-50 items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeSellModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold cursor-pointer">
+    <div id="sellModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeSellModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400">List Your Item for Sale</h3>
@@ -251,7 +304,7 @@
             "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut", "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Gorakhpur", "Mathura"],
             "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Dewas", "Satna", "Ratlam", "Rewa"],
             "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar"],
-            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
+            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Silguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
             "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Erode", "Vellore", "Thoothukudi", "Dindigul"],
             "Karnataka": ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi", "Kalaburagi", "Davanagere", "Ballari", "Vijayapura", "Shivamogga"],
             "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Kakinada", "Rajahmundry", "Tirupati", "Kadapa", "Anantapur"],
@@ -297,6 +350,7 @@
         ];
 
         let currentCategory = 'all';
+        let activeProductId = null;
 
         function updateDistricts() {
             const stateSelect = document.getElementById('sellState');
@@ -395,7 +449,7 @@
                         </div>
                     </div>
                     <div class="p-4 pt-0">
-                        <button onclick="openProductInNewTab(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
+                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
                             View Details & Buy
                         </button>
                     </div>
@@ -404,135 +458,91 @@
             });
         }
 
-        // Open Product Details in a New Tab
-        function openProductInNewTab(id) {
+        // Open Full Screen Product Modal with Details & Reviews
+        function openProductModalById(id) {
             const p = products.find(item => item.id === id);
             if(!p) return;
 
-            const newWindow = window.open('', '_blank');
-            if(!newWindow) {
-                alert('Please allow popups for this site to view product details.');
-                return;
+            activeProductId = p.id;
+
+            document.getElementById('modalTitle').innerText = p.title;
+            document.getElementById('modalPrice').innerText = p.finalPriceStr;
+            document.getElementById('modalLocation').innerText = p.location;
+            document.getElementById('modalDesc').innerText = p.desc;
+            
+            const origPriceElem = document.getElementById('modalOriginalPrice');
+            if (p.originalPriceStr) {
+                origPriceElem.innerText = p.originalPriceStr;
+                origPriceElem.classList.remove('hidden');
+            } else {
+                origPriceElem.classList.add('hidden');
             }
 
-            let imagesHTML = '';
+            const imgContainer = document.getElementById('modalImagesContainer');
+            imgContainer.innerHTML = "";
             if(p.images && p.images.length > 0) {
                 p.images.forEach(imgSrc => {
-                    imagesHTML += `<img src="${imgSrc}" class="w-full max-h-96 object-contain rounded-xl border mb-3 bg-gray-100">`;
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-full h-64 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0 mb-2";
+                    imgContainer.appendChild(img);
                 });
             } else {
-                imagesHTML = `<div class="h-64 bg-gray-200 flex items-center justify-center rounded-xl mb-3"><i class="fa-solid fa-image text-5xl text-gray-400"></i></div>`;
+                imgContainer.innerHTML = `<div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-xl"><i class="fa-solid fa-image text-4xl text-gray-400"></i></div>`;
             }
 
-            let reviewsHTML = '';
+            renderReviews(p);
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function renderReviews(p) {
+            const reviewsContainer = document.getElementById('modalReviewsContainer');
+            reviewsContainer.innerHTML = "";
             const reviewsList = p.reviews || [];
             if(reviewsList.length > 0) {
                 reviewsList.forEach(r => {
                     let stars = '⭐'.repeat(r.rating);
-                    reviewsHTML += `
-                        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-2">
-                            <div class="flex justify-between font-bold text-sm">
-                                <span>${r.name}</span>
-                                <span>${stars}</span>
-                            </div>
-                            <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${r.comment}</p>
+                    const revDiv = document.createElement('div');
+                    revDiv.className = "bg-gray-50 dark:bg-gray-700 p-3 rounded-lg";
+                    revDiv.innerHTML = `
+                        <div class="flex justify-between font-bold text-sm">
+                            <span>${r.name}</span>
+                            <span>${stars}</span>
                         </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${r.comment}</p>
                     `;
+                    reviewsContainer.appendChild(revDiv);
                 });
             } else {
-                reviewsHTML = `<p class="text-xs text-gray-400 mb-4">No reviews yet. Be the first to give feedback!</p>`;
+                reviewsContainer.innerHTML = `<p class="text-xs text-gray-400">No reviews yet. Be the first to give feedback!</p>`;
+            }
+        }
+
+        function submitReview() {
+            const name = document.getElementById('reviewerName').value || 'Anonymous';
+            const rating = parseInt(document.getElementById('reviewerRating').value);
+            const comment = document.getElementById('reviewerComment').value;
+
+            if(!comment) {
+                alert('Please write a feedback comment.');
+                return;
             }
 
-            const pageContent = `
-            <!DOCTYPE html>
-            <html lang="gu">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${p.title} - OldX Details</title>
-                <script src="https://cdn.tailwindcss.com"><\/script>
-                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-            </head>
-            <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-4 md:p-8">
-                <div class="max-w-3xl mx-auto bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-2xl">
-                    <button onclick="window.close()" class="mb-4 bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded text-sm font-semibold hover:bg-gray-300">
-                        ← Back / Close
-                    </button>
-                    
-                    <div class="mb-6">
-                        ${imagesHTML}
-                    </div>
+            let p = products.find(item => item.id === activeProductId);
+            if(p) {
+                if(!p.reviews) p.reviews = [];
+                p.reviews.unshift({ name, rating, comment });
+                localStorage.setItem('oldx_products', JSON.stringify(products));
+                
+                document.getElementById('reviewerName').value = '';
+                document.getElementById('reviewerComment').value = '';
+                renderReviews(p);
+                alert('Thank you for your feedback!');
+            }
+        }
 
-                    <h1 class="text-3xl font-extrabold text-primary dark:text-teal-400 mb-2">${p.title}</h1>
-                    <div class="flex items-center gap-3 mb-4">
-                        <span class="text-3xl font-black text-teal-700 dark:text-teal-300">${p.finalPriceStr}</span>
-                        ${p.originalPriceStr ? `<span class="text-xl text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
-                        ${p.discountPercent > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">${p.discountPercent}% OFF</span>` : ''}
-                    </div>
-
-                    <div class="space-y-3 border-t border-b py-4 mb-6 dark:border-gray-700 text-sm">
-                        <p><strong>Location:</strong> ${p.location}</p>
-                        <p><strong>Description:</strong> ${p.desc}</p>
-                        <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery: ₹99 Included</p>
-                        <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protection Included (5% Platform Fee)</p>
-                    </div>
-
-                    <button onclick="alert('Redirecting to Razorpay Secure Gateway... Doorstep delivery initiated!')" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow mb-8 cursor-pointer">
-                        Proceed with Secure Payment
-                    </button>
-
-                    <!-- Rating & Feedback Section -->
-                    <div class="border-t dark:border-gray-700 pt-6">
-                        <h3 class="text-xl font-bold mb-3">Customer Ratings & Feedback</h3>
-                        <div id="reviewsContainer" class="mb-6">
-                            ${reviewsHTML}
-                        </div>
-
-                        <!-- Add Review Form -->
-                        <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl">
-                            <h4 class="font-bold text-sm mb-2">Give Your Feedback & Rating</h4>
-                            <input type="text" id="reviewerName" placeholder="Your Name" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
-                            <select id="reviewerRating" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
-                                <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-                                <option value="4">⭐⭐⭐⭐ (4/5)</option>
-                                <option value="3">⭐⭐⭐ (3/5)</option>
-                                <option value="2">⭐⭐ (2/5)</option>
-                                <option value="1">⭐ (1/5)</option>
-                            </select>
-                            <textarea id="reviewerComment" placeholder="Write feedback..." class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm" rows="2"></textarea>
-                            <button onclick="submitReview(${p.id})" class="bg-primary hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Submit Feedback</button>
-                        </div>
-                    </div>
-                </div>
-
-                <script>
-                    function submitReview(productId) {
-                        const name = document.getElementById('reviewerName').value || 'Anonymous';
-                        const rating = parseInt(document.getElementById('reviewerRating').value);
-                        const comment = document.getElementById('reviewerComment').value;
-
-                        if(!comment) {
-                            alert('Please write a feedback comment.');
-                            return;
-                        }
-
-                        let allProds = JSON.parse(localStorage.getItem('oldx_products')) || [];
-                        let prod = allProds.find(item => item.id === productId);
-                        if(prod) {
-                            if(!prod.reviews) prod.reviews = [];
-                            prod.reviews.unshift({ name, rating, comment });
-                            localStorage.setItem('oldx_products', JSON.stringify(allProds));
-                            alert('Thank you for your feedback!');
-                            window.location.reload();
-                        }
-                    }
-                <\/script>
-            </body>
-            </html>
-            `;
-
-            newWindow.document.write(pageContent);
-            newWindow.document.close();
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
         }
 
         function openSellModal() {
@@ -613,7 +623,7 @@
             try {
                 localStorage.setItem('oldx_products', JSON.stringify(products));
             } catch (e) {
-                console.warn("Storage limit reached, saving product.");
+                console.warn("Storage limit exceeded, saving product.");
                 localStorage.setItem('oldx_products', JSON.stringify(products));
             }
             renderProducts();
@@ -621,6 +631,11 @@
             closeSellModal();
             document.querySelector('#sellModal form').reset();
             updateDistricts();
+        }
+
+        function simulateRazorpayPayment() {
+            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & doorstep pickup initiated!');
+            closeProductModal();
         }
 
         const translations = {
