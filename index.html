@@ -90,4 +90,115 @@
                     <option value="Odisha">Odisha</option>
                     <option value="Punjab">Punjab</option>
                     <option value="Rajasthan">Rajasthan</option>
-                    <option value="S
+                    <option value="Sikkim">Sikkim</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Tripura">Tripura</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Uttarakhand">Uttarakhand</option>
+                    <option value="West Bengal">West Bengal</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h3 class="text-xl font-bold mb-4">Categories</h3>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-box text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">All Items</p>
+            </div>
+            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-laptop text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Electronics</p>
+            </div>
+            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-car text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Vehicles</p>
+            </div>
+            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-mobile text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Mobiles</p>
+            </div>
+            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-couch text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Furniture</p>
+            </div>
+            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-building text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Properties</p>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <h3 class="text-xl font-bold mb-4">Fresh Recommendations Across India</h3>
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Products rendered dynamically -->
+        </div>
+    </main>
+
+    <!-- Login / Authentication Modal -->
+    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400 text-center">Login to OldX</h3>
+            
+            <!-- Auth Tab Switcher -->
+            <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                <button id="tabEmail" onclick="switchAuthTab('email')" class="flex-1 py-2 font-semibold text-sm border-b-2 border-primary text-primary">Email Login</button>
+                <button id="tabPhone" onclick="switchAuthTab('phone')" class="flex-1 py-2 font-semibold text-sm border-b-2 border-transparent text-gray-400">Phone (OTP)</button>
+            </div>
+
+            <!-- Email Login Form -->
+            <form id="emailLoginForm" onsubmit="handleEmailAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="example@mail.com" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="******" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" onclick="window.authAction='login'" class="flex-1 bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Login</button>
+                    <button type="submit" onclick="window.authAction='signup'" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Sign Up</button>
+                </div>
+            </form>
+
+            <!-- Phone OTP Form -->
+            <div id="phoneLoginForm" class="space-y-4" style="display: none;">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Mobile Number (With +91)</label>
+                    <input type="text" id="authPhone" placeholder="+919876543210" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div id="recaptcha-container" class="my-2"></div>
+                <button type="button" onclick="sendOTP()" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Send OTP</button>
+
+                <div id="otpInputDiv" style="display: none;" class="space-y-2 pt-2 border-t dark:border-gray-700">
+                    <label class="block text-xs font-medium mb-1">Enter 6-Digit OTP</label>
+                    <input type="text" id="authOTP" placeholder="123456" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                    <button type="button" onclick="verifyOTP()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Verify OTP & Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Full Screen Product Details Modal -->
+    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
+                <!-- Images load here -->
+            </div>
+            
+            
