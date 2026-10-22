@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="gu" dir="ltr">
 <head>
     <meta charset="UTF-8">
@@ -58,8 +58,8 @@
                 Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery.
             </p>
             <div class="flex flex-col md:flex-row justify-center gap-3">
-                <input type="text" id="searchInput" placeholder="Search laptops, mobiles, cars..." class="px-4 py-3 rounded-lg text-gray-800 w-full md:w-96 focus:outline-none shadow">
-                <select id="stateFilter" class="px-4 py-3 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
+                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search laptops, mobiles, cars..." class="px-4 py-3 rounded-lg text-gray-800 w-full md:w-96 focus:outline-none shadow">
+                <select id="stateFilter" onchange="filterProducts()" class="px-4 py-3 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
                     <option value="">All States / All India (Pan-India)</option>
                     <option value="Andhra Pradesh">Andhra Pradesh</option>
                     <option value="Arunachal Pradesh">Arunachal Pradesh</option>
@@ -100,27 +100,27 @@
     <main class="max-w-7xl mx-auto px-4 py-8">
         <h3 class="text-xl font-bold mb-4">Categories</h3>
         <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-box text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">All Items</p>
             </div>
-            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-laptop text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">Electronics</p>
             </div>
-            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-car text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">Vehicles</p>
             </div>
-            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-mobile text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">Mobiles</p>
             </div>
-            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-couch text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">Furniture</p>
             </div>
-            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
                 <i class="fa-solid fa-building text-2xl text-primary mb-2"></i>
                 <p class="font-medium text-sm">Properties</p>
             </div>
@@ -129,45 +129,26 @@
         <!-- Product Grid -->
         <h3 class="text-xl font-bold mb-4">Fresh Recommendations Across India</h3>
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <!-- Sample Product Card -->
-            <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between">
-                <div>
-                    <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
-                        <span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">15% OFF</span>
-                        <i class="fa-solid fa-image text-4xl text-gray-400"></i>
-                    </div>
-                    <div class="p-4">
-                        <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">Ahmedabad, Gujarat</span>
-                        <h4 class="font-bold text-lg mt-2">Honda Activa 6G - Well Maintained</h4>
-                        <div class="flex items-center gap-2 mt-1">
-                            <p class="text-primary dark:text-teal-400 font-extrabold text-xl">₹57,845</p>
-                            <span class="text-sm text-gray-400 line-through">₹65,000</span>
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">Includes 5% Platform Fee + ₹99 Delivery</p>
-                    </div>
-                </div>
-                <div class="p-4 pt-0">
-                    <button onclick="openProductModal('Honda Activa 6G', '₹57,845', 'Ahmedabad, Gujarat', 'Good condition, 2 years old, insurance valid.', '₹65,000')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
-                        View Details & Buy
-                    </button>
-                </div>
-            </div>
+            <!-- Products will be rendered dynamically -->
         </div>
     </main>
 
     <!-- Product Details Modal (Buy) -->
     <div id="productModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative">
+        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
                 <i class="fa-solid fa-xmark"></i>
             </button>
+            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
+                <!-- Images will load here -->
+            </div>
             <h3 id="modalTitle" class="text-2xl font-bold mb-2">Product Title</h3>
             <div class="flex items-center gap-3 mb-3">
                 <p id="modalPrice" class="text-primary dark:text-teal-400 text-2xl font-extrabold">₹0</p>
                 <span id="modalOriginalPrice" class="text-gray-400 line-through text-lg"></span>
             </div>
             <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
-                <p><strong>Complete Address / Location:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Complete Address:</strong> <span id="modalLocation">-</span></p>
                 <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
                 <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
                 <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
@@ -189,6 +170,16 @@
                 <div>
                     <label class="block text-sm font-medium mb-1">Item Title</label>
                     <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 / Tractor / Sofa" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Category</label>
+                    <select id="sellCategory" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <option value="electronics">Electronics</option>
+                        <option value="vehicles">Vehicles</option>
+                        <option value="mobiles">Mobiles</option>
+                        <option value="furniture">Furniture</option>
+                        <option value="properties">Properties</option>
+                    </select>
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -244,8 +235,12 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark (For Rural & Town Sellers)</label>
+                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark</label>
                     <input type="text" id="sellVillage" required placeholder="e.g. Village Rampura / Near Bus Stand" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Upload Multiple Images (Photos)</label>
+                    <input type="file" id="sellImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Description</label>
@@ -282,7 +277,7 @@
             "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut", "Bareilly", "Aligarh", "Moradabad", "Saharanpur", "Gorakhpur", "Mathura"],
             "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Dewas", "Satna", "Ratlam", "Rewa"],
             "Bihar": ["Patna", "Gaya", "Bhagalpur", "Muzaffarpur", "Purnia", "Darbhanga", "Bihar Sharif", "Arrah", "Begusarai", "Katihar"],
-            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Siliguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
+            "West Bengal": ["Kolkata", "Howrah", "Durgapur", "Asansol", "Silguri", "Kharagpur", "Haldia", "Bardhaman", "Malda", "Darjeeling"],
             "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Tiruchirappalli", "Salem", "Tirunelveli", "Erode", "Vellore", "Thoothukudi", "Dindigul"],
             "Karnataka": ["Bengaluru Urban", "Mysuru", "Hubballi-Dharwad", "Mangaluru", "Belagavi", "Kalaburagi", "Davanagere", "Ballari", "Vijayapura", "Shivamogga"],
             "Andhra Pradesh": ["Visakhapatnam", "Vijayawada", "Guntur", "Nellore", "Kurnool", "Kakinada", "Rajahmundry", "Tirupati", "Kadapa", "Anantapur"],
@@ -308,6 +303,24 @@
             "Jammu and Kashmir": ["Srinagar", "Jammu", "Anantnag", "Baramulla", "Sopore", "Kathua", "Udhampur", "Poonch", "Rajouri"]
         };
 
+        let products = [
+            {
+                id: 1,
+                title: "Honda Activa 6G - Well Maintained",
+                category: "vehicles",
+                basePrice: 50000,
+                finalPriceStr: "₹57,845",
+                originalPriceStr: "₹65,000",
+                discountPercent: 15,
+                location: "Rampura, Ahmedabad, Gujarat",
+                state: "Gujarat",
+                desc: "Good condition, 2 years old, insurance valid.",
+                images: []
+            }
+        ];
+
+        let currentCategory = 'all';
+
         function updateDistricts() {
             const stateSelect = document.getElementById('sellState');
             const districtSelect = document.getElementById('sellDistrict');
@@ -332,6 +345,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             updateDistricts();
+            renderProducts();
         });
 
         function toggleDarkMode() {
@@ -343,18 +357,96 @@
             }
         }
 
-        function openProductModal(title, price, location, desc, originalPrice) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalPrice').innerText = price;
-            document.getElementById('modalLocation').innerText = location;
-            document.getElementById('modalDesc').innerText = desc;
+        function filterCategory(cat) {
+            currentCategory = cat;
+            renderProducts();
+        }
+
+        function filterProducts() {
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const stateVal = document.getElementById('stateFilter').value;
+            
+            grid.innerHTML = "";
+
+            const filtered = products.filter(p => {
+                const matchesCategory = (currentCategory === 'all' || p.category === currentCategory);
+                const matchesSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchesState = (!stateVal || p.state === stateVal);
+                return matchesCategory && matchesSearch && matchesState;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">Koi product madi nathi.</p>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                let imgContent = `<i class="fa-solid fa-image text-4xl text-gray-400"></i>`;
+                if(p.images && p.images.length > 0) {
+                    imgContent = `<img src="${p.images[0]}" class="w-full h-full object-cover">`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative overflow-hidden">
+                            ${p.discountPercent > 0 ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold z-10">${p.discountPercent}% OFF</span>` : ''}
+                            ${imgContent}
+                        </div>
+                        <div class="p-4">
+                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">${p.location}</span>
+                            <h4 class="font-bold text-lg mt-2">${p.title}</h4>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p class="text-primary dark:text-teal-400 font-extrabold text-xl">${p.finalPriceStr}</p>
+                                ${p.originalPriceStr ? `<span class="text-sm text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Includes 5% Platform Fee + ₹99 Delivery</p>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0">
+                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
+                            View Details & Buy
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openProductModalById(id) {
+            const p = products.find(item => item.id === id);
+            if(!p) return;
+
+            document.getElementById('modalTitle').innerText = p.title;
+            document.getElementById('modalPrice').innerText = p.finalPriceStr;
+            document.getElementById('modalLocation').innerText = p.location;
+            document.getElementById('modalDesc').innerText = p.desc;
             
             const origPriceElem = document.getElementById('modalOriginalPrice');
-            if (originalPrice && originalPrice !== 'undefined' && originalPrice !== '') {
-                origPriceElem.innerText = originalPrice;
+            if (p.originalPriceStr) {
+                origPriceElem.innerText = p.originalPriceStr;
                 origPriceElem.classList.remove('hidden');
             } else {
                 origPriceElem.classList.add('hidden');
+            }
+
+            const imgContainer = document.getElementById('modalImagesContainer');
+            imgContainer.innerHTML = "";
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(imgSrc => {
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-24 h-24 object-cover rounded-lg border dark:border-gray-700 flex-shrink-0";
+                    imgContainer.appendChild(img);
+                });
+            } else {
+                imgContainer.innerHTML = `<p class="text-xs text-gray-400">No images uploaded.</p>`;
             }
             
             document.getElementById('productModal').classList.remove('hidden');
@@ -375,61 +467,65 @@
         function handleSellSubmit(event) {
             event.preventDefault();
             const title = document.getElementById('sellTitle').value;
+            const category = document.getElementById('sellCategory').value;
             const basePrice = parseFloat(document.getElementById('sellPrice').value);
             const originalPriceInput = document.getElementById('sellOriginalPrice').value;
             const state = document.getElementById('sellState').value;
             const district = document.getElementById('sellDistrict').value;
             const village = document.getElementById('sellVillage').value;
             const desc = document.getElementById('sellDesc').value;
+            const imageInput = document.getElementById('sellImages');
 
             const commission = basePrice * 0.05;
             const finalPriceValue = Math.round(basePrice + commission + 99);
             const finalPriceStr = '₹' + finalPriceValue.toLocaleString('en-IN');
             
             let originalPriceStr = '';
-            let discountBadge = '';
+            let discountPercent = 0;
             if (originalPriceInput) {
                 const origVal = parseFloat(originalPriceInput);
                 originalPriceStr = '₹' + origVal.toLocaleString('en-IN');
-                const discountPercent = Math.round(((origVal - basePrice) / origVal) * 100);
-                if (discountPercent > 0) {
-                    discountBadge = `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold">${discountPercent}% OFF</span>`;
-                }
+                discountPercent = Math.round(((origVal - basePrice) / origVal) * 100);
             }
 
-            // Full structured address including village/town
             const locationStr = village + ", " + district + ", " + state;
 
-            const grid = document.getElementById('productGrid');
-            const newCard = document.createElement('div');
-            newCard.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between";
-            newCard.innerHTML = `
-                <div>
-                    <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative">
-                        ${discountBadge}
-                        <i class="fa-solid fa-image text-4xl text-gray-400"></i>
-                    </div>
-                    <div class="p-4">
-                        <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">${locationStr}</span>
-                        <h4 class="font-bold text-lg mt-2">${title}</h4>
-                        <div class="flex items-center gap-2 mt-1">
-                            <p class="text-primary dark:text-teal-400 font-extrabold text-xl">${finalPriceStr}</p>
-                            ${originalPriceStr ? `<span class="text-sm text-gray-400 line-through">${originalPriceStr}</span>` : ''}
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1">Includes 5% Platform Fee + ₹99 Delivery</p>
-                    </div>
-                </div>
-                <div class="p-4 pt-0">
-                    <button onclick="openProductModal('${title}', '${finalPriceStr}', '${locationStr.replace(/'/g, "\\'")}', '${desc.replace(/'/g, "\\'")}', '${originalPriceStr}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
-                        View Details & Buy
-                    </button>
-                </div>
-            `;
-            grid.prepend(newCard);
+            // Read multiple images using FileReader
+            let imageUrls = [];
+            if(imageInput.files && imageInput.files.length > 0) {
+                let filesCount = imageInput.files.length;
+                let loadedCount = 0;
+                
+                Array.from(imageInput.files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imageUrls[index] = e.target.result;
+                        loadedCount++;
+                        if(loadedCount === filesCount) {
+                            saveAndAddNewProduct({
+                                id: Date.now(),
+                                title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                                location: locationStr, state, desc, images: imageUrls
+                            });
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                saveAndAddNewProduct({
+                    id: Date.now(),
+                    title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                    location: locationStr, state, desc, images: []
+                });
+            }
+        }
 
+        function saveAndAddNewProduct(newProd) {
+            products.unshift(newProd);
+            renderProducts();
             alert('Tamari item safaltapurvak list thai gai chhe!');
             closeSellModal();
-            event.target.reset();
+            document.querySelector('#sellModal form').reset();
             updateDistricts();
         }
 
@@ -458,10 +554,6 @@
                 document.getElementById('bannerTitle').innerText = translations[lang].bannerTitle;
                 document.getElementById('bannerDesc').innerText = translations[lang].bannerDesc;
             }
-        }
-
-        function filterCategory(cat) {
-            alert("Filtering category: " + cat);
         }
     </script>
 </body>
