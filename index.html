@@ -347,10 +347,219 @@
             updateDistricts();
             renderProducts();
             
-            // Restore saved language preference
             const savedLang = localStorage.getItem('oldx_lang') || 'gu';
             document.getElementById('languageSelect').value = savedLang;
             changeLanguage(savedLang);
         });
 
-        function
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('darkModeIcon');
+            if(icon) {
+                icon.classList.toggle('fa-moon');
+                icon.classList.toggle('fa-sun');
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            renderProducts();
+        }
+
+        function filterProducts() {
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const stateVal = document.getElementById('stateFilter').value;
+            
+            grid.innerHTML = "";
+
+            const filtered = products.filter(p => {
+                const matchesCategory = (currentCategory === 'all' || p.category === currentCategory);
+                const matchesSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchesState = (!stateVal || p.state === stateVal);
+                return matchesCategory && matchesSearch && matchesState;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">Koi product madi nathi.</p>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                let imgContent = `<i class="fa-solid fa-image text-4xl text-gray-400"></i>`;
+                if(p.images && p.images.length > 0) {
+                    imgContent = `<img src="${p.images[0]}" class="w-full h-full object-cover">`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between";
+                card.innerHTML = `
+                    <div>
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative overflow-hidden">
+                            ${p.discountPercent > 0 ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold z-10">${p.discountPercent}% OFF</span>` : ''}
+                            ${imgContent}
+                        </div>
+                        <div class="p-4">
+                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">${p.location}</span>
+                            <h4 class="font-bold text-lg mt-2">${p.title}</h4>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p class="text-primary dark:text-teal-400 font-extrabold text-xl">${p.finalPriceStr}</p>
+                                ${p.originalPriceStr ? `<span class="text-sm text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Includes 5% Platform Fee + ₹99 Delivery</p>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0">
+                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
+                            View Details & Buy
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openProductModalById(id) {
+            const p = products.find(item => item.id === id);
+            if(!p) return;
+
+            document.getElementById('modalTitle').innerText = p.title;
+            document.getElementById('modalPrice').innerText = p.finalPriceStr;
+            document.getElementById('modalLocation').innerText = p.location;
+            document.getElementById('modalDesc').innerText = p.desc;
+            
+            const origPriceElem = document.getElementById('modalOriginalPrice');
+            if (p.originalPriceStr) {
+                origPriceElem.innerText = p.originalPriceStr;
+                origPriceElem.classList.remove('hidden');
+            } else {
+                origPriceElem.classList.add('hidden');
+            }
+
+            const imgContainer = document.getElementById('modalImagesContainer');
+            imgContainer.innerHTML = "";
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(imgSrc => {
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-24 h-24 object-cover rounded-lg border dark:border-gray-700 flex-shrink-0";
+                    imgContainer.appendChild(img);
+                });
+            } else {
+                imgContainer.innerHTML = `<p class="text-xs text-gray-400">No images uploaded.</p>`;
+            }
+            
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        function openSellModal() {
+            document.getElementById('sellModal').classList.remove('hidden');
+        }
+
+        function closeSellModal() {
+            document.getElementById('sellModal').classList.add('hidden');
+        }
+
+        function handleSellSubmit(event) {
+            event.preventDefault();
+            const title = document.getElementById('sellTitle').value;
+            const category = document.getElementById('sellCategory').value;
+            const basePrice = parseFloat(document.getElementById('sellPrice').value);
+            const originalPriceInput = document.getElementById('sellOriginalPrice').value;
+            const state = document.getElementById('sellState').value;
+            const district = document.getElementById('sellDistrict').value;
+            const village = document.getElementById('sellVillage').value;
+            const desc = document.getElementById('sellDesc').value;
+            const imageInput = document.getElementById('sellImages');
+
+            const commission = basePrice * 0.05;
+            const finalPriceValue = Math.round(basePrice + commission + 99);
+            const finalPriceStr = '₹' + finalPriceValue.toLocaleString('en-IN');
+            
+            let originalPriceStr = '';
+            let discountPercent = 0;
+            if (originalPriceInput) {
+                const origVal = parseFloat(originalPriceInput);
+                originalPriceStr = '₹' + origVal.toLocaleString('en-IN');
+                discountPercent = Math.round(((origVal - basePrice) / origVal) * 100);
+            }
+
+            const locationStr = village + ", " + district + ", " + state;
+
+            let imageUrls = [];
+            if(imageInput.files && imageInput.files.length > 0) {
+                let filesCount = imageInput.files.length;
+                let loadedCount = 0;
+                
+                Array.from(imageInput.files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imageUrls[index] = e.target.result;
+                        loadedCount++;
+                        if(loadedCount === filesCount) {
+                            saveAndAddNewProduct({
+                                id: Date.now(),
+                                title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                                location: locationStr, state, desc, images: imageUrls
+                            });
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                saveAndAddNewProduct({
+                    id: Date.now(),
+                    title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                    location: locationStr, state, desc, images: []
+                });
+            }
+        }
+
+        function saveAndAddNewProduct(newProd) {
+            products.unshift(newProd);
+            localStorage.setItem('oldx_products', JSON.stringify(products));
+            renderProducts();
+            alert('Tamari item safaltapurvak list thai gai chhe!');
+            closeSellModal();
+            document.querySelector('#sellModal form').reset();
+            updateDistricts();
+        }
+
+        function simulateRazorpayPayment() {
+            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & doorstep pickup initiated!');
+            closeProductModal();
+        }
+
+        const translations = {
+            gu: {
+                bannerTitle: "Bharatnu Potanu Trusted Marketplace 🇮🇳",
+                bannerDesc: "Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery."
+            },
+            hi: {
+                bannerTitle: "भारत का अपना भरोसेमंद मार्केटप्लेस 🇮🇳",
+                bannerDesc: "पुराने से लेकर नए कपड़े, गैजेट्स और प्रॉपर्टीज़ पलक झपकते बेचें! पैन-इंडिया एस्क्रो पेमेंट सुरक्षा और होम पिकअप डिलीवरी।"
+            },
+            en: {
+                bannerTitle: "India's Own Trusted C2C Marketplace 🇮🇳",
+                bannerDesc: "Buy & Sell Pre-owned and New Goods Across India with Escrow Payment Protection & Doorstep Pickup."
+            }
+        };
+
+        function changeLanguage(lang) {
+            if(translations[lang]) {
+                document.getElementById('bannerTitle').innerText = translations[lang].bannerTitle;
+                document.getElementById('bannerDesc').innerText = translations[lang].bannerDesc;
+                localStorage.setItem('oldx_lang', lang);
+            }
+        }
+    </script>
+</body>
+</html>
