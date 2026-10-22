@@ -167,7 +167,7 @@
                 <span id="modalOriginalPrice" class="text-gray-400 line-through text-lg"></span>
             </div>
             <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
-                <p><strong>Location:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Complete Address / Location:</strong> <span id="modalLocation">-</span></p>
                 <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
                 <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
                 <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
@@ -188,7 +188,7 @@
             <form onsubmit="handleSellSubmit(event)" class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium mb-1">Item Title</label>
-                    <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 / Sofa / Bike" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 / Tractor / Sofa" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
@@ -242,6 +242,10 @@
                             <!-- Populated dynamically -->
                         </select>
                     </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark (For Rural & Town Sellers)</label>
+                    <input type="text" id="sellVillage" required placeholder="e.g. Village Rampura / Near Bus Stand" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Description</label>
@@ -375,6 +379,7 @@
             const originalPriceInput = document.getElementById('sellOriginalPrice').value;
             const state = document.getElementById('sellState').value;
             const district = document.getElementById('sellDistrict').value;
+            const village = document.getElementById('sellVillage').value;
             const desc = document.getElementById('sellDesc').value;
 
             const commission = basePrice * 0.05;
@@ -392,7 +397,8 @@
                 }
             }
 
-            const locationStr = district + ", " + state;
+            // Full structured address including village/town
+            const locationStr = village + ", " + district + ", " + state;
 
             const grid = document.getElementById('productGrid');
             const newCard = document.createElement('div');
@@ -414,7 +420,7 @@
                     </div>
                 </div>
                 <div class="p-4 pt-0">
-                    <button onclick="openProductModal('${title}', '${finalPriceStr}', '${locationStr}', '${desc.replace(/'/g, "\\'")}', '${originalPriceStr}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
+                    <button onclick="openProductModal('${title}', '${finalPriceStr}', '${locationStr.replace(/'/g, "\\'")}', '${desc.replace(/'/g, "\\'")}', '${originalPriceStr}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
                         View Details & Buy
                     </button>
                 </div>
@@ -428,7 +434,7 @@
         }
 
         function simulateRazorpayPayment() {
-            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & delivery service initiated!');
+            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & doorstep pickup initiated!');
             closeProductModal();
         }
 
