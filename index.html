@@ -8,10 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase Compat SDKs (App, Auth, and Firestore) -->
+    <!-- Firebase Auth Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -114,3 +113,867 @@
             </div>
         </div>
     </section>
+
+    <!-- Categories Section -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h3 class="text-xl font-bold mb-4">Categories</h3>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-box text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">All Items</p>
+            </div>
+            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-laptop text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Electronics</p>
+            </div>
+            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-car text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Vehicles</p>
+            </div>
+            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-mobile text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Mobiles</p>
+            </div>
+            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-couch text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Furniture</p>
+            </div>
+            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
+                <i class="fa-solid fa-building text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Properties</p>
+            </div>
+        </div>
+
+        <!-- Product Grid -->
+        <h3 class="text-xl font-bold mb-4">Fresh Recommendations Across India</h3>
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Products rendered dynamically -->
+        </div>
+    </main>
+
+    <!-- Login / Authentication Modal -->
+    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400 text-center">Login to OldX</h3>
+            
+            <!-- Auth Tab Switcher -->
+            <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
+                <button id="tabEmail" onclick="switchAuthTab('email')" class="flex-1 py-2 font-semibold text-sm border-b-2 border-primary text-primary">Email Login</button>
+                <button id="tabPhone" onclick="switchAuthTab('phone')" class="flex-1 py-2 font-semibold text-sm border-b-2 border-transparent text-gray-400">Phone (OTP)</button>
+            </div>
+
+            <!-- Email Login Form -->
+            <form id="emailLoginForm" onsubmit="handleEmailAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="example@mail.com" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="******" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" onclick="window.authAction='login'" class="flex-1 bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Login</button>
+                    <button type="submit" onclick="window.authAction='signup'" class="flex-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 text-gray-800 dark:text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Sign Up</button>
+                </div>
+            </form>
+
+            <!-- Phone OTP Form -->
+            <div id="phoneLoginForm" class="space-y-4" style="display: none;">
+                <div>
+                    <label class="block text-xs font-medium mb-1">Mobile Number (With +91)</label>
+                    <input type="text" id="authPhone" placeholder="+919876543210" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div id="recaptcha-container" class="my-2"></div>
+                <button type="button" onclick="sendOTP()" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Send OTP</button>
+
+                <div id="otpInputDiv" style="display: none;" class="space-y-2 pt-2 border-t dark:border-gray-700">
+                    <label class="block text-xs font-medium mb-1">Enter 6-Digit OTP</label>
+                    <input type="text" id="authOTP" placeholder="123456" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                    <button type="button" onclick="verifyOTP()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg font-bold text-sm cursor-pointer">Verify OTP & Login</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Ads / Edit / Delete Modal -->
+    <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-2xl max-h-[85vh] rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400">My Listed Ads</h3>
+            <div id="myAdsContainer" class="space-y-3">
+                <!-- User's ads load here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl relative overflow-y-auto max-h-[90vh]">
+            <button onclick="closeEditModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400">Edit Your Listing</h3>
+            <form onsubmit="handleEditSubmit(event)" class="space-y-3 text-sm">
+                <input type="hidden" id="editProductId">
+                <div>
+                    <label class="block font-medium mb-1">Title</label>
+                    <input type="text" id="editTitle" required class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Price (₹)</label>
+                    <input type="number" id="editPrice" required class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Location</label>
+                    <input type="text" id="editLocation" required class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div>
+                    <label class="block font-medium mb-1">Description</label>
+                    <textarea id="editDesc" rows="3" required class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:border-gray-600"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-bold shadow">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Full Screen Product Details Modal -->
+    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
+                <!-- Images load here -->
+            </div>
+            
+            <h3 id="modalTitle" class="text-2xl font-extrabold mb-2 text-primary dark:text-teal-400">Product Title</h3>
+            <div class="flex items-center gap-3 mb-4">
+                <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300">₹0</p>
+                <span id="modalOriginalPrice" class="text-lg text-gray-400 line-through"></span>
+            </div>
+            
+            <div class="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-4 dark:border-gray-700">
+                <p><strong>Complete Address:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
+                <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
+                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
+            </div>
+
+            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow mb-8 cursor-pointer">
+                Proceed with Secure Payment
+            </button>
+
+            <!-- Ratings & Feedback Section -->
+            <div class="border-t dark:border-gray-700 pt-6">
+                <h3 class="text-xl font-bold mb-3">Customer Ratings & Feedback</h3>
+                <div id="modalReviewsContainer" class="mb-6 space-y-2">
+                    <!-- Reviews load here -->
+                </div>
+
+                <!-- Add Review Form -->
+                <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl">
+                    <h4 class="font-bold text-sm mb-2">Give Your Feedback & Rating</h4>
+                    <input type="text" id="reviewerName" placeholder="Your Name" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                    <select id="reviewerRating" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
+                        <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                        <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                        <option value="3">⭐⭐⭐ (3/5)</option>
+                        <option value="2">⭐⭐ (2/5)</option>
+                        <option value="1">⭐ (1/5)</option>
+                    </select>
+                    <textarea id="reviewerComment" placeholder="Write feedback..." class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm" rows="2"></textarea>
+                    <button onclick="submitReview()" class="bg-primary hover:bg-teal-700 text-white px-4 py-2 rounded text-sm font-semibold cursor-pointer">Submit Feedback</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sell Item Form Modal -->
+    <div id="sellModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-lg md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
+            <button onclick="closeSellModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400">List Your Item for Sale</h3>
+            <form onsubmit="handleSellSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Item Title</label>
+                    <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 / Tractor / Sofa" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Category</label>
+                    <select id="sellCategory" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <option value="electronics">Electronics</option>
+                        <option value="vehicles">Vehicles</option>
+                        <option value="mobiles">Mobiles</option>
+                        <option value="furniture">Furniture</option>
+                        <option value="properties">Properties</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Your Price (₹)</label>
+                        <input type="number" id="sellPrice" required placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Original Price / MRP (Optional)</label>
+                        <input type="number" id="sellOriginalPrice" placeholder="e.g. 30000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">State</label>
+                        <select id="sellState" onchange="updateDistricts()" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">District / City</label>
+                        <select id="sellDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark</label>
+                    <input type="text" id="sellVillage" required placeholder="e.g. Village Rampura / Near Bus Stand" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Upload Multiple Images (Photos)</label>
+                    <input type="file" id="sellImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="sellDesc" rows="3" required placeholder="Condition, age, reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-300">
+                    ℹ️ Note: 5% platform fee + ₹99 delivery charge will be automatically added to buyer's final payable amount.
+                </div>
+                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow cursor-pointer">
+                    Publish Listing (Pan-India)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-12 py-8 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <p>&copy; 2026 OldX Marketplace. All rights reserved (Pan-India).</p>
+            <div class="flex space-x-6">
+                <a href="#contact" onclick="alert('Support Email: paniruddhsinh088@gmail.com | Helpline: +91-6354224716')" class="hover:underline">Contact Us</a>
+                <a href="#terms" onclick="alert('Terms & Conditions: All transactions include 5% commission & ₹99 courier fee, protected via OldX Escrow system.')" class="hover:underline">Terms & Conditions</a>
+                <a href="#privacy" onclick="alert('Privacy Policy: Your data and payments are 100% safe and encrypted.')" class="hover:underline">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase Script Logic -->
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
+            authDomain: "oldx-1c983.firebaseapp.com",
+            projectId: "oldx-1c983",
+            storageBucket: "oldx-1c983.firebasestorage.app",
+            messagingSenderId: "1036370611979",
+            appId: "1:1036370611979:web:5c3a6c754b3ad979f69c0e",
+            measurementId: "G-NLJBLYBBJY"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+
+        let confirmationResultGlobal = null;
+        window.authAction = 'login';
+        window.currentUser = null;
+
+        // Monitor Login State
+        auth.onAuthStateChanged((user) => {
+            const authContainer = document.getElementById('authContainer');
+            if (user) {
+                window.currentUser = user;
+                const displayName = user.email ? user.email.split('@')[0] : (user.phoneNumber || 'User');
+                authContainer.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-gray-700 px-2 py-1 rounded">👤 ${displayName}</span>
+                        <button onclick="logoutUser()" class="text-xs bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded font-semibold cursor-pointer">Logout</button>
+                    </div>
+                `;
+                closeAuthModal();
+            } else {
+                window.currentUser = null;
+                authContainer.innerHTML = `
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
+                        <i class="fa-solid fa-user mr-1"></i> Login / Signup
+                    </button>
+                `;
+            }
+        });
+
+        // Email Login / Signup
+        function handleEmailAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+
+            if (window.authAction === 'signup') {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(() => alert("Account Successfully Created!"))
+                    .catch((err) => alert("Auth Error: " + err.message));
+            } else {
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(() => alert("Successfully Logged In!"))
+                    .catch((err) => alert("Auth Error: " + err.message));
+            }
+        }
+
+        // Phone Recaptcha
+        function setupRecaptcha() {
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+                    'size': 'normal',
+                    'callback': () => {}
+                });
+            }
+        }
+
+        // Send OTP
+        function sendOTP() {
+            const phoneNumber = document.getElementById('authPhone').value;
+            if (!phoneNumber || phoneNumber.length < 10) {
+                alert("Please enter a valid mobile number with +91");
+                return;
+            }
+            setupRecaptcha();
+            const appVerifier = window.recaptchaVerifier;
+
+            auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+                .then((confirmationResult) => {
+                    confirmationResultGlobal = confirmationResult;
+                    document.getElementById('otpInputDiv').style.display = 'block';
+                    alert("OTP has been sent to your mobile number.");
+                })
+                .catch((error) => alert("OTP Error: " + error.message));
+        }
+
+        // Verify OTP
+        function verifyOTP() {
+            const code = document.getElementById('authOTP').value;
+            if (!code) return alert("Please enter the 6-digit OTP.");
+
+            confirmationResultGlobal.confirm(code)
+                .then(() => alert("Mobile Verified & Logged In!"))
+                .catch(() => alert("Invalid OTP. Try again."));
+        }
+
+        // Logout
+        function logoutUser() {
+            auth.signOut().then(() => alert("Logged Out!"));
+        }
+
+        function switchAuthTab(tab) {
+            const tabEmail = document.getElementById('tabEmail');
+            const tabPhone = document.getElementById('tabPhone');
+            const emailForm = document.getElementById('emailLoginForm');
+            const phoneForm = document.getElementById('phoneLoginForm');
+
+            if(tab === 'email') {
+                tabEmail.classList.add('border-primary', 'text-primary');
+                tabEmail.classList.remove('border-transparent', 'text-gray-400');
+                tabPhone.classList.remove('border-primary', 'text-primary');
+                tabPhone.classList.add('border-transparent', 'text-gray-400');
+                emailForm.style.display = 'block';
+                phoneForm.style.display = 'none';
+            } else {
+                tabPhone.classList.add('border-primary', 'text-primary');
+                tabPhone.classList.remove('border-transparent', 'text-gray-400');
+                tabEmail.classList.remove('border-primary', 'text-primary');
+                tabEmail.classList.add('border-transparent', 'text-gray-400');
+                emailForm.style.display = 'none';
+                phoneForm.style.display = 'block';
+            }
+        }
+
+        function openAuthModal() {
+            document.getElementById('authModal').style.display = 'flex';
+        }
+
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+        }
+
+        const districtData = {
+            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Banaskantha", "Patan", "Sabarkantha", "Aravalli", "Mahisagar", "Dahod", "Panchmahal", "Kheda", "Narmada", "Bharuch", "Tapi", "Navsari", "Valsad", "Dang", "Porbandar", "Devbhoomi Dwarka", "Gir Somnath", "Amreli", "Botad", "Morbi", "Surendranagar"],
+            "Maharashtra": ["Mumbai City", "Mumbai Suburban", "Pune", "Nagpur", "Nashik", "Thane", "Aurangabad", "Solapur", "Kolhapur", "Amravati"],
+            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota", "Ajmer", "Bikaner", "Alwar", "Bhilwara", "Bharatpur", "Sikar"],
+            "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut", "Bareilly", "Gorakhpur"],
+            "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Dewas", "Satna"]
+        };
+
+        let products = JSON.parse(localStorage.getItem('oldx_products')) || [
+            {
+                id: 101,
+                sellerUid: 'demo_user',
+                title: "Honda Activa 6G - Well Maintained",
+                category: "vehicles",
+                basePrice: 50000,
+                finalPriceStr: "₹57,845",
+                originalPriceStr: "₹65,000",
+                discountPercent: 15,
+                location: "Rampura, Ahmedabad, Gujarat",
+                state: "Gujarat",
+                desc: "Very good condition, 2 years old, all insurance papers valid.",
+                images: [],
+                reviews: [
+                    { name: "Rajesh Patel", rating: 5, comment: "Khub j sari condition ma bike chhe!" }
+                ]
+            }
+        ];
+
+        let currentCategory = 'all';
+        let activeProductId = null;
+
+        function updateDistricts() {
+            const stateSelect = document.getElementById('sellState');
+            const districtSelect = document.getElementById('sellDistrict');
+            if(!stateSelect || !districtSelect) return;
+            const selectedState = stateSelect.value;
+            
+            districtSelect.innerHTML = "";
+            if (districtData[selectedState]) {
+                districtData[selectedState].forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = district;
+                    districtSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = "General";
+                option.textContent = "General / City";
+                districtSelect.appendChild(option);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDistricts();
+            renderProducts();
+            
+            const savedLang = localStorage.getItem('oldx_lang') || 'gu';
+            const langSelect = document.getElementById('languageSelect');
+            if(langSelect) {
+                langSelect.value = savedLang;
+            }
+            changeLanguage(savedLang);
+        });
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('darkModeIcon');
+            if(icon) {
+                icon.classList.toggle('fa-moon');
+                icon.classList.toggle('fa-sun');
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            renderProducts();
+        }
+
+        function filterProducts() {
+            renderProducts();
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const stateVal = document.getElementById('stateFilter').value;
+            
+            if(!grid) return;
+            grid.innerHTML = "";
+
+            const filtered = products.filter(p => {
+                const matchesCategory = (currentCategory === 'all' || p.category === currentCategory);
+                const matchesSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchesState = (!stateVal || p.state === stateVal);
+                return matchesCategory && matchesSearch && matchesState;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-8">Koi product madi nathi.</p>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                let imgContent = `<i class="fa-solid fa-image text-4xl text-gray-400"></i>`;
+                if(p.images && p.images.length > 0) {
+                    imgContent = `<img src="${p.images[0]}" class="w-full h-full object-cover">`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition";
+                card.innerHTML = `
+                    <div>
+                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center relative overflow-hidden">
+                            ${p.discountPercent > 0 ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold z-10">${p.discountPercent}% OFF</span>` : ''}
+                            ${imgContent}
+                        </div>
+                        <div class="p-4">
+                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded font-semibold">${p.location}</span>
+                            <h4 class="font-bold text-lg mt-2 line-clamp-1">${p.title}</h4>
+                            <div class="flex items-center gap-2 mt-1">
+                                <p class="text-primary dark:text-teal-400 font-extrabold text-xl">${p.finalPriceStr}</p>
+                                ${p.originalPriceStr ? `<span class="text-sm text-gray-400 line-through">${p.originalPriceStr}</span>` : ''}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Includes 5% Platform Fee + ₹99 Delivery</p>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0">
+                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
+                            View Details & Buy
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Open My Ads Modal
+        function openMyAdsModal() {
+            if (!window.currentUser) {
+                alert("Pehla Login karo potani Ads jova mate.");
+                openAuthModal();
+                return;
+            }
+            const container = document.getElementById('myAdsContainer');
+            container.innerHTML = "";
+
+            const userUid = window.currentUser.uid;
+            const myProducts = products.filter(p => p.sellerUid === userUid);
+
+            if (myProducts.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 text-center py-4">Tame haju koi ad list nathi kareli.</p>`;
+            } else {
+                myProducts.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 border rounded-xl dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700";
+                    div.innerHTML = `
+                        <div>
+                            <h4 class="font-bold text-sm">${p.title}</h4>
+                            <p class="text-xs text-teal-600 dark:text-teal-400 font-semibold">${p.finalPriceStr}</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openEditModal(${p.id})" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                            <button onclick="deleteProduct(${p.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('myAdsModal').style.display = 'flex';
+        }
+
+        function closeMyAdsModal() {
+            document.getElementById('myAdsModal').style.display = 'none';
+        }
+
+        // Edit Product Logic
+        function openEditModal(id) {
+            const p = products.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('editProductId').value = p.id;
+            document.getElementById('editTitle').value = p.title;
+            document.getElementById('editPrice').value = p.basePrice;
+            document.getElementById('editLocation').value = p.location;
+            document.getElementById('editDesc').value = p.desc;
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function handleEditSubmit(e) {
+            e.preventDefault();
+            const id = parseInt(document.getElementById('editProductId').value);
+            const p = products.find(item => item.id === id);
+            if (!p) return;
+
+            const basePrice = parseFloat(document.getElementById('editPrice').value);
+            const commission = basePrice * 0.05;
+            const finalPriceValue = Math.round(basePrice + commission + 99);
+
+            p.title = document.getElementById('editTitle').value;
+            p.basePrice = basePrice;
+            p.finalPriceStr = '₹' + finalPriceValue.toLocaleString('en-IN');
+            p.location = document.getElementById('editLocation').value;
+            p.desc = document.getElementById('editDesc').value;
+
+            localStorage.setItem('oldx_products', JSON.stringify(products));
+            renderProducts();
+            closeEditModal();
+            openMyAdsModal();
+            alert("Ad successfully update thai gai!");
+        }
+
+        // Delete Product Logic
+        function deleteProduct(id) {
+            if (confirm("Chokas tame aa ad delete karva mangochho?")) {
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem('oldx_products', JSON.stringify(products));
+                renderProducts();
+                openMyAdsModal();
+                alert("Ad delete thai gai!");
+            }
+        }
+
+        function openProductModalById(id) {
+            const p = products.find(item => item.id === id);
+            if(!p) return;
+
+            activeProductId = p.id;
+
+            document.getElementById('modalTitle').innerText = p.title;
+            document.getElementById('modalPrice').innerText = p.finalPriceStr;
+            document.getElementById('modalLocation').innerText = p.location;
+            document.getElementById('modalDesc').innerText = p.desc;
+            
+            const origPriceElem = document.getElementById('modalOriginalPrice');
+            if (p.originalPriceStr) {
+                origPriceElem.innerText = p.originalPriceStr;
+                origPriceElem.classList.remove('hidden');
+            } else {
+                origPriceElem.classList.add('hidden');
+            }
+
+            const imgContainer = document.getElementById('modalImagesContainer');
+            imgContainer.innerHTML = "";
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(imgSrc => {
+                    const img = document.createElement('img');
+                    img.src = imgSrc;
+                    img.className = "w-full h-64 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0 mb-2";
+                    imgContainer.appendChild(img);
+                });
+            } else {
+                imgContainer.innerHTML = `<div class="w-full h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center rounded-xl"><i class="fa-solid fa-image text-4xl text-gray-400"></i></div>`;
+            }
+
+            renderReviews(p);
+            document.getElementById('productModal').style.display = 'flex';
+        }
+
+        function renderReviews(p) {
+            const reviewsContainer = document.getElementById('modalReviewsContainer');
+            reviewsContainer.innerHTML = "";
+            const reviewsList = p.reviews || [];
+            if(reviewsList.length > 0) {
+                reviewsList.forEach(r => {
+                    let stars = '⭐'.repeat(r.rating);
+                    const revDiv = document.createElement('div');
+                    revDiv.className = "bg-gray-50 dark:bg-gray-700 p-3 rounded-lg";
+                    revDiv.innerHTML = `
+                        <div class="flex justify-between font-bold text-sm">
+                            <span>${r.name}</span>
+                            <span>${stars}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-300 mt-1">${r.comment}</p>
+                    `;
+                    reviewsContainer.appendChild(revDiv);
+                });
+            } else {
+                reviewsContainer.innerHTML = `<p class="text-xs text-gray-400">No reviews yet. Be the first to give feedback!</p>`;
+            }
+        }
+
+        function submitReview() {
+            const name = document.getElementById('reviewerName').value || 'Anonymous';
+            const rating = parseInt(document.getElementById('reviewerRating').value);
+            const comment = document.getElementById('reviewerComment').value;
+
+            if(!comment) {
+                alert('Please write a feedback comment.');
+                return;
+            }
+
+            let p = products.find(item => item.id === activeProductId);
+            if(p) {
+                if(!p.reviews) p.reviews = [];
+                p.reviews.unshift({ name, rating, comment });
+                localStorage.setItem('oldx_products', JSON.stringify(products));
+                
+                document.getElementById('reviewerName').value = '';
+                document.getElementById('reviewerComment').value = '';
+                renderReviews(p);
+                alert('Thank you for your feedback!');
+            }
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').style.display = 'none';
+        }
+
+        function openSellModal() {
+            document.getElementById('sellModal').style.display = 'flex';
+        }
+
+        function closeSellModal() {
+            document.getElementById('sellModal').style.display = 'none';
+        }
+
+        function handleSellSubmit(event) {
+            event.preventDefault();
+            const title = document.getElementById('sellTitle').value;
+            const category = document.getElementById('sellCategory').value;
+            const basePrice = parseFloat(document.getElementById('sellPrice').value);
+            const originalPriceInput = document.getElementById('sellOriginalPrice').value;
+            const state = document.getElementById('sellState').value;
+            const district = document.getElementById('sellDistrict').value;
+            const village = document.getElementById('sellVillage').value;
+            const desc = document.getElementById('sellDesc').value;
+            const imageInput = document.getElementById('sellImages');
+
+            const commission = basePrice * 0.05;
+            const finalPriceValue = Math.round(basePrice + commission + 99);
+            const finalPriceStr = '₹' + finalPriceValue.toLocaleString('en-IN');
+            
+            let originalPriceStr = '';
+            let discountPercent = 0;
+            if (originalPriceInput) {
+                const origVal = parseFloat(originalPriceInput);
+                originalPriceStr = '₹' + origVal.toLocaleString('en-IN');
+                discountPercent = Math.round(((origVal - basePrice) / origVal) * 100);
+            }
+
+            const locationStr = village + ", " + district + ", " + state;
+            const sellerUid = window.currentUser ? window.currentUser.uid : 'guest_user';
+
+            let imageUrls = [];
+            if(imageInput.files && imageInput.files.length > 0) {
+                let filesCount = imageInput.files.length;
+                let loadedCount = 0;
+                
+                Array.from(imageInput.files).forEach((file, index) => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imageUrls[index] = e.target.result;
+                        loadedCount++;
+                        if(loadedCount === filesCount) {
+                            finalizeListing({
+                                id: Date.now(),
+                                sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                                location: locationStr, state, desc, images: imageUrls, reviews: []
+                            });
+                        }
+                    }
+                    reader.onerror = function() {
+                        loadedCount++;
+                        if(loadedCount === filesCount) {
+                            finalizeListing({
+                                id: Date.now(),
+                                sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                                location: locationStr, state, desc, images: [], reviews: []
+                            });
+                        }
+                    }
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                finalizeListing({
+                    id: Date.now(),
+                    sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
+                    location: locationStr, state, desc, images: [], reviews: []
+                });
+            }
+        }
+
+        function finalizeListing(newProd) {
+            products.unshift(newProd);
+            try {
+                localStorage.setItem('oldx_products', JSON.stringify(products));
+            } catch (e) {
+                console.warn("Storage limit exceeded, saving product.");
+                localStorage.setItem('oldx_products', JSON.stringify(products));
+            }
+            renderProducts();
+            alert('Tamari item safaltapurvak list thai gai chhe!');
+            closeSellModal();
+            document.querySelector('#sellModal form').reset();
+            updateDistricts();
+        }
+
+        function simulateRazorpayPayment() {
+            alert('Redirecting to Razorpay Secure Gateway... Escrow protection & doorstep pickup initiated!');
+            closeProductModal();
+        }
+
+        const translations = {
+            gu: {
+                bannerTitle: "Bharatnu Potanu Trusted Marketplace 🇮🇳",
+                bannerDesc: "Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery."
+            },
+            hi: {
+                bannerTitle: "भारत का अपना भरोसेमंद मार्केटप्लेस 🇮🇳",
+                bannerDesc: "पुराने से लेकर नए कपड़े, गैजेट्स और प्रॉपर्टीज़ पलक झपकते बेचें! पैन-इंडिया एस्क्रो पेमेंट सुरक्षा और होम पिकअप डिलीवरी।"
+            },
+            en: {
+                bannerTitle: "India's Own Trusted C2C Marketplace 🇮🇳",
+                bannerDesc: "Buy & Sell Pre-owned and New Goods Across India with Escrow Payment Protection & Doorstep Pickup."
+            }
+        };
+
+        function changeLanguage(lang) {
+            if(translations[lang]) {
+                const titleEl = document.getElementById('bannerTitle');
+                const descEl = document.getElementById('bannerDesc');
+                if(titleEl) titleEl.innerText = translations[lang].bannerTitle;
+                if(descEl) descEl.innerText = translations[lang].bannerDesc;
+                localStorage.setItem('oldx_lang', lang);
+            }
+        }
+    </script>
+</body>
+</html>
