@@ -135,4 +135,118 @@
 
     <!-- Product Details Modal (Buy) -->
     <div id="productModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl
+        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2">
+                <!-- Images will load here -->
+            </div>
+            <h3 id="modalTitle" class="text-2xl font-bold mb-2">Product Title</h3>
+            <div class="flex items-center gap-3 mb-3">
+                <p id="modalPrice" class="text-primary dark:text-teal-400 text-2xl font-extrabold">₹0</p>
+                <span id="modalOriginalPrice" class="text-gray-400 line-through text-lg"></span>
+            </div>
+            <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
+                <p><strong>Complete Address:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
+                <p class="text-teal-600 dark:text-teal-400 font-medium"><i class="fa-solid fa-truck mr-1"></i> Doorstep Delivery Charge: ₹99 Included</p>
+                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after inspection (Includes 5% marketplace fee).</p>
+            </div>
+            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow">
+                Proceed with Secure Payment
+            </button>
+        </div>
+    </div>
+
+    <!-- Sell Item Form Modal -->
+    <div id="sellModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeSellModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-4 text-primary dark:text-teal-400">List Your Item for Sale</h3>
+            <form onsubmit="handleSellSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Item Title</label>
+                    <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 / Tractor / Sofa" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Category</label>
+                    <select id="sellCategory" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <option value="electronics">Electronics</option>
+                        <option value="vehicles">Vehicles</option>
+                        <option value="mobiles">Mobiles</option>
+                        <option value="furniture">Furniture</option>
+                        <option value="properties">Properties</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Your Price (₹)</label>
+                        <input type="number" id="sellPrice" required placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Original Price / MRP (Optional)</label>
+                        <input type="number" id="sellOriginalPrice" placeholder="e.g. 30000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">State</label>
+                        <select id="sellState" onchange="updateDistricts()" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Punjab">Punjab</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">District / City</label>
+                        <select id="sellDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Village / Town / Landmark</label>
+                    <input type="text" id="sellVillage" required placeholder="e.g. Village Rampura / Near Bus Stand" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Upload Multiple Images (Photos)</label>
+                    <input type="file" id="sellImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Description</label>
+                    <textarea id="sellDesc" rows="3" required placeholder="Condition, age, reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-300">
+                    ℹ️ Note: 5% platform fee + ₹99 delivery charge will be automatically added to buyer's final payable amount.
+                </div>
+                <button type
