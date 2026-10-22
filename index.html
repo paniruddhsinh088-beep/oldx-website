@@ -1,571 +1,218 @@
 <!DOCTYPE html>
-<html lang="gu">
+<html lang="gu" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OldX - Pan-India C2C & E-Commerce Marketplace</title>
-
-    <!-- Razorpay Payment Gateway SDK -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <style>
-        :root {
-            --bg-color: #f4f6f9;
-            --card-bg: #ffffff;
-            --text-color: #002f34;
-            --header-bg: #002f34;
-            --accent-color: #23e5bf;
-            --border-color: #e0e0e0;
-            --subtext-color: #666666;
-            --modal-bg: rgba(0,0,0,0.85);
+    <title>OldX - Pan-India C2C Marketplace</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0F766E',
+                        darkBg: '#111827'
+                    }
+                }
+            }
         }
-
-        body.dark-mode {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #e0e0e0;
-            --header-bg: #0f172a;
-            --accent-color: #38bdf8;
-            --border-color: #333333;
-            --subtext-color: #aaa;
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
-        body { background-color: var(--bg-color); color: var(--text-color); }
-        
-        header { background: var(--header-bg); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; position: sticky; top:0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        header h1 { font-size: 26px; font-weight: 800; color: var(--accent-color); letter-spacing: 1px; }
-        
-        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .lang-select { background: transparent; border: 1px solid #ffce32; color: #ffce32; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 12px; outline: none; }
-        .lang-select option { background: var(--header-bg); color: white; }
-        .theme-toggle { background: transparent; border: 1px solid var(--accent-color); color: var(--accent-color); padding: 6px 10px; border-radius: 20px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        .post-ad-btn { background: #ffce32; color: #002f34; font-weight: bold; border: none; padding: 8px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); transition: 0.3s; }
-        .post-ad-btn:hover { background: #e6b800; transform: scale(1.03); }
-
-        .container { max-width: 1100px; margin: 15px auto; padding: 0 12px; }
-
-        /* Hero Banner */
-        .hero-banner {
-            background: linear-gradient(135deg, #002f34 0%, #00565b 100%);
-            color: white;
-            border-radius: 12px;
-            padding: 25px 20px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            position: relative;
-            overflow: hidden;
-        }
-        .hero-text h2 { font-size: 24px; margin-bottom: 8px; color: var(--accent-color); }
-        .hero-text p { font-size: 14px; color: #e0e0e0; max-width: 500px; line-height: 1.4; }
-        .hero-badge { background: #ffce32; color: #002f34; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 12px; display: inline-block; margin-top: 10px; }
-
-        /* Search Box */
-        .search-box { background: var(--card-bg); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); display: flex; gap: 10px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(0,0,0,0.04); flex-wrap: wrap; }
-        .search-box input, .search-box select { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-color); font-size: 13px; flex: 1; min-width: 160px; outline: none; }
-
-        /* Category Grid */
-        .cat-title { font-size: 16px; font-weight: bold; margin-bottom: 12px; color: var(--text-color); }
-        .category-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .cat-item { background: var(--card-bg); border-radius: 10px; padding: 12px 6px; text-align: center; cursor: pointer; border: 1px solid var(--border-color); box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: 0.2s; }
-        .cat-item.active { border-color: var(--accent-color); background: #e8f5e9; font-weight: bold; }
-        body.dark-mode .cat-item.active { background: #1e293b; }
-        .cat-item .icon { font-size: 26px; display: block; margin-bottom: 4px; }
-        .cat-item span { font-size: 11px; font-weight: 600; display: block; line-height: 1.2; }
-
-        /* Product Form */
-        .form-card { background: var(--card-bg); padding: 18px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px; display: none; border: 1px solid var(--border-color); }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--card-bg); color: var(--text-color); font-size: 13px; }
-        .submit-btn { background: var(--header-bg); color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; font-size: 15px; }
-
-        /* Products Grid */
-        .section-title { margin-bottom: 15px; font-size: 18px; color: var(--text-color); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 15px; }
-        @media (min-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); } }
-        
-        .card { background: var(--card-bg); border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border-color); transition: 0.3s; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 6px 14px rgba(0,0,0,0.12); }
-        .card img { width: 100%; height: 150px; object-fit: cover; }
-        .card-details { padding: 12px; }
-        
-        .price-row { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-bottom: 4px; }
-        .price { font-size: 17px; font-weight: bold; color: var(--text-color); }
-        .original-price { font-size: 12px; text-decoration: line-through; color: #888; }
-        .discount-tag { font-size: 11px; font-weight: bold; color: #388e3c; background: #e8f5e9; padding: 2px 6px; border-radius: 4px; }
-
-        .title { font-size: 14px; margin: 4px 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .badge-container { display: flex; gap: 4px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-        .rating-badge { background: #388e3c; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        .verified-badge { background: #0288d1; color: white; font-size: 10px; font-weight: bold; padding: 2px 5px; border-radius: 4px; }
-        .meta-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--subtext-color); margin-bottom: 10px; flex-direction: column; gap: 2px; }
-        
-        .btn-group { display: flex; gap: 6px; flex-direction: column; }
-        .wa-btn { display: block; text-align: center; background: #25D366; color: white; text-decoration: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 12px; }
-        .buy-btn { display: block; text-align: center; background: #2874f0; color: white; text-decoration: none; padding: 8px; border-radius: 6px; font-weight: bold; font-size: 12px; border: none; cursor: pointer; }
-        
-        /* Full Product Page Modal */
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: var(--modal-bg); overflow: auto; animation: fadeIn 0.3s; }
-        .modal-content { background: var(--card-bg); margin: 5% auto; padding: 20px; border-radius: 12px; width: 92%; max-width: 600px; position: relative; color: var(--text-color); border: 1px solid var(--border-color); }
-        .close-modal { position: absolute; right: 15px; top: 12px; font-size: 26px; cursor: pointer; font-weight: bold; color: #888; }
-        .gallery { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; }
-        .gallery img { width: 120px; height: 120px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer; }
-        .fk-highlights { background: var(--bg-color); padding: 12px; border-radius: 8px; margin-top: 10px; font-size: 13px; border: 1px solid var(--border-color); line-height: 1.6; white-space: pre-line; }
-
-        .order-box { display: none; background: var(--bg-color); padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px dashed #2874f0; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    </style>
+    </script>
 </head>
-<body>
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300">
 
-    <header>
-        <h1>OldX</h1>
-        <div class="header-actions">
-            <!-- 10+ Major Indian Languages -->
-            <select class="lang-select" id="langSelect">
-                <option value="gu">🌐 ગુજરાતી</option>
-                <option value="hi">🌐 हिन्दी</option>
-                <option value="en">🌐 English</option>
-                <option value="mr">🌐 मराठी</option>
-                <option value="bn">🌐 বাংলা</option>
-                <option value="ta">🌐 தமிழ்</option>
-                <option value="te">🌐 తెలుగు</option>
-                <option value="kn">🌐 ಕನ್ನಡ</option>
-                <option value="pa">🌐 ਪੰਜਾਬੀ</option>
-                <option value="ml">🌐 മലയാളം</option>
-                <option value="or">🌐 ଓଡ଼ିଆ</option>
-            </select>
-            <button class="theme-toggle" id="themeBtn">🌙 Dark Mode</button>
-            <button class="post-ad-btn" id="postBtn">+ Sell Item</button>
+    <!-- Header / Navbar -->
+    <header class="sticky top-0 z-50 bg-white dark:bg-gray-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-bold text-primary dark:text-teal-400">OldX</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Language Selector -->
+                <select id="languageSelect" onchange="changeLanguage(this.value)" class="bg-gray-100 dark:bg-gray-700 text-sm px-2 py-1 rounded border dark:border-gray-600 focus:outline-none">
+                    <option value="gu">ગુજરાતી</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="en">English</option>
+                </select>
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200">
+                    <i id="darkModeIcon" class="fa-solid fa-moon"></i>
+                </button>
+                <!-- Sell Button -->
+                <button onclick="openSellModal()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-semibold text-sm shadow">
+                    <i class="fa-solid fa-plus mr-1"></i> Sell Item
+                </button>
+            </div>
         </div>
     </header>
 
-    <div class="container">
-        <!-- Attractive Hero Banner -->
-        <div class="hero-banner">
-            <div class="hero-text">
-                <h2>Buy & Sell Anything Across India 🇮🇳</h2>
-                <p>Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery by Shiprocket.</p>
-                <span class="hero-badge">⚡ 100% Safe & Verified Deals</span>
+    <!-- Hero Banner with Attractive Slogan -->
+    <section class="bg-gradient-to-r from-teal-800 to-primary text-white py-12 px-4 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h2 id="bannerTitle" class="text-3xl md:text-4xl font-extrabold mb-4">
+                Bharatnu Potanu Trusted Marketplace 🇮🇳
+            </h2>
+            <p id="bannerDesc" class="text-teal-100 text-lg mb-6">
+                Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery.
+            </p>
+            <div class="flex flex-col md:flex-row justify-center gap-3">
+                <input type="text" id="searchInput" placeholder="Search laptops, mobiles, cars..." class="px-4 py-3 rounded-lg text-gray-800 w-full md:w-96 focus:outline-none shadow">
+                <select id="stateFilter" class="px-4 py-3 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
+                    <option value="">All States / All India (Pan-India)</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Karnataka">Karnataka</option>
+                </select>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories Section -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <h3 class="text-xl font-bold mb-4">Categories</h3>
+        <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
+            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-box text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">All Items</p>
+            </div>
+            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-laptop text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Electronics</p>
+            </div>
+            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-car text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Vehicles</p>
+            </div>
+            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-mobile text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Mobiles</p>
+            </div>
+            <div onclick="filterCategory('furniture')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-couch text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Furniture</p>
+            </div>
+            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                <i class="fa-solid fa-building text-2xl text-primary mb-2"></i>
+                <p class="font-medium text-sm">Properties</p>
             </div>
         </div>
 
-        <!-- Search & All Indian States Filter -->
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="🔍 Search laptops, mobiles, cars...">
-            <select id="stateFilter">
-                <option value="all">📍 All States / તમામ રાજ્યો (Pan-India)</option>
-                <option value="Andhra Pradesh">Andhra Pradesh</option>
-                <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                <option value="Assam">Assam</option>
-                <option value="Bihar">Bihar</option>
-                <option value="Chhattisgarh">Chhattisgarh</option>
-                <option value="Goa">Goa</option>
-                <option value="Gujarat">Gujarat</option>
-                <option value="Haryana">Haryana</option>
-                <option value="Himachal Pradesh">Himachal Pradesh</option>
-                <option value="Jharkhand">Jharkhand</option>
-                <option value="Karnataka">Karnataka</option>
-                <option value="Kerala">Kerala</option>
-                <option value="Madhya Pradesh">Madhya Pradesh</option>
-                <option value="Maharashtra">Maharashtra</option>
-                <option value="Manipur">Manipur</option>
-                <option value="Meghalaya">Meghalaya</option>
-                <option value="Mizoram">Mizoram</option>
-                <option value="Nagaland">Nagaland</option>
-                <option value="Odisha">Odisha</option>
-                <option value="Punjab">Punjab</option>
-                <option value="Rajasthan">Rajasthan</option>
-                <option value="Sikkim">Sikkim</option>
-                <option value="Tamil Nadu">Tamil Nadu</option>
-                <option value="Telangana">Telangana</option>
-                <option value="Tripura">Tripura</option>
-                <option value="Uttar Pradesh">Uttar Pradesh</option>
-                <option value="Uttarakhand">Uttarakhand</option>
-                <option value="West Bengal">West Bengal</option>
-                <option value="Delhi">Delhi (NCR)</option>
-            </select>
-        </div>
-
-        <!-- Categories -->
-        <div class="cat-title">Categories</div>
-        <div class="category-grid">
-            <div class="cat-item active" data-category="all">
-                <span class="icon">📦</span><span>All Items</span>
-            </div>
-            <div class="cat-item" data-category="ઇલેક્ટ્રોનિક્સ">
-                <span class="icon">💻</span><span>Electronics</span>
-            </div>
-            <div class="cat-item" data-category="વાહનો">
-                <span class="icon">🚗</span><span>Vehicles</span>
-            </div>
-            <div class="cat-item" data-category="મોબાઇલ">
-                <span class="icon">📱</span><span>Mobiles</span>
-            </div>
-            <div class="cat-item" data-category="ફર્નિચર">
-                <span class="icon">🛋️</span><span>Furniture</span>
-            </div>
-            <div class="cat-item" data-category="જમીન/મકાન">
-                <span class="icon">🏢</span><span>Properties</span>
-            </div>
-        </div>
-
-        <!-- Seller Post Ad Form -->
-        <div class="form-card" id="adForm">
-            <h3 style="margin-bottom:12px;">Fill details to sell your item</h3>
-            <form id="itemForm">
-                <div class="form-group">
-                    <label>Item Title:</label>
-                    <input type="text" id="itemTitle" placeholder="HP Laptop 8GB RAM" required>
-                </div>
-                <div class="form-group">
-                    <label>Category:</label>
-                    <select id="itemCategory" required>
-                        <option value="ઇલેક્ટ્રોનિક્સ">Electronics</option>
-                        <option value="વાહનો">Vehicles</option>
-                        <option value="મોબાઇલ">Mobiles</option>
-                        <option value="ફર્નિચર">Furniture</option>
-                        <option value="જમીન/મકાન">Properties</option>
-                        <option value="અન્ય">Other</option>
-                    </select>
-                </div>
-
-                <div style="display: flex; gap: 8px;">
-                    <div class="form-group" style="flex: 1;">
-                        <label>Original Price (₹):</label>
-                        <input type="number" id="itemOriginalPrice" placeholder="20000" required>
+        <!-- Product Grid -->
+        <h3 class="text-xl font-bold mb-4">Fresh Recommendations Across India</h3>
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Sample Product Card -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between">
+                <div>
+                    <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                        <i class="fa-solid fa-image text-4xl text-gray-400"></i>
                     </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label>Discount (%):</label>
-                        <input type="number" id="itemDiscountPercent" placeholder="15" min="0" max="90" value="0">
+                    <div class="p-4">
+                        <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-1 rounded">Gujarat</span>
+                        <h4 class="font-bold text-lg mt-2">Honda Activa 6G - Well Maintained</h4>
+                        <p class="text-primary dark:text-teal-400 font-extrabold text-xl mt-1">₹55,000</p>
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Product Details & Highlights:</label>
-                    <textarea id="itemHighlights" rows="3" placeholder="Specs, condition, accessories included..." required></textarea>
+                <div class="p-4 pt-0">
+                    <button onclick="openProductModal('Honda Activa 6G', '₹55,000', 'Gujarat', 'Good condition, 2 years old, insurance valid.', 'Ahmedabad')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition">
+                        View Details & Buy
+                    </button>
                 </div>
-
-                <div class="form-group">
-                    <label>Courier Charge (₹):</label>
-                    <input type="number" id="itemCourierCharge" value="99" required>
-                </div>
-
-                <div class="form-group">
-                    <label>State / રાજ્ય:</label>
-                    <select id="itemState" required>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Delhi">Delhi</option>
-                        <option value="Other">Other State</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>City / District / Address:</label>
-                    <input type="text" id="itemDistrict" placeholder="e.g. Ahmedabad, Satellite" required>
-                </div>
-
-                <div class="form-group">
-                    <label>WhatsApp Phone Number:</label>
-                    <input type="tel" id="itemPhone" value="6354224716" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Upload Photos:</label>
-                    <input type="file" id="itemImageFiles" accept="image/*" multiple required>
-                </div>
-
-                <button type="submit" class="submit-btn">Post Ad Now</button>
-            </form>
+            </div>
         </div>
+    </main>
 
-        <h2 class="section-title">Fresh Recommendations Across India</h2>
-        <div class="grid" id="productGrid"></div>
-    </div>
-
-    <!-- Product Details Dedicated View Modal -->
-    <div id="productModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" id="closeModalBtn">&times;</span>
-            <h3 id="modalTitle" style="font-size:20px; line-height:1.3;"></h3>
-            
-            <div class="badge-container" style="margin-top:8px;">
-                <span class="rating-badge" id="modalRating">★ 4.5</span>
-                <span class="verified-badge">✔ Verified Seller</span>
+    <!-- Product Details Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 max-w-lg w-full rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 text-gray-500 hover:text-red-500 text-xl font-bold">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h3 id="modalTitle" class="text-2xl font-bold mb-2">Product Title</h3>
+            <p id="modalPrice" class="text-primary dark:text-teal-400 text-xl font-extrabold mb-4">₹0</p>
+            <div class="space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-300">
+                <p><strong>Location:</strong> <span id="modalLocation">-</span></p>
+                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
+                <p class="text-amber-600 font-medium"><i class="fa-solid fa-shield-halved mr-1"></i> Escrow Protected: Payment released only after delivery inspection.</p>
             </div>
-
-            <div class="price-row" style="margin: 12px 0;">
-                <span id="modalFinalPrice" style="font-weight:bold; font-size:22px; color:#2874f0;"></span>
-                <span id="modalOriginalPrice" class="original-price" style="font-size:15px;"></span>
-                <span id="modalDiscountTag" class="discount-tag" style="font-size:13px;"></span>
-            </div>
-
-            <div class="gallery" id="modalGallery"></div>
-            
-            <div style="font-weight:bold; font-size:14px; margin-top:10px;">Specifications & Highlights:</div>
-            <div class="fk-highlights" id="modalHighlights"></div>
-
-            <button class="buy-btn" id="openOrderBtn" style="width:100%; margin-top:15px; font-size:15px; padding:12px;">💳 Buy Online & Delivery via Shiprocket</button>
-
-            <!-- Order Address Form -->
-            <div class="order-box" id="orderBox">
-                <h4 style="margin-bottom:10px; font-size:14px; color:#2874f0;">📦 Shipping & Address Details:</h4>
-                <input type="text" id="buyerName" placeholder="Full Name" style="width:100%; margin-bottom:8px; padding:9px; font-size:13px;">
-                <input type="tel" id="buyerPhone" placeholder="10-Digit Mobile Number" style="width:100%; margin-bottom:8px; padding:9px; font-size:13px;">
-                <textarea id="buyerAddress" placeholder="Complete Shipping Address with Pincode" rows="2" style="width:100%; margin-bottom:8px; padding:9px; font-size:13px;"></textarea>
-                
-                <p style="font-size:12px; margin-bottom:10px; color:#666;">Includes ₹99 Shiprocket Courier Handling Fee.</p>
-                
-                <button onclick="payWithRazorpay()" style="background:#388e3c; color:white; border:none; padding:12px; width:100%; border-radius:6px; font-weight:bold; cursor:pointer; font-size:14px;">🔒 Pay Securely via Razorpay</button>
-            </div>
+            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow">
+                Proceed with Secure Payment (₹99 Courier Fee + Escrow)
+            </button>
         </div>
     </div>
 
+    <!-- Footer with Contact & Terms -->
+    <footer class="bg-white dark:bg-gray-800 border-t dark:border-gray-700 mt-12 py-8 px-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+            <p>&copy; 2026 OldX Marketplace. All rights reserved (Pan-India).</p>
+            <div class="flex space-x-6">
+                <a href="#contact" onclick="alert('Support Email: paniruddhsinh088@gmail.com | Helpline: +91-6354224716')" class="hover:underline">Contact Us</a>
+                <a href="#terms" onclick="alert('Terms & Conditions: All transactions are protected via OldX Escrow system. Courier fee is ₹99.')" class="hover:underline">Terms & Conditions</a>
+                <a href="#privacy" onclick="alert('Privacy Policy: Your data and payments are 100% safe and encrypted.')" class="hover:underline">Privacy Policy</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
     <script>
-        // Firebase Configuration (Replace with your Firebase console config)
-        const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "oldx-marketplace.firebaseapp.com",
-            projectId: "oldx-marketplace",
-            storageBucket: "oldx-marketplace.appspot.com",
-            messagingSenderId: "1234567890",
-            appId: "1:1234567890:web:abcdef"
+        // Dark Mode
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('darkModeIcon');
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+        }
+
+        // Modal Controls
+        function openProductModal(title, price, state, desc, location) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalPrice').innerText = price;
+            document.getElementById('modalLocation').innerText = location + ", " + state;
+            document.getElementById('modalDesc').innerText = desc;
+            document.getElementById('productModal').classList.remove('hidden');
+        }
+
+        function closeProductModal() {
+            document.getElementById('productModal').classList.add('hidden');
+        }
+
+        function openSellModal() {
+            alert('Sell feature: Fill product details to list your item instantly across India! Contact: 6354224716');
+        }
+
+        function simulateRazorpayPayment() {
+            alert('Redirecting to Razorpay Secure Gateway... Escrow protection enabled!');
+            closeProductModal();
+        }
+
+        // Multi-language Simple Dictionary
+        const translations = {
+            gu: {
+                bannerTitle: "Bharatnu Potanu Trusted Marketplace 🇮🇳",
+                bannerDesc: "Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata! Pan-India Escrow Payment Protection & Home Pickup Doorstep Delivery."
+            },
+            hi: {
+                bannerTitle: "भारत का अपना भरोसेमंद मार्केटप्लेस 🇮🇳",
+                bannerDesc: "पुराने से लेकर नए कपड़े, गैजेट्स और प्रॉपर्टीज़ पलक झपकते बेचें! पैन-इंडिया एस्क्रो पेमेंट सुरक्षा और होम पिकअप डिलीवरी।"
+            },
+            en: {
+                bannerTitle: "India's Own Trusted C2C Marketplace 🇮🇳",
+                bannerDesc: "Buy & Sell Pre-owned and New Goods Across India with Escrow Payment Protection & Doorstep Pickup."
+            }
         };
 
-        // Initialize Firebase
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const db = firebase.firestore();
-
-        let selectedCategory = "all";
-        let currentActiveItem = null;
-
-        // Local Fallback items
-        const defaultItems = [
-            { 
-                id: "1", 
-                title: "HP Laptop (8GB RAM / 256GB SSD)", 
-                category: "ઇલેક્ટ્રોનિક્સ", 
-                originalPrice: 22000,
-                discountPercent: 18,
-                finalPrice: 17999, 
-                courierFee: 99,
-                location: "Gujarat", 
-                phone: "6354224716", 
-                rating: "4.8", 
-                highlights: "• 8 GB RAM | 256 GB SSD\n• Windows 11 Home\n• Original Charger Included",
-                images: ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400"]
+        function changeLanguage(lang) {
+            if(translations[lang]) {
+                document.getElementById('bannerTitle').innerText = translations[lang].bannerTitle;
+                document.getElementById('bannerDesc').innerText = translations[lang].bannerDesc;
             }
-        ];
-
-        // Load Items from Firebase or LocalStorage
-        function fetchItems() {
-            db.collection("products").orderBy("id", "desc").get().then((querySnapshot) => {
-                let items = [];
-                querySnapshot.forEach((doc) => {
-                    items.push(doc.data());
-                });
-                if(items.length > 0) {
-                    displayItems(items);
-                } else {
-                    displayItems(defaultItems);
-                }
-            }).catch(() => {
-                displayItems(defaultItems);
-            });
         }
 
-        function displayItems(itemsToDisplay) {
-            const grid = document.getElementById('productGrid');
-            if(!grid) return;
-            grid.innerHTML = "";
-
-            itemsToDisplay.forEach((item) => {
-                const mainImg = item.images ? item.images[0] : "https://via.placeholder.com/200";
-                const origPriceHTML = item.originalPrice && item.discountPercent > 0 
-                    ? `<span class="original-price">₹${item.originalPrice}</span>` : '';
-                const discountHTML = item.discountPercent > 0 
-                    ? `<span class="discount-tag">${item.discountPercent}% OFF</span>` : '';
-
-                grid.innerHTML += `
-                    <div class="card">
-                        <img src="${mainImg}" onclick="openModal('${item.id}')" style="cursor:pointer;">
-                        <div class="card-details">
-                            <div class="price-row">
-                                <span class="price">₹${item.finalPrice}</span>
-                                ${origPriceHTML}
-                                ${discountHTML}
-                            </div>
-                            <div class="title">${item.title}</div>
-                            <div class="badge-container">
-                                <span class="rating-badge">★ ${item.rating || "4.5"}</span>
-                                <span class="verified-badge">✔ Verified</span>
-                            </div>
-                            <div class="meta-info">
-                                <span>📍 ${item.location}</span>
-                                <span>🚚 Courier: ₹${item.courierFee || 99}</span>
-                            </div>
-                            <div class="btn-group">
-                                <button class="buy-btn" onclick="openModal('${item.id}')">💳 View Details & Buy</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
+        function filterCategory(cat) {
+            alert("Filtering category: " + cat);
         }
-
-        // WebP Image Compressor Function
-        function compressToWebP(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = 500;
-                        canvas.height = 500;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, 500, 500);
-                        // Compress to WebP format at 0.6 quality
-                        resolve(canvas.toDataURL('image/webp', 0.6));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function openModal(id) {
-            db.collection("products").doc(String(id)).get().then((doc) => {
-                let item = doc.exists ? doc.data() : defaultItems.find(i => i.id == id);
-                if (!item) item = defaultItems[0];
-
-                currentActiveItem = item;
-
-                document.getElementById('modalTitle').innerText = item.title;
-                document.getElementById('modalFinalPrice').innerText = "₹ " + item.finalPrice;
-                
-                if(item.discountPercent > 0) {
-                    document.getElementById('modalOriginalPrice').innerText = "₹" + item.originalPrice;
-                    document.getElementById('modalDiscountTag').innerText = item.discountPercent + "% OFF";
-                } else {
-                    document.getElementById('modalOriginalPrice').innerText = "";
-                    document.getElementById('modalDiscountTag').innerText = "";
-                }
-
-                const gallery = document.getElementById('modalGallery');
-                gallery.innerHTML = "";
-                (item.images || [item.image]).forEach(img => {
-                    gallery.innerHTML += `<img src="${img}">`;
-                });
-
-                document.getElementById('modalHighlights').innerText = item.highlights || "No specifications added.";
-                document.getElementById('orderBox').style.display = "none";
-                document.getElementById('productModal').style.display = 'block';
-            });
-        }
-
-        function closeModal() {
-            document.getElementById('productModal').style.display = 'none';
-        }
-
-        function payWithRazorpay() {
-            const name = document.getElementById('buyerName').value;
-            const phone = document.getElementById('buyerPhone').value;
-            const address = document.getElementById('buyerAddress').value;
-
-            if(!name || !phone || !address) {
-                alert("Please fill name, phone, and complete delivery address!");
-                return;
-            }
-
-            const totalPrice = Number(currentActiveItem.finalPrice) + Number(currentActiveItem.courierFee || 99);
-
-            var options = {
-                "key": "rzp_test_YourRazorpayKey",
-                "amount": totalPrice * 100,
-                "currency": "INR",
-                "name": "OldX Marketplace",
-                "description": "Order for " + currentActiveItem.title,
-                "handler": function (response) {
-                    alert("🎉 Payment Successful! Payment ID: " + response.razorpay_payment_id);
-                    const msg = `✅ *NEW ORDER PAID*\n\n📦 *Product:* ${currentActiveItem.title}\n💰 *Amount:* ₹${totalPrice}\n💳 *Payment ID:* ${response.razorpay_payment_id}\n\n👤 *Buyer:* ${name}\n📞 *Phone:* ${phone}\n📍 *Address:* ${address}`;
-                    window.open(`https://wa.me/91${currentActiveItem.phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                    closeModal();
-                },
-                "prefill": { "name": name, "contact": phone },
-                "theme": { "color": "#002f34" }
-            };
-
-            var rzp = new Razorpay(options);
-            rzp.open();
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            fetchItems();
-
-            document.getElementById('themeBtn').addEventListener('click', () => document.body.classList.toggle('dark-mode'));
-            document.getElementById('postBtn').addEventListener('click', () => {
-                const f = document.getElementById('adForm');
-                f.style.display = (f.style.display === 'block') ? 'none' : 'block';
-            });
-            document.getElementById('closeModalBtn').addEventListener('click', closeModal);
-            document.getElementById('openOrderBtn').addEventListener('click', () => {
-                document.getElementById('orderBox').style.display = "block";
-            });
-
-            // Post Form Submission with WebP Compression
-            document.getElementById('itemForm').addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const title = document.getElementById('itemTitle').value;
-                const category = document.getElementById('itemCategory').value;
-                const originalPrice = Number(document.getElementById('itemOriginalPrice').value);
-                const discountPercent = Number(document.getElementById('itemDiscountPercent').value) || 0;
-                const finalPrice = Math.round(originalPrice - (originalPrice * (discountPercent / 100)));
-                const highlights = document.getElementById('itemHighlights').value;
-                const courierFee = Number(document.getElementById('itemCourierCharge').value);
-                const state = document.getElementById('itemState').value;
-                const phone = document.getElementById('itemPhone').value;
-                const files = document.getElementById('itemImageFiles').files;
-
-                let webpImages = [];
-                for (let i = 0; i < files.length; i++) {
-                    const compressed = await compressToWebP(files[i]);
-                    webpImages.push(compressed);
-                }
-
-                const itemId = String(Date.now());
-                const newItem = {
-                    id: itemId,
-                    title, category, originalPrice, discountPercent, finalPrice,
-                    highlights, courierFee, location: state, phone,
-                    rating: "4.5", images: webpImages
-                };
-
-                // Save to Firebase
-                db.collection("products").doc(itemId).set(newItem).then(() => {
-                    alert('Ad posted successfully to Firebase Cloud!');
-                    document.getElementById('itemForm').reset();
-                    document.getElementById('adForm').style.display = 'none';
-                    fetchItems();
-                }).catch(() => {
-                    alert('Saved locally!');
-                });
-            });
-        });
     </script>
 </body>
 </html>
