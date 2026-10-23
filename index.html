@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OldX - Pan-India C2C Marketplace</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -79,7 +78,7 @@
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
     </main>
 
-    <!-- OLX STYLE MULTI-STAGE SELL WIZARD MODAL -->
+    <!-- OLX STYLE 3-STAGE SELL WIZARD MODAL -->
     <div id="sellWizardModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
@@ -89,8 +88,8 @@
             <!-- STAGE 1: 12 Main Categories -->
             <div id="wizardStage1">
                 <h3 class="text-xl font-bold mb-1">Post Your Ad</h3>
-                <p class="text-xs text-gray-500 mb-4">Choose a main category</p>
-                <div id="wizardMainCatList" class="grid grid-cols-2 gap-3"></div>
+                <p class="text-xs text-gray-500 mb-4">Choose a category</p>
+                <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
             </div>
 
             <!-- STAGE 2: Sub-Categories -->
@@ -102,33 +101,39 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Category-Specific Dynamic Form Fields & Location -->
+            <!-- STAGE 3: Exact OLX Form Fields & Details -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
                 </button>
-                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Fill Item Details</h3>
+                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Include some details</h3>
                 <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
                 
-                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-3 text-sm">
+                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-3.5 text-sm">
+                    <!-- Dynamic Specific Fields Container -->
+                    <div id="dynamicFormFields" class="space-y-3"></div>
+
                     <div>
-                        <label class="block font-semibold mb-1">Ad Title *</label>
-                        <input type="text" id="adTitle" required placeholder="e.g. Maruti Swift / iPhone 13" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        <label class="block font-semibold mb-1">Ad title *</label>
+                        <input type="text" id="adTitle" required placeholder="Mention key features (e.g. brand, model, age)" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
 
-                    <!-- Dynamic Fields Container based on Category -->
-                    <div id="dynamicFieldsContainer" class="space-y-3"></div>
+                    <div>
+                        <label class="block font-semibold mb-1">Describe what you are selling *</label>
+                        <textarea id="adDesc" rows="3" required placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
+                    </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold mb-1">Price (₹) *</label>
-                            <input type="number" id="adPrice" required placeholder="15000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <input type="number" id="adPrice" required placeholder="Enter price" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                         <div>
                             <label class="block font-semibold mb-1">Original Price (MRP)</label>
-                            <input type="number" id="adOriginalPrice" placeholder="20000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <input type="number" id="adOriginalPrice" placeholder="Optional" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
+
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold mb-1">State *</label>
@@ -140,422 +145,4 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">District / City *</label>
-                            <select id="adDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Village / Landmark *</label>
-                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Photos *</label>
-                        <input type="file" id="adImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Description *</label>
-                        <textarea id="adDesc" rows="3" required placeholder="Mention condition, features..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
-                    </div>
-                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
-                        Post Now
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- SKELETON LOADER OVERLAY -->
-    <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
-        <div class="space-y-4 max-w-xl mx-auto w-full">
-            <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
-            <div class="w-full h-60 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
-            <div class="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-    </div>
-
-    <!-- Product Detail Modal -->
-    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-9 h-9 rounded-full flex items-center justify-center font-bold">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2"></div>
-            <h3 id="modalTitle" class="text-2xl font-bold mb-2 text-primary"></h3>
-            <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300 mb-3"></p>
-            <div id="modalExtraDetails" class="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-3 rounded-xl mb-3"></div>
-            <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-3">
-                <p><strong>Location:</strong> <span id="modalLocation"></span></p>
-                <p><strong>Description:</strong> <span id="modalDesc"></span></p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Auth Modal -->
-    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-6 relative">
-            <button onclick="closeAuthModal()" class="absolute top-3 right-3"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-xl font-bold mb-4">Login to OldX</h3>
-            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
-                <i class="fa-brands fa-google text-red-500"></i> Continue with Google
-            </button>
-        </div>
-    </div>
-
-    <!-- My Ads Modal -->
-    <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] overflow-y-auto">
-            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-xl font-bold mb-3">My Posted Ads</h3>
-            <div id="myAdsContainer" class="space-y-2"></div>
-        </div>
-    </div>
-
-    <!-- Main Logic Script -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
-            authDomain: "oldx-1c983.firebaseapp.com",
-            projectId: "oldx-1c983",
-            storageBucket: "oldx-1c983.firebasestorage.app",
-            messagingSenderId: "1036370611979",
-            appId: "1:1036370611979:web:5c3a6c754b3ad979f69c0e"
-        };
-
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-
-        window.currentUser = null;
-        let products = [];
-        let selectedMainCat = null;
-        let selectedSubCat = null;
-        let currentFilterCat = 'all';
-
-        // 12 Complete OLX Categories & Sub-categories
-        const olxCategories = [
-            { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers', 'Commercial Vehicles', 'Spare Parts'] },
-            { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'Agricultural Land / Farm', 'Shops & Offices'] },
-            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', subs: ['Mobile Phones', 'Tablets & iPads', 'Accessories'] },
-            { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', subs: ['Motorcycles', 'Scooters', 'Bicycles', 'Spare Parts'] },
-            { id: 'electronics', name: 'Electronics & Appliances', icon: 'fa-laptop', subs: ['TVs, Video - Audio', 'Computers & Laptops', 'Kitchen Appliances', 'Refrigerators & AC', 'Washing Machines', 'Cameras'] },
-            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden'] },
-            { id: 'farming', name: 'Agriculture & Farming', icon: 'fa-tractor', subs: ['Tractors', 'Irrigation Pumps & Valves', 'Drip & Tools', 'Seeds & Fertilizer'] },
-            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', subs: ['Men Wear', 'Women Wear', 'Watches & Bags', 'Kids Wear'] },
-            { id: 'pets', name: 'Pets', icon: 'fa-paw', subs: ['Cows & Buffaloes', 'Dogs & Cats', 'Pet Food & Accessories'] },
-            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry', 'Sales & Marketing', 'Driver & Delivery', 'Office Assistant'] },
-            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Electronics Repair', 'Transport & Packers', 'Education & Classes'] }
-        ];
-
-        const districtData = {
-            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar"],
-            "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
-            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
-            "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
-        };
-
-        function renderHomeCategories() {
-            const grid = document.getElementById('homeCatGrid');
-            grid.innerHTML = `
-                <div onclick="filterCat('all')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                    <i class="fa-solid fa-border-all text-xl text-primary mb-1"></i>
-                    <p class="font-bold text-xs">All</p>
-                </div>
-            `;
-            olxCategories.forEach(cat => {
-                const el = document.createElement('div');
-                el.className = "bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition";
-                el.onclick = () => filterCat(cat.id);
-                el.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary mb-1"></i><p class="font-bold text-xs truncate">${cat.name}</p>`;
-                grid.appendChild(el);
-            });
-        }
-
-        function filterCat(catId) { currentFilterCat = catId; renderProducts(); }
-
-        db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-            products = [];
-            snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
-            renderProducts();
-        });
-
-        auth.onAuthStateChanged(user => {
-            window.currentUser = user;
-            const container = document.getElementById('authContainer');
-            if(user) {
-                container.innerHTML = `<span class="text-xs font-bold bg-teal-50 dark:bg-gray-700 text-teal-600 px-2 py-1 rounded">👤 ${user.displayName || 'User'}</span>`;
-            } else {
-                container.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs">Login</button>`;
-            }
-        });
-
-        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
-
-        // Sell Wizard Multi-stage Flow
-        function startSellWizard() {
-            const list = document.getElementById('wizardMainCatList');
-            list.innerHTML = '';
-            olxCategories.forEach(cat => {
-                const card = document.createElement('div');
-                card.className = "p-3 border rounded-xl bg-gray-50 dark:bg-gray-700 hover:border-primary cursor-pointer flex items-center gap-3";
-                card.onclick = () => selectWizardMain(cat);
-                card.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary"></i><span class="font-bold text-xs">${cat.name}</span>`;
-                list.appendChild(card);
-            });
-            document.getElementById('wizardStage1').style.display = 'block';
-            document.getElementById('wizardStage2').style.display = 'none';
-            document.getElementById('wizardStage3').style.display = 'none';
-            document.getElementById('sellWizardModal').style.display = 'flex';
-        }
-
-        function selectWizardMain(cat) {
-            selectedMainCat = cat;
-            document.getElementById('wizardSubCatTitle').innerText = cat.name + ' Sub-categories';
-            const subList = document.getElementById('wizardSubCatList');
-            subList.innerHTML = '';
-            cat.subs.forEach(sub => {
-                const item = document.createElement('div');
-                item.className = "p-3 border rounded-xl hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center";
-                item.onclick = () => selectWizardSub(sub);
-                item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
-                subList.appendChild(item);
-            });
-            document.getElementById('wizardStage1').style.display = 'none';
-            document.getElementById('wizardStage2').style.display = 'block';
-        }
-
-        function selectWizardSub(sub) {
-            selectedSubCat = sub;
-            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
-            
-            // Render Dynamic Category-Specific Fields
-            const dynContainer = document.getElementById('dynamicFieldsContainer');
-            dynContainer.innerHTML = '';
-
-            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes') {
-                dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">Brand / Model</label><input type="text" id="dynBrand" placeholder="e.g. Honda / Swift" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                        <div><label class="block font-semibold mb-1">Year</label><input type="number" id="dynYear" placeholder="e.g. 2022" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">KM Driven</label><input type="number" id="dynKm" placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                        <div><label class="block font-semibold mb-1">Fuel / Type</label><input type="text" id="dynFuel" placeholder="Petrol / Diesel" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                    </div>
-                `;
-            } else if(selectedMainCat.id === 'properties') {
-                dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">Bedrooms (BHK)</label><select id="dynBhk" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"><option value="1 BHK">1 BHK</option><option value="2 BHK">2 BHK</option><option value="3 BHK">3 BHK</option><option value="Agricultural Land">Land / Plot</option></select></div>
-                        <div><label class="block font-semibold mb-1">Super Area (sq.ft)</label><input type="text" id="dynArea" placeholder="e.g. 1200 sq.ft" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                    </div>
-                `;
-            } else if(selectedMainCat.id === 'mobiles') {
-                dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">Brand</label><input type="text" id="dynBrand" placeholder="Apple / Samsung" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                        <div><label class="block font-semibold mb-1">Storage / RAM</label><input type="text" id="dynRam" placeholder="8GB / 128GB" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                    </div>
-                `;
-            } else {
-                dynContainer.innerHTML = `
-                    <div><label class="block font-semibold mb-1">Condition / Details</label><input type="text" id="dynCondition" placeholder="Good / Like New" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                `;
-            }
-
-            document.getElementById('wizardStage2').style.display = 'none';
-            document.getElementById('wizardStage3').style.display = 'block';
-            updateWizardDistricts();
-        }
-
-        function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
-        function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
-        function closeSellWizard() { document.getElementById('sellWizardModal').style.display = 'none'; }
-
-        function updateWizardDistricts() {
-            const state = document.getElementById('adState').value;
-            const distSelect = document.getElementById('adDistrict');
-            distSelect.innerHTML = '';
-            (districtData[state] || ['General']).forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
-                distSelect.appendChild(opt);
-            });
-        }
-
-        function handleFinalAdSubmit(e) {
-            e.preventDefault();
-            const btn = document.getElementById('adSubmitBtn');
-            btn.innerText = 'Publishing...'; btn.disabled = true;
-
-            const title = document.getElementById('adTitle').value;
-            const basePrice = parseFloat(document.getElementById('adPrice').value);
-            const origPrice = document.getElementById('adOriginalPrice').value;
-            const state = document.getElementById('adState').value;
-            const district = document.getElementById('adDistrict').value;
-            const village = document.getElementById('adVillage').value;
-            const desc = document.getElementById('adDesc').value;
-            const imgInput = document.getElementById('adImages');
-
-            // Gather dynamic specific fields
-            let extraDetails = {};
-            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', year: document.getElementById('dynYear')?.value || '', km: document.getElementById('dynKm')?.value || '', fuel: document.getElementById('dynFuel')?.value || '' };
-            } else if(selectedMainCat.id === 'properties') {
-                extraDetails = { bhk: document.getElementById('dynBhk')?.value || '', area: document.getElementById('dynArea')?.value || '' };
-            } else if(selectedMainCat.id === 'mobiles') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', ram: document.getElementById('dynRam')?.value || '' };
-            } else {
-                extraDetails = { condition: document.getElementById('dynCondition')?.value || 'Good' };
-            }
-
-            const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
-            const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
-
-            let images = [];
-            if(imgInput.files && imgInput.files.length > 0) {
-                let count = 0;
-                Array.from(imgInput.files).forEach((f, i) => {
-                    const r = new FileReader();
-                    r.onload = ev => {
-                        images[i] = ev.target.result;
-                        count++;
-                        if(count === imgInput.files.length) saveAdToFirestore();
-                    };
-                    r.readAsDataURL(f);
-                });
-            } else {
-                saveAdToFirestore();
-            }
-
-            function saveAdToFirestore() {
-                db.collection('products').add({
-                    sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
-                    category: selectedMainCat.id,
-                    subCategory: selectedSubCat,
-                    title, basePrice, finalPriceStr, originalPriceStr,
-                    extraDetails,
-                    location: `${village}, ${district}, ${state}`, state, desc, images,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    alert('Ad Published Live Successfully!');
-                    closeSellWizard();
-                    btn.innerText = 'Post Now'; btn.disabled = false;
-                });
-            }
-        }
-
-        // Skeleton Loader & Detail Modal
-        function openProductModalById(docId) {
-            const overlay = document.getElementById('skeletonOverlay');
-            overlay.style.display = 'flex';
-
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                const p = products.find(item => item.docId === docId);
-                if(!p) return;
-
-                document.getElementById('modalTitle').innerText = p.title;
-                document.getElementById('modalPrice').innerText = p.finalPriceStr;
-                document.getElementById('modalLocation').innerText = p.location;
-                document.getElementById('modalDesc').innerText = p.desc;
-
-                // Render Extra Details Grid in Modal
-                const extraDiv = document.getElementById('modalExtraDetails');
-                extraDiv.innerHTML = '';
-                if(p.extraDetails) {
-                    for(let key in p.extraDetails) {
-                        if(p.extraDetails[key]) {
-                            extraDiv.innerHTML += `<div><strong class="capitalize">${key}:</strong> ${p.extraDetails[key]}</div>`;
-                        }
-                    }
-                }
-
-                const imgCont = document.getElementById('modalImagesContainer');
-                imgCont.innerHTML = '';
-                if(p.images && p.images.length > 0) {
-                    p.images.forEach(img => {
-                        const el = document.createElement('img');
-                        el.src = img;
-                        el.className = 'w-full h-60 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0';
-                        imgCont.appendChild(el);
-                    });
-                } else {
-                    imgCont.innerHTML = `<div class="w-full h-40 bg-gray-200 rounded-xl flex items-center justify-center"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
-                }
-
-                document.getElementById('productModal').style.display = 'flex';
-            }, 350);
-        }
-
-        function closeProductModal() { document.getElementById('productModal').style.display = 'none'; }
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-
-        function openMyAdsModal() {
-            if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
-            const container = document.getElementById('myAdsContainer');
-            container.innerHTML = '';
-            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
-            if(mine.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400">No ads posted yet.</p>`; }
-            else {
-                mine.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center p-3 border rounded-xl";
-                    div.innerHTML = `<div><h4 class="font-bold text-sm">${p.title}</h4><p class="text-xs text-teal-600">${p.finalPriceStr}</p></div><button onclick="deleteAd('${p.docId}')" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs font-bold">Delete</button>`;
-                    container.appendChild(div);
-                });
-            }
-            document.getElementById('myAdsModal').style.display = 'flex';
-        }
-        function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
-        function deleteAd(docId) { if(confirm('Delete this ad?')) db.collection('products').doc(docId).delete().then(() => openMyAdsModal()); }
-
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const stateVal = document.getElementById('stateFilter').value;
-            if(!grid) return;
-            grid.innerHTML = '';
-
-            const filtered = products.filter(p => {
-                const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
-                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
-                const matchState = (!stateVal || p.state === stateVal);
-                return matchCat && matchSearch && matchState;
-            });
-
-            if(filtered.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6">No products found.</p>`;
-                return;
-            }
-
-            filtered.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition";
-                card.innerHTML = `
-                    <div>
-                        <div class="h-44 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
-                            ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-3xl text-gray-400"></i>`}
-                        </div>
-                        <div class="p-3">
-                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-0.5 rounded font-semibold">${p.location}</span>
-                            <h4 class="font-bold text-sm mt-1.5 line-clamp-1">${p.title}</h4>
-                            <p class="text-primary dark:text-teal-400 font-extrabold text-base mt-0.5">${p.finalPriceStr}</p>
-                        </div>
-                    </div>
-                    <div class="p-3 pt-0">
-                        <button onclick="openProductModalById('${p.docId}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-xs transition cursor-pointer">
-                            View Details
-                        </button>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderHomeCategories();
-        });
-    </script>
-</body>
-</html>
+                            <label
