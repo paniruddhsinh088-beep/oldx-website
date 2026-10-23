@@ -73,9 +73,7 @@
     <!-- Main Categories Grid -->
     <main class="max-w-7xl mx-auto px-4 py-6">
         <h3 class="text-xl font-bold mb-4">Browse Categories</h3>
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid">
-            <!-- Dynamically populated main categories -->
-        </div>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid"></div>
 
         <h3 class="text-xl font-bold mb-4">Fresh Recommendations</h3>
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
@@ -88,14 +86,14 @@
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
-            <!-- STAGE 1: OLX Main Categories -->
+            <!-- STAGE 1: 12 Main Categories -->
             <div id="wizardStage1">
                 <h3 class="text-xl font-bold mb-1">Post Your Ad</h3>
-                <p class="text-xs text-gray-500 mb-4">Choose a category</p>
+                <p class="text-xs text-gray-500 mb-4">Choose a main category</p>
                 <div id="wizardMainCatList" class="grid grid-cols-2 gap-3"></div>
             </div>
 
-            <!-- STAGE 2: OLX Sub-Categories -->
+            <!-- STAGE 2: Sub-Categories -->
             <div id="wizardStage2" style="display: none;">
                 <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Categories
@@ -104,12 +102,12 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Final Ad Form -->
+            <!-- STAGE 3: Category-Specific Dynamic Form Fields & Location -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
                 </button>
-                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Include Some Details</h3>
+                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Fill Item Details</h3>
                 <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
                 
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-3 text-sm">
@@ -117,6 +115,10 @@
                         <label class="block font-semibold mb-1">Ad Title *</label>
                         <input type="text" id="adTitle" required placeholder="e.g. Maruti Swift / iPhone 13" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
+
+                    <!-- Dynamic Fields Container based on Category -->
+                    <div id="dynamicFieldsContainer" class="space-y-3"></div>
+
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold mb-1">Price (₹) *</label>
@@ -162,13 +164,12 @@
         </div>
     </div>
 
-    <!-- SKELETON LOADER OVERLAY (OLX Video Style) -->
+    <!-- SKELETON LOADER OVERLAY -->
     <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
         <div class="space-y-4 max-w-xl mx-auto w-full">
             <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
             <div class="w-full h-60 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
             <div class="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
-            <div class="h-6 w-1/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
         </div>
     </div>
 
@@ -181,6 +182,7 @@
             <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2"></div>
             <h3 id="modalTitle" class="text-2xl font-bold mb-2 text-primary"></h3>
             <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300 mb-3"></p>
+            <div id="modalExtraDetails" class="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-3 rounded-xl mb-3"></div>
             <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-3">
                 <p><strong>Location:</strong> <span id="modalLocation"></span></p>
                 <p><strong>Description:</strong> <span id="modalDesc"></span></p>
@@ -208,7 +210,7 @@
         </div>
     </div>
 
-    <!-- Main Application Logic Script -->
+    <!-- Main Logic Script -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
@@ -229,7 +231,7 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
 
-        // Exact OLX Categories & Sub-categories structure
+        // 12 Complete OLX Categories & Sub-categories
         const olxCategories = [
             { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers', 'Commercial Vehicles', 'Spare Parts'] },
             { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'Agricultural Land / Farm', 'Shops & Offices'] },
@@ -251,7 +253,6 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
-        // Initialize Home Page Category Filters Grid
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             grid.innerHTML = `
@@ -269,12 +270,8 @@
             });
         }
 
-        function filterCat(catId) {
-            currentFilterCat = catId;
-            renderProducts();
-        }
+        function filterCat(catId) { currentFilterCat = catId; renderProducts(); }
 
-        // Realtime Firestore Listener
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
@@ -291,11 +288,9 @@
             }
         });
 
-        function loginWithGoogle() {
-            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal());
-        }
+        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
 
-        // OLX Wizard Multi-stage Sell Flow
+        // Sell Wizard Multi-stage Flow
         function startSellWizard() {
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
@@ -306,7 +301,6 @@
                 card.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary"></i><span class="font-bold text-xs">${cat.name}</span>`;
                 list.appendChild(card);
             });
-
             document.getElementById('wizardStage1').style.display = 'block';
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'none';
@@ -325,7 +319,6 @@
                 item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
                 subList.appendChild(item);
             });
-
             document.getElementById('wizardStage1').style.display = 'none';
             document.getElementById('wizardStage2').style.display = 'block';
         }
@@ -333,21 +326,49 @@
         function selectWizardSub(sub) {
             selectedSubCat = sub;
             document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
+            
+            // Render Dynamic Category-Specific Fields
+            const dynContainer = document.getElementById('dynamicFieldsContainer');
+            dynContainer.innerHTML = '';
+
+            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block font-semibold mb-1">Brand / Model</label><input type="text" id="dynBrand" placeholder="e.g. Honda / Swift" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                        <div><label class="block font-semibold mb-1">Year</label><input type="number" id="dynYear" placeholder="e.g. 2022" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block font-semibold mb-1">KM Driven</label><input type="number" id="dynKm" placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                        <div><label class="block font-semibold mb-1">Fuel / Type</label><input type="text" id="dynFuel" placeholder="Petrol / Diesel" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    </div>
+                `;
+            } else if(selectedMainCat.id === 'properties') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block font-semibold mb-1">Bedrooms (BHK)</label><select id="dynBhk" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"><option value="1 BHK">1 BHK</option><option value="2 BHK">2 BHK</option><option value="3 BHK">3 BHK</option><option value="Agricultural Land">Land / Plot</option></select></div>
+                        <div><label class="block font-semibold mb-1">Super Area (sq.ft)</label><input type="text" id="dynArea" placeholder="e.g. 1200 sq.ft" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    </div>
+                `;
+            } else if(selectedMainCat.id === 'mobiles') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div><label class="block font-semibold mb-1">Brand</label><input type="text" id="dynBrand" placeholder="Apple / Samsung" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                        <div><label class="block font-semibold mb-1">Storage / RAM</label><input type="text" id="dynRam" placeholder="8GB / 128GB" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    </div>
+                `;
+            } else {
+                dynContainer.innerHTML = `
+                    <div><label class="block font-semibold mb-1">Condition / Details</label><input type="text" id="dynCondition" placeholder="Good / Like New" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                `;
+            }
+
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'block';
             updateWizardDistricts();
         }
 
-        function backToWizardStage1() {
-            document.getElementById('wizardStage2').style.display = 'none';
-            document.getElementById('wizardStage1').style.display = 'block';
-        }
-
-        function backToWizardStage2() {
-            document.getElementById('wizardStage3').style.display = 'none';
-            document.getElementById('wizardStage2').style.display = 'block';
-        }
-
+        function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
+        function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
         function closeSellWizard() { document.getElementById('sellWizardModal').style.display = 'none'; }
 
         function updateWizardDistricts() {
@@ -375,6 +396,18 @@
             const desc = document.getElementById('adDesc').value;
             const imgInput = document.getElementById('adImages');
 
+            // Gather dynamic specific fields
+            let extraDetails = {};
+            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes') {
+                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', year: document.getElementById('dynYear')?.value || '', km: document.getElementById('dynKm')?.value || '', fuel: document.getElementById('dynFuel')?.value || '' };
+            } else if(selectedMainCat.id === 'properties') {
+                extraDetails = { bhk: document.getElementById('dynBhk')?.value || '', area: document.getElementById('dynArea')?.value || '' };
+            } else if(selectedMainCat.id === 'mobiles') {
+                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', ram: document.getElementById('dynRam')?.value || '' };
+            } else {
+                extraDetails = { condition: document.getElementById('dynCondition')?.value || 'Good' };
+            }
+
             const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
             const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
 
@@ -400,6 +433,7 @@
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
                     title, basePrice, finalPriceStr, originalPriceStr,
+                    extraDetails,
                     location: `${village}, ${district}, ${state}`, state, desc, images,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => {
@@ -410,7 +444,7 @@
             }
         }
 
-        // OLX Video Style Skeleton Loader
+        // Skeleton Loader & Detail Modal
         function openProductModalById(docId) {
             const overlay = document.getElementById('skeletonOverlay');
             overlay.style.display = 'flex';
@@ -424,6 +458,17 @@
                 document.getElementById('modalPrice').innerText = p.finalPriceStr;
                 document.getElementById('modalLocation').innerText = p.location;
                 document.getElementById('modalDesc').innerText = p.desc;
+
+                // Render Extra Details Grid in Modal
+                const extraDiv = document.getElementById('modalExtraDetails');
+                extraDiv.innerHTML = '';
+                if(p.extraDetails) {
+                    for(let key in p.extraDetails) {
+                        if(p.extraDetails[key]) {
+                            extraDiv.innerHTML += `<div><strong class="capitalize">${key}:</strong> ${p.extraDetails[key]}</div>`;
+                        }
+                    }
+                }
 
                 const imgCont = document.getElementById('modalImagesContainer');
                 imgCont.innerHTML = '';
