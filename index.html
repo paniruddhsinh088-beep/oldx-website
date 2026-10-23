@@ -182,8 +182,15 @@
                 </div>
             </form>
 
+            <!-- Google Sign-In Button -->
+            <div class="mt-4 pt-4 border-t dark:border-gray-700">
+                <button type="button" onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600 text-gray-700 dark:text-white py-2.5 rounded-lg font-semibold text-sm shadow-sm cursor-pointer transition">
+                    <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+                </button>
+            </div>
+
             <!-- Phone OTP Form -->
-            <div id="phoneLoginForm" class="space-y-4" style="display: none;">
+            <div id="phoneLoginForm" class="space-y-4 mt-4" style="display: none;">
                 <div>
                     <label class="block text-xs font-medium mb-1">Mobile Number (With +91)</label>
                     <input type="text" id="authPhone" placeholder="+919876543210" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-sm">
@@ -468,6 +475,22 @@
                     .then(() => alert("Successfully Logged In!"))
                     .catch((err) => alert("Auth Error: " + err.message));
             }
+        }
+
+        // Google Sign-In Function
+        function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    const user = result.user;
+                    console.log("Logged in user:", user.email);
+                    alert("Welcome, " + (user.displayName || "User") + "!");
+                    closeAuthModal();
+                })
+                .catch((error) => {
+                    console.error("Google Auth Error:", error);
+                    alert("Google Login Failed: " + error.message);
+                });
         }
 
         // Setup Invisible reCAPTCHA
