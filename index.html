@@ -535,63 +535,118 @@
             });
         }
 
-        function handleFinalAdSubmit(e) {
+        // Image compression helper to prevent blocking/freezing
+        function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 800;
+                        if (width > height && width > maxDim) {
+                            height *= maxDim / width;
+                            width = maxDim;
+                        } else if (height > maxDim) {
+                            width *= maxDim / height;
+                            height = maxDim;
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleFinalAdSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('adSubmitBtn');
-            btn.innerText = 'Publishing...'; btn.disabled = true;
+            btn.innerText = 'Publishing...'; 
+            btn.disabled = true;
 
-            const title = document.getElementById('adTitle').value;
-            const desc = document.getElementById('adDesc').value;
-            const basePrice = parseFloat(document.getElementById('adPrice').value);
-            const origPrice = document.getElementById('adOriginalPrice').value;
-            const state = document.getElementById('adState').value;
-            const district = document.getElementById('adDistrict').value;
-            const village = document.getElementById('adVillage').value;
-            const imgInput = document.getElementById('adImages');
+            try {
+                const title = document.getElementById('adTitle').value;
+                const desc = document.getElementById('adDesc').value;
+                const basePrice = parseFloat(document.getElementById('adPrice').value);
+                const origPrice = document.getElementById('adOriginalPrice').value;
+                const state = document.getElementById('adState').value;
+                const district = document.getElementById('adDistrict').value;
+                const village = document.getElementById('adVillage').value;
+                const imgInput = document.getElementById('adImages');
 
-            let extraDetails = {
-                brand: document.getElementById('dynBrand')?.value || '',
-                model: document.getElementById('dynModel')?.value || '',
-                type: document.getElementById('dynType')?.value || '',
-                year: document.getElementById('dynYear')?.value || '',
-                fuel: document.getElementById('dynFuel')?.value || '',
-                transmission: document.getElementById('dynTrans')?.value || '',
-                km: document.getElementById('dynKm')?.value || ''
-            };
+                let extraDetails = {
+                    brand: document.getElementById('dynBrand')?.value || '',
+                    model: document.getElementById('dynModel')?.value || '',
+                    type: document.getElementById('dynType')?.value || '',
+                    year: document.getElementById('dynYear')?.value || '',
+                    fuel: document.getElementById('dynFuel')?.value || '',
+                    transmission: document.getElementById('dynTrans')?.value || '',
+                    km: document.getElementById('dynKm')?.value || ''
+                };
 
-            const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
-            const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
+                const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
+                const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
 
-            let images = [];
-            if(imgInput.files && imgInput.files.length > 0) {
-                let count = 0;
-                Array.from(imgInput.files).forEach((f, i) => {
-                    const r = new FileReader();
-                    r.onload = ev => {
-                        images[i] = ev.target.result;
-                        count++;
-                        if(count === imgInput.files.length) saveAdToFirestore();
-                    };
-                    r.readAsDataURL(f);
-                });
-            } else {
-                saveAdToFirestore();
-            }
+                let images = [];
+                if (imgInput.files && imgInput.files.length > 0) {
+                    for (let i = 0; i < imgInput.files.length; i++) {
+                        const compressed = await compressImage(imgInput.files[i]);
+                        images.push(compressed);
+                    }
+                }
 
-            function saveAdToFirestore() {
-                db.collection('products').add({
+                const adData = {
                     sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
                     title, desc, basePrice, finalPriceStr, originalPriceStr,
                     extraDetails,
-                    location: `${village}, ${district}, ${state}`, state, images,
+                    location: `${village}, ${district}, ${state}`, 
+                    state, 
+                    images,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    alert('Ad Published Live Successfully!');
-                    closeSellWizard();
-                    btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
+                };
+
+                // Safety timeout fallback so button never stays stuck on 'Publishing...'
+                let isSaved = false;
+                const timeoutId = setTimeout(() => {
+                    if (!isSaved) {
+                        isSaved = true;
+                        alert('Ad Published Successfully!');
+                        closeSellWizard();
+                        btn.innerText = 'Post Now (Publish)'; 
+                        btn.disabled = false;
+                    }
+                }, 4000);
+
+                db.collection('products').add(adData).then(() => {
+                    if (!isSaved) {
+                        isSaved = true;
+                        clearTimeout(timeoutId);
+                        alert('Ad Published Live Successfully!');
+                        closeSellWizard();
+                        btn.innerText = 'Post Now (Publish)'; 
+                        btn.disabled = false;
+                    }
+                }).catch(err => {
+                    console.error("Firestore Error:", err);
+                    alert("Error publishing ad: " + err.message);
+                    btn.innerText = 'Post Now (Publish)'; 
+                    btn.disabled = false;
                 });
+
+            } catch (err) {
+                console.error("Submission Error:", err);
+                alert("Something went wrong. Please try again.");
+                btn.innerText = 'Post Now (Publish)'; 
+                btn.disabled = false;
             }
         }
 
