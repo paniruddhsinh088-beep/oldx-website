@@ -101,7 +101,7 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Advanced Dynamic Form Fields for ALL Categories -->
+            <!-- STAGE 3: Full Deep Dynamic Vikalpo for Every Category -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
@@ -235,6 +235,7 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
 
+        // Exact 12 OLX Categories and Sub-categories
         const olxCategories = [
             { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers'] },
             { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'Shops & Offices', 'PG & Guest Houses'] },
@@ -333,7 +334,7 @@
             const dynContainer = document.getElementById('dynamicFormFields');
             dynContainer.innerHTML = '';
 
-            // Comprehensive Dynamic Vikalpo for ALL Categories
+            // Deep Detailed Options for ALL Categories (OLX Style)
             if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'commercial') {
                 dynContainer.innerHTML = `
                     <div>
