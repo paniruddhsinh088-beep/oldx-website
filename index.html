@@ -78,14 +78,14 @@
         <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
     </main>
 
-    <!-- EXACT OLX STYLE 3-STAGE SELL WIZARD MODAL -->
+    <!-- OLX STYLE MULTI-STEP SELL WIZARD MODAL -->
     <div id="sellWizardModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
-            <!-- STAGE 1: OLX 12 Main Categories -->
+            <!-- STAGE 1: Main Categories -->
             <div id="wizardStage1">
                 <h3 class="text-xl font-bold mb-1">Categories</h3>
                 <p class="text-xs text-gray-500 mb-4">Choose a category</p>
@@ -101,7 +101,7 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Include Some Details (Exact OLX Form Layout) -->
+            <!-- STAGE 3: Include Some Details -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
@@ -109,9 +109,14 @@
                 <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Include some details</h3>
                 <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
                 
-                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-4 text-sm">
-                    <!-- Dynamic OLX Fields -->
+                <form onsubmit="goToPhotoUploadStep(event)" class="space-y-4 text-sm">
                     <div id="dynamicFormFields" class="space-y-3"></div>
+
+                    <!-- Auto Description Generator Button ("Write for me") -->
+                    <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-2.5 rounded-xl border border-teal-200">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
+                        <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
+                    </div>
 
                     <div>
                         <label class="block font-semibold mb-1">Ad title *</label>
@@ -121,6 +126,27 @@
                     <div>
                         <label class="block font-semibold mb-1">Describe what you are selling *</label>
                         <textarea id="adDesc" rows="3" required maxlength="4096" placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
+                        Next: Upload Photos & Price
+                    </button>
+                </form>
+            </div>
+
+            <!-- STAGE 4: Upload Photos & Pricing Step -->
+            <div id="wizardStage4" style="display: none;">
+                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Details
+                </button>
+                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Upload Photos & Price</h3>
+                <p class="text-xs text-gray-500 mb-4">Add multiple photos and set your location & price</p>
+
+                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-4 text-sm">
+                    <div>
+                        <label class="block font-semibold mb-1">Upload Multiple Photos *</label>
+                        <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
+                        <p class="text-[10px] text-gray-400 mt-1">You can select multiple photos at once.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -155,20 +181,15 @@
                         <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
 
-                    <div>
-                        <label class="block font-semibold mb-1">Photos *</label>
-                        <input type="file" id="adImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    </div>
-
                     <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
-                        Post Now
+                        Post Now (Publish)
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- SKELETON LOADER OVERLAY (OLX Video Style) -->
+    <!-- SKELETON LOADER OVERLAY -->
     <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
         <div class="space-y-4 max-w-xl mx-auto w-full">
             <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
@@ -235,20 +256,19 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
 
-        // Exact 12 OLX Categories and Sub-categories mapping
         const olxCategories = [
             { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers'] },
             { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
             { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
             { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics & Appliances', icon: 'fa-laptop', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridge', 'AC', 'Washing Machine'] },
+            { id: 'electronics', name: 'Electronics & Appliances', icon: 'fa-laptop', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
             { id: 'commercial', name: 'Commercial Vehicles & Spares', icon: 'fa-truck', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
             { id: 'furniture', name: 'Furniture', icon: 'fa-couch', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
             { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', subs: ['Men', 'Women', 'Kids'] },
             { id: 'books', name: 'Books, Sports & Hobbies', icon: 'fa-book', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
             { id: 'pets', name: 'Pets', icon: 'fa-paw', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
-            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant'] },
-            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Electronics Repair & Services', 'Education & Classes', 'Drivers & Taxis', 'Health & Beauty'] }
+            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
         ];
 
         const districtData = {
@@ -308,6 +328,7 @@
             document.getElementById('wizardStage1').style.display = 'block';
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('wizardStage4').style.display = 'none';
             document.getElementById('sellWizardModal').style.display = 'flex';
         }
 
@@ -334,27 +355,29 @@
             const dynContainer = document.getElementById('dynamicFormFields');
             dynContainer.innerHTML = '';
 
-            // Exact OLX Form Fields & Vikalpo
-            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'commercial') {
+            if(selectedMainCat.id === 'cars') {
                 dynContainer.innerHTML = `
-                    <div>
-                        <label class="block font-semibold mb-1">Brand *</label>
-                        <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                            <option value="">Select Brand</option>
-                            <option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Honda">Honda</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Toyota">Toyota</option><option value="Hero">Hero</option><option value="Bajaj">Bajaj</option><option value="Royal Enfield">Royal Enfield</option><option value="TVS">TVS</option><option value="Other">Other</option>
-                        </select>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Model / Variant *</label>
+                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold mb-1">Year *</label>
-                            <select id="dynYear" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="">Select Year</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2015-2018">2015 - 2018</option><option value="Before 2015">Before 2015</option>
-                            </select>
+                            <input type="number" id="dynYear" required placeholder="2020" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                         <div>
                             <label class="block font-semibold mb-1">Fuel *</label>
                             <select id="dynFuel" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="">Select Fuel</option><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="CNG & Hybrid">CNG & Hybrid</option><option value="Electric">Electric</option>
+                                <option value="">Select Fuel</option><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="CNG & Hybrids">CNG & Hybrids</option><option value="Electric">Electric</option>
                             </select>
                         </div>
                     </div>
@@ -366,80 +389,94 @@
                         </div>
                         <input type="hidden" id="dynTrans" required>
                     </div>
-                    <div>
-                        <label class="block font-semibold mb-1">KM driven *</label>
-                        <input type="number" id="dynKm" required placeholder="0" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">KM driven *</label>
+                            <input type="number" id="dynKm" required placeholder="75000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">No. of Owners *</label>
+                            <select id="dynOwners" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="1st">1st</option><option value="2nd">2nd</option><option value="3rd">3rd</option><option value="4+">4+</option>
+                            </select>
+                        </div>
                     </div>
                 `;
-            } else if(selectedMainCat.id === 'properties') {
+            } else if(selectedMainCat.id === 'bikes' && (sub === 'Motorcycles' || sub === 'Scooters')) {
                 dynContainer.innerHTML = `
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1">BHK / Type *</label>
-                            <select id="dynBhk" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="1 BHK">1 BHK</option><option value="2 BHK">2 BHK</option><option value="3 BHK">3 BHK</option><option value="4+ BHK">4+ BHK</option><option value="Land / Plot">Land / Plot</option>
+                            <label class="block font-semibold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Brand</option><option value="Royal Enfield">Royal Enfield</option><option value="Honda">Honda</option><option value="Bajaj">Bajaj</option><option value="Hero">Hero</option><option value="Yamaha">Yamaha</option><option value="TVS">TVS</option><option value="Other">Other</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">Bathrooms *</label>
-                            <select id="dynBath" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4+">4+</option>
-                            </select>
+                            <label class="block font-semibold mb-1">Year *</label>
+                            <input type="number" id="dynYear" required placeholder="2022" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1">Furnishing *</label>
-                            <select id="dynFurnish" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="Furnished">Furnished</option><option value="Semi-Furnished">Semi-Furnished</option><option value="Unfurnished">Unfurnished</option>
+                            <label class="block font-semibold mb-1">Fuel *</label>
+                            <select id="dynFuel" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Petrol">Petrol</option><option value="Electric">Electric</option><option value="CNG">CNG</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">Super Builtup Area (sq.ft) *</label>
-                            <input type="text" id="dynArea" required placeholder="1200" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <label class="block font-semibold mb-1">KM driven *</label>
+                            <input type="number" id="dynKm" required placeholder="25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
                 `;
-            } else if(selectedMainCat.id === 'mobiles') {
+            } else if(selectedMainCat.id === 'mobiles' && sub === 'Mobile Phones') {
                 dynContainer.innerHTML = `
                     <div>
                         <label class="block font-semibold mb-1">Brand *</label>
                         <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                            <option value="">Select Brand</option><option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="OnePlus">OnePlus</option><option value="Xiaomi / Redmi">Xiaomi / Redmi</option><option value="Realme">Realme</option><option value="Vivo / Oppo">Vivo / Oppo</option><option value="Other">Other</option>
+                            <option value="">Select Brand</option><option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Vivo">Vivo</option><option value="Oppo">Oppo</option><option value="Xiaomi">Xiaomi</option><option value="Realme">Realme</option><option value="OnePlus">OnePlus</option><option value="Other">Other</option>
                         </select>
+                    </div>
+                `;
+            } else if(selectedMainCat.id === 'electronics' && sub === 'Computers & Laptops') {
+                dynContainer.innerHTML = `
+                    <div>
+                        <label class="block font-semibold mb-1">Type *</label>
+                        <div class="grid grid-cols-2 gap-3 mt-1">
+                            <button type="button" onclick="setCompType('Laptop')" id="compLap" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Laptop</button>
+                            <button type="button" onclick="setCompType('Computer/Desktop')" id="compDesk" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Computer/Desktop</button>
+                        </div>
+                        <input type="hidden" id="dynType" required>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Brand *</label>
+                        <input type="text" id="dynBrand" required placeholder="e.g. Dell, HP, Lenovo" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
                 `;
             } else if(selectedMainCat.id === 'jobs') {
                 dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">Salary period *</label>
-                            <select id="dynSalaryPeriod" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="Monthly">Monthly</option><option value="Weekly">Weekly</option><option value="Hourly">Hourly</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">Position type *</label>
-                            <select id="dynPosition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="Full-time">Full-time</option><option value="Part-time">Part-time</option>
-                            </select>
-                        </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Position type *</label>
+                        <select id="dynPosition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <option value="Contract">Contract</option><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Temporary">Temporary</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-semibold mb-1">Salary from (₹)</label>
+                        <input type="number" id="dynSalary" placeholder="e.g. 15000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
                 `;
             } else {
                 dynContainer.innerHTML = `
                     <div>
-                        <label class="block font-semibold mb-1">Condition *</label>
-                        <select id="dynCondition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                            <option value="Brand New">Brand New</option><option value="Like New">Like New</option><option value="Good">Good</option><option value="Fair">Fair</option>
-                        </select>
+                        <label class="block font-semibold mb-1">Type / Details *</label>
+                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
                 `;
             }
 
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'block';
-            updateWizardDistricts();
         }
 
         function setTransmission(val) {
@@ -448,8 +485,43 @@
             document.getElementById('transMan').classList.toggle('bg-teal-100', val === 'Manual');
         }
 
+        function setCompType(val) {
+            document.getElementById('dynType').value = val;
+            document.getElementById('compLap').classList.toggle('bg-teal-100', val === 'Laptop');
+            document.getElementById('compDesk').classList.toggle('bg-teal-100', val === 'Computer/Desktop');
+        }
+
+        function autoGenerateText() {
+            const brand = document.getElementById('dynBrand')?.value || '';
+            const model = document.getElementById('dynModel')?.value || '';
+            const type = document.getElementById('dynType')?.value || selectedSubCat;
+            const year = document.getElementById('dynYear')?.value || '';
+            const fuel = document.getElementById('dynFuel')?.value || '';
+            const trans = document.getElementById('dynTrans')?.value || '';
+            const km = document.getElementById('dynKm')?.value || '';
+
+            if(selectedMainCat.id === 'cars') {
+                document.getElementById('adTitle').value = `${brand} ${model} (${year})`;
+                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}.\n• Variant: ${model}\n• Year: ${year}\n• Fuel Type: ${fuel}\n• Transmission: ${trans}\n• Odometer Reading: ${km} km`;
+            } else if(selectedMainCat.id === 'bikes') {
+                document.getElementById('adTitle').value = `${brand} Bike (${year})`;
+                document.getElementById('adDesc').value = `Well maintained ${brand} motorcycle.\n• Year: ${year}\n• Fuel: ${fuel}\n• KM driven: ${km} km`;
+            } else {
+                document.getElementById('adTitle').value = `${type} - Good Condition`;
+                document.getElementById('adDesc').value = `Selling ${type} in excellent condition under ${selectedSubCat}. Contact for details.`;
+            }
+        }
+
+        function goToPhotoUploadStep(e) {
+            e.preventDefault();
+            document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('wizardStage4').style.display = 'block';
+            updateWizardDistricts();
+        }
+
         function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
         function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
+        function backToWizardStage3() { document.getElementById('wizardStage4').style.display = 'none'; document.getElementById('wizardStage3').style.display = 'block'; }
         function closeSellWizard() { document.getElementById('sellWizardModal').style.display = 'none'; }
 
         function updateWizardDistricts() {
@@ -477,18 +549,15 @@
             const village = document.getElementById('adVillage').value;
             const imgInput = document.getElementById('adImages');
 
-            let extraDetails = {};
-            if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'commercial') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', year: document.getElementById('dynYear')?.value || '', fuel: document.getElementById('dynFuel')?.value || '', transmission: document.getElementById('dynTrans')?.value || '', km: document.getElementById('dynKm')?.value || '' };
-            } else if(selectedMainCat.id === 'properties') {
-                extraDetails = { bhk: document.getElementById('dynBhk')?.value || '', bathrooms: document.getElementById('dynBath')?.value || '', furnishing: document.getElementById('dynFurnish')?.value || '', area: document.getElementById('dynArea')?.value || '' };
-            } else if(selectedMainCat.id === 'mobiles') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '' };
-            } else if(selectedMainCat.id === 'jobs') {
-                extraDetails = { salaryPeriod: document.getElementById('dynSalaryPeriod')?.value || '', position: document.getElementById('dynPosition')?.value || '' };
-            } else {
-                extraDetails = { condition: document.getElementById('dynCondition')?.value || 'Good' };
-            }
+            let extraDetails = {
+                brand: document.getElementById('dynBrand')?.value || '',
+                model: document.getElementById('dynModel')?.value || '',
+                type: document.getElementById('dynType')?.value || '',
+                year: document.getElementById('dynYear')?.value || '',
+                fuel: document.getElementById('dynFuel')?.value || '',
+                transmission: document.getElementById('dynTrans')?.value || '',
+                km: document.getElementById('dynKm')?.value || ''
+            };
 
             const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
             const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
@@ -521,7 +590,7 @@
                 }).then(() => {
                     alert('Ad Published Live Successfully!');
                     closeSellWizard();
-                    btn.innerText = 'Post Now'; btn.disabled = false;
+                    btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
                 });
             }
         }
