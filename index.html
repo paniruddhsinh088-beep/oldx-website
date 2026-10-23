@@ -6,11 +6,29 @@
     <title>OldX - Pan-India C2C Marketplace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
         html { scroll-behavior: smooth; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .cat-card-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
+        .cat-card-hover:hover { transform: translateY(-3px); }
+        
+        /* Smooth Slide Up Animation */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Skeleton Pulse Effect */
+        @keyframes pulseSkeleton {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 0.3; }
+        }
+        .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
     </style>
 
     <!-- Firebase SDKs -->
@@ -22,35 +40,51 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                extend: { colors: { primary: '#002f34', accent: '#00a49f', darkBg: '#111827' } }
+                extend: { 
+                    colors: { 
+                        primary: '#002f34', 
+                        brand: '#00a49f', 
+                        accent: '#ffce32',
+                        darkBg: '#0f172a' 
+                    } 
+                }
             }
         }
     </script>
 </head>
-<body class="bg-gray-100 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen">
 
     <!-- Header / Navbar -->
-    <header class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-wider cursor-pointer" onclick="window.location.hash=''">OldX</h1>
-            <div class="flex items-center space-x-2 md:space-x-4">
-                <!-- Saved / Cart Button -->
-                <button onclick="openCartModal()" class="relative bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-200 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm border border-teal-200 dark:border-gray-600 shadow-sm cursor-pointer flex items-center gap-1">
-                    <i class="fa-solid fa-heart text-base text-red-500"></i>
+    <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
+        <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-2">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.hash=''">
+                <div class="bg-primary text-accent p-2 rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-tight">OldX</h1>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-2 md:space-x-3">
+                <button onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-heart text-red-500 text-sm"></i>
                     <span class="hidden md:inline">Saved</span>
-                    <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full ml-0.5">0</span>
+                    <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">0</span>
                 </button>
 
-                <button onclick="openMyAdsModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
-                    <i class="fa-solid fa-list-check mr-1"></i> My Ads
+                <button onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition">
+                    <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
                 </button>
+
                 <div id="authContainer">
-                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
-                        <i class="fa-solid fa-user mr-1"></i> Login
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                        <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 </div>
-                <button onclick="startSellWizard()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-lg font-bold text-xs md:text-sm shadow cursor-pointer flex items-center gap-1">
-                    <i class="fa-solid fa-plus text-base"></i> SELL
+
+                <button onclick="startSellWizard()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-primary font-black px-4 py-2 rounded-xl text-xs md:text-sm shadow-md transition transform active:scale-95 flex items-center gap-1.5 border border-amber-300">
+                    <i class="fa-solid fa-plus text-sm"></i> SELL
                 </button>
             </div>
         </div>
@@ -58,122 +92,164 @@
 
     <!-- MAIN HOME VIEW -->
     <div id="homeView">
-        <!-- Hero Section -->
-        <section class="bg-primary text-white py-8 px-4 text-center">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-2xl md:text-3xl font-extrabold mb-3">Bharatnu Potanu Trusted Marketplace 🇮🇳</h2>
-                <div class="flex flex-col md:flex-row justify-center gap-2 mt-4">
-                    <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Search cars, mobiles, properties..." class="px-4 py-2.5 rounded-lg text-gray-800 w-full md:w-80 focus:outline-none shadow">
-                    <select id="stateFilter" onchange="renderProducts()" class="px-4 py-2.5 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
-                        <option value="">All India / Pan-India</option>
-                        <option value="Gujarat">Gujarat</option>
-                        <option value="Maharashtra">Maharashtra</option>
-                        <option value="Rajasthan">Rajasthan</option>
-                        <option value="Delhi">Delhi</option>
-                    </select>
+        <!-- Hero Banner -->
+        <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
+            <div class="max-w-4xl mx-auto relative z-10">
+                <span class="bg-white/10 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
+                <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
+                <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
+
+                <!-- Modern Integrated Search Bar -->
+                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
+                    <!-- Location Select -->
+                    <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
+                        <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
+                        <select id="stateFilter" onchange="renderProducts()" class="w-full bg-transparent font-bold text-xs md:text-sm text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer">
+                            <option value="">All India / Pan-India</option>
+                            <option value="Gujarat">Gujarat</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                            <option value="Delhi">Delhi</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3">
+                        <i class="fa-solid fa-magnifying-glass text-teal-600 text-base"></i>
+                        <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes, Properties..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Main Categories Grid -->
-        <main class="max-w-7xl mx-auto px-4 py-6">
-            <h3 class="text-xl font-bold mb-4">Browse Categories</h3>
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid"></div>
+        <main class="max-w-7xl mx-auto px-4 py-8">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <i class="fa-solid fa-grid-2 text-teal-600"></i> Browse Categories
+                </h3>
+            </div>
+            
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4 mb-10" id="homeCatGrid"></div>
 
-            <h3 class="text-xl font-bold mb-4">Fresh Recommendations</h3>
-            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+            <!-- Recommendations Header -->
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                    <i class="fa-solid fa-sparkles text-amber-500"></i> Fresh Recommendations
+                </h3>
+            </div>
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5"></div>
         </main>
     </div>
 
-    <!-- DEDICATED FULL PAGE PRODUCT DETAILS VIEW (100% OLX STYLE) -->
-    <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24">
-        <!-- Sticky Top Back & Share Navigation -->
+    <!-- SKELETON LOADING SLIDE VIEW (Exact like OLX Video 00:05) -->
+    <div id="productSkeletonSlide" style="display: none;" class="fixed inset-0 z-50 bg-gray-200 dark:bg-gray-900 flex flex-col p-4 space-y-4 animate-slide-up">
+        <!-- Top OldX Branding Header -->
+        <div class="flex justify-between items-center py-2 border-b dark:border-gray-800">
+            <div class="flex items-center gap-2">
+                <div class="bg-primary text-accent px-2.5 py-1 rounded-lg font-black text-lg">OldX</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 animate-skeleton"></div>
+        </div>
+
+        <!-- Big Image Box Placeholder -->
+        <div class="w-full h-64 bg-gray-300 dark:bg-gray-800 rounded-2xl animate-skeleton"></div>
+
+        <!-- Title & Price Placeholders -->
+        <div class="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm">
+            <div class="h-6 w-3/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
+            <div class="h-8 w-1/3 bg-teal-200 dark:bg-gray-700 rounded animate-skeleton"></div>
+            <div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-skeleton"></div>
+        </div>
+
+        <!-- Details Placeholders -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm space-y-3">
+            <div class="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-skeleton"></div>
+                <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-skeleton"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DEDICATED PRODUCT DETAILS PAGE (FULL VIEW) -->
+    <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24 animate-slide-up">
         <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
-            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
                 <i class="fa-solid fa-arrow-left text-lg"></i>
             </button>
             <div class="flex gap-2 pointer-events-auto">
-                <button onclick="toggleCartCurrentProduct()" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                <button onclick="toggleCartCurrentProduct()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
                     <i class="fa-solid fa-heart text-lg text-red-500" id="detailCartIcon"></i>
                 </button>
-                <button onclick="shareProductLink()" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                <button onclick="shareProductLink()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
             </div>
         </div>
 
-        <!-- Image Carousel Section -->
         <div class="relative bg-black w-full h-[380px]">
             <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
-            <!-- Image Count Badge -->
-            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                1/1
-            </div>
+            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">1/1</div>
         </div>
 
-        <!-- Views Bar -->
-        <div class="bg-primary/90 text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow">
-            <i class="fa-regular fa-eye"></i> <span id="detailViewsText">Active buyer interested - Message the seller now!</span>
+        <div class="bg-primary text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow-inner">
+            <i class="fa-regular fa-eye text-amber-400"></i> <span id="detailViewsText">Active buyers viewing this ad now</span>
         </div>
 
-        <!-- Main Product Card -->
         <div class="max-w-3xl mx-auto px-3 py-3 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
                 <div class="flex justify-between items-start">
-                    <span class="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <i class="fa-solid fa-shield-halved"></i> Verified Seller
+                    <span class="bg-teal-50 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-teal-200 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check text-teal-600"></i> Verified Seller
                     </span>
-                    <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-teal-200 flex items-center gap-1">
+                    <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-xl border border-teal-200 flex items-center gap-1">
                         <i class="fa-solid fa-heart text-red-500"></i> Save Ad
                     </button>
                 </div>
 
-                <h2 id="detailTitle" class="text-xl font-bold text-gray-900 dark:text-white mt-2"></h2>
+                <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
                 <div class="flex justify-between items-baseline mt-2">
                     <p id="detailPrice" class="text-2xl font-black text-primary dark:text-teal-400"></p>
                     <span class="text-xs text-gray-400 font-medium">Posted Recently</span>
                 </div>
 
-                <!-- OLX Local Deal & Safety Suggestion Box -->
-                <div class="mt-4 bg-amber-50 dark:bg-gray-700/50 border border-amber-200 dark:border-gray-600 rounded-xl p-3 text-xs">
+                <div class="mt-4 bg-amber-50/80 dark:bg-gray-700/50 border border-amber-200/80 dark:border-gray-600 rounded-2xl p-3 text-xs">
                     <div class="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
                         <i class="fa-solid fa-handshake text-base text-amber-600"></i> Local Meetup & Direct Deal
                     </div>
-                    <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1">
-                        સેલર સાથે રૂબરૂ મળીને વસ્તુ ચેક કર્યા બાદ જ પેમેન્ટ કરવું. કોઈપણ અજાણી વ્યક્તિને અગાઉથી એડવાન્સ પેમેન્ટ ન કરવું.
+                    <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                        Meet the seller locally, inspect the item carefully, and pay directly via cash/UPI.
                     </p>
                 </div>
 
-                <!-- Location -->
-                <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 font-bold">
                     <i class="fa-solid fa-location-dot text-red-500 text-sm"></i>
-                    <span id="detailLocation" class="font-semibold"></span>
+                    <span id="detailLocation"></span>
                 </div>
             </div>
 
-            <!-- Highlights / Dynamic Specs Section -->
-            <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
                 <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white">Key Highlights</h3>
                 <div id="detailHighlightsGrid" class="grid grid-cols-2 gap-2"></div>
             </div>
 
-            <!-- Description Section -->
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
                 <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white">Description</h3>
                 <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
             </div>
         </div>
 
-        <!-- Sticky Bottom Contact Action Bar (OLX Direct Chat & WhatsApp) -->
+        <!-- Sticky Bottom Bar -->
         <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
             <div class="max-w-3xl mx-auto flex items-center gap-2">
-                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
+                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
                     <i class="fa-regular fa-comments text-base"></i> Chat
                 </button>
-                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900">
+                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow">
                     <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
                 </button>
-                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1">
+                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 shadow">
                     <i class="fa-brands fa-whatsapp text-lg"></i>
                 </a>
             </div>
@@ -181,16 +257,15 @@
     </div>
 
     <!-- SAVED ADS MODAL -->
-    <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+    <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl">
             <button onclick="closeCartModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-            <h3 class="text-lg font-bold mb-1 flex items-center gap-2 text-primary dark:text-teal-400">
+            <h3 class="text-lg font-black mb-1 flex items-center gap-2 text-primary dark:text-teal-400">
                 <i class="fa-solid fa-heart text-red-500"></i> My Saved Ads
             </h3>
             <p class="text-xs text-gray-400 mb-4">Ads you bookmarked for later</p>
-            
             <div id="cartItemsContainer" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
         </div>
     </div>
@@ -200,16 +275,14 @@
         <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
                 <i class="fa-solid fa-xmark"></i>
-            </button>
+            </button>            
             
-            <!-- STAGE 1: Main Categories -->
             <div id="wizardStage1">
                 <h3 class="text-xl font-bold mb-1">Categories</h3>
                 <p class="text-xs text-gray-500 mb-4">Choose a category</p>
                 <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
             </div>
 
-            <!-- STAGE 2: Sub-Categories -->
             <div id="wizardStage2" style="display: none;">
                 <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Categories
@@ -218,7 +291,6 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Details -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
@@ -250,7 +322,6 @@
                 </form>
             </div>
 
-            <!-- STAGE 4: Upload Photos & Price -->
             <div id="wizardStage4" style="display: none;">
                 <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Details
@@ -363,18 +434,18 @@
         let currentFilterCat = 'all';
 
         const olxCategories = [
-            { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers'] },
-            { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
-            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
-            { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics & Appliances', icon: 'fa-laptop', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
-            { id: 'commercial', name: 'Commercial Vehicles & Spares', icon: 'fa-truck', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
-            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
-            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', subs: ['Men', 'Women', 'Kids'] },
-            { id: 'books', name: 'Books, Sports & Hobbies', icon: 'fa-book', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
-            { id: 'pets', name: 'Pets', icon: 'fa-paw', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
-            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
-            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
+            { id: 'cars', name: 'Cars', icon: 'fa-car', color: 'bg-blue-50 text-blue-600 border-blue-100', subs: ['Cars / 4 Wheelers'] },
+            { id: 'properties', name: 'Properties', icon: 'fa-building', color: 'bg-indigo-50 text-indigo-600 border-indigo-100', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
+            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', color: 'bg-teal-50 text-teal-600 border-teal-100', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
+            { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', color: 'bg-orange-50 text-orange-600 border-orange-100', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
+            { id: 'electronics', name: 'Electronics', icon: 'fa-laptop', color: 'bg-purple-50 text-purple-600 border-purple-100', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
+            { id: 'commercial', name: 'Vehicles', icon: 'fa-truck', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
+            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', color: 'bg-amber-50 text-amber-600 border-amber-100', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
+            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', color: 'bg-pink-50 text-pink-600 border-pink-100', subs: ['Men', 'Women', 'Kids'] },
+            { id: 'books', name: 'Hobbies', icon: 'fa-book-open', color: 'bg-sky-50 text-sky-600 border-sky-100', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
+            { id: 'pets', name: 'Pets', icon: 'fa-paw', color: 'bg-rose-50 text-rose-600 border-rose-100', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
+            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', color: 'bg-cyan-50 text-cyan-600 border-cyan-100', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', icon: 'fa-wrench', color: 'bg-violet-50 text-violet-600 border-violet-100', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
         ];
 
         const districtData = {
@@ -444,16 +515,23 @@
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             grid.innerHTML = `
-                <div onclick="filterCat('all')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
-                    <i class="fa-solid fa-border-all text-xl text-primary mb-1"></i>
+                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5">
+                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
                     <p class="font-bold text-xs">All</p>
                 </div>
             `;
             olxCategories.forEach(cat => {
                 const el = document.createElement('div');
-                el.className = "bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition";
+                el.className = "cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5";
                 el.onclick = () => filterCat(cat.id);
-                el.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary mb-1"></i><p class="font-bold text-xs truncate">${cat.name}</p>`;
+                el.innerHTML = `
+                    <div class="w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center text-lg font-bold">
+                        <i class="fa-solid ${cat.icon}"></i>
+                    </div>
+                    <p class="font-bold text-xs truncate w-full">${cat.name}</p>
+                `;
                 grid.appendChild(el);
             });
         }
@@ -471,9 +549,9 @@
             window.currentUser = user;
             const container = document.getElementById('authContainer');
             if(user) {
-                container.innerHTML = `<span class="text-xs font-bold bg-teal-50 dark:bg-gray-700 text-teal-600 px-2 py-1 rounded">👤 ${user.displayName || 'User'}</span>`;
+                container.innerHTML = `<span class="text-xs font-bold bg-teal-50 dark:bg-gray-700 text-teal-600 px-2 py-1 rounded-xl border border-teal-200">👤 ${user.displayName || 'User'}</span>`;
             } else {
-                container.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs">Login</button>`;
+                container.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs">Login</button>`;
             }
         });
 
@@ -488,13 +566,21 @@
                 const p = products.find(item => item.docId === docId);
                 if(p) {
                     currentProduct = p;
-                    renderProductDetailView(p);
+                    // Show Skeleton Splash Slide First (Exact like OLX Video 00:05)
                     document.getElementById('homeView').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'block';
-                    window.scrollTo(0,0);
+                    document.getElementById('productDetailView').style.display = 'none';
+                    document.getElementById('productSkeletonSlide').style.display = 'flex';
+
+                    setTimeout(() => {
+                        renderProductDetailView(p);
+                        document.getElementById('productSkeletonSlide').style.display = 'none';
+                        document.getElementById('productDetailView').style.display = 'block';
+                        window.scrollTo(0,0);
+                    }, 400); // 400ms smooth splash animation delay
                     return;
                 }
             }
+            document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
         }
@@ -563,7 +649,7 @@
             const input = document.getElementById('chatInput');
             if(!input.value.trim()) return;
             const box = document.getElementById('chatMessages');
-            box.innerHTML += `<div class="bg-primary text-white p-2.5 rounded-lg max-w-[80%] ml-auto text-right">${input.value}</div>`;
+            box.innerHTML += `<div class="bg-primary text-white p-2.5 rounded-lg max-w-[80%] ml-auto text-right font-medium">${input.value}</div>`;
             input.value = ''; box.scrollTop = box.scrollHeight;
         }
 
@@ -637,26 +723,6 @@
                             </select>
                         </div>
                     </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Transmission *</label>
-                        <div class="grid grid-cols-2 gap-3 mt-1">
-                            <button type="button" onclick="setTransmission('Automatic')" id="transAuto" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Automatic</button>
-                            <button type="button" onclick="setTransmission('Manual')" id="transMan" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Manual</button>
-                        </div>
-                        <input type="hidden" id="dynTrans" required>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">KM driven *</label>
-                            <input type="number" id="dynKm" required placeholder="75000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">No. of Owners *</label>
-                            <select id="dynOwners" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="1st">1st</option><option value="2nd">2nd</option><option value="3rd">3rd</option><option value="4+">4+</option>
-                            </select>
-                        </div>
-                    </div>
                 `;
             } else {
                 dynContainer.innerHTML = `
@@ -671,24 +737,15 @@
             document.getElementById('wizardStage3').style.display = 'block';
         }
 
-        function setTransmission(val) {
-            document.getElementById('dynTrans').value = val;
-            document.getElementById('transAuto').classList.toggle('bg-teal-100', val === 'Automatic');
-            document.getElementById('transMan').classList.toggle('bg-teal-100', val === 'Manual');
-        }
-
         function autoGenerateText() {
             const brand = document.getElementById('dynBrand')?.value || '';
             const model = document.getElementById('dynModel')?.value || '';
             const type = document.getElementById('dynType')?.value || selectedSubCat;
             const year = document.getElementById('dynYear')?.value || '';
-            const fuel = document.getElementById('dynFuel')?.value || '';
-            const trans = document.getElementById('dynTrans')?.value || '';
-            const km = document.getElementById('dynKm')?.value || '';
 
             if(selectedMainCat.id === 'cars') {
                 document.getElementById('adTitle').value = `${brand} ${model} (${year})`;
-                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}.\n• Variant: ${model}\n• Year: ${year}\n• Fuel Type: ${fuel}\n• Transmission: ${trans}\n• Odometer Reading: ${km} km`;
+                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}.\n• Variant: ${model}\n• Year: ${year}`;
             } else {
                 document.getElementById('adTitle').value = `${type} - Good Condition`;
                 document.getElementById('adDesc').value = `Selling ${type} in excellent condition under ${selectedSubCat}. Contact for details.`;
@@ -759,10 +816,7 @@
                     brand: document.getElementById('dynBrand')?.value || '',
                     model: document.getElementById('dynModel')?.value || '',
                     type: document.getElementById('dynType')?.value || '',
-                    year: document.getElementById('dynYear')?.value || '',
-                    fuel: document.getElementById('dynFuel')?.value || '',
-                    transmission: document.getElementById('dynTrans')?.value || '',
-                    km: document.getElementById('dynKm')?.value || ''
+                    year: document.getElementById('dynYear')?.value || ''
                 };
 
                 const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
@@ -835,23 +889,24 @@
             });
 
             if(filtered.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6">No products found.</p>`;
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6 font-semibold">No products found.</p>`;
                 return;
             }
 
             filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition cursor-pointer";
+                card.className = "bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border border-gray-200/80 dark:border-gray-700 overflow-hidden flex flex-col justify-between transition cursor-pointer transform hover:-translate-y-1 active:scale-98";
                 card.onclick = () => openProductDetailPage(p.docId);
                 card.innerHTML = `
                     <div>
-                        <div class="h-44 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        <div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
                             ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-3xl text-gray-400"></i>`}
+                            <span class="absolute top-2 left-2 bg-primary/80 backdrop-blur-sm text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">FEATURED</span>
                         </div>
-                        <div class="p-3">
-                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-0.5 rounded font-semibold">${p.location}</span>
-                            <h4 class="font-bold text-sm mt-1.5 line-clamp-1">${p.title}</h4>
-                            <p class="text-primary dark:text-teal-400 font-extrabold text-base mt-0.5">${p.finalPriceStr}</p>
+                        <div class="p-3.5">
+                            <span class="text-[10px] bg-teal-50 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200 border border-teal-200/50 px-2 py-0.5 rounded-full font-bold inline-block mb-1">${p.location}</span>
+                            <h4 class="font-bold text-sm text-gray-900 dark:text-white line-clamp-1">${p.title}</h4>
+                            <p class="text-primary dark:text-teal-400 font-black text-lg mt-1">${p.finalPriceStr}</p>
                         </div>
                     </div>
                 `;
