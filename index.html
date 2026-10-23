@@ -9,11 +9,8 @@
     
     <style>
         html { scroll-behavior: smooth; }
-        @keyframes pulse-fast {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
-        }
-        .animate-skeleton { animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 
     <!-- Firebase SDKs -->
@@ -25,18 +22,25 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                extend: { colors: { primary: '#0F766E', darkBg: '#111827' } }
+                extend: { colors: { primary: '#002f34', accent: '#00a49f', darkBg: '#111827' } }
             }
         }
     </script>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300">
+<body class="bg-gray-100 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen">
 
     <!-- Header / Navbar -->
-    <header class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
+    <header class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-sm border-b">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-wider">OldX</h1>
+            <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-wider cursor-pointer" onclick="window.location.hash=''">OldX</h1>
             <div class="flex items-center space-x-2 md:space-x-4">
+                <!-- Saved / Cart Button -->
+                <button onclick="openCartModal()" class="relative bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-200 px-3 py-2 rounded-lg font-semibold text-xs md:text-sm border border-teal-200 dark:border-gray-600 shadow-sm cursor-pointer flex items-center gap-1">
+                    <i class="fa-solid fa-heart text-base text-red-500"></i>
+                    <span class="hidden md:inline">Saved</span>
+                    <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full ml-0.5">0</span>
+                </button>
+
                 <button onclick="openMyAdsModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
                     <i class="fa-solid fa-list-check mr-1"></i> My Ads
                 </button>
@@ -52,33 +56,146 @@
         </div>
     </header>
 
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-teal-800 to-primary text-white py-10 px-4 text-center">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-2xl md:text-3xl font-extrabold mb-3">Bharatnu Potanu Trusted Marketplace 🇮🇳</h2>
-            <div class="flex flex-col md:flex-row justify-center gap-2 mt-4">
-                <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Search cars, mobiles, properties..." class="px-4 py-2.5 rounded-lg text-gray-800 w-full md:w-80 focus:outline-none shadow">
-                <select id="stateFilter" onchange="renderProducts()" class="px-4 py-2.5 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
-                    <option value="">All India / Pan-India</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Rajasthan">Rajasthan</option>
-                    <option value="Delhi">Delhi</option>
-                </select>
+    <!-- MAIN HOME VIEW -->
+    <div id="homeView">
+        <!-- Hero Section -->
+        <section class="bg-primary text-white py-8 px-4 text-center">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-2xl md:text-3xl font-extrabold mb-3">Bharatnu Potanu Trusted Marketplace 🇮🇳</h2>
+                <div class="flex flex-col md:flex-row justify-center gap-2 mt-4">
+                    <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Search cars, mobiles, properties..." class="px-4 py-2.5 rounded-lg text-gray-800 w-full md:w-80 focus:outline-none shadow">
+                    <select id="stateFilter" onchange="renderProducts()" class="px-4 py-2.5 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
+                        <option value="">All India / Pan-India</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Delhi">Delhi</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Categories Grid -->
+        <main class="max-w-7xl mx-auto px-4 py-6">
+            <h3 class="text-xl font-bold mb-4">Browse Categories</h3>
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid"></div>
+
+            <h3 class="text-xl font-bold mb-4">Fresh Recommendations</h3>
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+        </main>
+    </div>
+
+    <!-- DEDICATED FULL PAGE PRODUCT DETAILS VIEW (100% OLX STYLE) -->
+    <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24">
+        <!-- Sticky Top Back & Share Navigation -->
+        <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
+            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <div class="flex gap-2 pointer-events-auto">
+                <button onclick="toggleCartCurrentProduct()" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                    <i class="fa-solid fa-heart text-lg text-red-500" id="detailCartIcon"></i>
+                </button>
+                <button onclick="shareProductLink()" class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                    <i class="fa-solid fa-share-nodes text-lg"></i>
+                </button>
             </div>
         </div>
-    </section>
 
-    <!-- Main Categories Grid -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-        <h3 class="text-xl font-bold mb-4">Browse Categories</h3>
-        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid"></div>
+        <!-- Image Carousel Section -->
+        <div class="relative bg-black w-full h-[380px]">
+            <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
+            <!-- Image Count Badge -->
+            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                1/1
+            </div>
+        </div>
 
-        <h3 class="text-xl font-bold mb-4">Fresh Recommendations</h3>
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
-    </main>
+        <!-- Views Bar -->
+        <div class="bg-primary/90 text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow">
+            <i class="fa-regular fa-eye"></i> <span id="detailViewsText">Active buyer interested - Message the seller now!</span>
+        </div>
 
-    <!-- OLX STYLE MULTI-STEP SELL WIZARD MODAL -->
+        <!-- Main Product Card -->
+        <div class="max-w-3xl mx-auto px-3 py-3 space-y-3">
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                <div class="flex justify-between items-start">
+                    <span class="bg-teal-100 text-teal-800 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <i class="fa-solid fa-shield-halved"></i> Verified Seller
+                    </span>
+                    <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-teal-200 flex items-center gap-1">
+                        <i class="fa-solid fa-heart text-red-500"></i> Save Ad
+                    </button>
+                </div>
+
+                <h2 id="detailTitle" class="text-xl font-bold text-gray-900 dark:text-white mt-2"></h2>
+                <div class="flex justify-between items-baseline mt-2">
+                    <p id="detailPrice" class="text-2xl font-black text-primary dark:text-teal-400"></p>
+                    <span class="text-xs text-gray-400 font-medium">Posted Recently</span>
+                </div>
+
+                <!-- OLX Local Deal & Safety Suggestion Box -->
+                <div class="mt-4 bg-amber-50 dark:bg-gray-700/50 border border-amber-200 dark:border-gray-600 rounded-xl p-3 text-xs">
+                    <div class="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+                        <i class="fa-solid fa-handshake text-base text-amber-600"></i> Local Meetup & Direct Deal
+                    </div>
+                    <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1">
+                        સેલર સાથે રૂબરૂ મળીને વસ્તુ ચેક કર્યા બાદ જ પેમેન્ટ કરવું. કોઈપણ અજાણી વ્યક્તિને અગાઉથી એડવાન્સ પેમેન્ટ ન કરવું.
+                    </p>
+                </div>
+
+                <!-- Location -->
+                <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+                    <i class="fa-solid fa-location-dot text-red-500 text-sm"></i>
+                    <span id="detailLocation" class="font-semibold"></span>
+                </div>
+            </div>
+
+            <!-- Highlights / Dynamic Specs Section -->
+            <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white">Key Highlights</h3>
+                <div id="detailHighlightsGrid" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <!-- Description Section -->
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white">Description</h3>
+                <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
+            </div>
+        </div>
+
+        <!-- Sticky Bottom Contact Action Bar (OLX Direct Chat & WhatsApp) -->
+        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
+            <div class="max-w-3xl mx-auto flex items-center gap-2">
+                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
+                    <i class="fa-regular fa-comments text-base"></i> Chat
+                </button>
+                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900">
+                    <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
+                </button>
+                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAVED ADS MODAL -->
+    <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl">
+            <button onclick="closeCartModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-bold mb-1 flex items-center gap-2 text-primary dark:text-teal-400">
+                <i class="fa-solid fa-heart text-red-500"></i> My Saved Ads
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Ads you bookmarked for later</p>
+            
+            <div id="cartItemsContainer" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- SELL WIZARD MODAL -->
     <div id="sellWizardModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
@@ -101,7 +218,7 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Include Some Details -->
+            <!-- STAGE 3: Details -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
@@ -112,7 +229,6 @@
                 <form onsubmit="goToPhotoUploadStep(event)" class="space-y-4 text-sm">
                     <div id="dynamicFormFields" class="space-y-3"></div>
 
-                    <!-- Auto Description Generator Button ("Write for me") -->
                     <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-2.5 rounded-xl border border-teal-200">
                         <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
                         <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
@@ -134,7 +250,7 @@
                 </form>
             </div>
 
-            <!-- STAGE 4: Upload Photos & Pricing Step -->
+            <!-- STAGE 4: Upload Photos & Price -->
             <div id="wizardStage4" style="display: none;">
                 <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Details
@@ -146,7 +262,6 @@
                     <div>
                         <label class="block font-semibold mb-1">Upload Multiple Photos *</label>
                         <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
-                        <p class="text-[10px] text-gray-400 mt-1">You can select multiple photos at once.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -155,8 +270,8 @@
                             <input type="number" id="adPrice" required placeholder="Enter price" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">Original Price (MRP)</label>
-                            <input type="number" id="adOriginalPrice" placeholder="Optional" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <label class="block font-semibold mb-1">WhatsApp Mobile No *</label>
+                            <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                         </div>
                     </div>
 
@@ -189,28 +304,17 @@
         </div>
     </div>
 
-    <!-- SKELETON LOADER OVERLAY -->
-    <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
-        <div class="space-y-4 max-w-xl mx-auto w-full">
-            <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
-            <div class="w-full h-60 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
-            <div class="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
-        </div>
-    </div>
-
-    <!-- Product Detail Modal -->
-    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-9 h-9 rounded-full flex items-center justify-center font-bold">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2"></div>
-            <h3 id="modalTitle" class="text-2xl font-bold mb-2 text-primary"></h3>
-            <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300 mb-3"></p>
-            <div id="modalExtraDetails" class="grid grid-cols-2 gap-2 text-xs bg-gray-50 dark:bg-gray-700 p-3 rounded-xl mb-3"></div>
-            <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-3">
-                <p><strong>Location:</strong> <span id="modalLocation"></span></p>
-                <p><strong>Description:</strong> <span id="modalDesc"></span></p>
+    <!-- Chat Modal -->
+    <div id="chatModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-4 relative flex flex-col h-[400px]">
+            <button onclick="closeChatModal()" class="absolute top-3 right-3 text-gray-500"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="font-bold border-b pb-2 text-sm">Direct Chat with Seller</h3>
+            <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-2 text-xs">
+                <div class="bg-teal-50 p-2.5 rounded-lg max-w-[80%] text-gray-800">Hello! Is this item available?</div>
+            </div>
+            <div class="flex gap-2 pt-2 border-t">
+                <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 border px-3 py-2 rounded-lg text-xs dark:bg-gray-700">
+                <button onclick="sendChatMessage()" class="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold">Send</button>
             </div>
         </div>
     </div>
@@ -252,6 +356,8 @@
 
         window.currentUser = null;
         let products = [];
+        let currentProduct = null;
+        let cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
         let selectedMainCat = null;
         let selectedSubCat = null;
         let currentFilterCat = 'all';
@@ -278,6 +384,63 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
+        function updateCartBadge() {
+            document.getElementById('cartBadgeCount').innerText = cartList.length;
+        }
+
+        function toggleCartCurrentProduct() {
+            if(!currentProduct) return;
+            const idx = cartList.findIndex(id => id === currentProduct.docId);
+            if(idx > -1) {
+                cartList.splice(idx, 1);
+                alert('Ad removed from saved list!');
+            } else {
+                cartList.push(currentProduct.docId);
+                alert('Ad saved successfully!');
+            }
+            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            updateCartBadge();
+        }
+
+        function openCartModal() {
+            const container = document.getElementById('cartItemsContainer');
+            container.innerHTML = '';
+            if(cartList.length === 0) {
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`;
+            } else {
+                cartList.forEach(id => {
+                    const p = products.find(item => item.docId === id);
+                    if(p) {
+                        const div = document.createElement('div');
+                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                        div.innerHTML = `
+                            <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${p.docId}')">
+                                <img src="${p.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                                <div>
+                                    <h4 class="font-bold text-xs truncate max-w-[180px]">${p.title}</h4>
+                                    <p class="text-teal-600 font-extrabold text-xs">${p.finalPriceStr}</p>
+                                </div>
+                            </div>
+                            <button onclick="removeFromCart('${p.docId}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg text-xs font-bold">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            }
+            document.getElementById('cartModal').style.display = 'flex';
+        }
+
+        function removeFromCart(id) {
+            cartList = cartList.filter(item => item !== id);
+            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            updateCartBadge();
+            openCartModal();
+        }
+
+        function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
+
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             grid.innerHTML = `
@@ -301,6 +464,7 @@
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
+            handleHashChange();
         });
 
         auth.onAuthStateChanged(user => {
@@ -314,6 +478,99 @@
         });
 
         function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
+
+        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+
+        function handleHashChange() {
+            const hash = window.location.hash;
+            if(hash.startsWith('#product-')) {
+                const docId = hash.replace('#product-', '');
+                const p = products.find(item => item.docId === docId);
+                if(p) {
+                    currentProduct = p;
+                    renderProductDetailView(p);
+                    document.getElementById('homeView').style.display = 'none';
+                    document.getElementById('productDetailView').style.display = 'block';
+                    window.scrollTo(0,0);
+                    return;
+                }
+            }
+            document.getElementById('productDetailView').style.display = 'none';
+            document.getElementById('homeView').style.display = 'block';
+        }
+
+        window.addEventListener('hashchange', handleHashChange);
+
+        function closeProductDetailView() { window.location.hash = ''; }
+
+        function renderProductDetailView(p) {
+            document.getElementById('detailTitle').innerText = p.title;
+            document.getElementById('detailPrice').innerText = p.finalPriceStr;
+            document.getElementById('detailLocation').innerText = p.location;
+            document.getElementById('detailDescription').innerText = p.desc;
+
+            const slider = document.getElementById('detailImageSlider');
+            slider.innerHTML = '';
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
+                });
+                document.getElementById('detailImgBadge').innerText = `1/${p.images.length}`;
+            } else {
+                slider.innerHTML = `<div class="w-full h-full flex items-center justify-center text-white"><i class="fa-solid fa-image text-5xl opacity-40"></i></div>`;
+                document.getElementById('detailImgBadge').innerText = `0/0`;
+            }
+
+            const grid = document.getElementById('detailHighlightsGrid');
+            grid.innerHTML = '';
+            if(p.extraDetails) {
+                for(let k in p.extraDetails) {
+                    if(p.extraDetails[k]) {
+                        grid.innerHTML += `
+                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border border-gray-100 flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p>
+                                    <p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            const phone = p.phone || '919876543210';
+            const waMsg = encodeURIComponent(`Hi, I am interested in your item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
+        }
+
+        function updateImageCounter() {
+            const slider = document.getElementById('detailImageSlider');
+            if(!currentProduct || !currentProduct.images) return;
+            const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+            document.getElementById('detailImgBadge').innerText = `${index}/${currentProduct.images.length}`;
+        }
+
+        function shareProductLink() {
+            if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
+            else { navigator.clipboard.writeText(window.location.href); alert('Link copied!'); }
+        }
+
+        function openLiveChatModal() { document.getElementById('chatModal').style.display = 'flex'; }
+        function closeChatModal() { document.getElementById('chatModal').style.display = 'none'; }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            if(!input.value.trim()) return;
+            const box = document.getElementById('chatMessages');
+            box.innerHTML += `<div class="bg-primary text-white p-2.5 rounded-lg max-w-[80%] ml-auto text-right">${input.value}</div>`;
+            input.value = ''; box.scrollTop = box.scrollHeight;
+        }
+
+        function openOfferModal() {
+            const offer = prompt('Enter your offer price (₹):');
+            if(offer) alert(`Offer of ₹${offer} sent to seller!`);
+        }
 
         function startSellWizard() {
             const list = document.getElementById('wizardMainCatList');
@@ -351,7 +608,6 @@
         function selectWizardSub(sub) {
             selectedSubCat = sub;
             document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
-            
             const dynContainer = document.getElementById('dynamicFormFields');
             dynContainer.innerHTML = '';
 
@@ -402,70 +658,6 @@
                         </div>
                     </div>
                 `;
-            } else if(selectedMainCat.id === 'bikes' && (sub === 'Motorcycles' || sub === 'Scooters')) {
-                dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">Brand *</label>
-                            <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="">Select Brand</option><option value="Royal Enfield">Royal Enfield</option><option value="Honda">Honda</option><option value="Bajaj">Bajaj</option><option value="Hero">Hero</option><option value="Yamaha">Yamaha</option><option value="TVS">TVS</option><option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">Year *</label>
-                            <input type="number" id="dynYear" required placeholder="2022" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">Fuel *</label>
-                            <select id="dynFuel" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                                <option value="Petrol">Petrol</option><option value="Electric">Electric</option><option value="CNG">CNG</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">KM driven *</label>
-                            <input type="number" id="dynKm" required placeholder="25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                    </div>
-                `;
-            } else if(selectedMainCat.id === 'mobiles' && sub === 'Mobile Phones') {
-                dynContainer.innerHTML = `
-                    <div>
-                        <label class="block font-semibold mb-1">Brand *</label>
-                        <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                            <option value="">Select Brand</option><option value="Apple">Apple</option><option value="Samsung">Samsung</option><option value="Vivo">Vivo</option><option value="Oppo">Oppo</option><option value="Xiaomi">Xiaomi</option><option value="Realme">Realme</option><option value="OnePlus">OnePlus</option><option value="Other">Other</option>
-                        </select>
-                    </div>
-                `;
-            } else if(selectedMainCat.id === 'electronics' && sub === 'Computers & Laptops') {
-                dynContainer.innerHTML = `
-                    <div>
-                        <label class="block font-semibold mb-1">Type *</label>
-                        <div class="grid grid-cols-2 gap-3 mt-1">
-                            <button type="button" onclick="setCompType('Laptop')" id="compLap" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Laptop</button>
-                            <button type="button" onclick="setCompType('Computer/Desktop')" id="compDesk" class="border py-2 rounded-lg font-bold text-xs hover:border-primary">Computer/Desktop</button>
-                        </div>
-                        <input type="hidden" id="dynType" required>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Brand *</label>
-                        <input type="text" id="dynBrand" required placeholder="e.g. Dell, HP, Lenovo" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                    </div>
-                `;
-            } else if(selectedMainCat.id === 'jobs') {
-                dynContainer.innerHTML = `
-                    <div>
-                        <label class="block font-semibold mb-1">Position type *</label>
-                        <select id="dynPosition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                            <option value="Contract">Contract</option><option value="Full-time">Full-time</option><option value="Part-time">Part-time</option><option value="Temporary">Temporary</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold mb-1">Salary from (₹)</label>
-                        <input type="number" id="dynSalary" placeholder="e.g. 15000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                    </div>
-                `;
             } else {
                 dynContainer.innerHTML = `
                     <div>
@@ -485,12 +677,6 @@
             document.getElementById('transMan').classList.toggle('bg-teal-100', val === 'Manual');
         }
 
-        function setCompType(val) {
-            document.getElementById('dynType').value = val;
-            document.getElementById('compLap').classList.toggle('bg-teal-100', val === 'Laptop');
-            document.getElementById('compDesk').classList.toggle('bg-teal-100', val === 'Computer/Desktop');
-        }
-
         function autoGenerateText() {
             const brand = document.getElementById('dynBrand')?.value || '';
             const model = document.getElementById('dynModel')?.value || '';
@@ -503,9 +689,6 @@
             if(selectedMainCat.id === 'cars') {
                 document.getElementById('adTitle').value = `${brand} ${model} (${year})`;
                 document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}.\n• Variant: ${model}\n• Year: ${year}\n• Fuel Type: ${fuel}\n• Transmission: ${trans}\n• Odometer Reading: ${km} km`;
-            } else if(selectedMainCat.id === 'bikes') {
-                document.getElementById('adTitle').value = `${brand} Bike (${year})`;
-                document.getElementById('adDesc').value = `Well maintained ${brand} motorcycle.\n• Year: ${year}\n• Fuel: ${fuel}\n• KM driven: ${km} km`;
             } else {
                 document.getElementById('adTitle').value = `${type} - Good Condition`;
                 document.getElementById('adDesc').value = `Selling ${type} in excellent condition under ${selectedSubCat}. Contact for details.`;
@@ -535,7 +718,6 @@
             });
         }
 
-        // Image compression helper to prevent blocking/freezing
         function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -543,18 +725,11 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        let width = img.width;
-                        let height = img.height;
+                        let width = img.width; let height = img.height;
                         const maxDim = 800;
-                        if (width > height && width > maxDim) {
-                            height *= maxDim / width;
-                            width = maxDim;
-                        } else if (height > maxDim) {
-                            width *= maxDim / height;
-                            height = maxDim;
-                        }
-                        canvas.width = width;
-                        canvas.height = height;
+                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                        canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         resolve(canvas.toDataURL('image/jpeg', 0.7));
@@ -568,14 +743,13 @@
         async function handleFinalAdSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('adSubmitBtn');
-            btn.innerText = 'Publishing...'; 
-            btn.disabled = true;
+            btn.innerText = 'Publishing...'; btn.disabled = true;
 
             try {
                 const title = document.getElementById('adTitle').value;
                 const desc = document.getElementById('adDesc').value;
                 const basePrice = parseFloat(document.getElementById('adPrice').value);
-                const origPrice = document.getElementById('adOriginalPrice').value;
+                const phone = document.getElementById('adPhone').value;
                 const state = document.getElementById('adState').value;
                 const district = document.getElementById('adDistrict').value;
                 const village = document.getElementById('adVillage').value;
@@ -592,7 +766,6 @@
                 };
 
                 const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
-                const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
 
                 let images = [];
                 if (imgInput.files && imgInput.files.length > 0) {
@@ -606,7 +779,7 @@
                     sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
-                    title, desc, basePrice, finalPriceStr, originalPriceStr,
+                    title, desc, basePrice, finalPriceStr, phone,
                     extraDetails,
                     location: `${village}, ${district}, ${state}`, 
                     state, 
@@ -614,85 +787,17 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                // Safety timeout fallback so button never stays stuck on 'Publishing...'
-                let isSaved = false;
-                const timeoutId = setTimeout(() => {
-                    if (!isSaved) {
-                        isSaved = true;
-                        alert('Ad Published Successfully!');
-                        closeSellWizard();
-                        btn.innerText = 'Post Now (Publish)'; 
-                        btn.disabled = false;
-                    }
-                }, 4000);
-
                 db.collection('products').add(adData).then(() => {
-                    if (!isSaved) {
-                        isSaved = true;
-                        clearTimeout(timeoutId);
-                        alert('Ad Published Live Successfully!');
-                        closeSellWizard();
-                        btn.innerText = 'Post Now (Publish)'; 
-                        btn.disabled = false;
-                    }
-                }).catch(err => {
-                    console.error("Firestore Error:", err);
-                    alert("Error publishing ad: " + err.message);
-                    btn.innerText = 'Post Now (Publish)'; 
-                    btn.disabled = false;
+                    alert('Ad Published Live Successfully!');
+                    closeSellWizard();
+                    btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
                 });
-
             } catch (err) {
-                console.error("Submission Error:", err);
-                alert("Something went wrong. Please try again.");
-                btn.innerText = 'Post Now (Publish)'; 
-                btn.disabled = false;
+                alert("Something went wrong.");
+                btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
             }
         }
 
-        // Skeleton Loader
-        function openProductModalById(docId) {
-            const overlay = document.getElementById('skeletonOverlay');
-            overlay.style.display = 'flex';
-
-            setTimeout(() => {
-                overlay.style.display = 'none';
-                const p = products.find(item => item.docId === docId);
-                if(!p) return;
-
-                document.getElementById('modalTitle').innerText = p.title;
-                document.getElementById('modalPrice').innerText = p.finalPriceStr;
-                document.getElementById('modalLocation').innerText = p.location;
-                document.getElementById('modalDesc').innerText = p.desc;
-
-                const extraDiv = document.getElementById('modalExtraDetails');
-                extraDiv.innerHTML = '';
-                if(p.extraDetails) {
-                    for(let key in p.extraDetails) {
-                        if(p.extraDetails[key]) {
-                            extraDiv.innerHTML += `<div><strong class="capitalize">${key}:</strong> ${p.extraDetails[key]}</div>`;
-                        }
-                    }
-                }
-
-                const imgCont = document.getElementById('modalImagesContainer');
-                imgCont.innerHTML = '';
-                if(p.images && p.images.length > 0) {
-                    p.images.forEach(img => {
-                        const el = document.createElement('img');
-                        el.src = img;
-                        el.className = 'w-full h-60 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0';
-                        imgCont.appendChild(el);
-                    });
-                } else {
-                    imgCont.innerHTML = `<div class="w-full h-40 bg-gray-200 rounded-xl flex items-center justify-center"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
-                }
-
-                document.getElementById('productModal').style.display = 'flex';
-            }, 350);
-        }
-
-        function closeProductModal() { document.getElementById('productModal').style.display = 'none'; }
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
@@ -736,7 +841,8 @@
 
             filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition";
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition cursor-pointer";
+                card.onclick = () => openProductDetailPage(p.docId);
                 card.innerHTML = `
                     <div>
                         <div class="h-44 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
@@ -748,11 +854,6 @@
                             <p class="text-primary dark:text-teal-400 font-extrabold text-base mt-0.5">${p.finalPriceStr}</p>
                         </div>
                     </div>
-                    <div class="p-3 pt-0">
-                        <button onclick="openProductModalById('${p.docId}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-xs transition cursor-pointer">
-                            View Details
-                        </button>
-                    </div>
                 `;
                 grid.appendChild(card);
             });
@@ -760,6 +861,8 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             renderHomeCategories();
+            handleHashChange();
+            updateCartBadge();
         });
     </script>
 </body>
