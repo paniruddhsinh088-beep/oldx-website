@@ -142,33 +142,133 @@
         </main>
     </div>
 
-    <!-- SKELETON LOADING SLIDE VIEW (Exact like OLX Video 00:05) -->
+    <!-- FULL PAGE DEDICATED SELL FLOW PAGE (NO POPUP / MODAL) -->
+    <div id="sellWizardPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
+        <!-- Top Sticky Header -->
+        <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
+            <button onclick="closeSellWizardPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-arrow-left text-base"></i> Close
+            </button>
+            <h2 class="font-black text-base text-primary dark:text-teal-400">Post Your Ad</h2>
+            <div class="w-8"></div>
+        </div>
+
+        <div class="max-w-2xl mx-auto p-4 md:p-6">
+            <!-- STAGE 1: Main Categories -->
+            <div id="wizardStage1">
+                <h3 class="text-2xl font-black mb-1 text-gray-900 dark:text-white">Choose a Category</h3>
+                <p class="text-xs text-gray-500 mb-6">Select what you want to sell</p>
+                <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+            </div>
+
+            <!-- STAGE 2: Sub-Categories -->
+            <div id="wizardStage2" style="display: none;">
+                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Categories
+                </button>
+                <h3 id="wizardSubCatTitle" class="text-2xl font-black mb-4">Sub-Categories</h3>
+                <div id="wizardSubCatList" class="space-y-3"></div>
+            </div>
+
+            <!-- STAGE 3: Item Details -->
+            <div id="wizardStage3" style="display: none;">
+                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
+                </button>
+                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Include Some Details</h3>
+                <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-3 py-1 rounded-full inline-block mb-6"></p>
+                
+                <form onsubmit="goToPhotoUploadStep(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                    <div id="dynamicFormFields" class="space-y-4"></div>
+
+                    <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-3 rounded-xl border border-teal-200">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
+                        <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Ad title *</label>
+                        <input type="text" id="adTitle" required maxlength="70" placeholder="Mention key features (e.g. brand, model, age, type)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Describe what you are selling *</label>
+                        <textarea id="adDesc" rows="4" required maxlength="4096" placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-3.5 rounded-xl font-black text-base shadow cursor-pointer">
+                        Next: Upload Photos & Price
+                    </button>
+                </form>
+            </div>
+
+            <!-- STAGE 4: Upload Photos & Set Price -->
+            <div id="wizardStage4" style="display: none;">
+                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Details
+                </button>
+                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Upload Photos & Price</h3>
+                <p class="text-xs text-gray-500 mb-6">Add multiple photos and set your location & price</p>
+
+                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                    <div>
+                        <label class="block font-bold mb-1">Upload Multiple Photos *</label>
+                        <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Price (₹) *</label>
+                            <input type="number" id="adPrice" required placeholder="Enter price" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
+                            <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">State *</label>
+                            <select id="adState" onchange="updateWizardDistricts()" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Delhi">Delhi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">District / City *</label>
+                            <select id="adDistrict" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Village / Landmark *</label>
+                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+
+                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-primary font-black py-3.5 rounded-xl text-base shadow cursor-pointer">
+                        Post Now (Publish Ad)
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SKELETON LOADING SLIDE VIEW -->
     <div id="productSkeletonSlide" style="display: none;" class="fixed inset-0 z-50 bg-gray-200 dark:bg-gray-900 flex flex-col p-4 space-y-4 animate-slide-up">
-        <!-- Top OldX Branding Header -->
         <div class="flex justify-between items-center py-2 border-b dark:border-gray-800">
             <div class="flex items-center gap-2">
                 <div class="bg-primary text-accent px-2.5 py-1 rounded-lg font-black text-lg">OldX</div>
             </div>
             <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 animate-skeleton"></div>
         </div>
-
-        <!-- Big Image Box Placeholder -->
         <div class="w-full h-64 bg-gray-300 dark:bg-gray-800 rounded-2xl animate-skeleton"></div>
-
-        <!-- Title & Price Placeholders -->
         <div class="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm">
             <div class="h-6 w-3/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
             <div class="h-8 w-1/3 bg-teal-200 dark:bg-gray-700 rounded animate-skeleton"></div>
             <div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-skeleton"></div>
-        </div>
-
-        <!-- Details Placeholders -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm space-y-3">
-            <div class="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
-            <div class="grid grid-cols-2 gap-2">
-                <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-skeleton"></div>
-                <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl animate-skeleton"></div>
-            </div>
         </div>
     </div>
 
@@ -270,111 +370,6 @@
         </div>
     </div>
 
-    <!-- SELL WIZARD MODAL -->
-    <div id="sellWizardModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
-                <i class="fa-solid fa-xmark"></i>
-            </button>            
-            
-            <div id="wizardStage1">
-                <h3 class="text-xl font-bold mb-1">Categories</h3>
-                <p class="text-xs text-gray-500 mb-4">Choose a category</p>
-                <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
-            </div>
-
-            <div id="wizardStage2" style="display: none;">
-                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Categories
-                </button>
-                <h3 id="wizardSubCatTitle" class="text-xl font-bold mb-3">Sub-Categories</h3>
-                <div id="wizardSubCatList" class="space-y-2"></div>
-            </div>
-
-            <div id="wizardStage3" style="display: none;">
-                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
-                </button>
-                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Include some details</h3>
-                <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
-                
-                <form onsubmit="goToPhotoUploadStep(event)" class="space-y-4 text-sm">
-                    <div id="dynamicFormFields" class="space-y-3"></div>
-
-                    <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-2.5 rounded-xl border border-teal-200">
-                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
-                        <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold mb-1">Ad title *</label>
-                        <input type="text" id="adTitle" required maxlength="70" placeholder="Mention key features (e.g. brand, model, age, type)" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold mb-1">Describe what you are selling *</label>
-                        <textarea id="adDesc" rows="3" required maxlength="4096" placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
-                    </div>
-
-                    <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
-                        Next: Upload Photos & Price
-                    </button>
-                </form>
-            </div>
-
-            <div id="wizardStage4" style="display: none;">
-                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Details
-                </button>
-                <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Upload Photos & Price</h3>
-                <p class="text-xs text-gray-500 mb-4">Add multiple photos and set your location & price</p>
-
-                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-4 text-sm">
-                    <div>
-                        <label class="block font-semibold mb-1">Upload Multiple Photos *</label>
-                        <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">Price (₹) *</label>
-                            <input type="number" id="adPrice" required placeholder="Enter price" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">WhatsApp Mobile No *</label>
-                            <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">State *</label>
-                            <select id="adState" onchange="updateWizardDistricts()" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                                <option value="Gujarat">Gujarat</option>
-                                <option value="Maharashtra">Maharashtra</option>
-                                <option value="Rajasthan">Rajasthan</option>
-                                <option value="Delhi">Delhi</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">District / City *</label>
-                            <select id="adDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold mb-1">Village / Landmark *</label>
-                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-
-                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
-                        Post Now (Publish)
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Chat Modal -->
     <div id="chatModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-4 relative flex flex-col h-[400px]">
@@ -433,19 +428,20 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
 
+        // HIGH DEFINITION COLOR VECTORS FOR CATEGORIES
         const olxCategories = [
-            { id: 'cars', name: 'Cars', icon: 'fa-car', color: 'bg-blue-50 text-blue-600 border-blue-100', subs: ['Cars / 4 Wheelers'] },
-            { id: 'properties', name: 'Properties', icon: 'fa-building', color: 'bg-indigo-50 text-indigo-600 border-indigo-100', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
-            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', color: 'bg-teal-50 text-teal-600 border-teal-100', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
-            { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', color: 'bg-orange-50 text-orange-600 border-orange-100', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics', icon: 'fa-laptop', color: 'bg-purple-50 text-purple-600 border-purple-100', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
-            { id: 'commercial', name: 'Vehicles', icon: 'fa-truck', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
-            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', color: 'bg-amber-50 text-amber-600 border-amber-100', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
-            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', color: 'bg-pink-50 text-pink-600 border-pink-100', subs: ['Men', 'Women', 'Kids'] },
-            { id: 'books', name: 'Hobbies', icon: 'fa-book-open', color: 'bg-sky-50 text-sky-600 border-sky-100', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
-            { id: 'pets', name: 'Pets', icon: 'fa-paw', color: 'bg-rose-50 text-rose-600 border-rose-100', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
-            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', color: 'bg-cyan-50 text-cyan-600 border-cyan-100', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
-            { id: 'services', name: 'Services', icon: 'fa-wrench', color: 'bg-violet-50 text-violet-600 border-violet-100', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
+            { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
+            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
+            { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
+            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
+            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
+            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
+            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
+            { id: 'fashion', name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=150&auto=format&fit=crop&q=80', subs: ['Men', 'Women', 'Kids'] },
+            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
+            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
+            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
         ];
 
         const districtData = {
@@ -516,7 +512,7 @@
             const grid = document.getElementById('homeCatGrid');
             grid.innerHTML = `
                 <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5">
-                    <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-bold">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-bold">
                         <i class="fa-solid fa-border-all"></i>
                     </div>
                     <p class="font-bold text-xs">All</p>
@@ -524,12 +520,10 @@
             `;
             olxCategories.forEach(cat => {
                 const el = document.createElement('div');
-                el.className = "cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5";
+                el.className = "cat-card-hover bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center cursor-pointer flex flex-col items-center justify-center gap-1.5";
                 el.onclick = () => filterCat(cat.id);
                 el.innerHTML = `
-                    <div class="w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center text-lg font-bold">
-                        <i class="fa-solid ${cat.icon}"></i>
-                    </div>
+                    <img src="${cat.img}" class="w-12 h-12 rounded-2xl object-cover shadow-sm">
                     <p class="font-bold text-xs truncate w-full">${cat.name}</p>
                 `;
                 grid.appendChild(el);
@@ -566,8 +560,8 @@
                 const p = products.find(item => item.docId === docId);
                 if(p) {
                     currentProduct = p;
-                    // Show Skeleton Splash Slide First (Exact like OLX Video 00:05)
                     document.getElementById('homeView').style.display = 'none';
+                    document.getElementById('sellWizardPage').style.display = 'none';
                     document.getElementById('productDetailView').style.display = 'none';
                     document.getElementById('productSkeletonSlide').style.display = 'flex';
 
@@ -576,10 +570,19 @@
                         document.getElementById('productSkeletonSlide').style.display = 'none';
                         document.getElementById('productDetailView').style.display = 'block';
                         window.scrollTo(0,0);
-                    }, 400); // 400ms smooth splash animation delay
+                    }, 400);
                     return;
                 }
+            } else if(hash === '#sell') {
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('productSkeletonSlide').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'block';
+                window.scrollTo(0,0);
+                return;
             }
+            
+            document.getElementById('sellWizardPage').style.display = 'none';
             document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
@@ -588,6 +591,7 @@
         window.addEventListener('hashchange', handleHashChange);
 
         function closeProductDetailView() { window.location.hash = ''; }
+        function closeSellWizardPage() { window.location.hash = ''; }
 
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
@@ -658,21 +662,22 @@
             if(offer) alert(`Offer of ₹${offer} sent to seller!`);
         }
 
+        // START FULL PAGE SELL FLOW
         function startSellWizard() {
+            window.location.hash = 'sell';
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
             olxCategories.forEach(cat => {
                 const card = document.createElement('div');
-                card.className = "p-3 border rounded-xl bg-gray-50 dark:bg-gray-700 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2";
+                card.className = "p-3 border rounded-2xl bg-white dark:bg-gray-800 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2 shadow-sm transition transform hover:-translate-y-1";
                 card.onclick = () => selectWizardMain(cat);
-                card.innerHTML = `<i class="fa-solid ${cat.icon} text-2xl text-primary"></i><span class="font-bold text-xs">${cat.name}</span>`;
+                card.innerHTML = `<img src="${cat.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm"><span class="font-bold text-xs text-gray-800 dark:text-gray-100">${cat.name}</span>`;
                 list.appendChild(card);
             });
             document.getElementById('wizardStage1').style.display = 'block';
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'none';
             document.getElementById('wizardStage4').style.display = 'none';
-            document.getElementById('sellWizardModal').style.display = 'flex';
         }
 
         function selectWizardMain(cat) {
@@ -682,7 +687,7 @@
             subList.innerHTML = '';
             cat.subs.forEach(sub => {
                 const item = document.createElement('div');
-                item.className = "p-3 border rounded-xl hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center";
+                item.className = "p-4 border rounded-2xl bg-white dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center shadow-sm";
                 item.onclick = () => selectWizardSub(sub);
                 item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
                 subList.appendChild(item);
@@ -701,24 +706,24 @@
                 dynContainer.innerHTML = `
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1">Brand *</label>
-                            <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <label class="block font-bold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                                 <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">Model / Variant *</label>
-                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <label class="block font-bold mb-1">Model / Variant *</label>
+                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1">Year *</label>
-                            <input type="number" id="dynYear" required placeholder="2020" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <label class="block font-bold mb-1">Year *</label>
+                            <input type="number" id="dynYear" required placeholder="2020" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                         </div>
                         <div>
-                            <label class="block font-semibold mb-1">Fuel *</label>
-                            <select id="dynFuel" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <label class="block font-bold mb-1">Fuel *</label>
+                            <select id="dynFuel" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                                 <option value="">Select Fuel</option><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="CNG & Hybrids">CNG & Hybrids</option><option value="Electric">Electric</option>
                             </select>
                         </div>
@@ -727,8 +732,8 @@
             } else {
                 dynContainer.innerHTML = `
                     <div>
-                        <label class="block font-semibold mb-1">Type / Details *</label>
-                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        <label class="block font-bold mb-1">Type / Details *</label>
+                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                     </div>
                 `;
             }
@@ -762,7 +767,6 @@
         function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
         function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
         function backToWizardStage3() { document.getElementById('wizardStage4').style.display = 'none'; document.getElementById('wizardStage3').style.display = 'block'; }
-        function closeSellWizard() { document.getElementById('sellWizardModal').style.display = 'none'; }
 
         function updateWizardDistricts() {
             const state = document.getElementById('adState').value;
@@ -843,12 +847,12 @@
 
                 db.collection('products').add(adData).then(() => {
                     alert('Ad Published Live Successfully!');
-                    closeSellWizard();
-                    btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
+                    closeSellWizardPage();
+                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
                 });
             } catch (err) {
                 alert("Something went wrong.");
-                btn.innerText = 'Post Now (Publish)'; btn.disabled = false;
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
             }
         }
 
