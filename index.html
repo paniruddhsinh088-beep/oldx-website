@@ -101,7 +101,7 @@
                 <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Exact OLX Form Fields & Details -->
+            <!-- STAGE 3: Advanced Dynamic Form Fields for ALL Categories -->
             <div id="wizardStage3" style="display: none;">
                 <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
@@ -110,7 +110,7 @@
                 <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
                 
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-3.5 text-sm">
-                    <!-- Dynamic Specific Fields Container -->
+                    <!-- Fully Expanded Dynamic Vikalpo Container -->
                     <div id="dynamicFormFields" class="space-y-3"></div>
 
                     <div>
@@ -168,7 +168,7 @@
         </div>
     </div>
 
-    <!-- SKELETON LOADER OVERLAY (OLX Video Style) -->
+    <!-- SKELETON LOADER OVERLAY -->
     <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
         <div class="space-y-4 max-w-xl mx-auto w-full">
             <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
@@ -235,7 +235,6 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
 
-        // Exact 12 OLX Categories & Sub-categories
         const olxCategories = [
             { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers'] },
             { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'Shops & Offices', 'PG & Guest Houses'] },
@@ -295,7 +294,6 @@
 
         function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
 
-        // Sell Wizard Multi-stage Flow
         function startSellWizard() {
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
@@ -332,34 +330,128 @@
             selectedSubCat = sub;
             document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
             
-            // Exact OLX Dynamic Form Fields based on Category
             const dynContainer = document.getElementById('dynamicFormFields');
             dynContainer.innerHTML = '';
 
+            // Comprehensive Dynamic Vikalpo for ALL Categories
             if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'commercial') {
                 dynContainer.innerHTML = `
-                    <div><label class="block font-semibold mb-1">Brand *</label><input type="text" id="dynBrand" required placeholder="e.g. Maruti, Honda" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">Year *</label><input type="number" id="dynYear" required placeholder="2022" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                        <div><label class="block font-semibold mb-1">Fuel *</label><input type="text" id="dynFuel" required placeholder="Petrol / Diesel" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    <div>
+                        <label class="block font-semibold mb-1">Brand *</label>
+                        <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                            <option value="">Select Brand</option>
+                            <option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Honda">Honda</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Toyota">Toyota</option><option value="Hero">Hero</option><option value="Bajaj">Bajaj</option><option value="Royal Enfield">Royal Enfield</option><option value="TVS">TVS</option><option value="Other">Other</option>
+                        </select>
                     </div>
-                    <div><label class="block font-semibold mb-1">KM driven *</label><input type="number" id="dynKm" required placeholder="25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Year *</label>
+                            <select id="dynYear" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Year</option><option value="2026">2026</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option><option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option><option value="2019">2019</option><option value="2015-2018">2015 - 2018</option><option value="Before 2015">Before 2015</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Fuel *</label>
+                            <select id="dynFuel" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Fuel</option><option value="Petrol">Petrol</option><option value="Diesel">Diesel</option><option value="CNG & Hybrid">CNG & Hybrid</option><option value="Electric">Electric</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Transmission *</label>
+                            <select id="dynTrans" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Manual">Manual</option><option value="Automatic">Automatic</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">KM Driven *</label>
+                            <input type="number" id="dynKm" required placeholder="e.g. 25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
                 `;
             } else if(selectedMainCat.id === 'properties') {
                 dynContainer.innerHTML = `
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="block font-semibold mb-1">BHK / Type *</label><input type="text" id="dynBhk" required placeholder="2 BHK" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
-                        <div><label class="block font-semibold mb-1">Bathrooms *</label><input type="number" id="dynBath" required placeholder="2" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                        <div>
+                            <label class="block font-semibold mb-1">BHK / Type *</label>
+                            <select id="dynBhk" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="1 BHK">1 BHK</option><option value="2 BHK">2 BHK</option><option value="3 BHK">3 BHK</option><option value="4+ BHK">4+ BHK</option><option value="Land / Plot">Land / Plot</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Bathrooms *</label>
+                            <select id="dynBath" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4+">4+</option>
+                            </select>
+                        </div>
                     </div>
-                    <div><label class="block font-semibold mb-1">Super Builtup Area (sq.ft) *</label><input type="text" id="dynArea" required placeholder="1200" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Furnishing *</label>
+                            <select id="dynFurnish" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Furnished">Furnished</option><option value="Semi-Furnished">Semi-Furnished</option><option value="Unfurnished">Unfurnished</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Super Area (sq.ft) *</label>
+                            <input type="text" id="dynArea" required placeholder="e.g. 1200" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
                 `;
             } else if(selectedMainCat.id === 'mobiles') {
                 dynContainer.innerHTML = `
-                    <div><label class="block font-semibold mb-1">Brand *</label><input type="text" id="dynBrand" required placeholder="Apple, Samsung" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Apple">Apple iPhone</option><option value="Samsung">Samsung</option><option value="OnePlus">OnePlus</option><option value="Xiaomi / Redmi">Xiaomi / Redmi</option><option value="Realme">Realme</option><option value="Vivo / Oppo">Vivo / Oppo</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Storage / RAM *</label>
+                            <input type="text" id="dynStorage" required placeholder="e.g. 8GB / 128GB" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
+                `;
+            } else if(selectedMainCat.id === 'electronics' || selectedMainCat.id === 'furniture') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Brand *</label>
+                            <input type="text" id="dynBrand" required placeholder="e.g. Sony, LG, Godrej" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Condition *</label>
+                            <select id="dynCondition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Brand New">Brand New</option><option value="Like New">Like New</option><option value="Good">Good</option><option value="Fair">Fair</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            } else if(selectedMainCat.id === 'jobs') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold mb-1">Salary Period *</label>
+                            <select id="dynSalaryPeriod" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Monthly">Monthly</option><option value="Weekly">Weekly</option><option value="Hourly">Hourly</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold mb-1">Position Type *</label>
+                            <select id="dynPosition" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                                <option value="Full-time">Full-time</option><option value="Part-time">Part-time</option>
+                            </select>
+                        </div>
+                    </div>
                 `;
             } else {
                 dynContainer.innerHTML = `
-                    <div><label class="block font-semibold mb-1">Condition *</label><input type="text" id="dynCondition" required placeholder="New / Good / Like New" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></div>
+                    <div>
+                        <label class="block font-semibold mb-1">Condition / Type *</label>
+                        <input type="text" id="dynCondition" required placeholder="Specify details..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
+                    </div>
                 `;
             }
 
@@ -399,13 +491,17 @@
 
             let extraDetails = {};
             if(selectedMainCat.id === 'cars' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'commercial') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', year: document.getElementById('dynYear')?.value || '', fuel: document.getElementById('dynFuel')?.value || '', km: document.getElementById('dynKm')?.value || '' };
+                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', year: document.getElementById('dynYear')?.value || '', fuel: document.getElementById('dynFuel')?.value || '', transmission: document.getElementById('dynTrans')?.value || '', km: document.getElementById('dynKm')?.value || '' };
             } else if(selectedMainCat.id === 'properties') {
-                extraDetails = { bhk: document.getElementById('dynBhk')?.value || '', bathrooms: document.getElementById('dynBath')?.value || '', area: document.getElementById('dynArea')?.value || '' };
+                extraDetails = { bhk: document.getElementById('dynBhk')?.value || '', bathrooms: document.getElementById('dynBath')?.value || '', furnishing: document.getElementById('dynFurnish')?.value || '', area: document.getElementById('dynArea')?.value || '' };
             } else if(selectedMainCat.id === 'mobiles') {
-                extraDetails = { brand: document.getElementById('dynBrand')?.value || '' };
+                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', storage: document.getElementById('dynStorage')?.value || '' };
+            } else if(selectedMainCat.id === 'electronics' || selectedMainCat.id === 'furniture') {
+                extraDetails = { brand: document.getElementById('dynBrand')?.value || '', condition: document.getElementById('dynCondition')?.value || '' };
+            } else if(selectedMainCat.id === 'jobs') {
+                extraDetails = { salaryPeriod: document.getElementById('dynSalaryPeriod')?.value || '', position: document.getElementById('dynPosition')?.value || '' };
             } else {
-                extraDetails = { condition: document.getElementById('dynCondition')?.value || 'Good' };
+                extraDetails = { details: document.getElementById('dynCondition')?.value || 'Good' };
             }
 
             const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
@@ -444,7 +540,7 @@
             }
         }
 
-        // OLX Video Style Skeleton Loader
+        // Skeleton Loader
         function openProductModalById(docId) {
             const overlay = document.getElementById('skeletonOverlay');
             overlay.style.display = 'flex';
