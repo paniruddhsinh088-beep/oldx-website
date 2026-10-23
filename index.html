@@ -15,9 +15,10 @@
         }
     </style>
 
-    <!-- Firebase Auth Compat SDKs -->
+    <!-- Firebase Auth & Firestore SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -158,15 +159,13 @@
         </div>
     </main>
 
-    <!-- NEW ATTRACTIVE AUTH MODAL (Google + Email/Password + Guest Mode) -->
+    <!-- AUTH MODAL -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 md:p-8 shadow-2xl relative border border-gray-100 dark:border-gray-700">
-            <!-- Close Button -->
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 w-9 h-9 rounded-full text-gray-600 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer transition">
                 <i class="fa-solid fa-xmark"></i>
             </button>
 
-            <!-- Brand Header -->
             <div class="text-center mb-6">
                 <div class="w-14 h-14 bg-teal-100 dark:bg-teal-900/40 text-primary dark:text-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl font-black shadow-inner">
                     OldX
@@ -175,19 +174,16 @@
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Join India's trusted C2C marketplace today</p>
             </div>
 
-            <!-- 1. Google Sign-In Button (Primary Choice) -->
             <button type="button" onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-teal-500 dark:hover:border-teal-400 hover:bg-teal-50/30 text-gray-800 dark:text-white py-3 px-4 rounded-xl font-bold text-sm shadow-sm hover:shadow transition-all cursor-pointer">
                 <i class="fa-brands fa-google text-red-500 text-lg"></i> Continue with Google
             </button>
 
-            <!-- Divider -->
             <div class="relative my-5 flex items-center justify-center">
                 <div class="border-t border-gray-200 dark:border-gray-700 w-full"></div>
                 <span class="bg-white dark:bg-gray-800 px-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">or email</span>
                 <div class="border-t border-gray-200 dark:border-gray-700 w-full"></div>
             </div>
 
-            <!-- 2. Email & Password Auth Form -->
             <form onsubmit="handleEmailAuth(event)" class="space-y-3.5">
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Email Address</label>
@@ -208,7 +204,6 @@
                 </div>
             </form>
 
-            <!-- 3. Guest Access Option -->
             <div class="mt-5 text-center border-t border-gray-100 dark:border-gray-700 pt-4">
                 <button type="button" onclick="continueAsGuest()" class="text-xs font-bold text-teal-600 dark:text-teal-400 hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer">
                     <i class="fa-solid fa-eye text-teal-500"></i> Continue as Guest (Browse Only)
@@ -217,7 +212,7 @@
         </div>
     </div>
 
-    <!-- My Ads / Edit / Delete Modal -->
+    <!-- My Ads Modal -->
     <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-2xl max-h-[85vh] rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
             <button onclick="closeMyAdsModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
@@ -288,14 +283,13 @@
                 Proceed with Secure Payment
             </button>
 
-            <!-- Ratings & Feedback Section -->
+            <!-- Feedback Section -->
             <div class="border-t dark:border-gray-700 pt-6">
                 <h3 class="text-xl font-bold mb-3">Customer Ratings & Feedback</h3>
                 <div id="modalReviewsContainer" class="mb-6 space-y-2">
                     <!-- Reviews load here -->
                 </div>
 
-                <!-- Add Review Form -->
                 <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-xl">
                     <h4 class="font-bold text-sm mb-2">Give Your Feedback & Rating</h4>
                     <input type="text" id="reviewerName" placeholder="Your Name" class="w-full p-2 mb-2 border rounded dark:bg-gray-800 dark:border-gray-600 text-sm">
@@ -384,7 +378,6 @@
                     <div>
                         <label class="block text-sm font-medium mb-1">District / City</label>
                         <select id="sellDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                            <!-- Populated dynamically -->
                         </select>
                     </div>
                 </div>
@@ -403,7 +396,7 @@
                 <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-xs text-gray-500 dark:text-gray-300">
                     ℹ️ Note: 5% platform fee + ₹99 delivery charge will be automatically added to buyer's final payable amount.
                 </div>
-                <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow cursor-pointer">
+                <button type="submit" id="publishBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow cursor-pointer">
                     Publish Listing (Pan-India)
                 </button>
             </form>
@@ -422,7 +415,7 @@
         </div>
     </footer>
 
-    <!-- Firebase Script Logic -->
+    <!-- Firebase Logic -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
@@ -434,14 +427,31 @@
             measurementId: "G-NLJBLYBBJY"
         };
 
-        // Initialize Firebase
+        // Initialize Firebase & Firestore
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
         const auth = firebase.auth();
+        const db = firebase.firestore();
 
         window.authAction = 'login';
         window.currentUser = null;
+        let products = [];
+        let currentCategory = 'all';
+        let activeProductId = null;
+
+        // Real-time Firestore Listener
+        function listenToProducts() {
+            db.collection('products').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
+                products = [];
+                snapshot.forEach((doc) => {
+                    products.push({ docId: doc.id, ...doc.data() });
+                });
+                renderProducts();
+            }, (error) => {
+                console.error("Firestore Error:", error);
+            });
+        }
 
         // Monitor Login State
         auth.onAuthStateChanged((user) => {
@@ -466,22 +476,18 @@
             }
         });
 
-        // Google Sign-In Function
+        // Google Login
         function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider)
                 .then((result) => {
-                    const user = result.user;
-                    alert("Welcome, " + (user.displayName || "User") + "!");
+                    alert("Welcome, " + (result.user.displayName || "User") + "!");
                     closeAuthModal();
                 })
-                .catch((error) => {
-                    console.error("Google Auth Error:", error);
-                    alert("Google Login Failed: " + error.message);
-                });
+                .catch((error) => alert("Google Login Failed: " + error.message));
         }
 
-        // Email Login / Signup
+        // Email Auth
         function handleEmailAuth(e) {
             e.preventDefault();
             const email = document.getElementById('authEmail').value;
@@ -498,23 +504,10 @@
             }
         }
 
-        // Continue as Guest Function
-        function continueAsGuest() {
-            closeAuthModal();
-        }
-
-        // Logout
-        function logoutUser() {
-            auth.signOut().then(() => alert("Logged Out!"));
-        }
-
-        function openAuthModal() {
-            document.getElementById('authModal').style.display = 'flex';
-        }
-
-        function closeAuthModal() {
-            document.getElementById('authModal').style.display = 'none';
-        }
+        function continueAsGuest() { closeAuthModal(); }
+        function logoutUser() { auth.signOut().then(() => alert("Logged Out!")); }
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
         const districtData = {
             "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Banaskantha", "Patan", "Sabarkantha", "Aravalli", "Mahisagar", "Dahod", "Panchmahal", "Kheda", "Narmada", "Bharuch", "Tapi", "Navsari", "Valsad", "Dang", "Porbandar", "Devbhoomi Dwarka", "Gir Somnath", "Amreli", "Botad", "Morbi", "Surendranagar"],
@@ -523,29 +516,6 @@
             "Uttar Pradesh": ["Lucknow", "Kanpur", "Varanasi", "Agra", "Noida", "Ghaziabad", "Prayagraj", "Meerut", "Bareilly", "Gorakhpur"],
             "Madhya Pradesh": ["Bhopal", "Indore", "Gwalior", "Jabalpur", "Ujjain", "Sagar", "Dewas", "Satna"]
         };
-
-        let products = JSON.parse(localStorage.getItem('oldx_products')) || [
-            {
-                id: 101,
-                sellerUid: 'demo_user',
-                title: "Honda Activa 6G - Well Maintained",
-                category: "vehicles",
-                basePrice: 50000,
-                finalPriceStr: "₹57,845",
-                originalPriceStr: "₹65,000",
-                discountPercent: 15,
-                location: "Rampura, Ahmedabad, Gujarat",
-                state: "Gujarat",
-                desc: "Very good condition, 2 years old, all insurance papers valid.",
-                images: [],
-                reviews: [
-                    { name: "Rajesh Patel", rating: 5, comment: "Khub j sari condition ma bike chhe!" }
-                ]
-            }
-        ];
-
-        let currentCategory = 'all';
-        let activeProductId = null;
 
         function updateDistricts() {
             const stateSelect = document.getElementById('sellState');
@@ -571,13 +541,11 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             updateDistricts();
-            renderProducts();
+            listenToProducts();
             
             const savedLang = localStorage.getItem('oldx_lang') || 'gu';
             const langSelect = document.getElementById('languageSelect');
-            if(langSelect) {
-                langSelect.value = savedLang;
-            }
+            if(langSelect) langSelect.value = savedLang;
             changeLanguage(savedLang);
         });
 
@@ -590,14 +558,8 @@
             }
         }
 
-        function filterCategory(cat) {
-            currentCategory = cat;
-            renderProducts();
-        }
-
-        function filterProducts() {
-            renderProducts();
-        }
+        function filterCategory(cat) { currentCategory = cat; renderProducts(); }
+        function filterProducts() { renderProducts(); }
 
         function renderProducts() {
             const grid = document.getElementById('productGrid');
@@ -644,7 +606,7 @@
                         </div>
                     </div>
                     <div class="p-4 pt-0">
-                        <button onclick="openProductModalById(${p.id})" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
+                        <button onclick="openProductModalById('${p.docId}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-sm transition cursor-pointer">
                             View Details & Buy
                         </button>
                     </div>
@@ -678,8 +640,8 @@
                             <p class="text-xs text-teal-600 dark:text-teal-400 font-semibold">${p.finalPriceStr}</p>
                         </div>
                         <div class="flex gap-2">
-                            <button onclick="openEditModal(${p.id})" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                            <button onclick="deleteProduct(${p.id})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
+                            <button onclick="openEditModal('${p.docId}')" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                            <button onclick="deleteProduct('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash"></i> Delete</button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -688,16 +650,14 @@
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        function closeMyAdsModal() {
-            document.getElementById('myAdsModal').style.display = 'none';
-        }
+        function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        // Edit Product Logic
-        function openEditModal(id) {
-            const p = products.find(item => item.id === id);
+        // Edit Product
+        function openEditModal(docId) {
+            const p = products.find(item => item.docId === docId);
             if (!p) return;
 
-            document.getElementById('editProductId').value = p.id;
+            document.getElementById('editProductId').value = p.docId;
             document.getElementById('editTitle').value = p.title;
             document.getElementById('editPrice').value = p.basePrice;
             document.getElementById('editLocation').value = p.location;
@@ -706,49 +666,43 @@
             document.getElementById('editModal').style.display = 'flex';
         }
 
-        function closeEditModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
+        function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
 
         function handleEditSubmit(e) {
             e.preventDefault();
-            const id = parseInt(document.getElementById('editProductId').value);
-            const p = products.find(item => item.id === id);
-            if (!p) return;
-
+            const docId = document.getElementById('editProductId').value;
             const basePrice = parseFloat(document.getElementById('editPrice').value);
             const commission = basePrice * 0.05;
             const finalPriceValue = Math.round(basePrice + commission + 99);
 
-            p.title = document.getElementById('editTitle').value;
-            p.basePrice = basePrice;
-            p.finalPriceStr = '₹' + finalPriceValue.toLocaleString('en-IN');
-            p.location = document.getElementById('editLocation').value;
-            p.desc = document.getElementById('editDesc').value;
-
-            localStorage.setItem('oldx_products', JSON.stringify(products));
-            renderProducts();
-            closeEditModal();
-            openMyAdsModal();
-            alert("Ad successfully update thai gai!");
+            db.collection('products').doc(docId).update({
+                title: document.getElementById('editTitle').value,
+                basePrice: basePrice,
+                finalPriceStr: '₹' + finalPriceValue.toLocaleString('en-IN'),
+                location: document.getElementById('editLocation').value,
+                desc: document.getElementById('editDesc').value
+            }).then(() => {
+                alert("Ad successfully update thai gai!");
+                closeEditModal();
+                openMyAdsModal();
+            }).catch(err => alert("Update Error: " + err.message));
         }
 
-        // Delete Product Logic
-        function deleteProduct(id) {
+        // Delete Product
+        function deleteProduct(docId) {
             if (confirm("Chokas tame aa ad delete karva mangochho?")) {
-                products = products.filter(p => p.id !== id);
-                localStorage.setItem('oldx_products', JSON.stringify(products));
-                renderProducts();
-                openMyAdsModal();
-                alert("Ad delete thai gai!");
+                db.collection('products').doc(docId).delete().then(() => {
+                    alert("Ad delete thai gai!");
+                    openMyAdsModal();
+                }).catch(err => alert("Delete Error: " + err.message));
             }
         }
 
-        function openProductModalById(id) {
-            const p = products.find(item => item.id === id);
+        function openProductModalById(docId) {
+            const p = products.find(item => item.docId === docId);
             if(!p) return;
 
-            activeProductId = p.id;
+            activeProductId = p.docId;
 
             document.getElementById('modalTitle').innerText = p.title;
             document.getElementById('modalPrice').innerText = p.finalPriceStr;
@@ -808,38 +762,33 @@
             const rating = parseInt(document.getElementById('reviewerRating').value);
             const comment = document.getElementById('reviewerComment').value;
 
-            if(!comment) {
-                alert('Please write a feedback comment.');
-                return;
-            }
+            if(!comment) return alert('Please write a feedback comment.');
 
-            let p = products.find(item => item.id === activeProductId);
+            let p = products.find(item => item.docId === activeProductId);
             if(p) {
-                if(!p.reviews) p.reviews = [];
-                p.reviews.unshift({ name, rating, comment });
-                localStorage.setItem('oldx_products', JSON.stringify(products));
+                const newReviews = p.reviews || [];
+                newReviews.unshift({ name, rating, comment });
                 
-                document.getElementById('reviewerName').value = '';
-                document.getElementById('reviewerComment').value = '';
-                renderReviews(p);
-                alert('Thank you for your feedback!');
+                db.collection('products').doc(activeProductId).update({
+                    reviews: newReviews
+                }).then(() => {
+                    document.getElementById('reviewerName').value = '';
+                    document.getElementById('reviewerComment').value = '';
+                    alert('Thank you for your feedback!');
+                });
             }
         }
 
-        function closeProductModal() {
-            document.getElementById('productModal').style.display = 'none';
-        }
-
-        function openSellModal() {
-            document.getElementById('sellModal').style.display = 'flex';
-        }
-
-        function closeSellModal() {
-            document.getElementById('sellModal').style.display = 'none';
-        }
+        function closeProductModal() { document.getElementById('productModal').style.display = 'none'; }
+        function openSellModal() { document.getElementById('sellModal').style.display = 'flex'; }
+        function closeSellModal() { document.getElementById('sellModal').style.display = 'none'; }
 
         function handleSellSubmit(event) {
             event.preventDefault();
+            const btn = document.getElementById('publishBtn');
+            btn.innerText = "Publishing to Firestore...";
+            btn.disabled = true;
+
             const title = document.getElementById('sellTitle').value;
             const category = document.getElementById('sellCategory').value;
             const basePrice = parseFloat(document.getElementById('sellPrice').value);
@@ -876,47 +825,37 @@
                         imageUrls[index] = e.target.result;
                         loadedCount++;
                         if(loadedCount === filesCount) {
-                            finalizeListing({
-                                id: Date.now(),
+                            saveToFirestore({
                                 sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                                location: locationStr, state, desc, images: imageUrls, reviews: []
-                            });
-                        }
-                    }
-                    reader.onerror = function() {
-                        loadedCount++;
-                        if(loadedCount === filesCount) {
-                            finalizeListing({
-                                id: Date.now(),
-                                sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                                location: locationStr, state, desc, images: [], reviews: []
+                                location: locationStr, state, desc, images: imageUrls, reviews: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
                             });
                         }
                     }
                     reader.readAsDataURL(file);
                 });
             } else {
-                finalizeListing({
-                    id: Date.now(),
+                saveToFirestore({
                     sellerUid, title, category, basePrice, finalPriceStr, originalPriceStr, discountPercent,
-                    location: locationStr, state, desc, images: [], reviews: []
+                    location: locationStr, state, desc, images: [], reviews: [], createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
         }
 
-        function finalizeListing(newProd) {
-            products.unshift(newProd);
-            try {
-                localStorage.setItem('oldx_products', JSON.stringify(products));
-            } catch (e) {
-                console.warn("Storage limit exceeded, saving product.");
-                localStorage.setItem('oldx_products', JSON.stringify(products));
-            }
-            renderProducts();
-            alert('Tamari item safaltapurvak list thai gai chhe!');
-            closeSellModal();
-            document.querySelector('#sellModal form').reset();
-            updateDistricts();
+        function saveToFirestore(data) {
+            db.collection('products').add(data)
+                .then(() => {
+                    alert('Tamari item Live Firestore ma publish thai gai!');
+                    closeSellModal();
+                    document.querySelector('#sellModal form').reset();
+                    updateDistricts();
+                    document.getElementById('publishBtn').innerText = "Publish Listing (Pan-India)";
+                    document.getElementById('publishBtn').disabled = false;
+                })
+                .catch(err => {
+                    alert("Firestore Error: " + err.message);
+                    document.getElementById('publishBtn').innerText = "Publish Listing (Pan-India)";
+                    document.getElementById('publishBtn').disabled = false;
+                });
         }
 
         function simulateRazorpayPayment() {
