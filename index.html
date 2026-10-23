@@ -8,21 +8,16 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Smooth Scrolling Effect -->
     <style>
-        html {
-            scroll-behavior: smooth;
-        }
+        html { scroll-behavior: smooth; }
         @keyframes pulse-fast {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.4; }
         }
-        .animate-skeleton {
-            animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
+        .animate-skeleton { animation: pulse-fast 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
     </style>
 
-    <!-- Firebase Auth & Firestore SDKs -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -31,12 +26,7 @@
         tailwind.config = {
             darkMode: 'class',
             theme: {
-                extend: {
-                    colors: {
-                        primary: '#0F766E',
-                        darkBg: '#111827'
-                    }
-                }
+                extend: { colors: { primary: '#0F766E', darkBg: '#111827' } }
             }
         }
     </script>
@@ -46,156 +36,101 @@
     <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white dark:bg-gray-800 shadow-md">
         <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-wider">OldX</h1>
-            </div>
+            <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-wider">OldX</h1>
             <div class="flex items-center space-x-2 md:space-x-4">
-                <select id="languageSelect" onchange="changeLanguage(this.value)" class="bg-gray-100 dark:bg-gray-700 text-sm px-2 py-1 rounded border dark:border-gray-600 focus:outline-none">
-                    <option value="gu">ગુજરાતી</option>
-                    <option value="hi">हिंदी</option>
-                    <option value="en">English</option>
-                </select>
-                <button onclick="toggleDarkMode()" class="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200">
-                    <i id="darkModeIcon" class="fa-solid fa-moon"></i>
-                </button>
-                
                 <button onclick="openMyAdsModal()" class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
                     <i class="fa-solid fa-list-check mr-1"></i> My Ads
                 </button>
-
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm shadow cursor-pointer">
-                        <i class="fa-solid fa-user mr-1"></i> Login / Signup
+                        <i class="fa-solid fa-user mr-1"></i> Login
                     </button>
                 </div>
-
-                <button onclick="startMultiStageSell()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-lg font-bold text-xs md:text-sm shadow cursor-pointer flex items-center gap-1">
+                <button onclick="startSellWizard()" class="bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-lg font-bold text-xs md:text-sm shadow cursor-pointer flex items-center gap-1">
                     <i class="fa-solid fa-plus text-base"></i> SELL
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Hero Banner -->
-    <section class="bg-gradient-to-r from-teal-800 to-primary text-white py-12 px-4 text-center">
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-r from-teal-800 to-primary text-white py-10 px-4 text-center">
         <div class="max-w-4xl mx-auto">
-            <h2 id="bannerTitle" class="text-3xl md:text-4xl font-extrabold mb-4">
-                Bharatnu Potanu Trusted Marketplace 🇮🇳
-            </h2>
-            <p id="bannerDesc" class="text-teal-100 text-lg mb-6">
-                Jya Juna Thi Lai Ne Nava Vastar, Gadgets Ane Properties Vecho Palak Jhapkata!
-            </p>
-            <div class="flex flex-col md:flex-row justify-center gap-3">
-                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="Search laptops, mobiles, cars..." class="px-4 py-3 rounded-lg text-gray-800 w-full md:w-96 focus:outline-none shadow">
-                <select id="stateFilter" onchange="filterProducts()" class="px-4 py-3 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
-                    <option value="">All States / All India (Pan-India)</option>
+            <h2 class="text-2xl md:text-3xl font-extrabold mb-3">Bharatnu Potanu Trusted Marketplace 🇮🇳</h2>
+            <div class="flex flex-col md:flex-row justify-center gap-2 mt-4">
+                <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Search cars, mobiles, properties..." class="px-4 py-2.5 rounded-lg text-gray-800 w-full md:w-80 focus:outline-none shadow">
+                <select id="stateFilter" onchange="renderProducts()" class="px-4 py-2.5 rounded-lg text-gray-800 font-medium focus:outline-none shadow">
+                    <option value="">All India / Pan-India</option>
                     <option value="Gujarat">Gujarat</option>
                     <option value="Maharashtra">Maharashtra</option>
                     <option value="Rajasthan">Rajasthan</option>
                     <option value="Delhi">Delhi</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
                 </select>
             </div>
         </div>
     </section>
 
-    <!-- Categories Section -->
-    <main class="max-w-7xl mx-auto px-4 py-8">
-        <h3 class="text-xl font-bold mb-4">Categories</h3>
-        <div class="grid grid-cols-3 md:grid-cols-6 gap-3 mb-8">
-            <div onclick="filterCategory('all')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-border-all text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">All</p>
-            </div>
-            <div onclick="filterCategory('mobiles')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-mobile-screen-button text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">Mobiles</p>
-            </div>
-            <div onclick="filterCategory('vehicles')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-car text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">Vehicles</p>
-            </div>
-            <div onclick="filterCategory('electronics')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-laptop text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">Electronics</p>
-            </div>
-            <div onclick="filterCategory('properties')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-building text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">Properties</p>
-            </div>
-            <div onclick="filterCategory('farming')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition">
-                <i class="fa-solid fa-tractor text-2xl text-primary mb-1"></i>
-                <p class="font-medium text-xs md:text-sm">Farming</p>
-            </div>
+    <!-- Main Categories Grid -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        <h3 class="text-xl font-bold mb-4">Browse Categories</h3>
+        <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mb-8" id="homeCatGrid">
+            <!-- Dynamically populated main categories -->
         </div>
 
-        <!-- Product Grid -->
         <h3 class="text-xl font-bold mb-4">Fresh Recommendations</h3>
-        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <!-- Products loaded dynamically -->
-        </div>
+        <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
     </main>
 
-    <!-- MULTI-STAGE CATEGORY SELECTION & SELL MODAL -->
-    <div id="multiSellModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-2xl p-5 md:p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-            <button onclick="closeMultiSellModal()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-9 h-9 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-lg font-bold cursor-pointer">
+    <!-- OLX STYLE MULTI-STAGE SELL WIZARD MODAL -->
+    <div id="sellWizardModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-5 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeSellWizard()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center font-bold">
                 <i class="fa-solid fa-xmark"></i>
             </button>
             
-            <!-- STAGE 1: Main Category Selection -->
-            <div id="stageCategorySelect">
-                <h3 class="text-xl font-bold mb-1 text-gray-900 dark:text-white">Choose a Category</h3>
-                <p class="text-xs text-gray-500 mb-4">Select the category that best matches your item</p>
-                <div id="categoryGridContainer" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    <!-- Categories injected via JavaScript -->
-                </div>
+            <!-- STAGE 1: OLX Main Categories -->
+            <div id="wizardStage1">
+                <h3 class="text-xl font-bold mb-1">Post Your Ad</h3>
+                <p class="text-xs text-gray-500 mb-4">Choose a category</p>
+                <div id="wizardMainCatList" class="grid grid-cols-2 gap-3"></div>
             </div>
 
-            <!-- STAGE 2: Sub-Category Selection -->
-            <div id="stageSubCategorySelect" style="display: none;">
-                <button onclick="goBackToCategories()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
+            <!-- STAGE 2: OLX Sub-Categories -->
+            <div id="wizardStage2" style="display: none;">
+                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Categories
                 </button>
-                <h3 id="selectedMainCatTitle" class="text-xl font-bold mb-3">Sub-Categories</h3>
-                <div id="subCategoryList" class="space-y-2">
-                    <!-- Sub-categories injected here -->
-                </div>
+                <h3 id="wizardSubCatTitle" class="text-xl font-bold mb-3">Select Sub-Category</h3>
+                <div id="wizardSubCatList" class="space-y-2"></div>
             </div>
 
-            <!-- STAGE 3: Custom Form Fields -->
-            <div id="stageFormFill" style="display: none;">
-                <button onclick="goBackToSubCategories()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
+            <!-- STAGE 3: Final Ad Form -->
+            <div id="wizardStage3" style="display: none;">
+                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-3 flex items-center gap-1 cursor-pointer">
                     <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
                 </button>
                 <h3 class="text-xl font-bold mb-1 text-primary dark:text-teal-400">Include Some Details</h3>
-                <p id="selectedSubCatBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2.5 py-1 rounded-full inline-block mb-4"></p>
+                <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-2 py-1 rounded inline-block mb-4"></p>
                 
-                <form onsubmit="handleMultiSellSubmit(event)" class="space-y-3.5 text-sm">
+                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-3 text-sm">
                     <div>
                         <label class="block font-semibold mb-1">Ad Title *</label>
-                        <input type="text" id="sellTitle" required placeholder="e.g. iPhone 13 Pro 128GB" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <input type="text" id="adTitle" required placeholder="e.g. Maruti Swift / iPhone 13" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
-
-                    <!-- Dynamic Extra Fields Container -->
-                    <div id="dynamicExtraFields" class="space-y-3"></div>
-
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-semibold mb-1">Your Price (₹) *</label>
-                            <input type="number" id="sellPrice" required placeholder="25000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <label class="block font-semibold mb-1">Price (₹) *</label>
+                            <input type="number" id="adPrice" required placeholder="15000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                         <div>
                             <label class="block font-semibold mb-1">Original Price (MRP)</label>
-                            <input type="number" id="sellOriginalPrice" placeholder="30000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <input type="number" id="adOriginalPrice" placeholder="20000" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
-
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-semibold mb-1">State *</label>
-                            <select id="sellState" onchange="updateDistricts()" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                            <select id="adState" onchange="updateWizardDistricts()" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                                 <option value="Gujarat">Gujarat</option>
                                 <option value="Maharashtra">Maharashtra</option>
                                 <option value="Rajasthan">Rajasthan</option>
@@ -204,93 +139,76 @@
                         </div>
                         <div>
                             <label class="block font-semibold mb-1">District / City *</label>
-                            <select id="sellDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></select>
+                            <select id="adDistrict" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></select>
                         </div>
                     </div>
-
                     <div>
                         <label class="block font-semibold mb-1">Village / Landmark *</label>
-                        <input type="text" id="sellVillage" required placeholder="e.g. Near Bus Stand / Rampura" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
                     </div>
-
                     <div>
-                        <label class="block font-semibold mb-1">Upload Images (Photos)</label>
-                        <input type="file" id="sellImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                        <label class="block font-semibold mb-1">Photos *</label>
+                        <input type="file" id="adImages" multiple accept="image/*" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 text-xs">
                     </div>
-
                     <div>
                         <label class="block font-semibold mb-1">Description *</label>
-                        <textarea id="sellDesc" rows="3" required placeholder="Describe condition, age, usage..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                        <textarea id="adDesc" rows="3" required placeholder="Mention condition, features..." class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"></textarea>
                     </div>
-
-                    <button type="submit" id="publishBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-extrabold text-base shadow cursor-pointer">
-                        Post Now (Pan-India)
+                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-base shadow cursor-pointer">
+                        Post Now
                     </button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- SKELETON LOADER MODAL (Video style loading overlay) -->
-    <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-4 md:p-8 animate-skeleton">
-        <div class="space-y-4 max-w-2xl mx-auto w-full">
-            <div class="flex items-center justify-between pb-2 border-b dark:border-gray-800">
-                <div class="h-6 w-20 bg-teal-600 rounded flex items-center justify-center font-black text-white text-sm">OldX</div>
-                <div class="h-6 w-6 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
-            </div>
-            <div class="w-full h-64 bg-gray-300 dark:bg-gray-700 rounded-2xl"></div>
-            <div class="h-8 w-3/4 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
-            <div class="h-6 w-1/3 bg-gray-300 dark:bg-gray-700 rounded-lg"></div>
-            <div class="space-y-2 pt-4">
-                <div class="h-4 w-full bg-gray-200 dark:bg-gray-800 rounded"></div>
-                <div class="h-4 w-5/6 bg-gray-200 dark:bg-gray-800 rounded"></div>
-                <div class="h-4 w-2/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
-            </div>
+    <!-- SKELETON LOADER OVERLAY (OLX Video Style) -->
+    <div id="skeletonOverlay" style="display: none;" class="fixed inset-0 bg-white dark:bg-gray-900 z-50 flex flex-col justify-between p-6 animate-skeleton">
+        <div class="space-y-4 max-w-xl mx-auto w-full">
+            <div class="flex justify-between pb-2 border-b"><div class="h-6 w-20 bg-teal-600 rounded text-white text-center font-bold text-xs flex items-center justify-center">OldX</div></div>
+            <div class="w-full h-60 bg-gray-200 dark:bg-gray-800 rounded-2xl"></div>
+            <div class="h-8 w-3/4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+            <div class="h-6 w-1/3 bg-gray-200 dark:bg-gray-800 rounded"></div>
         </div>
     </div>
 
-    <!-- Full Screen Product Details Modal -->
-    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-0 md:p-4">
-        <div class="bg-white dark:bg-gray-800 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-2xl md:rounded-2xl p-6 shadow-2xl relative overflow-y-auto">
-            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-10 h-10 rounded-full text-gray-700 dark:text-gray-200 flex items-center justify-center text-xl font-bold cursor-pointer hover:bg-red-500 hover:text-white transition">
+    <!-- Product Detail Modal -->
+    <div id="productModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-2 md:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xl rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 bg-gray-200 dark:bg-gray-700 w-9 h-9 rounded-full flex items-center justify-center font-bold">
                 <i class="fa-solid fa-xmark"></i>
             </button>
-            
             <div id="modalImagesContainer" class="flex gap-2 overflow-x-auto mb-4 pb-2"></div>
-            
-            <h3 id="modalTitle" class="text-2xl font-extrabold mb-2 text-primary dark:text-teal-400">Product Title</h3>
-            <div class="flex items-center gap-3 mb-4">
-                <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300">₹0</p>
-                <span id="modalOriginalPrice" class="text-lg text-gray-400 line-through"></span>
+            <h3 id="modalTitle" class="text-2xl font-bold mb-2 text-primary"></h3>
+            <p id="modalPrice" class="text-3xl font-black text-teal-700 dark:text-teal-300 mb-3"></p>
+            <div class="space-y-2 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-3">
+                <p><strong>Location:</strong> <span id="modalLocation"></span></p>
+                <p><strong>Description:</strong> <span id="modalDesc"></span></p>
             </div>
-            
-            <div class="space-y-3 mb-6 text-sm text-gray-600 dark:text-gray-300 border-t border-b py-4 dark:border-gray-700">
-                <p><strong>Complete Location:</strong> <span id="modalLocation">-</span></p>
-                <p><strong>Description:</strong> <span id="modalDesc">-</span></p>
-            </div>
-
-            <button onclick="simulateRazorpayPayment()" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 rounded-xl font-bold text-lg shadow mb-6 cursor-pointer">
-                Proceed with Secure Payment
-            </button>
         </div>
     </div>
 
     <!-- Auth Modal -->
-    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 shadow-2xl relative">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 bg-gray-100 dark:bg-gray-700 w-8 h-8 rounded-full">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <div class="text-center mb-6">
-                <h3 class="text-2xl font-extrabold">Welcome to OldX</h3>
-            </div>
-            <button type="button" onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border-2 py-3 rounded-xl font-bold text-sm shadow-sm">
-                <i class="fa-brands fa-google text-red-500 mr-2"></i> Continue with Google
+    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-2xl p-6 relative">
+            <button onclick="closeAuthModal()" class="absolute top-3 right-3"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-4">Login to OldX</h3>
+            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border py-2.5 rounded-xl font-bold flex items-center justify-center gap-2">
+                <i class="fa-brands fa-google text-red-500"></i> Continue with Google
             </button>
         </div>
     </div>
 
-    <!-- Firebase Script Logic -->
+    <!-- My Ads Modal -->
+    <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] overflow-y-auto">
+            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark"></i></button>
+            <h3 class="text-xl font-bold mb-3">My Posted Ads</h3>
+            <div id="myAdsContainer" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- Main Application Logic Script -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
@@ -298,8 +216,7 @@
             projectId: "oldx-1c983",
             storageBucket: "oldx-1c983.firebasestorage.app",
             messagingSenderId: "1036370611979",
-            appId: "1:1036370611979:web:5c3a6c754b3ad979f69c0e",
-            measurementId: "G-NLJBLYBBJY"
+            appId: "1:1036370611979:web:5c3a6c754b3ad979f69c0e"
         };
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -308,140 +225,134 @@
 
         window.currentUser = null;
         let products = [];
-        let currentCategory = 'all';
         let selectedMainCat = null;
         let selectedSubCat = null;
+        let currentFilterCat = 'all';
 
-        // Categories Data Structure
-        const categoryData = [
+        // Exact OLX Categories & Sub-categories structure
+        const olxCategories = [
             { id: 'cars', name: 'Cars', icon: 'fa-car', subs: ['Cars / 4 Wheelers', 'Commercial Vehicles', 'Spare Parts'] },
-            { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['Houses & Apartments', 'Lands & Plots', 'Agricultural Land / Farm', 'Shops & Offices'] },
-            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', subs: ['Mobile Phones', 'Tablets & iPads', 'Accessories & Smartwatches'] },
+            { id: 'properties', name: 'Properties', icon: 'fa-building', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'Agricultural Land / Farm', 'Shops & Offices'] },
+            { id: 'mobiles', name: 'Mobiles', icon: 'fa-mobile-screen-button', subs: ['Mobile Phones', 'Tablets & iPads', 'Accessories'] },
             { id: 'bikes', name: 'Bikes', icon: 'fa-motorcycle', subs: ['Motorcycles', 'Scooters', 'Bicycles', 'Spare Parts'] },
-            { id: 'electronics', name: 'Electronics', icon: 'fa-laptop', subs: ['TVs & Audio', 'Computers & Laptops', 'Cameras', 'Refrigerators & AC'] },
-            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor'] },
-            { id: 'farming', name: 'Agriculture & Farming', icon: 'fa-tractor', subs: ['Tractors', 'Irrigation Pipes & Valves', 'Drip Machines', 'Seeds & Tools'] },
-            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', subs: ['Men Wear', 'Women Wear', 'Watches & Bags'] },
-            { id: 'pets', name: 'Pets & Cattle', icon: 'fa-paw', subs: ['Cows & Buffaloes', 'Dogs', 'Pet Food'] },
-            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry', 'Sales & Marketing', 'Driver & Field Worker'] },
-            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Electronics Repair', 'Transport', 'Education'] }
+            { id: 'electronics', name: 'Electronics & Appliances', icon: 'fa-laptop', subs: ['TVs, Video - Audio', 'Computers & Laptops', 'Kitchen Appliances', 'Refrigerators & AC', 'Washing Machines', 'Cameras'] },
+            { id: 'furniture', name: 'Furniture', icon: 'fa-couch', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden'] },
+            { id: 'farming', name: 'Agriculture & Farming', icon: 'fa-tractor', subs: ['Tractors', 'Irrigation Pumps & Valves', 'Drip & Tools', 'Seeds & Fertilizer'] },
+            { id: 'fashion', name: 'Fashion', icon: 'fa-shirt', subs: ['Men Wear', 'Women Wear', 'Watches & Bags', 'Kids Wear'] },
+            { id: 'pets', name: 'Pets', icon: 'fa-paw', subs: ['Cows & Buffaloes', 'Dogs & Cats', 'Pet Food & Accessories'] },
+            { id: 'jobs', name: 'Jobs', icon: 'fa-briefcase', subs: ['Data Entry', 'Sales & Marketing', 'Driver & Delivery', 'Office Assistant'] },
+            { id: 'services', name: 'Services', icon: 'fa-wrench', subs: ['Electronics Repair', 'Transport & Packers', 'Education & Classes'] }
         ];
 
         const districtData = {
             "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar"],
             "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
-            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"]
+            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+            "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
-        function listenToProducts() {
-            db.collection('products').orderBy('createdAt', 'desc').onSnapshot((snapshot) => {
-                products = [];
-                snapshot.forEach((doc) => {
-                    products.push({ docId: doc.id, ...doc.data() });
-                });
-                renderProducts();
+        // Initialize Home Page Category Filters Grid
+        function renderHomeCategories() {
+            const grid = document.getElementById('homeCatGrid');
+            grid.innerHTML = `
+                <div onclick="filterCat('all')" class="bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent">
+                    <i class="fa-solid fa-border-all text-xl text-primary mb-1"></i>
+                    <p class="font-bold text-xs">All</p>
+                </div>
+            `;
+            olxCategories.forEach(cat => {
+                const el = document.createElement('div');
+                el.className = "bg-white dark:bg-gray-800 p-3 rounded-xl shadow text-center cursor-pointer hover:border-primary border-2 border-transparent transition";
+                el.onclick = () => filterCat(cat.id);
+                el.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary mb-1"></i><p class="font-bold text-xs truncate">${cat.name}</p>`;
+                grid.appendChild(el);
             });
         }
 
-        auth.onAuthStateChanged((user) => {
-            const authContainer = document.getElementById('authContainer');
-            if (user) {
-                window.currentUser = user;
-                authContainer.innerHTML = `<span class="text-xs font-bold bg-teal-50 dark:bg-gray-700 text-teal-600 px-2 py-1 rounded">👤 ${user.displayName || 'User'}</span>`;
+        function filterCat(catId) {
+            currentFilterCat = catId;
+            renderProducts();
+        }
+
+        // Realtime Firestore Listener
+        db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+            products = [];
+            snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
+            renderProducts();
+        });
+
+        auth.onAuthStateChanged(user => {
+            window.currentUser = user;
+            const container = document.getElementById('authContainer');
+            if(user) {
+                container.innerHTML = `<span class="text-xs font-bold bg-teal-50 dark:bg-gray-700 text-teal-600 px-2 py-1 rounded">👤 ${user.displayName || 'User'}</span>`;
             } else {
-                window.currentUser = null;
-                authContainer.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3 py-2 rounded-lg font-semibold text-xs md:text-sm">Login</button>`;
+                container.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 text-white px-3 py-2 rounded-lg font-semibold text-xs">Login</button>`;
             }
         });
 
         function loginWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).then(() => closeAuthModal());
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal());
         }
 
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-
-        // MULTI-STAGE CATEGORY LOGIC
-        function startMultiStageSell() {
-            const container = document.getElementById('categoryGridContainer');
-            container.innerHTML = '';
-            categoryData.forEach(cat => {
+        // OLX Wizard Multi-stage Sell Flow
+        function startSellWizard() {
+            const list = document.getElementById('wizardMainCatList');
+            list.innerHTML = '';
+            olxCategories.forEach(cat => {
                 const card = document.createElement('div');
-                card.className = 'p-3 border rounded-xl bg-gray-50 dark:bg-gray-700 hover:border-primary cursor-pointer text-center transition';
-                card.onclick = () => selectMainCategory(cat);
-                card.innerHTML = `<i class="fa-solid ${cat.icon} text-2xl text-primary mb-1"></i><p class="font-bold text-xs">${cat.name}</p>`;
-                container.appendChild(card);
+                card.className = "p-3 border rounded-xl bg-gray-50 dark:bg-gray-700 hover:border-primary cursor-pointer flex items-center gap-3";
+                card.onclick = () => selectWizardMain(cat);
+                card.innerHTML = `<i class="fa-solid ${cat.icon} text-xl text-primary"></i><span class="font-bold text-xs">${cat.name}</span>`;
+                list.appendChild(card);
             });
 
-            document.getElementById('stageCategorySelect').style.display = 'block';
-            document.getElementById('stageSubCategorySelect').style.display = 'none';
-            document.getElementById('stageFormFill').style.display = 'none';
-            document.getElementById('multiSellModal').style.display = 'flex';
+            document.getElementById('wizardStage1').style.display = 'block';
+            document.getElementById('wizardStage2').style.display = 'none';
+            document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('sellWizardModal').style.display = 'flex';
         }
 
-        function selectMainCategory(cat) {
+        function selectWizardMain(cat) {
             selectedMainCat = cat;
-            document.getElementById('selectedMainCatTitle').innerText = cat.name + ' Sub-Categories';
-            const subList = document.getElementById('subCategoryList');
+            document.getElementById('wizardSubCatTitle').innerText = cat.name + ' Sub-categories';
+            const subList = document.getElementById('wizardSubCatList');
             subList.innerHTML = '';
             cat.subs.forEach(sub => {
                 const item = document.createElement('div');
-                item.className = 'p-3 border rounded-xl hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center';
-                item.onclick = () => selectSubCategory(sub);
+                item.className = "p-3 border rounded-xl hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center";
+                item.onclick = () => selectWizardSub(sub);
                 item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
                 subList.appendChild(item);
             });
 
-            document.getElementById('stageCategorySelect').style.display = 'none';
-            document.getElementById('stageSubCategorySelect').style.display = 'block';
+            document.getElementById('wizardStage1').style.display = 'none';
+            document.getElementById('wizardStage2').style.display = 'block';
         }
 
-        function selectSubCategory(sub) {
+        function selectWizardSub(sub) {
             selectedSubCat = sub;
-            document.getElementById('selectedSubCatBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
-            
-            // Dynamic extra fields setup based on category
-            const extraContainer = document.getElementById('dynamicExtraFields');
-            extraContainer.innerHTML = '';
-
-            if(selectedMainCat.id === 'mobiles' || selectedMainCat.id === 'bikes' || selectedMainCat.id === 'cars') {
-                extraContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-semibold mb-1">Brand / Model</label>
-                            <input type="text" id="extraBrand" placeholder="e.g. Apple / Honda" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                        <div>
-                            <label class="block font-semibold mb-1">Year / Condition</label>
-                            <input type="text" id="extraYear" placeholder="e.g. 2022 / Excellent" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                    </div>
-                `;
-            }
-
-            document.getElementById('stageSubCategorySelect').style.display = 'none';
-            document.getElementById('stageFormFill').style.display = 'block';
-            updateDistricts();
+            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
+            document.getElementById('wizardStage2').style.display = 'none';
+            document.getElementById('wizardStage3').style.display = 'block';
+            updateWizardDistricts();
         }
 
-        function goBackToCategories() {
-            document.getElementById('stageSubCategorySelect').style.display = 'none';
-            document.getElementById('stageCategorySelect').style.display = 'block';
+        function backToWizardStage1() {
+            document.getElementById('wizardStage2').style.display = 'none';
+            document.getElementById('wizardStage1').style.display = 'block';
         }
 
-        function goBackToSubCategories() {
-            document.getElementById('stageFormFill').style.display = 'none';
-            document.getElementById('stageSubCategorySelect').style.display = 'block';
+        function backToWizardStage2() {
+            document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('wizardStage2').style.display = 'block';
         }
 
-        function closeMultiSellModal() {
-            document.getElementById('multiSellModal').style.display = 'none';
-        }
+        function closeSellWizard() { document.getElementById('sellWizardModal').style.display = 'none'; }
 
-        function updateDistricts() {
-            const state = document.getElementById('sellState').value;
-            const distSelect = document.getElementById('sellDistrict');
+        function updateWizardDistricts() {
+            const state = document.getElementById('adState').value;
+            const distSelect = document.getElementById('adDistrict');
             distSelect.innerHTML = '';
             (districtData[state] || ['General']).forEach(d => {
                 const opt = document.createElement('option');
@@ -450,41 +361,40 @@
             });
         }
 
-        function handleMultiSellSubmit(e) {
+        function handleFinalAdSubmit(e) {
             e.preventDefault();
-            const btn = document.getElementById('publishBtn');
-            btn.innerText = 'Publishing to Firestore...'; btn.disabled = true;
+            const btn = document.getElementById('adSubmitBtn');
+            btn.innerText = 'Publishing...'; btn.disabled = true;
 
-            const title = document.getElementById('sellTitle').value;
-            const basePrice = parseFloat(document.getElementById('sellPrice').value);
-            const origPrice = document.getElementById('sellOriginalPrice').value;
-            const state = document.getElementById('sellState').value;
-            const district = document.getElementById('sellDistrict').value;
-            const village = document.getElementById('sellVillage').value;
-            const desc = document.getElementById('sellDesc').value;
-            const imgInput = document.getElementById('sellImages');
+            const title = document.getElementById('adTitle').value;
+            const basePrice = parseFloat(document.getElementById('adPrice').value);
+            const origPrice = document.getElementById('adOriginalPrice').value;
+            const state = document.getElementById('adState').value;
+            const district = document.getElementById('adDistrict').value;
+            const village = document.getElementById('adVillage').value;
+            const desc = document.getElementById('adDesc').value;
+            const imgInput = document.getElementById('adImages');
 
-            const finalPriceVal = Math.round(basePrice + (basePrice * 0.05) + 99);
-            const finalPriceStr = '₹' + finalPriceVal.toLocaleString('en-IN');
-            let originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
+            const finalPriceStr = '₹' + Math.round(basePrice * 1.05 + 99).toLocaleString('en-IN');
+            const originalPriceStr = origPrice ? ('₹' + parseFloat(origPrice).toLocaleString('en-IN')) : '';
 
             let images = [];
             if(imgInput.files && imgInput.files.length > 0) {
                 let count = 0;
                 Array.from(imgInput.files).forEach((f, i) => {
                     const r = new FileReader();
-                    r.onload = (ev) => {
+                    r.onload = ev => {
                         images[i] = ev.target.result;
                         count++;
-                        if(count === imgInput.files.length) saveProduct();
+                        if(count === imgInput.files.length) saveAdToFirestore();
                     };
                     r.readAsDataURL(f);
                 });
             } else {
-                saveProduct();
+                saveAdToFirestore();
             }
 
-            function saveProduct() {
+            function saveAdToFirestore() {
                 db.collection('products').add({
                     sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
                     category: selectedMainCat.id,
@@ -493,20 +403,20 @@
                     location: `${village}, ${district}, ${state}`, state, desc, images,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => {
-                    alert('Item Live Published Successfully!');
-                    closeMultiSellModal();
-                    btn.innerText = 'Post Now (Pan-India)'; btn.disabled = false;
+                    alert('Ad Published Live Successfully!');
+                    closeSellWizard();
+                    btn.innerText = 'Post Now'; btn.disabled = false;
                 });
             }
         }
 
-        // SKELETON ANIMATION OPENER (Matching video effect)
+        // OLX Video Style Skeleton Loader
         function openProductModalById(docId) {
             const overlay = document.getElementById('skeletonOverlay');
-            overlay.style.display = 'flex'; // Show skeleton overlay first
+            overlay.style.display = 'flex';
 
             setTimeout(() => {
-                overlay.style.display = 'none'; // Hide overlay after short delay
+                overlay.style.display = 'none';
                 const p = products.find(item => item.docId === docId);
                 if(!p) return;
 
@@ -521,11 +431,11 @@
                     p.images.forEach(img => {
                         const el = document.createElement('img');
                         el.src = img;
-                        el.className = 'w-full h-64 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0';
+                        el.className = 'w-full h-60 object-contain rounded-xl border bg-gray-100 dark:bg-gray-900 flex-shrink-0';
                         imgCont.appendChild(el);
                     });
                 } else {
-                    imgCont.innerHTML = `<div class="w-full h-48 bg-gray-200 dark:bg-gray-700 rounded-xl flex items-center justify-center"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
+                    imgCont.innerHTML = `<div class="w-full h-40 bg-gray-200 rounded-xl flex items-center justify-center"><i class="fa-solid fa-image text-3xl text-gray-400"></i></div>`;
                 }
 
                 document.getElementById('productModal').style.display = 'flex';
@@ -533,8 +443,27 @@
         }
 
         function closeProductModal() { document.getElementById('productModal').style.display = 'none'; }
-        function filterCategory(cat) { currentCategory = cat; renderProducts(); }
-        function filterProducts() { renderProducts(); }
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+
+        function openMyAdsModal() {
+            if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
+            const container = document.getElementById('myAdsContainer');
+            container.innerHTML = '';
+            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
+            if(mine.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400">No ads posted yet.</p>`; }
+            else {
+                mine.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between items-center p-3 border rounded-xl";
+                    div.innerHTML = `<div><h4 class="font-bold text-sm">${p.title}</h4><p class="text-xs text-teal-600">${p.finalPriceStr}</p></div><button onclick="deleteAd('${p.docId}')" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs font-bold">Delete</button>`;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('myAdsModal').style.display = 'flex';
+        }
+        function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
+        function deleteAd(docId) { if(confirm('Delete this ad?')) db.collection('products').doc(docId).delete().then(() => openMyAdsModal()); }
 
         function renderProducts() {
             const grid = document.getElementById('productGrid');
@@ -544,27 +473,32 @@
             grid.innerHTML = '';
 
             const filtered = products.filter(p => {
-                const matchCat = (currentCategory === 'all' || p.category === currentCategory);
+                const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
                 const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
                 const matchState = (!stateVal || p.state === stateVal);
                 return matchCat && matchSearch && matchState;
             });
 
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6">No products found.</p>`;
+                return;
+            }
+
             filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = 'bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition';
+                card.className = "bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden flex flex-col justify-between hover:shadow-lg transition";
                 card.innerHTML = `
                     <div>
-                        <div class="h-48 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+                        <div class="h-44 bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
                             ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-3xl text-gray-400"></i>`}
                         </div>
-                        <div class="p-4">
-                            <span class="text-xs bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-0.5 rounded font-semibold">${p.location}</span>
-                            <h4 class="font-bold text-base mt-2 line-clamp-1">${p.title}</h4>
-                            <p class="text-primary dark:text-teal-400 font-extrabold text-lg mt-1">${p.finalPriceStr}</p>
+                        <div class="p-3">
+                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200 px-2 py-0.5 rounded font-semibold">${p.location}</span>
+                            <h4 class="font-bold text-sm mt-1.5 line-clamp-1">${p.title}</h4>
+                            <p class="text-primary dark:text-teal-400 font-extrabold text-base mt-0.5">${p.finalPriceStr}</p>
                         </div>
                     </div>
-                    <div class="p-4 pt-0">
+                    <div class="p-3 pt-0">
                         <button onclick="openProductModalById('${p.docId}')" class="w-full bg-primary hover:bg-teal-700 text-white py-2 rounded-lg font-medium text-xs transition cursor-pointer">
                             View Details
                         </button>
@@ -575,7 +509,7 @@
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            listenToProducts();
+            renderHomeCategories();
         });
     </script>
 </body>
