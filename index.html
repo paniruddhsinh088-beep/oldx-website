@@ -27,12 +27,6 @@
             to { transform: scale(1); opacity: 1; }
         }
         .animate-scale-up { animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        @keyframes pulseSkeleton {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 0.3; }
-        }
-        .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
     </style>
 
     <!-- Firebase SDKs -->
@@ -61,7 +55,6 @@
     <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-2">
-            <!-- Brand Logo -->
             <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.hash=''">
                 <div class="bg-primary text-accent p-2 rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
                     <i class="fa-solid fa-store"></i>
@@ -69,7 +62,6 @@
                 <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-tight">OldX</h1>
             </div>
 
-            <!-- Action Buttons -->
             <div class="flex items-center space-x-2 md:space-x-3">
                 <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-heart text-red-500 text-sm"></i>
@@ -81,7 +73,6 @@
                     <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
                 </button>
 
-                <!-- Dynamic Profile / Auth Container -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -103,7 +94,6 @@
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
-                <!-- Search Bar -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
                         <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
@@ -124,7 +114,6 @@
             </div>
         </section>
 
-        <!-- Categories & Products -->
         <main class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-5">
                 <div>
@@ -150,7 +139,7 @@
         </main>
     </div>
 
-    <!-- ENHANCED DEDICATED PROFILE PAGE -->
+    <!-- PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
@@ -161,29 +150,21 @@
         </div>
 
         <div class="max-w-xl mx-auto p-4 md:p-6 space-y-5">
-            <!-- Profile Card with Edit Button & Rating -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-r from-teal-700 to-primary"></div>
                 <div class="relative z-10 pt-4">
-                    <div class="relative w-24 h-24 mx-auto">
-                        <img id="profileUserPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-md">
-                    </div>
-                    
+                    <img id="profileUserPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 mx-auto object-cover shadow-md">
                     <h3 id="profileUserName" class="text-xl font-black text-gray-900 dark:text-white mt-3">Guest User</h3>
                     <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
-                    
                     <div class="flex justify-center items-center gap-2 mt-2">
                         <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
                         <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                             <i class="fa-solid fa-star text-amber-500"></i> 4.9 Rating
                         </span>
                     </div>
-
-                    <p class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since 2026</p>
                 </div>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-3">
                 <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
                     <i class="fa-solid fa-boxes-packing text-2xl text-teal-600 mb-1"></i>
@@ -197,10 +178,8 @@
                 </div>
             </div>
 
-            <!-- Account Options List -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
-                
                 <div onclick="openEditProfileModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-user-pen text-teal-600"></i> Edit Profile Name & Photo</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
@@ -217,10 +196,6 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
-                <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
-                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
-                </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
                 </button>
@@ -228,537 +203,64 @@
         </div>
     </div>
 
-    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
+    <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border">
             <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
             <h3 class="text-lg font-black text-gray-900 dark:text-white"><i class="fa-solid fa-user-pen mr-1 text-teal-600"></i> Edit Profile</h3>
-            
             <div class="space-y-3 text-xs">
                 <div>
                     <label class="block font-bold mb-1">Full Name</label>
                     <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
-                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                    <label class="block font-bold mb-1">Select Profile Photo</label>
+                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 text-xs">
                 </div>
                 <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
-                    Save Profile Changes
+                    Save Changes
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- UNIVERSAL ATTRACTIVE CUSTOM ALERT MODAL -->
+    <!-- CUSTOM ALERT MODAL -->
     <div id="customAlertModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border">
             <div id="customAlertIconBox" class="w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
                 <i id="customAlertIcon" class="fa-solid fa-bell"></i>
             </div>
             <div>
                 <h3 id="customAlertTitle" class="text-lg font-black text-gray-900 dark:text-white">Notification</h3>
-                <p id="customAlertDesc" class="text-xs text-gray-500 mt-1 leading-relaxed">Message description goes here...</p>
+                <p id="customAlertDesc" class="text-xs text-gray-500 mt-1 leading-relaxed">Message...</p>
             </div>
-            
-            <button onclick="closeCustomAlert()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition">
-                OK
-            </button>
+            <button onclick="closeCustomAlert()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition">OK</button>
         </div>
     </div>
 
-    <!-- SUCCESS POPUP MODAL (FOR NEW AD PUBLISHED) -->
-    <div id="successAdModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
-            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold shadow-inner">
-                <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <div>
-                <h3 class="text-xl font-black text-gray-900 dark:text-white">Ad Published Live!</h3>
-                <p class="text-xs text-gray-500 mt-1 leading-relaxed">Your ad has been successfully posted and is now live for buyers across India.</p>
-            </div>
-            
-            <div class="space-y-2 pt-2">
-                <button onclick="closeSuccessModalAndGoHome()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-house"></i> Back to Home
-                </button>
-                <button onclick="closeSuccessModalAndOpenMyAds()" class="w-full bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-boxes-packing"></i> View My Posted Ads
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN AUTH MODAL -->
+    <!-- AUTH MODAL -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold"><i class="fa-solid fa-xmark text-lg"></i></button>
             <div class="text-center">
                 <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome to OldX</h3>
                 <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
             </div>
-
             <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition">
                 <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
             </button>
-
-            <div class="flex items-center my-2">
-                <div class="flex-1 border-t"></div>
-                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR Email Login</span>
-                <div class="flex-1 border-t"></div>
-            </div>
-
-            <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Password</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition">
-                    Login / Sign Up
-                </button>
-            </form>
-
             <div class="flex items-center my-2">
                 <div class="flex-1 border-t"></div>
                 <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
                 <div class="flex-1 border-t"></div>
             </div>
-
             <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition">
                 <i class="fa-solid fa-user-secret"></i> Continue as Guest
             </button>
         </div>
     </div>
 
-    <!-- 1. SET 4-DIGIT PIN MODAL -->
-    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
-            
-            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Save & Continue
-            </button>
-        </div>
-    </div>
-
-    <!-- 2. QUICK PIN VERIFY MODAL -->
-    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
-            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
-            
-            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Unlock Account
-            </button>
-
-            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
-                Forgot PIN? Re-authenticate
-            </button>
-        </div>
-    </div>
-
-    <!-- DELETE CONFIRMATION MODAL -->
-    <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-slide-up">
-            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <div>
-                <h3 class="text-lg font-black text-gray-900 dark:text-white">Delete this Ad?</h3>
-                <p class="text-xs text-gray-500 mt-1">Are you sure you want to remove this ad permanently? This action cannot be undone.</p>
-            </div>
-            
-            <div class="flex items-center gap-2 pt-2">
-                <button onclick="closeDeleteConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition">
-                    Cancel
-                </button>
-                <button id="confirmDeleteBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition">
-                    Yes, Delete
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- FULL DEDICATED EDIT AD PAGE -->
-    <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
-        <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
-            <button onclick="closeEditAdPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
-                <i class="fa-solid fa-arrow-left text-base"></i> Cancel & Back
-            </button>
-            <h2 class="font-black text-base text-primary dark:text-teal-400"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit My Ad</h2>
-            <div class="w-8"></div>
-        </div>
-
-        <div class="max-w-2xl mx-auto p-4 md:p-6">
-            <form onsubmit="handleEditAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                <input type="hidden" id="editDocId">
-
-                <div>
-                    <label class="block font-bold mb-1">Current Photos</label>
-                    <div id="editImagesPreview" class="flex gap-2 overflow-x-auto py-2 no-scrollbar"></div>
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-1">Replace / Upload New Photos (Optional)</label>
-                    <input type="file" id="editNewImages" multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    <p class="text-[10px] text-gray-400 mt-1">* Keep blank if you don't want to change photos</p>
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-1">Ad Title *</label>
-                    <input type="text" id="editTitle" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block font-bold mb-1">Final Price (₹) *</label>
-                        <input type="number" id="editPrice" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1">Discount (%)</label>
-                        <input type="number" id="editDiscount" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
-                    <input type="tel" id="editPhone" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-1">Location *</label>
-                    <input type="text" id="editLocation" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-
-                <div>
-                    <label class="block font-bold mb-1">Description *</label>
-                    <textarea id="editDesc" rows="4" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
-                </div>
-
-                <button type="submit" id="editSubmitBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl text-base shadow transition">
-                    Save Changes
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- FULL PAGE DEDICATED CHAT VIEW -->
-    <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
-        <!-- Chat Header -->
-        <div class="bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm">
-            <div class="flex items-center gap-3">
-                <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
-                </button>
-                <div class="relative">
-                    <img id="chatSellerPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-10 h-10 rounded-full object-cover border">
-                    <span id="chatOnlineDot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
-                </div>
-                <div>
-                    <h3 id="chatSellerName" class="font-bold text-sm text-gray-900 dark:text-white">Seller Name</h3>
-                    <p id="chatUserStatus" class="text-[11px] text-green-600 dark:text-green-400 font-semibold">Online</p>
-                </div>
-            </div>
-            
-            <div class="flex items-center gap-4 text-gray-600 dark:text-gray-300">
-                <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
-                    <i class="fa-solid fa-phone"></i>
-                </a>
-                <i class="fa-solid fa-ellipsis-vertical text-lg cursor-pointer hover:text-primary"></i>
-            </div>
-        </div>
-
-        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
-                <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
-                <div class="flex justify-end items-center gap-1 mt-1">
-                    <span class="text-[9px] text-gray-400">10:15 AM</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs">
-            <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
-            <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
-        </div>
-
-        <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
-            <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
-            
-            <button onclick="document.getElementById('chatFileInput').click()" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 p-2.5 rounded-full text-base flex items-center justify-center transition">
-                <i class="fa-solid fa-paperclip"></i>
-            </button>
-
-            <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="sendFullChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow">
-                <i class="fa-solid fa-paper-plane"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- FULL PAGE DEDICATED SELL FLOW PAGE -->
-    <div id="sellWizardPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
-        <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
-            <button onclick="closeSellWizardPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
-                <i class="fa-solid fa-arrow-left text-base"></i> Close
-            </button>
-            <h2 class="font-black text-base text-primary dark:text-teal-400">Post Your Ad</h2>
-            <div class="w-8"></div>
-        </div>
-
-        <div class="max-w-2xl mx-auto p-4 md:p-6">
-            <div id="wizardStage1">
-                <h3 class="text-2xl font-black mb-1 text-gray-900 dark:text-white">Choose a Category</h3>
-                <p class="text-xs text-gray-500 mb-6">Select what you want to sell</p>
-                <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
-            </div>
-
-            <div id="wizardStage2" style="display: none;">
-                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Categories
-                </button>
-                <h3 id="wizardSubCatTitle" class="text-2xl font-black mb-4">Sub-Categories</h3>
-                <div id="wizardSubCatList" class="space-y-3"></div>
-            </div>
-
-            <div id="wizardStage3" style="display: none;">
-                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
-                </button>
-                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Include Some Details</h3>
-                <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-3 py-1 rounded-full inline-block mb-6"></p>
-                
-                <form onsubmit="goToPhotoUploadStep(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                    <div id="dynamicFormFields" class="space-y-4"></div>
-
-                    <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-3 rounded-xl border border-teal-200">
-                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
-                        <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
-                    </div>
-
-                    <div>
-                        <label class="block font-bold mb-1">Ad title *</label>
-                        <input type="text" id="adTitle" required maxlength="70" placeholder="Mention key features (e.g. brand, model, age, type)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-
-                    <div>
-                        <label class="block font-bold mb-1">Describe what you are selling *</label>
-                        <textarea id="adDesc" rows="4" required maxlength="4096" placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
-                    </div>
-
-                    <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-3.5 rounded-xl font-black text-base shadow cursor-pointer">
-                        Next: Upload Photos & Price
-                    </button>
-                </form>
-            </div>
-
-            <div id="wizardStage4" style="display: none;">
-                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Details
-                </button>
-                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Upload Photos & Price</h3>
-                <p class="text-xs text-gray-500 mb-6">Add multiple photos and set your location & price</p>
-
-                <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                    <div>
-                        <label class="block font-bold mb-1">Upload Multiple Photos *</label>
-                        <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2">
-                        <div>
-                            <label class="block font-bold mb-1 text-xs">MRP Price (₹) *</label>
-                            <input type="number" id="adMrpPrice" required placeholder="e.g. 1000" oninput="calculatePrices('mrp')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1 text-xs">Discount (%)</label>
-                            <input type="number" id="adDiscount" placeholder="e.g. 20" oninput="calculatePrices('discount')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1 text-xs">Final Price (₹) *</label>
-                            <input type="number" id="adPrice" required placeholder="e.g. 800" oninput="calculatePrices('final')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
-                        <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold mb-1">State *</label>
-                            <select id="adState" onchange="updateWizardDistricts()" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                                <option value="Gujarat">Gujarat</option>
-                                <option value="Maharashtra">Maharashtra</option>
-                                <option value="Rajasthan">Rajasthan</option>
-                                <option value="Delhi">Delhi</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">District / City *</label>
-                            <select id="adDistrict" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block font-bold mb-1">Village / Landmark *</label>
-                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                    </div>
-
-                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-primary font-black py-3.5 rounded-xl text-base shadow cursor-pointer">
-                        Post Now (Publish Ad)
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- SKELETON LOADING SLIDE VIEW -->
-    <div id="productSkeletonSlide" style="display: none;" class="fixed inset-0 z-50 bg-gray-200 dark:bg-gray-900 flex flex-col p-4 space-y-4 animate-slide-up">
-        <div class="flex justify-between items-center py-2 border-b dark:border-gray-800">
-            <div class="flex items-center gap-2">
-                <div class="bg-primary text-accent px-2.5 py-1 rounded-lg font-black text-lg">OldX</div>
-            </div>
-            <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 animate-skeleton"></div>
-        </div>
-        <div class="w-full h-64 bg-gray-300 dark:bg-gray-800 rounded-2xl animate-skeleton"></div>
-        <div class="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm">
-            <div class="h-6 w-3/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
-            <div class="h-8 w-1/3 bg-teal-200 dark:bg-gray-700 rounded animate-skeleton"></div>
-            <div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-skeleton"></div>
-        </div>
-    </div>
-
-    <!-- DEDICATED PRODUCT DETAILS PAGE -->
-    <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24 animate-slide-up">
-        <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
-            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
-                <i class="fa-solid fa-arrow-left text-lg"></i>
-            </button>
-            <div class="flex gap-2 pointer-events-auto">
-                <button onclick="toggleCartCurrentProduct()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
-                    <i class="fa-solid fa-heart text-lg text-red-500" id="detailCartIcon"></i>
-                </button>
-                <button onclick="shareProductLink()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
-                    <i class="fa-solid fa-share-nodes text-lg"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="relative bg-black w-full h-[380px]">
-            <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
-            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">1/1</div>
-        </div>
-
-        <div class="bg-primary text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow-inner">
-            <i class="fa-regular fa-eye text-amber-400"></i> <span id="detailViewsText">Active buyers viewing this ad now</span>
-        </div>
-
-        <div class="max-w-3xl mx-auto px-3 py-3 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
-                <div class="flex justify-between items-start">
-                    <span class="bg-teal-50 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-teal-200 flex items-center gap-1">
-                        <i class="fa-solid fa-circle-check text-teal-600"></i> Verified Seller
-                    </span>
-                    <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-xl border border-teal-200 flex items-center gap-1">
-                        <i class="fa-solid fa-heart text-red-500"></i> Save Ad
-                    </button>
-                </div>
-
-                <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
-                
-                <div class="flex items-baseline gap-2 mt-2">
-                    <p id="detailPrice" class="text-2xl font-black text-primary dark:text-teal-400"></p>
-                    <p id="detailMrpPrice" class="text-sm font-semibold text-gray-400 line-through"></p>
-                    <span id="detailDiscountBadge" class="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full"></span>
-                </div>
-
-                <div class="mt-4 bg-amber-50/80 dark:bg-gray-700/50 border border-amber-200/80 dark:border-gray-600 rounded-2xl p-3 text-xs">
-                    <div class="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
-                        <i class="fa-solid fa-handshake text-base text-amber-600"></i> Local Meetup & Direct Deal
-                    </div>
-                    <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
-                        Meet the seller locally, inspect the item carefully, and pay directly via cash/UPI.
-                    </p>
-                </div>
-
-                <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 font-bold">
-                    <i class="fa-solid fa-location-dot text-red-500 text-sm"></i>
-                    <span id="detailLocation"></span>
-                </div>
-            </div>
-
-            <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
-                <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white">Key Highlights</h3>
-                <div id="detailHighlightsGrid" class="grid grid-cols-2 gap-2"></div>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
-                <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white">Description</h3>
-                <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
-            </div>
-        </div>
-
-        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
-            <div class="max-w-3xl mx-auto flex items-center gap-2">
-                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
-                    <i class="fa-regular fa-comments text-base"></i> Chat
-                </button>
-                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow">
-                    <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
-                </button>
-                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 shadow">
-                    <i class="fa-brands fa-whatsapp text-lg"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- SAVED ADS MODAL -->
-    <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl">
-            <button onclick="closeCartModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
-                <i class="fa-solid fa-xmark text-xl"></i>
-            </button>
-            <h3 class="text-lg font-black mb-1 flex items-center gap-2 text-primary dark:text-teal-400">
-                <i class="fa-solid fa-heart text-red-500"></i> My Saved Ads
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">Ads you bookmarked for later</p>
-            <div id="cartItemsContainer" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
-        </div>
-    </div>
-
-    <!-- MY ADS MODAL -->
-    <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl p-6 relative max-h-[85vh] overflow-y-auto shadow-2xl">
-            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-xl font-black mb-1 text-primary dark:text-teal-400">My Posted Ads</h3>
-            <p class="text-xs text-gray-400 mb-4">Manage, edit or mark your items as sold</p>
-            <div id="myAdsContainer" class="space-y-3"></div>
-        </div>
-    </div>
-
-    <!-- Main Logic Script -->
+    <!-- SCRIPT LOGIC -->
     <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
@@ -772,38 +274,25 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
         window.currentUser = null;
         let products = [];
-        let currentProduct = null;
         let cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
-        let selectedMainCat = null;
-        let selectedSubCat = null;
         let currentFilterCat = 'all';
-        let currentChatAttachment = null;
-        let pendingDeleteDocId = null;
 
-        // UNIVERSAL CUSTOM ALERT FUNCTION
+        const olxCategories = [
+            { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
+            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['Lands & Plots'] },
+            { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones'] },
+            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles'] },
+            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['Laptops'] },
+            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofas'] }
+        ];
+
         function showCustomAlert(title, message, type = 'success') {
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertDesc').innerText = message;
-            
-            const iconBox = document.getElementById('customAlertIconBox');
-            const icon = document.getElementById('customAlertIcon');
-
-            if(type === 'success') {
-                iconBox.className = "w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
-                icon.className = "fa-solid fa-circle-check";
-            } else if(type === 'error') {
-                iconBox.className = "w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
-                icon.className = "fa-solid fa-triangle-exclamation";
-            } else {
-                iconBox.className = "w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
-                icon.className = "fa-solid fa-bell";
-            }
-
             document.getElementById('customAlertModal').style.display = 'flex';
         }
 
@@ -811,43 +300,10 @@
             document.getElementById('customAlertModal').style.display = 'none';
         }
 
-        const olxCategories = [
-            { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
-            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
-            { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
-            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
-            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
-            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
-            { id: 'fashion', name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=150&auto=format&fit=crop&q=80', subs: ['Men', 'Women', 'Kids'] },
-            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
-            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
-            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
-            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
-        ];
-
-        const districtData = {
-            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar"],
-            "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
-            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
-            "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
-        };
-
-        function getValidSavedCount() {
-            return cartList.filter(id => products.some(p => p.docId === id)).length;
-        }
-
-        // USER AUTHENTICATION
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
-            const savedBtn = document.getElementById('headerSavedBtn');
-            const myAdsBtn = document.getElementById('headerMyAdsBtn');
-
             if(user) {
-                if(savedBtn) savedBtn.style.display = 'flex';
-                if(myAdsBtn) myAdsBtn.style.display = 'flex';
-
                 const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
                 container.innerHTML = `
                     <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
@@ -856,11 +312,7 @@
                     </div>
                 `;
                 updateProfileDetails(user);
-                checkUserPinStatus(user);
             } else {
-                if(savedBtn) savedBtn.style.display = 'none';
-                if(myAdsBtn) myAdsBtn.style.display = 'none';
-
                 container.innerHTML = `
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -869,126 +321,8 @@
             }
         });
 
-        function calculatePrices(source) {
-            const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
-            const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
-            const finalPriceInput = document.getElementById('adPrice');
-
-            if (source === 'mrp' || source === 'discount') {
-                if (mrp > 0) {
-                    const finalVal = Math.round(mrp - (mrp * (discount / 100)));
-                    finalPriceInput.value = finalVal > 0 ? finalVal : '';
-                }
-            } else if (source === 'final') {
-                const finalVal = parseFloat(finalPriceInput.value) || 0;
-                if (mrp > 0 && finalVal > 0 && mrp >= finalVal) {
-                    const calcDiscount = Math.round(((mrp - finalVal) / mrp) * 100);
-                    document.getElementById('adDiscount').value = calcDiscount;
-                }
-            }
-        }
-
-        // FULL PAGE CHAT FUNCTIONS
-        function openLiveChatModal() {
-            if (!currentProduct) return;
-            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
-            
-            const sellerPhone = currentProduct.phone || '919876543210';
-            document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
-
-            const isOnline = Math.random() > 0.3;
-            const dot = document.getElementById('chatOnlineDot');
-            const statusTxt = document.getElementById('chatUserStatus');
-
-            if(isOnline) {
-                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full";
-                statusTxt.innerText = "Online";
-                statusTxt.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
-            } else {
-                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full";
-                statusTxt.innerText = "Last seen today at 10:05 AM";
-                statusTxt.className = "text-[11px] text-gray-400 font-medium";
-            }
-
-            document.getElementById('fullChatPage').style.display = 'flex';
-        }
-
-        function closeFullChatPage() {
-            document.getElementById('fullChatPage').style.display = 'none';
-        }
-
-        function handleChatFileUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                currentChatAttachment = {
-                    name: file.name,
-                    type: file.type,
-                    data: evt.target.result
-                };
-                document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
-                document.getElementById('chatAttachmentPreview').style.display = 'flex';
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function clearChatAttachment() {
-            currentChatAttachment = null;
-            document.getElementById('chatFileInput').value = '';
-            document.getElementById('chatAttachmentPreview').style.display = 'none';
-        }
-
-        function sendFullChatMessage() {
-            const input = document.getElementById('fullChatInput');
-            const msg = input.value.trim();
-
-            if (!msg && !currentChatAttachment) return;
-
-            const container = document.getElementById('fullChatMessages');
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            let attachmentHTML = '';
-            if (currentChatAttachment) {
-                if (currentChatAttachment.type.startsWith('image/')) {
-                    attachmentHTML = `<img src="${currentChatAttachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
-                } else if (currentChatAttachment.type.startsWith('video/')) {
-                    attachmentHTML = `<video src="${currentChatAttachment.data}" controls class="rounded-lg max-h-48 mb-1"></video>`;
-                } else {
-                    attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${currentChatAttachment.name}</span></div>`;
-                }
-            }
-
-            const msgId = 'msg-' + Date.now();
-            const msgCard = document.createElement('div');
-            msgCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[80%] ml-auto text-xs shadow-sm";
-            msgCard.innerHTML = `
-                ${attachmentHTML}
-                ${msg ? `<p class="font-medium">${msg}</p>` : ''}
-                <div class="flex justify-end items-center gap-1 mt-1">
-                    <span class="text-[9px] text-teal-200">${now}</span>
-                    <i id="${msgId}-status" class="fa-solid fa-check text-teal-300 text-[10px]"></i>
-                </div>
-            `;
-
-            container.appendChild(msgCard);
-            container.scrollTop = container.scrollHeight;
-
-            input.value = '';
-            clearChatAttachment();
-
-            setTimeout(() => {
-                const tickElem = document.getElementById(`${msgId}-status`);
-                if (tickElem) {
-                    tickElem.className = "fa-solid fa-check-double text-blue-400 text-[10px]";
-                }
-            }, 1500);
-        }
-
-        // EDIT PROFILE FUNCTIONS
         function openEditProfileModal() {
-            if(!window.currentUser) return;
+            if(!window.currentUser) { openAuthModal(); return; }
             document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
             document.getElementById('editProfileModal').style.display = 'flex';
         }
@@ -1001,630 +335,123 @@
             const newName = document.getElementById('editProfileNameInput').value.trim();
             const photoFileInput = document.getElementById('editProfilePhotoFile');
             const btn = document.getElementById('saveProfileBtn');
-
             if(!window.currentUser) return;
             btn.innerText = 'Saving...'; btn.disabled = true;
 
             try {
                 let photoURL = window.currentUser.photoURL;
-
                 if (photoFileInput.files && photoFileInput.files[0]) {
                     photoURL = await compressImage(photoFileInput.files[0]);
                 }
-
-                await window.currentUser.updateProfile({
-                    displayName: newName,
-                    photoURL: photoURL
-                });
-
+                await window.currentUser.updateProfile({ displayName: newName, photoURL: photoURL });
                 closeEditProfileModal();
                 updateProfileDetails(window.currentUser);
                 showCustomAlert("Success", "Profile updated successfully!", "success");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
             } catch (error) {
                 showCustomAlert("Error", error.message, "error");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
             }
+            btn.innerText = 'Save Changes'; btn.disabled = false;
         }
 
-        function shareProfile() {
-            const profileUrl = window.location.href;
-            if(navigator.share) {
-                navigator.share({ title: 'My OldX Profile', url: profileUrl });
-            } else {
-                navigator.clipboard.writeText(profileUrl);
-                showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
-            }
-        }
-
-        // MY ADS MANAGEMENT
-        function openMyAdsModal() {
-            if(!window.currentUser) { 
-                showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
-                openAuthModal(); 
-                return; 
-            }
-            const container = document.getElementById('myAdsContainer');
-            container.innerHTML = '';
-            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
-            
-            if(mine.length === 0) { 
-                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">You haven't posted any ads yet.</p>`; 
-            } else {
-                mine.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = "p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2";
-                    const isSold = p.isSold || false;
-
-                    div.innerHTML = `
-                        <div class="flex justify-between items-start gap-2">
-                            <div>
-                                <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
-                                    ${p.title}
-                                    ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
-                                </h4>
-                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 pt-1 border-t">
-                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1">
-                                <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
-                            </button>
-                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
-                                <i class="fa-solid fa-pen-to-square"></i> Edit
-                            </button>
-                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </div>
-                    `;
-                    container.appendChild(div);
-                });
-            }
-            document.getElementById('myAdsModal').style.display = 'flex';
-        }
-
-        function toggleAdStockStatus(docId, currentStatus) {
-            db.collection('products').doc(docId).update({
-                isSold: !currentStatus
-            }).then(() => {
-                openMyAdsModal();
+        function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width, height = img.height;
+                        const maxDim = 800;
+                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                        canvas.width = width; canvas.height = height;
+                        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
             });
         }
-
-        function confirmDeleteAd(docId) {
-            pendingDeleteDocId = docId;
-            document.getElementById('myAdsModal').style.display = 'none';
-            document.getElementById('deleteConfirmModal').style.display = 'flex';
-            
-            document.getElementById('confirmDeleteBtn').onclick = function() {
-                if (pendingDeleteDocId) {
-                    db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
-                        closeDeleteConfirmModal();
-                        openMyAdsModal();
-                        showCustomAlert("Deleted", "Ad removed successfully!", "success");
-                    });
-                }
-            };
-        }
-
-        function closeDeleteConfirmModal() {
-            pendingDeleteDocId = null;
-            document.getElementById('deleteConfirmModal').style.display = 'none';
-            document.getElementById('myAdsModal').style.display = 'flex';
-        }
-
-        function openEditAdModal(docId) {
-            closeMyAdsModal();
-            window.location.hash = `edit-${docId}`;
-        }
-
-        function renderEditAdView(docId) {
-            const p = products.find(item => item.docId === docId);
-            if(!p) return;
-
-            document.getElementById('editDocId').value = p.docId;
-            document.getElementById('editTitle').value = p.title;
-            document.getElementById('editPrice').value = p.basePrice || 0;
-            document.getElementById('editDiscount').value = p.discountPercent || 0;
-            document.getElementById('editPhone').value = p.phone || '';
-            document.getElementById('editLocation').value = p.location || '';
-            document.getElementById('editDesc').value = p.desc || '';
-
-            const imgPreview = document.getElementById('editImagesPreview');
-            imgPreview.innerHTML = '';
-            if(p.images && p.images.length > 0) {
-                p.images.forEach(img => {
-                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
-                });
-            }
-        }
-
-        function closeEditAdPage() {
-            window.location.hash = '';
-            setTimeout(() => openMyAdsModal(), 100);
-        }
-
-        async function handleEditAdSubmit(e) {
-            e.preventDefault();
-            const btn = document.getElementById('editSubmitBtn');
-            btn.innerText = 'Updating...'; btn.disabled = true;
-
-            try {
-                const docId = document.getElementById('editDocId').value;
-                const title = document.getElementById('editTitle').value;
-                const basePrice = parseFloat(document.getElementById('editPrice').value);
-                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
-                const phone = document.getElementById('editPhone').value;
-                const location = document.getElementById('editLocation').value;
-                const desc = document.getElementById('editDesc').value;
-                const newImgInput = document.getElementById('editNewImages');
-
-                const p = products.find(item => item.docId === docId);
-                let updatedImages = p ? p.images : [];
-
-                if (newImgInput.files && newImgInput.files.length > 0) {
-                    updatedImages = [];
-                    for (let i = 0; i < newImgInput.files.length; i++) {
-                        const compressed = await compressImage(newImgInput.files[i]);
-                        updatedImages.push(compressed);
-                    }
-                }
-
-                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
-
-                await db.collection('products').doc(docId).update({
-                    title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
-                    images: updatedImages
-                });
-
-                btn.innerText = 'Save Changes'; btn.disabled = false;
-                closeEditAdPage();
-                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
-            } catch (err) {
-                btn.innerText = 'Save Changes'; btn.disabled = false;
-                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
-            }
-        }
-
-        // PIN LOGIC
-        function checkUserPinStatus(user) {
-            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
-            if(!userSavedPin) {
-                document.getElementById('setPinModal').style.display = 'flex';
-            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
-                document.getElementById('verifyPinModal').style.display = 'flex';
-            }
-        }
-
-        function saveUserPin() {
-            const input = document.getElementById('newPinInput').value;
-            if(input && input.length === 4 && !isNaN(input)) {
-                if(window.currentUser) {
-                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    document.getElementById('setPinModal').style.display = 'none';
-                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
-                }
-            } else {
-                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
-            }
-        }
-
-        function verifyUserPin() {
-            const input = document.getElementById('verifyPinInput').value;
-            if(window.currentUser) {
-                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
-                if(input === correctPin) {
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    document.getElementById('verifyPinModal').style.display = 'none';
-                    document.getElementById('verifyPinInput').value = '';
-                } else {
-                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
-                    document.getElementById('verifyPinInput').value = '';
-                }
-            }
-        }
-
-        function handleForgotPin() {
-            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
-                document.getElementById('verifyPinModal').style.display = 'none';
-                if(window.currentUser) {
-                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
-                }
-                auth.signOut().then(() => {
-                    openAuthModal();
-                });
-            }
-        }
-
-        function openSetPinModal() {
-            document.getElementById('setPinModal').style.display = 'flex';
-        }
-
-        function loginWithGoogle() { 
-            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
-        }
-
-        function handleEmailAuth(e) {
-            e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            
-            auth.signInWithEmailAndPassword(email, password).then(() => {
-                closeAuthModal();
-            }).catch(() => {
-                auth.createUserWithEmailAndPassword(email, password).then(() => {
-                    closeAuthModal();
-                }).catch(err => showCustomAlert("Auth Error", err.message, "error"));
-            });
-        }
-
-        function continueAsGuest() {
-            closeAuthModal();
-            showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
-        }
-
-        function openProfilePage() { window.location.hash = 'profile'; }
 
         function updateProfileDetails(user) {
             if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
             document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
             if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
-            document.getElementById('profileUserBadge').innerText = 'Verified Member';
-            
-            const myCount = products.filter(p => p.sellerUid === user.uid).length;
-            document.getElementById('statMyAdsCount').innerText = myCount;
-            document.getElementById('statSavedAdsCount').innerText = getValidSavedCount();
         }
-
-        function handleLogout() {
-            if(confirm('Are you sure you want to log out from OldX?')) {
-                sessionStorage.removeItem('oldx_pin_unlocked');
-                auth.signOut().then(() => {
-                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
-                    window.location.hash = '';
-                });
-            }
-        }
-
-        function updateCartBadge() { 
-            const badge = document.getElementById('cartBadgeCount');
-            if(badge) badge.innerText = getValidSavedCount(); 
-        }
-
-        function toggleCartProduct(docId) {
-            if(!window.currentUser) {
-                showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
-                openAuthModal();
-                return;
-            }
-            const idx = cartList.findIndex(id => id === docId);
-            if(idx > -1) { 
-                cartList.splice(idx, 1); 
-                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
-            } else { 
-                cartList.push(docId); 
-                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
-            }
-            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
-            updateCartBadge();
-            if(window.currentUser) updateProfileDetails(window.currentUser);
-            renderProducts();
-        }
-
-        function toggleCartCurrentProduct() {
-            if(currentProduct) toggleCartProduct(currentProduct.docId);
-        }
-
-        function openCartModal() {
-            if(!window.currentUser) {
-                showCustomAlert("Login Required", "Please login to view saved ads!", "error");
-                openAuthModal();
-                return;
-            }
-            const container = document.getElementById('cartItemsContainer');
-            container.innerHTML = '';
-            const validCartList = cartList.filter(id => products.some(p => p.docId === id));
-            
-            if(validCartList.length === 0) { 
-                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
-            } else {
-                validCartList.forEach(id => {
-                    const p = products.find(item => item.docId === id);
-                    if(p) {
-                        const div = document.createElement('div');
-                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
-                        div.innerHTML = `
-                            <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${p.docId}')">
-                                <img src="${p.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                                <div><h4 class="font-bold text-xs truncate max-w-[180px]">${p.title}</h4><p class="text-teal-600 font-extrabold text-xs">${p.finalPriceStr}</p></div>
-                            </div>
-                            <button onclick="removeFromCart('${p.docId}')" class="text-red-500 p-2 text-xs font-bold"><i class="fa-solid fa-trash-can"></i></button>
-                        `;
-                        container.appendChild(div);
-                    }
-                });
-            }
-            document.getElementById('cartModal').style.display = 'flex';
-        }
-
-        function removeFromCart(id) {
-            cartList = cartList.filter(item => item !== id);
-            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
-            updateCartBadge();
-            if(window.currentUser) updateProfileDetails(window.currentUser);
-            openCartModal();
-        }
-
-        function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
-            const isAllSelected = currentFilterCat === 'all';
-
+            if(!grid) return;
             grid.innerHTML = `
-                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
-                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
-                        <i class="fa-solid fa-border-all"></i>
-                    </div>
-                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
+                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border text-center cursor-pointer flex flex-col items-center justify-center gap-2">
+                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-black"><i class="fa-solid fa-border-all"></i></div>
+                    <p class="font-extrabold text-xs">All</p>
                 </div>
             `;
-
             olxCategories.forEach(cat => {
-                const isSelected = currentFilterCat === cat.id;
                 const el = document.createElement('div');
-                el.className = `cat-card-hover bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
+                el.className = "cat-card-hover bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border text-center cursor-pointer flex flex-col items-center justify-center gap-2";
                 el.onclick = () => filterCat(cat.id);
                 el.innerHTML = `
-                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
-                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
-                    </div>
-                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm"><img src="${cat.img}" class="w-full h-full object-cover"></div>
+                    <p class="font-bold text-xs truncate w-full">${cat.name}</p>
                 `;
                 grid.appendChild(el);
             });
         }
 
-        function filterCat(catId) { 
-            currentFilterCat = catId; 
-            renderHomeCategories();
-            renderProducts(); 
+        function filterCat(catId) {
+            currentFilterCat = catId;
+            renderProducts();
         }
 
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
-            updateCartBadge();
-            if(window.currentUser) updateProfileDetails(window.currentUser);
-            handleHashChange();
         });
 
-        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-gray-800 rounded-3xl border shadow-sm p-4 cursor-pointer";
+                card.innerHTML = `
+                    <div class="h-40 bg-gray-100 rounded-2xl overflow-hidden mb-2"><img src="${p.images?.[0] || ''}" class="w-full h-full object-cover"></div>
+                    <h4 class="font-extrabold text-sm truncate">${p.title}</h4>
+                    <p class="text-teal-600 font-black text-lg">${p.finalPriceStr}</p>
+                `;
+                grid.appendChild(card);
+            });
+        }
 
         function handleHashChange() {
             const hash = window.location.hash;
-
-            if(hash.startsWith('#edit-')) {
-                const docId = hash.replace('#edit-', '');
+            if(hash === '#profile') {
+                if(!window.currentUser) { window.location.hash = ''; openAuthModal(); return; }
                 document.getElementById('homeView').style.display = 'none';
-                document.getElementById('sellWizardPage').style.display = 'none';
-                document.getElementById('profilePage').style.display = 'none';
-                document.getElementById('productDetailView').style.display = 'none';
-                document.getElementById('fullEditPage').style.display = 'block';
-                renderEditAdView(docId);
-                window.scrollTo(0,0);
-                return;
-            } else if(hash.startsWith('#product-')) {
-                const docId = hash.replace('#product-', '');
-                const p = products.find(item => item.docId === docId);
-                if(p) {
-                    currentProduct = p;
-                    document.getElementById('homeView').style.display = 'none';
-                    document.getElementById('sellWizardPage').style.display = 'none';
-                    document.getElementById('profilePage').style.display = 'none';
-                    document.getElementById('fullEditPage').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'none';
-                    document.getElementById('productSkeletonSlide').style.display = 'flex';
-
-                    setTimeout(() => {
-                        renderProductDetailView(p);
-                        document.getElementById('productSkeletonSlide').style.display = 'none';
-                        document.getElementById('productDetailView').style.display = 'block';
-                        window.scrollTo(0,0);
-                    }, 400);
-                    return;
-                }
-            } else if(hash === '#sell') {
-                document.getElementById('homeView').style.display = 'none';
-                document.getElementById('productDetailView').style.display = 'none';
-                document.getElementById('profilePage').style.display = 'none';
-                document.getElementById('fullEditPage').style.display = 'none';
-                document.getElementById('sellWizardPage').style.display = 'block';
-                window.scrollTo(0,0);
-                return;
-            } else if(hash === '#profile') {
-                if(!window.currentUser) {
-                    window.location.hash = '';
-                    openAuthModal();
-                    return;
-                }
-                document.getElementById('homeView').style.display = 'none';
-                document.getElementById('productDetailView').style.display = 'none';
-                document.getElementById('sellWizardPage').style.display = 'none';
-                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'block';
-                updateProfileDetails(window.currentUser);
-                window.scrollTo(0,0);
-                return;
+            } else {
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('homeView').style.display = 'block';
             }
-            
-            document.getElementById('sellWizardPage').style.display = 'none';
-            document.getElementById('profilePage').style.display = 'none';
-            document.getElementById('productSkeletonSlide').style.display = 'none';
-            document.getElementById('productDetailView').style.display = 'none';
-            document.getElementById('fullEditPage').style.display = 'none';
-            document.getElementById('homeView').style.display = 'block';
         }
 
         window.addEventListener('hashchange', handleHashChange);
+        function openProfilePage() { window.location.hash = 'profile'; }
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
+        function continueAsGuest() { closeAuthModal(); }
 
-        function closeProductDetailView() { window.location.hash = ''; }
-        function closeSellWizardPage() { window.location.hash = ''; }
-
-        function renderProductDetailView(p) {
-            document.getElementById('detailTitle').innerText = p.title;
-            document.getElementById('detailPrice').innerText = p.finalPriceStr;
-            
-            const mrpElem = document.getElementById('detailMrpPrice');
-            const discElem = document.getElementById('detailDiscountBadge');
-            
-            if (p.mrpPrice && p.mrpPrice > p.basePrice) {
-                mrpElem.innerText = `₹${p.mrpPrice.toLocaleString('en-IN')}`;
-                mrpElem.style.display = 'inline';
-                if (p.discountPercent > 0) {
-                    discElem.innerText = `${p.discountPercent}% OFF`;
-                    discElem.style.display = 'inline-block';
-                } else {
-                    discElem.style.display = 'none';
-                }
-            } else {
-                mrpElem.style.display = 'none';
-                discElem.style.display = 'none';
-            }
-
-            document.getElementById('detailLocation').innerText = p.location;
-            document.getElementById('detailDescription').innerText = p.desc;
-
-            const slider = document.getElementById('detailImageSlider');
-            slider.innerHTML = '';
-            if(p.images && p.images.length > 0) {
-                p.images.forEach(img => {
-                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
-                });
-                document.getElementById('detailImgBadge').innerText = `1/${p.images.length}`;
-            }
-
-            const grid = document.getElementById('detailHighlightsGrid');
-            grid.innerHTML = '';
-            if(p.extraDetails) {
-                for(let k in p.extraDetails) {
-                    if(p.extraDetails[k]) {
-                        grid.innerHTML += `
-                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2">
-                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
-                                <div><p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p><p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p></div>
-                            </div>
-                        `;
-                    }
-                }
-            }
-
-            const phone = p.phone || '919876543210';
-            const waMsg = encodeURIComponent(`Hi, I am interested in your item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
-            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
-        }
-
-        function updateImageCounter() {
-            const slider = document.getElementById('detailImageSlider');
-            if(!currentProduct || !currentProduct.images) return;
-            const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
-            document.getElementById('detailImgBadge').innerText = `${index}/${currentProduct.images.length}`;
-        }
-
-        function shareProductLink() {
-            if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
-            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Link Copied", "Product link copied to clipboard!", "success"); }
-        }
-
-        function openOfferModal() {
-            const offer = prompt('Enter your offer price (₹):');
-            if(offer) showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
-        }
-
-        function startSellWizard() {
-            window.location.hash = 'sell';
-            const list = document.getElementById('wizardMainCatList');
-            list.innerHTML = '';
-            olxCategories.forEach(cat => {
-                const card = document.createElement('div');
-                card.className = "p-3 border rounded-2xl bg-white dark:bg-gray-800 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2 shadow-sm transition transform hover:-translate-y-1";
-                card.onclick = () => selectWizardMain(cat);
-                card.innerHTML = `<img src="${cat.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm"><span class="font-bold text-xs text-gray-800 dark:text-gray-100">${cat.name}</span>`;
-                list.appendChild(card);
-            });
-            document.getElementById('wizardStage1').style.display = 'block';
-            document.getElementById('wizardStage2').style.display = 'none';
-            document.getElementById('wizardStage3').style.display = 'none';
-            document.getElementById('wizardStage4').style.display = 'none';
-        }
-
-        function selectWizardMain(cat) {
-            selectedMainCat = cat;
-            document.getElementById('wizardSubCatTitle').innerText = cat.name;
-            const subList = document.getElementById('wizardSubCatList');
-            subList.innerHTML = '';
-            cat.subs.forEach(sub => {
-                const item = document.createElement('div');
-                item.className = "p-4 border rounded-2xl bg-white dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center shadow-sm";
-                item.onclick = () => selectWizardSub(sub);
-                item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
-                subList.appendChild(item);
-            });
-            document.getElementById('wizardStage1').style.display = 'none';
-            document.getElementById('wizardStage2').style.display = 'block';
-        }
-
-        function selectWizardSub(sub) {
-            selectedSubCat = sub;
-            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
-            const dynContainer = document.getElementById('dynamicFormFields');
-            dynContainer.innerHTML = '';
-
-            if(selectedMainCat.id === 'cars') {
-                dynContainer.innerHTML = `
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block font-bold mb-1">Brand *</label>
-                            <select id="dynBrand" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
-                                <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block font-bold mb-1">Model / Variant *</label>
-                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
-                        </div>
-                    </div>
-                `;
-            } else {
-                dynContainer.innerHTML = `
-                    <div>
-                        <label class="block font-bold mb-1">Type / Details *</label>
-                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
-                    </div>
-                `;
-            }
-
-            document.getElementById('wizardStage2').style.display = 'none';
-            document.getElementById('wizardStage3').style.display = 'block';
-        }
-
-        function autoGenerateText() {
-            const brand = document.getElementById('dynBrand')?.value || '';
-            const model = document.getElementById('dynModel')?.value || '';
-            const type = document.getElementById('dynType')?.value || selectedSubCat;
-
-            if(selectedMainCat.id === 'cars') {
-                document.getElementById('adTitle').value = `${brand} ${model}`;
-                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}. Excellent condition.`;
-            } else {
-                document.getElementById('adTitle').value = `${type} - Good Condition`;
-                document.getElementById('adDesc').value = `Selling ${type} in excellent condition. Contact for details.`;
-            }
-        }
-
-        function goToPhotoUploadStep(e) {
-            e.preventDefault();
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHomeCategories();
+            handleHashChange();
+        });
+    </script>
+</body>
+</html>
