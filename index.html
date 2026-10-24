@@ -300,46 +300,64 @@
         </div>
     </div>
 
-    <!-- EDIT AD MODAL (UPDATED WITH HIGHER Z-INDEX z-[60]) -->
-    <div id="editAdModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[90vh] overflow-y-auto shadow-2xl">
-            <button onclick="closeEditAdModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
-                <i class="fa-solid fa-xmark text-lg"></i>
+    <!-- FULL DEDICATED EDIT AD PAGE (NEW FULL PAGE VIEW WITH NEW IMAGE UPLOAD SUPPORT) -->
+    <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12 z-[70] relative">
+        <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
+            <button onclick="closeEditAdPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-arrow-left text-base"></i> Cancel & Back
             </button>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400 mb-1 flex items-center gap-2">
-                <i class="fa-solid fa-pen-to-square"></i> Edit My Ad
-            </h3>
-            <p class="text-xs text-gray-400 mb-4">Update price, title & details</p>
+            <h2 class="font-black text-base text-primary dark:text-teal-400"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit My Ad</h2>
+            <div class="w-8"></div>
+        </div>
 
-            <form onsubmit="handleEditAdSubmit(event)" class="space-y-3 text-xs">
+        <div class="max-w-2xl mx-auto p-4 md:p-6">
+            <form onsubmit="handleEditAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
                 <input type="hidden" id="editDocId">
+
+                <!-- Existing & New Images Preview Section -->
                 <div>
-                    <label class="block font-bold mb-1">Title</label>
-                    <input type="text" id="editTitle" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    <label class="block font-bold mb-1">Current Photos</label>
+                    <div id="editImagesPreview" class="flex gap-2 overflow-x-auto py-2 no-scrollbar"></div>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+
+                <div>
+                    <label class="block font-bold mb-1">Replace / Upload New Photos (Optional)</label>
+                    <input type="file" id="editNewImages" multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                    <p class="text-[10px] text-gray-400 mt-1">* Keep blank if you don't want to change photos</p>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Ad Title *</label>
+                    <input type="text" id="editTitle" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold mb-1">Price (₹)</label>
-                        <input type="number" id="editPrice" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                        <label class="block font-bold mb-1">Final Price (₹) *</label>
+                        <input type="number" id="editPrice" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
                     <div>
                         <label class="block font-bold mb-1">Discount (%)</label>
-                        <input type="number" id="editDiscount" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                        <input type="number" id="editDiscount" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
                 </div>
+
                 <div>
-                    <label class="block font-bold mb-1">Mobile No</label>
-                    <input type="tel" id="editPhone" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
+                    <input type="tel" id="editPhone" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
+
                 <div>
-                    <label class="block font-bold mb-1">Location</label>
-                    <input type="text" id="editLocation" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    <label class="block font-bold mb-1">Location *</label>
+                    <input type="text" id="editLocation" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
+
                 <div>
-                    <label class="block font-bold mb-1">Description</label>
-                    <textarea id="editDesc" rows="3" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600"></textarea>
+                    <label class="block font-bold mb-1">Description *</label>
+                    <textarea id="editDesc" rows="4" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
                 </div>
-                <button type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition mt-2">
+
+                <button type="submit" id="editSubmitBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl text-base shadow transition">
                     Save Changes
                 </button>
             </form>
@@ -927,7 +945,7 @@
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        // FIXED EDIT AD OVERLAY LOGIC (Temporarily hides MyAds modal on edit)
+        // UPDATED FULL-PAGE EDIT AD LOGIC WITH PHOTO EDIT SUPPORT
         function openEditAdModal(docId) {
             const p = products.find(item => item.docId === docId);
             if(!p) return;
@@ -940,34 +958,67 @@
             document.getElementById('editLocation').value = p.location || '';
             document.getElementById('editDesc').value = p.desc || '';
 
+            // Render existing images preview
+            const imgPreview = document.getElementById('editImagesPreview');
+            imgPreview.innerHTML = '';
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
+                });
+            }
+
             document.getElementById('myAdsModal').style.display = 'none';
-            document.getElementById('editAdModal').style.display = 'flex';
+            document.getElementById('fullEditPage').style.display = 'block';
+            window.scrollTo(0,0);
         }
 
-        function closeEditAdModal() {
-            document.getElementById('editAdModal').style.display = 'none';
+        function closeEditAdPage() {
+            document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        function handleEditAdSubmit(e) {
+        async function handleEditAdSubmit(e) {
             e.preventDefault();
-            const docId = document.getElementById('editDocId').value;
-            const title = document.getElementById('editTitle').value;
-            const basePrice = parseFloat(document.getElementById('editPrice').value);
-            const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
-            const phone = document.getElementById('editPhone').value;
-            const location = document.getElementById('editLocation').value;
-            const desc = document.getElementById('editDesc').value;
+            const btn = document.getElementById('editSubmitBtn');
+            btn.innerText = 'Updating...'; btn.disabled = true;
 
-            const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+            try {
+                const docId = document.getElementById('editDocId').value;
+                const title = document.getElementById('editTitle').value;
+                const basePrice = parseFloat(document.getElementById('editPrice').value);
+                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
+                const phone = document.getElementById('editPhone').value;
+                const location = document.getElementById('editLocation').value;
+                const desc = document.getElementById('editDesc').value;
+                const newImgInput = document.getElementById('editNewImages');
 
-            db.collection('products').doc(docId).update({
-                title, basePrice, discountPercent, finalPriceStr, phone, location, desc
-            }).then(() => {
+                const p = products.find(item => item.docId === docId);
+                let updatedImages = p ? p.images : [];
+
+                // If user selected new photos, compress and replace them
+                if (newImgInput.files && newImgInput.files.length > 0) {
+                    updatedImages = [];
+                    for (let i = 0; i < newImgInput.files.length; i++) {
+                        const compressed = await compressImage(newImgInput.files[i]);
+                        updatedImages.push(compressed);
+                    }
+                }
+
+                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+                await db.collection('products').doc(docId).update({
+                    title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
+                    images: updatedImages
+                });
+
                 alert('Ad Updated Successfully!');
-                closeEditAdModal();
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                closeEditAdPage();
                 openMyAdsModal();
-            });
+            } catch (err) {
+                alert("Error updating ad.");
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+            }
         }
 
         // 4-DIGIT PIN LOGIC
@@ -1175,6 +1226,7 @@
                     document.getElementById('sellWizardPage').style.display = 'none';
                     document.getElementById('profilePage').style.display = 'none';
                     document.getElementById('productDetailView').style.display = 'none';
+                    document.getElementById('fullEditPage').style.display = 'none';
                     document.getElementById('productSkeletonSlide').style.display = 'flex';
 
                     setTimeout(() => {
@@ -1189,6 +1241,7 @@
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'block';
                 window.scrollTo(0,0);
                 return;
@@ -1201,6 +1254,7 @@
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'block';
                 updateProfileDetails(window.currentUser);
                 window.scrollTo(0,0);
@@ -1211,6 +1265,7 @@
             document.getElementById('profilePage').style.display = 'none';
             document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
+            document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
         }
 
