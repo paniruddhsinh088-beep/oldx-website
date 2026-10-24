@@ -1362,10 +1362,10 @@
             });
         }
 
-        // 🛠️ MULTI-DEVICE (MOBILE & DESKTOP) PERFECT TYPING EVENT LISTENER
+        // 🛠️ ROBUST MOBILE & DESKTOP TYPING SENDER LOGIC
         const chatInputEl = document.getElementById('fullChatInput');
         if (chatInputEl) {
-            ['input', 'keydown'].forEach(eventType => {
+            ['input', 'keyup', 'keydown'].forEach(eventType => {
                 chatInputEl.addEventListener(eventType, () => {
                     if(!activeChatRoomId || !window.currentUser) return;
                     
@@ -1380,12 +1380,12 @@
                                 [`typing_${window.currentUser.uid}`]: false
                             }, { merge: true });
                         }
-                    }, 1200);
+                    }, 1500);
                 });
             });
         }
 
-        // 🛠️ WATCH TYPING STATUS WITH REAL-TIME SNAPSHOT RESTORE
+        // 🛠️ REAL-TIME TYPING RECEIVER WATCHER
         function watchTypingStatus(chatRoomId, otherUserId) {
             if(!chatRoomId || !otherUserId) return;
 
@@ -1404,6 +1404,8 @@
                 } else {
                     trackUserStatus(otherUserId);
                 }
+            }, error => {
+                console.log("Typing Listener Error: ", error);
             });
         }
 
@@ -1508,7 +1510,6 @@
                 warningBanner.style.display = 'none';
             }
 
-            // Immediately clear typing state on send button click
             if (activeChatRoomId && window.currentUser) {
                 db.collection('chats').doc(activeChatRoomId).set({
                     [`typing_${window.currentUser.uid}`]: false
