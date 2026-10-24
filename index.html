@@ -278,8 +278,8 @@
         </div>
     </div>
 
-    <!-- ATTRACTIVE DELETE CONFIRMATION MODAL -->
-    <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <!-- ATTRACTIVE DELETE CONFIRMATION MODAL (UPDATED WITH HIGHER Z-INDEX z-[60]) -->
+    <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-slide-up">
             <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -854,7 +854,7 @@
             }, 1500);
         }
 
-        // MY ADS MANAGEMENT (EDIT, OUT OF STOCK / SOLD & DELETE WITH POPUP)
+        // MY ADS MANAGEMENT
         function openMyAdsModal() {
             if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
             const container = document.getElementById('myAdsContainer');
@@ -905,9 +905,10 @@
             });
         }
 
-        // ATTRACTIVE DELETE POPUP LOGIC
+        // FIXED DELETE POPUP OVERLAY LOGIC (Temporarily hides MyAds modal to avoid overlay conflicts)
         function confirmDeleteAd(docId) {
             pendingDeleteDocId = docId;
+            document.getElementById('myAdsModal').style.display = 'none';
             document.getElementById('deleteConfirmModal').style.display = 'flex';
             
             document.getElementById('confirmDeleteBtn').onclick = function() {
@@ -923,6 +924,7 @@
         function closeDeleteConfirmModal() {
             pendingDeleteDocId = null;
             document.getElementById('deleteConfirmModal').style.display = 'none';
+            document.getElementById('myAdsModal').style.display = 'flex';
         }
 
         function openEditAdModal(docId) {
