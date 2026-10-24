@@ -278,6 +278,28 @@
         </div>
     </div>
 
+    <!-- ATTRACTIVE DELETE CONFIRMATION MODAL -->
+    <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-slide-up">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white">Delete this Ad?</h3>
+                <p class="text-xs text-gray-500 mt-1">Are you sure you want to remove this ad permanently? This action cannot be undone.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 pt-2">
+                <button onclick="closeDeleteConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button id="confirmDeleteBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- FULL PAGE DEDICATED CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
         <!-- Chat Header with Direct Call & Online Status -->
@@ -455,6 +477,52 @@
         </div>
     </div>
 
+    <!-- EDIT AD MODAL -->
+    <div id="editAdModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[90vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeEditAdModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square"></i> Edit My Ad
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Update price, title & details</p>
+
+            <form onsubmit="handleEditAdSubmit(event)" class="space-y-3 text-xs">
+                <input type="hidden" id="editDocId">
+                <div>
+                    <label class="block font-bold mb-1">Title</label>
+                    <input type="text" id="editTitle" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block font-bold mb-1">Price (₹)</label>
+                        <input type="number" id="editPrice" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Discount (%)</label>
+                        <input type="number" id="editDiscount" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Mobile No</label>
+                    <input type="tel" id="editPhone" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Location</label>
+                    <input type="text" id="editLocation" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Description</label>
+                    <textarea id="editDesc" rows="3" required class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition mt-2">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- SKELETON LOADING SLIDE VIEW -->
     <div id="productSkeletonSlide" style="display: none;" class="fixed inset-0 z-50 bg-gray-200 dark:bg-gray-900 flex flex-col p-4 space-y-4 animate-slide-up">
         <div class="flex justify-between items-center py-2 border-b dark:border-gray-800">
@@ -570,12 +638,13 @@
         </div>
     </div>
 
-    <!-- My Ads Modal -->
+    <!-- MY ADS MODAL -->
     <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] overflow-y-auto">
-            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark"></i></button>
-            <h3 class="text-xl font-bold mb-3">My Posted Ads</h3>
-            <div id="myAdsContainer" class="space-y-2"></div>
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl p-6 relative max-h-[85vh] overflow-y-auto shadow-2xl">
+            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-xl font-black mb-1 text-primary dark:text-teal-400">My Posted Ads</h3>
+            <p class="text-xs text-gray-400 mb-4">Manage, edit or mark your items as sold</p>
+            <div id="myAdsContainer" class="space-y-3"></div>
         </div>
     </div>
 
@@ -604,6 +673,7 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
         let currentChatAttachment = null;
+        let pendingDeleteDocId = null;
 
         const olxCategories = [
             { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
@@ -656,7 +726,7 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'none';
 
                 container.innerHTML = `
-                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow transition">
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 `;
@@ -775,13 +845,124 @@
             input.value = '';
             clearChatAttachment();
 
-            // REALTIME TICK DYNAMICS: Single Tick -> Double Blue Tick (Seen)
+            // TICK SIMULATION: Single Tick (Sent) -> Double Blue Tick (Seen)
             setTimeout(() => {
                 const tickElem = document.getElementById(`${msgId}-status`);
                 if (tickElem) {
                     tickElem.className = "fa-solid fa-check-double text-blue-400 text-[10px]";
                 }
             }, 1500);
+        }
+
+        // MY ADS MANAGEMENT (EDIT, OUT OF STOCK / SOLD & DELETE WITH POPUP)
+        function openMyAdsModal() {
+            if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
+            const container = document.getElementById('myAdsContainer');
+            container.innerHTML = '';
+            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
+            
+            if(mine.length === 0) { 
+                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">You haven't posted any ads yet.</p>`; 
+            } else {
+                mine.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2";
+                    const isSold = p.isSold || false;
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                                    ${p.title}
+                                    ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
+                                </h4>
+                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1 border-t">
+                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1">
+                                <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('myAdsModal').style.display = 'flex';
+        }
+
+        function toggleAdStockStatus(docId, currentStatus) {
+            db.collection('products').doc(docId).update({
+                isSold: !currentStatus
+            }).then(() => {
+                openMyAdsModal();
+            });
+        }
+
+        // ATTRACTIVE DELETE POPUP LOGIC
+        function confirmDeleteAd(docId) {
+            pendingDeleteDocId = docId;
+            document.getElementById('deleteConfirmModal').style.display = 'flex';
+            
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                if (pendingDeleteDocId) {
+                    db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
+                        closeDeleteConfirmModal();
+                        openMyAdsModal();
+                    });
+                }
+            };
+        }
+
+        function closeDeleteConfirmModal() {
+            pendingDeleteDocId = null;
+            document.getElementById('deleteConfirmModal').style.display = 'none';
+        }
+
+        function openEditAdModal(docId) {
+            const p = products.find(item => item.docId === docId);
+            if(!p) return;
+
+            document.getElementById('editDocId').value = p.docId;
+            document.getElementById('editTitle').value = p.title;
+            document.getElementById('editPrice').value = p.basePrice || 0;
+            document.getElementById('editDiscount').value = p.discountPercent || 0;
+            document.getElementById('editPhone').value = p.phone || '';
+            document.getElementById('editLocation').value = p.location || '';
+            document.getElementById('editDesc').value = p.desc || '';
+
+            document.getElementById('editAdModal').style.display = 'flex';
+        }
+
+        function closeEditAdModal() {
+            document.getElementById('editAdModal').style.display = 'none';
+        }
+
+        function handleEditAdSubmit(e) {
+            e.preventDefault();
+            const docId = document.getElementById('editDocId').value;
+            const title = document.getElementById('editTitle').value;
+            const basePrice = parseFloat(document.getElementById('editPrice').value);
+            const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
+            const phone = document.getElementById('editPhone').value;
+            const location = document.getElementById('editLocation').value;
+            const desc = document.getElementById('editDesc').value;
+
+            const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+            db.collection('products').doc(docId).update({
+                title, basePrice, discountPercent, finalPriceStr, phone, location, desc
+            }).then(() => {
+                alert('Ad Updated Successfully!');
+                closeEditAdModal();
+                openMyAdsModal();
+            });
         }
 
         // 4-DIGIT PIN LOGIC
@@ -1271,6 +1452,7 @@
                     location: `${village}, ${district}, ${state}`, 
                     state, 
                     images,
+                    isSold: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
@@ -1288,24 +1470,7 @@
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
-        function openMyAdsModal() {
-            if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
-            const container = document.getElementById('myAdsContainer');
-            container.innerHTML = '';
-            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
-            if(mine.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400">No ads posted yet.</p>`; }
-            else {
-                mine.forEach(p => {
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center p-3 border rounded-xl";
-                    div.innerHTML = `<div><h4 class="font-bold text-sm">${p.title}</h4><p class="text-xs text-teal-600">${p.finalPriceStr}</p></div><button onclick="deleteAd('${p.docId}')" class="bg-red-500 text-white px-2.5 py-1 rounded text-xs font-bold">Delete</button>`;
-                    container.appendChild(div);
-                });
-            }
-            document.getElementById('myAdsModal').style.display = 'flex';
-        }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
-        function deleteAd(docId) { if(confirm('Delete this ad?')) db.collection('products').doc(docId).delete().then(() => openMyAdsModal()); }
 
         function renderProducts() {
             const grid = document.getElementById('productGrid');
@@ -1328,7 +1493,7 @@
 
             filtered.forEach(p => {
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border overflow-hidden flex flex-col justify-between transition cursor-pointer transform hover:-translate-y-1 active:scale-98";
+                card.className = "bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border overflow-hidden flex flex-col justify-between transition cursor-pointer transform hover:-translate-y-1 active:scale-98 relative";
                 card.onclick = () => openProductDetailPage(p.docId);
                 
                 const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
@@ -1339,7 +1504,12 @@
                     ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">${p.discountPercent}% OFF</span>`
                     : '';
 
+                const soldBadge = p.isSold 
+                    ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-10"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                    : '';
+
                 card.innerHTML = `
+                    ${soldBadge}
                     <div>
                         <div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
                             ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-3xl text-gray-400"></i>`}
