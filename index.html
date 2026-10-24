@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="gu" dir="ltr">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -103,7 +103,7 @@
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
-                <!-- Search Bar with Voice Search (Point 5) -->
+                <!-- Search Bar with Voice Search -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
                         <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
@@ -118,10 +118,11 @@
 
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3">
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base"></i>
+                        <!-- Placeholder and default input value set to English -->
                         <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes, Properties..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
                         
-                        <!-- Multilingual Voice Search Button -->
-                        <button onclick="startVoiceSearch()" title="બોલીને સર્ચ કરો (Voice Search)" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9">
+                        <!-- Voice Search Button -->
+                        <button onclick="startVoiceSearch()" title="Voice Search" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
                     </div>
@@ -142,7 +143,7 @@
             
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 md:gap-5 mb-12" id="homeCatGrid"></div>
 
-            <!-- AI Recommendation Section (Point 4) -->
+            <!-- AI Recommendation Section -->
             <div id="aiRecommendedSection" style="display: none;" class="mb-10">
                 <div class="flex justify-between items-center mb-4">
                     <div>
@@ -179,7 +180,6 @@
         </div>
 
         <div class="max-w-xl mx-auto p-4 md:p-6 space-y-5">
-            <!-- Profile Card with Edit Button & Rating -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-r from-teal-700 to-primary"></div>
                 <div class="relative z-10 pt-4">
@@ -201,7 +201,6 @@
                 </div>
             </div>
 
-            <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-3">
                 <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
                     <i class="fa-solid fa-boxes-packing text-2xl text-teal-600 mb-1"></i>
@@ -215,7 +214,6 @@
                 </div>
             </div>
 
-            <!-- Account Options List -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
                 
@@ -285,7 +283,7 @@
         </div>
     </div>
 
-    <!-- SUCCESS POPUP MODAL (FOR NEW AD PUBLISHED) -->
+    <!-- SUCCESS POPUP MODAL -->
     <div id="successAdModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold shadow-inner">
@@ -355,7 +353,7 @@
         </div>
     </div>
 
-    <!-- 1. SET 4-DIGIT PIN MODAL -->
+    <!-- SET 4-DIGIT PIN MODAL -->
     <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -372,7 +370,7 @@
         </div>
     </div>
 
-    <!-- 2. QUICK PIN VERIFY MODAL -->
+    <!-- QUICK PIN VERIFY MODAL -->
     <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -480,7 +478,6 @@
 
     <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
-        <!-- Chat Header -->
         <div class="bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-3">
                 <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black">
@@ -503,7 +500,6 @@
             </div>
         </div>
 
-        <!-- Chat Messages Container -->
         <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
             <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
                 <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
@@ -518,13 +514,11 @@
             <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <!-- Smart Fraud Detection Safety Banner -->
         <div id="chatSafetyWarning" style="display: none;" class="bg-red-50 dark:bg-red-950/50 border-t border-red-200 px-4 py-2 flex items-center gap-2 text-red-600 dark:text-red-300 text-xs font-semibold">
             <i class="fa-solid fa-shield-halved text-sm animate-bounce"></i>
-            <span id="chatSafetyWarningText">સાવધાન: આ મેસેજમાં શંકાસ્પદ લિંક કે ફ્રોડ હોઈ શકે છે!</span>
+            <span id="chatSafetyWarningText">Caution: This message might contain a suspicious link or fraud!</span>
         </div>
 
-        <!-- Chat Input Bar -->
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
             
@@ -604,7 +598,6 @@
                 <p class="text-xs text-gray-500 mb-6">Add multiple photos and set your location & price</p>
 
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                    <!-- AI Photo Auto-Enhance Section -->
                     <div class="space-y-2 bg-teal-50/50 dark:bg-gray-700/50 p-4 rounded-2xl border border-teal-200/80 dark:border-gray-600">
                         <div class="flex items-center justify-between">
                             <label class="block font-bold text-xs text-primary dark:text-teal-300">
@@ -615,7 +608,6 @@
                         
                         <input type="file" id="adImages" required multiple accept="image/*" onchange="handleAiImagePreview(event)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
                         
-                        <!-- AI Processing & Enhanced Preview Container -->
                         <div id="aiImagePreviewContainer" class="grid grid-cols-4 gap-2 pt-2" style="display: none;"></div>
                     </div>
 
@@ -793,7 +785,7 @@
         </div>
     </div>
 
-    <!-- AI Smart Chatbot Widget (Multilingual) -->
+    <!-- AI Smart Chatbot Widget -->
     <div id="aiChatbotContainer" class="fixed bottom-4 left-4 z-30">
         <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
             <i class="fa-solid fa-robot"></i>
@@ -817,19 +809,19 @@
 
             <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-gray-50 dark:bg-gray-900">
                 <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                    <p class="font-semibold">नमस्ते! 👋 I am your OldX AI Assistant. Ask me anything in Gujarati, Hindi or English about cars, mobiles, or posting ads!</p>
+                    <p class="font-semibold">Hello! 👋 I am your OldX AI Assistant. Ask me anything about cars, mobiles, or posting ads!</p>
                     <span class="text-[9px] text-gray-400 mt-1 block">Just now</span>
                 </div>
             </div>
 
             <div class="px-3 py-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-1 overflow-x-auto no-scrollbar text-[10px]">
-                <button onclick="sendQuickAiQuery('એડ કેવી રીતે પોસ્ટ કરવી?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">એડ મૂકવી?</button>
-                <button onclick="sendQuickAiQuery('मुझे कार खरीदनी है')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">कार खोजें</button>
+                <button onclick="sendQuickAiQuery('How to post an ad?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Post Ad?</button>
+                <button onclick="sendQuickAiQuery('Find me a used car')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Find Car</button>
                 <button onclick="sendQuickAiQuery('Safety tips')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Safety Tips</button>
             </div>
 
             <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
-                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="Ask in Gujarati, Hindi, English..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="Type your message here..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 <button onclick="sendAiMessage()" class="bg-primary hover:bg-teal-800 text-white w-9 h-9 rounded-full flex items-center justify-center text-xs shadow transition cursor-pointer">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -865,23 +857,22 @@
         let pendingDeleteDocId = null;
         let activeChatRoomId = null;
         
-        // Track user's most viewed category for AI Recommendation Engine (Point 4)
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
-        // Point 5: Multilingual Voice Search Implementation
+        // Voice Search (Forced English/Universal recognition fallback)
         function startVoiceSearch() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                showCustomAlert("Not Supported", "તમારા બ્રાઉઝરમાં વોઇસ સર્ચ સપોર્ટેડ નથી.", "error");
+                showCustomAlert("Not Supported", "Voice search is not supported in your browser.", "error");
                 return;
             }
 
             const recognition = new SpeechRecognition();
-            recognition.lang = 'gu-IN'; // Set to Gujarati (can also understand Hindi/English seamlessly)
+            recognition.lang = 'en-IN'; // Set recognition to English (India)
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
-            showCustomAlert("Listening...", "કૃપા કરીને બોલો (જેમ કે 'કાર' કે 'મોબાઈલ')...", "success");
+            showCustomAlert("Listening...", "Please speak your search query (e.g. 'Laptop' or 'Car')...");
 
             recognition.onresult = function(event) {
                 const speechResult = event.results[0][0].transcript;
@@ -891,13 +882,12 @@
             };
 
             recognition.onerror = function(event) {
-                showCustomAlert("Voice Error", "અવાજ પકડવામાં તકલીફ થઈ. ફરીથી પ્રયત્ન કરો.", "error");
+                showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
             };
 
             recognition.start();
         }
 
-        // Multilingual AI Chatbot Functions
         function toggleAiChatbot() {
             const windowEl = document.getElementById('aiChatWindow');
             if (windowEl.style.display === 'none' || windowEl.style.display === '') {
@@ -936,41 +926,16 @@
 
             setTimeout(() => {
                 const lowerMsg = msg.toLowerCase();
-                let aiReply = "I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
+                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
 
-                const isHindi = /[\u0900-\u097F]/.test(msg) || lowerMsg.includes('car') || lowerMsg.includes('kaise') || lowerMsg.includes('kya') || lowerMsg.includes('खरीदनी') || lowerMsg.includes('बेचना');
-                const isGujarati = /[\u0A80-\u0AFF]/.test(msg) || lowerMsg.includes('kem') || lowerMsg.includes('su') || lowerMsg.includes('karvu') || lowerMsg.includes('મૂકવી');
-
-                if (isHindi || (lowerMsg.includes('hindi') || lowerMsg.includes('car') && !isGujarati)) {
-                    if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('बेचना')) {
-                        aiReply = "नई विज्ञापन पोस्ट करने के लिए ऊपर दिए गए पीले **'SELL'** बटन पर क्लिक करें!";
-                    } else if (lowerMsg.includes('car') || lowerMsg.includes('कार') || lowerMsg.includes('गाड़ी')) {
-                        aiReply = "सेकेंड हैंड कार देखने के लिए होम पेज पर 'Cars' कैटेगरी पर क्लिक करें या सर्च बार में 'Cars' टाइप करें।";
-                    } else if (lowerMsg.includes('safe') || lowerMsg.includes('fraud') || lowerMsg.includes('सुरक्षा')) {
-                        aiReply = "सुरक्षित रहने के लिए हमेशा आमने-सामने मिलकर वस्तु की जांच करें और सीधे नकद या यूपीआई से भुगतान करें।";
-                    } else {
-                        aiReply = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ? आप कार, मोबाइल या प्रॉपर्टी के बारे में पूछ सकते हैं।";
-                    }
-                } else if (isGujarati) {
-                    if (lowerMsg.includes('એડ') || lowerMsg.includes('ad') || lowerMsg.includes('મૂકવી')) {
-                        aiReply = "નવી એડ પોસ્ટ કરવા માટે ઉપર આપેલા પીળા રંગના **'SELL'** બટન પર ક્લિક કરો!";
-                    } else if (lowerMsg.includes('કાર') || lowerMsg.includes('car') || lowerMsg.includes('ગાડી')) {
-                        aiReply = "સેકન્ડ હેન્ડ કાર જોવા માટે હોમ પેજ પર 'Cars' કેટેગરી પર ક્લિક કરો.";
-                    } else if (lowerMsg.includes('સેફ્ટી') || lowerMsg.includes('safe') || lowerMsg.includes('fraud')) {
-                        aiReply = "સુરક્ષિત રહેવા માટે હંમેશાં રૂબરૂ મળીને વસ્તુ ચકાસીને જ પૈસા આપો.";
-                    } else {
-                        aiReply = "નમસ્તે! આજે હું તમને કઈ વસ્તુ શોધવામાં મદદ કરું?";
-                    }
+                if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
+                    aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
+                } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
+                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
+                } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
+                    aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
                 } else {
-                    if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
-                        aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
-                    } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
-                        aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
-                    } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
-                        aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
-                    } else {
-                        aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
-                    }
+                    aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
                 }
 
                 const aiCard = document.createElement('div');
@@ -981,7 +946,6 @@
             }, 600);
         }
 
-        // UNIVERSAL CUSTOM ALERT FUNCTION
         function showCustomAlert(title, message, type = 'success') {
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertDesc').innerText = message;
@@ -1007,7 +971,6 @@
             document.getElementById('customAlertModal').style.display = 'none';
         }
 
-        // AI Image Enhancement & Background Processing Function
         function handleAiImagePreview(event) {
             const files = event.target.files;
             const container = document.getElementById('aiImagePreviewContainer');
@@ -1015,11 +978,9 @@
             
             if (files && files.length > 0) {
                 container.style.display = 'grid';
-                
                 for (let i = 0; i < files.length; i++) {
                     const file = files[i];
                     const reader = new FileReader();
-                    
                     reader.onload = function(e) {
                         const img = new Image();
                         img.onload = function() {
@@ -1027,11 +988,9 @@
                             const ctx = canvas.getContext('2d');
                             canvas.width = img.width;
                             canvas.height = img.height;
-                            
                             ctx.drawImage(img, 0, 0);
                             ctx.filter = 'brightness(1.1) contrast(1.05)';
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                            
                             const enhancedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
                             
                             const thumbDiv = document.createElement('div');
@@ -1077,7 +1036,6 @@
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
-        // USER AUTHENTICATION
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
@@ -1128,10 +1086,9 @@
             }
         }
 
-        // FULL PAGE LIVE IN-APP CHAT FUNCTIONS
         function openLiveChatModal() {
             if (!window.currentUser) {
-                showCustomAlert("Login Required", "ચેટ શરૂ કરવા માટે કૃપા કરીને લોગિન કરો!", "error");
+                showCustomAlert("Login Required", "Please login to start chat!", "error");
                 openAuthModal();
                 return;
             }
@@ -1141,12 +1098,11 @@
             const sellerId = currentProduct.sellerUid;
             
             if (buyerId === sellerId) {
-                showCustomAlert("Notice", "તમે તમારી પોતાની જ એડ પર ચેટ ન કરી શકો.", "error");
+                showCustomAlert("Notice", "You cannot chat on your own ad.", "error");
                 return;
             }
 
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
-            
             document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
             const sellerPhone = currentProduct.phone || '919876543210';
             document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
@@ -1167,7 +1123,7 @@
               .onSnapshot(snapshot => {
                   container.innerHTML = '';
                   if(snapshot.empty) {
-                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">હજી કોઈ વાતચીત નથી થઈ. હેલો કહીને શરૂઆત કરો!</p>`;
+                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet. Say hello!</p>`;
                       return;
                   }
                   snapshot.forEach(doc => {
@@ -1222,7 +1178,6 @@
             document.getElementById('chatAttachmentPreview').style.display = 'none';
         }
 
-        // Smart Fraud & Scam Detection Function
         function checkScamAndSendChatMessage() {
             const input = document.getElementById('fullChatInput');
             const msg = input.value.trim();
@@ -1239,8 +1194,8 @@
 
             if (isSuspicious) {
                 warningBanner.style.display = 'flex';
-                warningText.innerText = "⚠️ સાવધાન: સિસ્ટમને આ મેસેજમાં શંકાસ્પદ લિંક અથવા ફ્રોડ શંકા લાગી છે. કૃપા કરીને અજાણ્યા વ્યક્તિઓને ઓનલાઈન પેમેન્ટ ન કરો!";
-                showCustomAlert("Security Warning", "આ મેસેજમાં ફ્રોડ અથવા સ્કેમની શંકા હોવાથી સુરક્ષા ખાતર બ્લોક કરવામાં આવ્યો છે.", "error");
+                warningText.innerText = "⚠️ Caution: This message contains a suspicious link or scam attempt. Do not make online payments to strangers!";
+                showCustomAlert("Security Warning", "Message blocked due to suspected scam/fraud link.", "error");
                 return;
             } else {
                 warningBanner.style.display = 'none';
@@ -1263,7 +1218,6 @@
             });
         }
 
-        // EDIT PROFILE FUNCTIONS
         function openEditProfileModal() {
             if(!window.currentUser) return;
             document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
@@ -1314,7 +1268,6 @@
             }
         }
 
-        // MY ADS MANAGEMENT
         function openMyAdsModal() {
             if(!window.currentUser) { 
                 showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
@@ -1464,7 +1417,6 @@
             }
         }
 
-        // PIN LOGIC
         function checkUserPinStatus(user) {
             const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
             if(!userSavedPin) {
@@ -1681,7 +1633,6 @@
         });
 
         function openProductDetailPage(docId) { 
-            // Track view for Point 4 (AI Recommendation Engine)
             const p = products.find(item => item.docId === docId);
             if (p && p.category) {
                 userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
@@ -2025,10 +1976,8 @@
 
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        // Point 4: Render AI Recommendations & Main Products
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const recSection = document.getElementById('aiRecommendedSection');
@@ -2040,7 +1989,6 @@
             grid.innerHTML = '';
             if(recGrid) recGrid.innerHTML = '';
 
-            // Find most viewed category by user
             let topCat = null;
             let maxViews = 0;
             for (let cat in userCategoryViews) {
@@ -2050,7 +1998,6 @@
                 }
             }
 
-            // Render AI Recommendations if user has history
             if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
                 const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 4);
                 if (recommendedItems.length > 0) {
@@ -2108,7 +2055,6 @@
             card.innerHTML = `
                 ${soldBadge}
                 <div>
-                    <!-- Image Area with Badges -->
                     <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
                         ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
                         
@@ -2119,13 +2065,11 @@
                             ${discBadge}
                         </div>
 
-                        <!-- Heart Save Button -->
                         <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
                             <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
                         </button>
                     </div>
 
-                    <!-- Info Area -->
                     <div class="p-4 space-y-2">
                         <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
                             <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
@@ -2143,7 +2087,6 @@
                     </div>
                 </div>
 
-                <!-- Card Footer Badge -->
                 <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
                     <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
                     <span class="text-gray-400 font-semibold">Inspect & Buy</span>
