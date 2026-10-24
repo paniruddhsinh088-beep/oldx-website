@@ -1362,37 +1362,47 @@
             });
         }
 
-        // 🛠️ FIXED TYPING EVENT LISTENER WITH AUTO RESET TIMER
-        document.getElementById('fullChatInput').addEventListener('input', () => {
-            if(!activeChatRoomId || !window.currentUser) return;
-            
-            db.collection('chats').doc(activeChatRoomId).set({
-                [`typing_${window.currentUser.uid}`]: true
-            }, { merge: true });
-
-            clearTimeout(window.typingTimer);
-            window.typingTimer = setTimeout(() => {
-                if(activeChatRoomId && window.currentUser) {
-                    db.collection('chats').doc(activeChatRoomId).set({
-                        [`typing_${window.currentUser.uid}`]: false
-                    }, { merge: true });
-                }
-            }, 1500);
-        });
-
-        // 🛠️ FIXED WATCH TYPING STATUS (RESTORES ONLINE WHEN TYPING STOPS)
-        function watchTypingStatus(chatRoomId, otherUserId) {
-            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
-                if(doc.exists) {
-                    const data = doc.data();
-                    const statusEl = document.getElementById('chatUserStatus');
+        // 🛠️ MULTI-DEVICE (MOBILE & DESKTOP) PERFECT TYPING EVENT LISTENER
+        const chatInputEl = document.getElementById('fullChatInput');
+        if (chatInputEl) {
+            ['input', 'keydown'].forEach(eventType => {
+                chatInputEl.addEventListener(eventType, () => {
+                    if(!activeChatRoomId || !window.currentUser) return;
                     
-                    if(data && data[`typing_${otherUserId}`] === true) {
+                    db.collection('chats').doc(activeChatRoomId).set({
+                        [`typing_${window.currentUser.uid}`]: true
+                    }, { merge: true });
+
+                    clearTimeout(window.typingTimer);
+                    window.typingTimer = setTimeout(() => {
+                        if(activeChatRoomId && window.currentUser) {
+                            db.collection('chats').doc(activeChatRoomId).set({
+                                [`typing_${window.currentUser.uid}`]: false
+                            }, { merge: true });
+                        }
+                    }, 1200);
+                });
+            });
+        }
+
+        // 🛠️ WATCH TYPING STATUS WITH REAL-TIME SNAPSHOT RESTORE
+        function watchTypingStatus(chatRoomId, otherUserId) {
+            if(!chatRoomId || !otherUserId) return;
+
+            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+                const statusEl = document.getElementById('chatUserStatus');
+                if (!statusEl) return;
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && data[`typing_${otherUserId}`] === true) {
                         statusEl.innerText = "typing...";
                         statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
                     } else {
                         trackUserStatus(otherUserId);
                     }
+                } else {
+                    trackUserStatus(otherUserId);
                 }
             });
         }
@@ -1498,10 +1508,12 @@
                 warningBanner.style.display = 'none';
             }
 
-            // Immediately clear typing state on send
-            db.collection('chats').doc(activeChatRoomId).set({
-                [`typing_${window.currentUser.uid}`]: false
-            }, { merge: true });
+            // Immediately clear typing state on send button click
+            if (activeChatRoomId && window.currentUser) {
+                db.collection('chats').doc(activeChatRoomId).set({
+                    [`typing_${window.currentUser.uid}`]: false
+                }, { merge: true });
+            }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             let sellerId = currentProduct ? currentProduct.sellerUid : '';
