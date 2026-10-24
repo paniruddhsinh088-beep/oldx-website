@@ -142,7 +142,7 @@
         <!-- MAIN LAYOUT SECTIONS -->
         <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
             
-            <!-- 2. BROWSE CATEGORIES -->
+            <!-- 2. BROWSE CATEGORIES (Optimized Carousel on Mobile, Grid on Desktop) -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -153,6 +153,7 @@
                     </div>
                 </div>
                 
+                <!-- Horizontal scroll on mobile / Flex Grid on Desktop -->
                 <div class="flex items-center gap-3 overflow-x-auto no-scrollbar md:grid md:grid-cols-6 md:gap-4 pb-2" id="homeCatGrid"></div>
             </section>
 
@@ -167,6 +168,7 @@
                     </div>
                     <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300">Sponsored</span>
                 </div>
+                <!-- Horizontal Carousel for Featured Ads -->
                 <div id="featuredProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
             </section>
 
@@ -180,6 +182,7 @@
                         <p class="text-xs text-gray-400 font-medium">AI Picks based on your recent activity & preferences</p>
                     </div>
                 </div>
+                <!-- Carousel Grid for Recommended Products -->
                 <div id="recommendedProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
             </section>
 
@@ -218,7 +221,9 @@
 
             <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
             
-            <div id="inboxConversationsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-2"></div>
+            <div id="inboxConversationsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-2">
+                <!-- Dynamic Chat Rooms -->
+            </div>
         </div>
     </div>
 
@@ -239,53 +244,293 @@
                     <div class="relative w-24 h-24 mx-auto">
                         <img id="profileUserPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-md">
                     </div>
+                    
                     <h3 id="profileUserName" class="text-xl font-black text-gray-900 dark:text-white mt-3">Guest User</h3>
                     <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
+                    
+                    <div class="flex justify-center items-center gap-2 mt-2">
+                        <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
+                        <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <i class="fa-solid fa-star text-amber-500"></i> 4.9 Rating
+                        </span>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since 2026</p>
                 </div>
             </div>
+
             <div class="grid grid-cols-2 gap-3">
-                <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer text-center">
+                <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
+                    <i class="fa-solid fa-boxes-packing text-2xl text-teal-600 mb-1"></i>
                     <h4 class="font-black text-lg text-gray-900 dark:text-white" id="statMyAdsCount">0</h4>
                     <p class="text-xs text-gray-500 font-semibold">My Posted Ads</p>
                 </div>
-                <div onclick="openCartModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer text-center">
+                <div onclick="openCartModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
+                    <i class="fa-solid fa-heart text-2xl text-red-500 mb-1"></i>
                     <h4 class="font-black text-lg text-gray-900 dark:text-white" id="statSavedAdsCount">0</h4>
                     <p class="text-xs text-gray-500 font-semibold">Saved Items</p>
                 </div>
             </div>
+
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
-                <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 py-3 rounded-xl font-black flex items-center justify-center gap-2">
+                <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
+                
+                <div onclick="openEditProfileModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-user-pen text-teal-600"></i> Edit Profile Name & Photo</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <div onclick="openMyAdsModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-teal-600"></i> Manage My Ads</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <div onclick="openCartModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-heart text-red-500"></i> Saved Bookmarks</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <div onclick="openSetPinModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- UNIVERSAL CUSTOM ALERT MODAL -->
+    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
+    <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-black text-gray-900 dark:text-white"><i class="fa-solid fa-user-pen mr-1 text-teal-600"></i> Edit Profile</h3>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Full Name</label>
+                    <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
+                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                </div>
+                <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
+                    Save Profile Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UNIVERSAL ATTRACTIVE CUSTOM ALERT MODAL -->
     <div id="customAlertModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <h3 id="customAlertTitle" class="text-lg font-black">Notification</h3>
-            <p id="customAlertDesc" class="text-xs text-gray-500">Message description...</p>
-            <button onclick="closeCustomAlert()" class="w-full bg-primary text-white font-black py-2.5 rounded-xl text-xs">OK</button>
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div id="customAlertIconBox" class="w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+                <i id="customAlertIcon" class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+                <h3 id="customAlertTitle" class="text-lg font-black text-gray-900 dark:text-white">Notification</h3>
+                <p id="customAlertDesc" class="text-xs text-gray-500 mt-1 leading-relaxed">Message description goes here...</p>
+            </div>
+            
+            <button onclick="closeCustomAlert()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition">
+                OK
+            </button>
         </div>
     </div>
 
     <!-- SUCCESS POPUP MODAL -->
     <div id="successAdModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <h3 class="text-xl font-black">Ad Published Live!</h3>
-            <button onclick="closeSuccessModalAndGoHome()" class="w-full bg-primary text-white font-black py-3 rounded-xl text-xs">Back to Home</button>
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold shadow-inner">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white">Ad Published Live!</h3>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">Your ad has been successfully posted and is now live for buyers across India.</p>
+            </div>
+            
+            <div class="space-y-2 pt-2">
+                <button onclick="closeSuccessModalAndGoHome()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i> Back to Home
+                </button>
+                <button onclick="closeSuccessModalAndOpenMyAds()" class="w-full bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-boxes-packing"></i> View My Posted Ads
+                </button>
+            </div>
         </div>
     </div>
 
     <!-- MAIN AUTH MODAL -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-xl font-black text-primary dark:text-teal-400 text-center">Welcome to OldX</h3>
-            <button onclick="loginWithGoogle()" class="w-full bg-white border py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                <i class="fa-brands fa-google text-red-500"></i> Continue with Google
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold">
+                <i class="fa-solid fa-xmark text-lg"></i>
             </button>
+            
+            <div class="text-center">
+                <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome to OldX</h3>
+                <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
+            </div>
+
+            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition">
+                <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
+            </button>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR Email Login</span>
+                <div class="flex-1 border-t"></div>
+            </div>
+
+            <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition">
+                    Login / Sign Up
+                </button>
+            </form>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
+                <div class="flex-1 border-t"></div>
+            </div>
+
+            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-user-secret"></i> Continue as Guest
+            </button>
+        </div>
+    </div>
+
+    <!-- SET 4-DIGIT PIN MODAL -->
+    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
+            
+            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- QUICK PIN VERIFY MODAL -->
+    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
+            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
+            
+            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Unlock Account
+            </button>
+
+            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
+                Forgot PIN? Re-authenticate
+            </button>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-slide-up">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-black text-gray-900 dark:text-white">Delete this Ad?</h3>
+                <p class="text-xs text-gray-500 mt-1">Are you sure you want to remove this ad permanently? This action cannot be undone.</p>
+            </div>
+            
+            <div class="flex items-center gap-2 pt-2">
+                <button onclick="closeDeleteConfirmModal()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl text-xs transition">
+                    Cancel
+                </button>
+                <button id="confirmDeleteBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FULL DEDICATED EDIT AD PAGE -->
+    <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
+        <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
+            <button onclick="closeEditAdPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-arrow-left text-base"></i> Cancel & Back
+            </button>
+            <h2 class="font-black text-base text-primary dark:text-teal-400"><i class="fa-solid fa-pen-to-square mr-1"></i> Edit My Ad</h2>
+            <div class="w-8"></div>
+        </div>
+
+        <div class="max-w-2xl mx-auto p-4 md:p-6">
+            <form onsubmit="handleEditAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                <input type="hidden" id="editDocId">
+
+                <div>
+                    <label class="block font-bold mb-1">Current Photos</label>
+                    <div id="editImagesPreview" class="flex gap-2 overflow-x-auto py-2 no-scrollbar"></div>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Replace / Upload New Photos (Optional)</label>
+                    <input type="file" id="editNewImages" multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                    <p class="text-[10px] text-gray-400 mt-1">* Keep blank if you don't want to change photos</p>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Ad Title *</label>
+                    <input type="text" id="editTitle" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold mb-1">Final Price (₹) *</label>
+                        <input type="number" id="editPrice" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block font-bold mb-1">Discount (%)</label>
+                        <input type="number" id="editDiscount" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
+                    <input type="tel" id="editPhone" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Location *</label>
+                    <input type="text" id="editLocation" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block font-bold mb-1">Description *</label>
+                    <textarea id="editDesc" rows="4" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                </div>
+
+                <button type="submit" id="editSubmitBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl text-base shadow transition">
+                    Save Changes
+                </button>
+            </form>
         </div>
     </div>
 
@@ -302,101 +547,311 @@
                 </div>
                 <div>
                     <h3 id="chatSellerName" class="font-bold text-sm text-gray-900 dark:text-white">Seller Name</h3>
-                    <p id="chatUserStatus" class="text-[11px] text-green-600 font-semibold">Online</p>
+                    <p id="chatUserStatus" class="text-[11px] text-green-600 dark:text-green-400 font-semibold">Online</p>
                 </div>
             </div>
-            <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg p-1"><i class="fa-solid fa-phone"></i></a>
+            
+            <div class="flex items-center gap-4 text-gray-600 dark:text-gray-300">
+                <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
+                    <i class="fa-solid fa-phone"></i>
+                </a>
+            </div>
         </div>
 
-        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
+                <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
+                <div class="flex justify-end items-center gap-1 mt-1">
+                    <span class="text-[9px] text-gray-400">10:15 AM</span>
+                </div>
+            </div>
+        </div>
 
-        <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 px-4 py-2 flex items-center justify-between text-xs">
-            <span id="chatAttachmentName" class="truncate font-semibold"></span>
+        <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs">
+            <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
             <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <div id="chatSafetyWarning" style="display: none;" class="bg-red-50 border-t border-red-200 px-4 py-2 flex items-center gap-2 text-red-600 text-xs font-semibold">
+        <div id="chatSafetyWarning" style="display: none;" class="bg-red-50 dark:bg-red-950/50 border-t border-red-200 px-4 py-2 flex items-center gap-2 text-red-600 dark:text-red-300 text-xs font-semibold">
             <i class="fa-solid fa-shield-halved text-sm animate-bounce"></i>
-            <span id="chatSafetyWarningText">Caution: Suspicious link!</span>
+            <span id="chatSafetyWarningText">Caution: This message might contain a suspicious link or fraud!</span>
         </div>
 
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
-            <button onclick="document.getElementById('chatFileInput').click()" class="bg-gray-100 dark:bg-gray-700 p-2.5 rounded-full"><i class="fa-solid fa-paperclip"></i></button>
-            <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 focus:outline-none">
-            <button onclick="checkScamAndSendChatMessage()" class="bg-primary text-white p-2.5 rounded-full w-10 h-10 shadow"><i class="fa-solid fa-paper-plane"></i></button>
+            
+            <button onclick="document.getElementById('chatFileInput').click()" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 p-2.5 rounded-full text-base flex items-center justify-center transition">
+                <i class="fa-solid fa-paperclip"></i>
+            </button>
+
+            <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
         </div>
     </div>
 
-    <!-- FULL PAGE SELL WIZARD -->
+    <!-- FULL PAGE DEDICATED SELL FLOW PAGE -->
     <div id="sellWizardPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
-            <button onclick="closeSellWizardPage()" class="flex items-center gap-2 text-xs font-bold"><i class="fa-solid fa-arrow-left"></i> Close</button>
+            <button onclick="closeSellWizardPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
+                <i class="fa-solid fa-arrow-left text-base"></i> Close
+            </button>
             <h2 class="font-black text-base text-primary dark:text-teal-400">Post Your Ad</h2>
             <div class="w-8"></div>
         </div>
+
         <div class="max-w-2xl mx-auto p-4 md:p-6">
             <div id="wizardStage1">
-                <h3 class="text-2xl font-black mb-1">Choose a Category</h3>
+                <h3 class="text-2xl font-black mb-1 text-gray-900 dark:text-white">Choose a Category</h3>
+                <p class="text-xs text-gray-500 mb-6">Select what you want to sell</p>
                 <div id="wizardMainCatList" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
             </div>
+
             <div id="wizardStage2" style="display: none;">
-                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-4"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                <button onclick="backToWizardStage1()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Categories
+                </button>
                 <h3 id="wizardSubCatTitle" class="text-2xl font-black mb-4">Sub-Categories</h3>
                 <div id="wizardSubCatList" class="space-y-3"></div>
             </div>
+
             <div id="wizardStage3" style="display: none;">
-                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-4"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                <button onclick="backToWizardStage2()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Sub-Categories
+                </button>
+                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Include Some Details</h3>
+                <p id="wizardPathBadge" class="text-xs font-semibold bg-teal-100 dark:bg-teal-900 text-teal-800 dark:text-teal-200 px-3 py-1 rounded-full inline-block mb-6"></p>
+                
                 <form onsubmit="goToPhotoUploadStep(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
                     <div id="dynamicFormFields" class="space-y-4"></div>
-                    <div><label class="block font-bold mb-1">Ad title *</label><input type="text" id="adTitle" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700"></div>
-                    <div><label class="block font-bold mb-1">Description *</label><textarea id="adDesc" rows="4" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700"></textarea></div>
-                    <button type="submit" class="w-full bg-primary text-white py-3.5 rounded-xl font-black">Next</button>
+
+                    <div class="flex justify-between items-center bg-teal-50 dark:bg-gray-700 p-3 rounded-xl border border-teal-200">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Auto-Generate Description</span>
+                        <button type="button" onclick="autoGenerateText()" class="bg-primary text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow cursor-pointer">Write for me</button>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Ad title *</label>
+                        <input type="text" id="adTitle" required maxlength="70" placeholder="Mention key features (e.g. brand, model, age, type)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block font-bold mb-1">Describe what you are selling *</label>
+                        <textarea id="adDesc" rows="4" required maxlength="4096" placeholder="Include condition, features and reason for selling..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-primary hover:bg-teal-700 text-white py-3.5 rounded-xl font-black text-base shadow cursor-pointer">
+                        Next: Upload Photos & Price
+                    </button>
                 </form>
             </div>
+
             <div id="wizardStage4" style="display: none;">
-                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-4"><i class="fa-solid fa-arrow-left"></i> Back</button>
+                <button onclick="backToWizardStage3()" class="text-xs text-teal-600 font-bold mb-4 flex items-center gap-1 cursor-pointer">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Details
+                </button>
+                <h3 class="text-2xl font-black mb-1 text-primary dark:text-teal-400">Upload Photos & Price</h3>
+                <p class="text-xs text-gray-500 mb-6">Add multiple photos, set location & boost/feature your ad</p>
+
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                    <div><label class="block font-bold mb-xs">Photos *</label><input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2 border rounded-xl"></div>
+                    <div class="space-y-2 bg-teal-50/50 dark:bg-gray-700/50 p-4 rounded-2xl border border-teal-200/80 dark:border-gray-600">
+                        <div class="flex items-center justify-between">
+                            <label class="block font-bold text-xs text-primary dark:text-teal-300">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-500"></i> Upload Multiple Photos (AI Auto-Enhanced)
+                            </label>
+                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold px-2 py-0.5 rounded-full">AI Powered</span>
+                        </div>
+                        
+                        <input type="file" id="adImages" required multiple accept="image/*" onchange="handleAiImagePreview(event)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                        
+                        <div id="aiImagePreviewContainer" class="grid grid-cols-4 gap-2 pt-2" style="display: none;"></div>
+                    </div>
+
                     <div class="grid grid-cols-3 gap-2">
-                        <div><label class="text-xs font-bold">MRP *</label><input type="number" id="adMrpPrice" required class="w-full p-2 border rounded-xl text-xs"></div>
-                        <div><label class="text-xs font-bold">Discount %</label><input type="number" id="adDiscount" class="w-full p-2 border rounded-xl text-xs"></div>
-                        <div><label class="text-xs font-bold">Final Price *</label><input type="number" id="adPrice" required class="w-full p-2 border rounded-xl text-xs"></div>
+                        <div>
+                            <label class="block font-bold mb-1 text-xs">MRP Price (₹) *</label>
+                            <input type="number" id="adMrpPrice" required placeholder="e.g. 1000" oninput="calculatePrices('mrp')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1 text-xs">Discount (%)</label>
+                            <input type="number" id="adDiscount" placeholder="e.g. 20" oninput="calculatePrices('discount')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1 text-xs">Final Price (₹) *</label>
+                            <input type="number" id="adPrice" required placeholder="e.g. 800" oninput="calculatePrices('final')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                        </div>
                     </div>
-                    <div><label class="font-bold">Phone *</label><input type="tel" id="adPhone" required class="w-full p-2.5 border rounded-xl"></div>
+
+                    <div>
+                        <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
+                        <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+
                     <div class="grid grid-cols-2 gap-3">
-                        <div><label class="font-bold">State *</label><select id="adState" class="w-full p-2.5 border rounded-xl"><option value="Gujarat">Gujarat</option></select></div>
-                        <div><label class="font-bold">District *</label><select id="adDistrict" class="w-full p-2.5 border rounded-xl"><option value="Ahmedabad">Ahmedabad</option></select></div>
+                        <div>
+                            <label class="block font-bold mb-1">State *</label>
+                            <select id="adState" onchange="updateWizardDistricts()" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                                <option value="Gujarat">Gujarat</option>
+                                <option value="Maharashtra">Maharashtra</option>
+                                <option value="Rajasthan">Rajasthan</option>
+                                <option value="Delhi">Delhi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">District / City *</label>
+                            <select id="adDistrict" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></select>
+                        </div>
                     </div>
-                    <div><label class="font-bold">Village *</label><input type="text" id="adVillage" required class="w-full p-2.5 border rounded-xl"></div>
-                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 text-primary font-black py-3.5 rounded-xl">Post Now</button>
+
+                    <div>
+                        <label class="block font-bold mb-1">Village / Landmark *</label>
+                        <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    </div>
+
+                    <!-- Map Pin Picker -->
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <label class="block font-bold text-xs text-primary dark:text-teal-300">
+                                <i class="fa-solid fa-map-location-dot mr-1 text-red-500"></i> Pin Exact Location on Map
+                            </label>
+                            <button type="button" onclick="getCurrentLocationForAd()" class="bg-teal-700 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold shadow hover:bg-teal-800">
+                                <i class="fa-solid fa-location-crosshairs mr-1"></i> Use My GPS Location
+                            </button>
+                        </div>
+                        <div id="adMapPicker" class="w-full h-48 rounded-xl border border-gray-300 dark:border-gray-600 z-10"></div>
+                        <p class="text-[10px] text-gray-400">Click anywhere on the map or use GPS to set the exact seller location.</p>
+                    </div>
+
+                    <!-- Point 6: Featured / Boost Ad Option -->
+                    <div class="bg-amber-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-amber-200 space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
+                                <input type="checkbox" id="adIsFeatured" class="w-4 h-4 text-amber-600 rounded">
+                                <i class="fa-solid fa-bolt text-amber-500"></i> Boost & Feature Ad on Top (+₹99)
+                            </label>
+                            <span class="bg-amber-200 text-amber-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">10x Views</span>
+                        </div>
+                        <p class="text-[10px] text-gray-600 dark:text-gray-300">Get your ad featured on the homepage banner for faster selling.</p>
+                    </div>
+
+                    <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-primary font-black py-3.5 rounded-xl text-base shadow cursor-pointer">
+                        Post Now (Publish Ad)
+                    </button>
                 </form>
             </div>
+        </div>
+    </div>
+
+    <!-- SKELETON LOADING SLIDE VIEW -->
+    <div id="productSkeletonSlide" style="display: none;" class="fixed inset-0 z-50 bg-gray-200 dark:bg-gray-900 flex flex-col p-4 space-y-4 animate-slide-up">
+        <div class="flex justify-between items-center py-2 border-b dark:border-gray-800">
+            <div class="flex items-center gap-2">
+                <div class="bg-primary text-accent px-2.5 py-1 rounded-lg font-black text-lg">OldX</div>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-700 animate-skeleton"></div>
+        </div>
+        <div class="w-full h-64 bg-gray-300 dark:bg-gray-800 rounded-2xl animate-skeleton"></div>
+        <div class="space-y-3 bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm">
+            <div class="h-6 w-3/4 bg-gray-300 dark:bg-gray-700 rounded animate-skeleton"></div>
+            <div class="h-8 w-1/3 bg-teal-200 dark:bg-gray-700 rounded animate-skeleton"></div>
+            <div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded animate-skeleton"></div>
         </div>
     </div>
 
     <!-- DEDICATED PRODUCT DETAILS PAGE -->
     <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24 animate-slide-up">
         <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
-            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/95 w-10 h-10 rounded-full shadow flex items-center justify-center font-bold"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                <i class="fa-solid fa-arrow-left text-lg"></i>
+            </button>
+            <div class="flex gap-2 pointer-events-auto">
+                <button onclick="toggleCartCurrentProduct()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                    <i class="fa-solid fa-heart text-lg text-red-500" id="detailCartIcon"></i>
+                </button>
+                <button onclick="shareProductLink()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold">
+                    <i class="fa-solid fa-share-nodes text-lg"></i>
+                </button>
+            </div>
         </div>
+
         <div class="relative bg-black w-full h-[380px]">
-            <div id="detailImageSlider" class="flex overflow-x-auto snap-x h-full no-scrollbar"></div>
+            <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
+            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">1/1</div>
         </div>
+
+        <div class="bg-primary text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow-inner">
+            <i class="fa-regular fa-eye text-amber-400"></i> <span id="detailViewsText">Active buyers viewing this ad now</span>
+        </div>
+
         <div class="max-w-3xl mx-auto px-3 py-3 space-y-3">
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border">
-                <h2 id="detailTitle" class="text-xl font-black"></h2>
-                <p id="detailPrice" class="text-2xl font-black text-teal-600 mt-2"></p>
-                <p id="detailLocation" class="text-xs text-gray-500 mt-2"></p>
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
+                <div class="flex justify-between items-start">
+                    <span class="bg-teal-50 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-teal-200 flex items-center gap-1">
+                        <i class="fa-solid fa-circle-check text-teal-600"></i> Verified Seller
+                    </span>
+                    <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-xl border border-teal-200 flex items-center gap-1">
+                        <i class="fa-solid fa-heart text-red-500"></i> Save Ad
+                    </button>
+                </div>
+
+                <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
+                
+                <div class="flex items-baseline gap-2 mt-2">
+                    <p id="detailPrice" class="text-2xl font-black text-primary dark:text-teal-400"></p>
+                    <p id="detailMrpPrice" class="text-sm font-semibold text-gray-400 line-through"></p>
+                    <span id="detailDiscountBadge" class="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full"></span>
+                </div>
+
+                <div class="mt-4 bg-teal-50 dark:bg-gray-700/60 border border-teal-200 dark:border-gray-600 rounded-2xl p-3 text-xs space-y-2">
+                    <div class="flex items-center justify-between font-bold text-teal-900 dark:text-teal-200">
+                        <span class="flex items-center gap-1.5"><i class="fa-solid fa-route text-teal-600"></i> Distance from your location:</span>
+                        <span id="detailDistanceBadge" class="bg-teal-600 text-white px-2.5 py-0.5 rounded-full text-[11px]">Calculating...</span>
+                    </div>
+                    <div id="detailMiniMap" class="w-full h-36 rounded-xl border border-teal-200"></div>
+                    <a id="detailNavigateBtn" target="_blank" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2 rounded-xl text-center block text-xs shadow transition">
+                        <i class="fa-solid fa-diamond-turn-right mr-1"></i> Start Google Maps Navigation
+                    </a>
+                </div>
+
+                <div class="mt-4 bg-amber-50/80 dark:bg-gray-700/50 border border-amber-200/80 dark:border-gray-600 rounded-2xl p-3 text-xs">
+                    <div class="flex items-center gap-2 font-bold text-amber-900 dark:text-amber-200">
+                        <i class="fa-solid fa-handshake text-base text-amber-600"></i> Local Meetup & Direct Deal
+                    </div>
+                    <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                        Meet the seller locally, inspect the item carefully, and pay directly via cash/UPI.
+                    </p>
+                </div>
+
+                <div class="mt-4 pt-3 border-t flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 font-bold">
+                    <i class="fa-solid fa-location-dot text-red-500 text-sm"></i>
+                    <span id="detailLocation"></span>
+                </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border">
-                <h3 class="font-bold text-sm mb-2">Description</h3>
-                <p id="detailDescription" class="text-xs text-gray-600 whitespace-pre-line"></p>
+
+            <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
+                <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white">Key Highlights</h3>
+                <div id="detailHighlightsGrid" class="grid grid-cols-2 gap-2"></div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
+                <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white">Description</h3>
+                <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
             </div>
         </div>
-        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t p-3 shadow-2xl">
+
+        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
             <div class="max-w-3xl mx-auto flex items-center gap-2">
-                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"><i class="fa-regular fa-comments"></i> In-App Chat</button>
+                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50 cursor-pointer">
+                    <i class="fa-regular fa-comments text-base"></i> In-App Chat
+                </button>
+                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow cursor-pointer">
+                    <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
+                </button>
+                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                </a>
             </div>
         </div>
     </div>
@@ -404,18 +859,68 @@
     <!-- SAVED ADS MODAL -->
     <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl">
-            <button onclick="closeCartModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark text-xl"></i></button>
-            <h3 class="text-lg font-black mb-4">My Saved Ads</h3>
-            <div id="cartItemsContainer" class="flex-1 overflow-y-auto space-y-3"></div>
+            <button onclick="closeCartModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-lg font-black mb-1 flex items-center gap-2 text-primary dark:text-teal-400">
+                <i class="fa-solid fa-heart text-red-500"></i> My Saved Ads
+            </h3>
+            <p class="text-xs text-gray-400 mb-4">Ads you bookmarked for later</p>
+            <div id="cartItemsContainer" class="flex-1 overflow-y-auto space-y-3 pr-1"></div>
         </div>
     </div>
 
     <!-- MY ADS MODAL -->
     <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-3xl p-6 relative max-h-[85vh] overflow-y-auto shadow-2xl">
-            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-xl font-black mb-4">My Posted Ads</h3>
+            <button onclick="closeMyAdsModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-xl font-black mb-1 text-primary dark:text-teal-400">My Posted Ads</h3>
+            <p class="text-xs text-gray-400 mb-4">Manage, edit or mark your items as sold</p>
             <div id="myAdsContainer" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <!-- AI Smart Chatbot Widget -->
+    <div id="aiChatbotContainer" class="fixed bottom-4 left-4 z-30">
+        <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+
+        <div id="aiChatWindow" style="display: none;" class="absolute bottom-16 left-0 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden animate-scale-up h-[450px]">
+            <div class="bg-primary text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-amber-400 text-primary flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-xs">OldX AI Assistant</h4>
+                        <p class="text-[10px] text-teal-200">Online | Multilingual Support 🇮🇳</p>
+                    </div>
+                </div>
+                <button onclick="toggleAiChatbot()" class="text-white hover:text-gray-300 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-gray-50 dark:bg-gray-900">
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                    <p class="font-semibold">Hello! 👋 I am your OldX AI Assistant. Ask me anything about cars, mobiles, or posting ads!</p>
+                    <span class="text-[9px] text-gray-400 mt-1 block">Just now</span>
+                </div>
+            </div>
+
+            <div class="px-3 py-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-1 overflow-x-auto no-scrollbar text-[10px]">
+                <button onclick="sendQuickAiQuery('How to post an ad?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Post Ad?</button>
+                <button onclick="sendQuickAiQuery('Find me a used car')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Find Car</button>
+                <button onclick="sendQuickAiQuery('Safety tips')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Safety Tips</button>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
+                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="Type your message here..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                <button onclick="sendAiMessage()" class="bg-primary hover:bg-teal-800 text-white w-9 h-9 rounded-full flex items-center justify-center text-xs shadow transition cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -444,9 +949,209 @@
         let selectedSubCat = null;
         let currentFilterCat = 'all';
         let currentChatAttachment = null;
+        let pendingDeleteDocId = null;
         let activeChatRoomId = null;
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
+        
+        let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
+
+        // Map Variables
+        let createAdMap = null;
+        let createAdMarker = null;
+        let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
+
+        function requestPushNotificationPermission() {
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        showCustomAlert("Notifications Enabled", "You will now receive instant push alerts for chat messages and offers!", "success");
+                    }
+                });
+            }
+        }
+
+        function triggerPushNotification(title, body) {
+            if ("Notification" in window && Notification.permission === "granted") {
+                new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" });
+            }
+        }
+
+        function startVoiceSearch() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showCustomAlert("Not Supported", "Voice search is not supported in your browser.", "error");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            showCustomAlert("Listening...", "Please speak your search query (e.g. 'Laptop' or 'Car')...");
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                document.getElementById('searchInput').value = speechResult;
+                renderProducts();
+                closeCustomAlert();
+            };
+
+            recognition.onerror = function(event) {
+                showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
+            };
+
+            recognition.start();
+        }
+
+        function toggleAiChatbot() {
+            const windowEl = document.getElementById('aiChatWindow');
+            if (windowEl.style.display === 'none' || windowEl.style.display === '') {
+                windowEl.style.display = 'flex';
+            } else {
+                windowEl.style.display = 'none';
+            }
+        }
+
+        function handleAiKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
+        }
+
+        function sendQuickAiQuery(text) {
+            document.getElementById('aiChatInput').value = text;
+            sendAiMessage();
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('aiChatMessages');
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const userCard = document.createElement('div');
+            userCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm";
+            userCard.innerHTML = `<p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span>`;
+            container.appendChild(userCard);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            setTimeout(() => {
+                const lowerMsg = msg.toLowerCase();
+                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
+
+                if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
+                    aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
+                } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
+                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
+                } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
+                    aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
+                } else {
+                    aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
+                }
+
+                const aiCard = document.createElement('div');
+                aiCard.className = "bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200";
+                aiCard.innerHTML = `<p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span>`;
+                container.appendChild(aiCard);
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
+
+        function showCustomAlert(title, message, type = 'success') {
+            document.getElementById('customAlertTitle').innerText = title;
+            document.getElementById('customAlertDesc').innerText = message;
+            
+            const iconBox = document.getElementById('customAlertIconBox');
+            const icon = document.getElementById('customAlertIcon');
+
+            if(type === 'success') {
+                iconBox.className = "w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-circle-check";
+            } else if(type === 'error') {
+                iconBox.className = "w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-triangle-exclamation";
+            } else {
+                iconBox.className = "w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-bell";
+            }
+
+            document.getElementById('customAlertModal').style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
+        function handleAiImagePreview(event) {
+            const files = event.target.files;
+            const container = document.getElementById('aiImagePreviewContainer');
+            container.innerHTML = '';
+            
+            if (files && files.length > 0) {
+                container.style.display = 'grid';
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            ctx.filter = 'brightness(1.1) contrast(1.05)';
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const enhancedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                            
+                            const thumbDiv = document.createElement('div');
+                            thumbDiv.className = "relative rounded-xl overflow-hidden border border-teal-500 shadow-sm h-16 bg-black";
+                            thumbDiv.innerHTML = `
+                                <img src="${enhancedDataUrl}" class="w-full h-full object-cover">
+                                <span class="absolute bottom-0 inset-x-0 bg-teal-700/80 text-white text-[8px] font-black text-center py-0.5">AI Enhanced ✨</span>
+                            `;
+                            container.appendChild(thumbDiv);
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        const olxCategories = [
+            { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
+            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
+            { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
+            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
+            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
+            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
+            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
+            { id: 'fashion', name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=150&auto=format&fit=crop&q=80', subs: ['Men', 'Women', 'Kids'] },
+            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
+            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
+            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
+        ];
+
+        const districtData = {
+            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar"],
+            "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
+            "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
+            "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
+        };
+
+        function getValidSavedCount() {
+            return cartList.filter(id => products.some(p => p.docId === id)).length;
+        }
 
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
@@ -460,26 +1165,62 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
 
+                // Update Online Status in Firestore
                 db.collection('users').doc(user.uid).set({
                     isOnline: true,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
 
+                window.addEventListener('beforeunload', () => {
+                    db.collection('users').doc(user.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+
+                const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
                 container.innerHTML = `
-                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 p-1 pr-3 rounded-full border shadow-sm" onclick="openProfilePage()">
-                        <img src="${user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" class="w-7 h-7 rounded-full object-cover">
-                        <span class="text-xs font-bold text-teal-800 max-w-[80px] truncate">${user.displayName || 'User'}</span>
+                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
+                        <img src="${photo}" class="w-7 h-7 rounded-full border border-teal-500 object-cover">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200 max-w-[80px] truncate">${user.displayName || 'User'}</span>
                     </div>
                 `;
+                updateProfileDetails(user);
+                checkUserPinStatus(user);
+                requestPushNotificationPermission();
             } else {
                 if(savedBtn) savedBtn.style.display = 'none';
                 if(myAdsBtn) myAdsBtn.style.display = 'none';
                 if(inboxBtn) inboxBtn.style.display = 'none';
-                container.innerHTML = `<button onclick="openAuthModal()" class="bg-teal-700 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow">Login</button>`;
+
+                container.innerHTML = `
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                        <i class="fa-solid fa-user-check mr-1"></i> Login
+                    </button>
+                `;
             }
         });
 
-        // 🛠️ UPDATED INBOX MODAL TO FETCH PARTICIPANT CHATS PROPERLY
+        function calculatePrices(source) {
+            const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
+            const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
+            const finalPriceInput = document.getElementById('adPrice');
+
+            if (source === 'mrp' || source === 'discount') {
+                if (mrp > 0) {
+                    const finalVal = Math.round(mrp - (mrp * (discount / 100)));
+                    finalPriceInput.value = finalVal > 0 ? finalVal : '';
+                }
+            } else if (source === 'final') {
+                const finalVal = parseFloat(finalPriceInput.value) || 0;
+                if (mrp > 0 && finalVal > 0 && mrp >= finalVal) {
+                    const calcDiscount = Math.round(((mrp - finalVal) / mrp) * 100);
+                    document.getElementById('adDiscount').value = calcDiscount;
+                }
+            }
+        }
+
+        // PROFESSIONAL INBOX MODAL
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -488,7 +1229,12 @@
             }
 
             const container = document.getElementById('inboxConversationsList');
-            container.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600"></i></div>`;
+            container.innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
+                    <p class="text-xs text-gray-400 font-medium">Loading conversations...</p>
+                </div>
+            `;
             document.getElementById('inboxModal').style.display = 'flex';
 
             db.collection('chats').onSnapshot(snapshot => {
@@ -497,15 +1243,21 @@
 
                 snapshot.forEach(doc => {
                     const chatRoomId = doc.id;
-                    const data = doc.data();
-                    
-                    if (chatRoomId.includes(window.currentUser.uid) || (data.participants && data.participants.includes(window.currentUser.uid))) {
-                        myChats.push({ chatRoomId, ...data });
+                    if (chatRoomId.includes(window.currentUser.uid)) {
+                        myChats.push({ chatRoomId, ...doc.data() });
                     }
                 });
 
                 if(myChats.length === 0) {
-                    container.innerHTML = `<p class="text-center py-14 text-xs text-gray-400 font-bold">No messages yet</p>`;
+                    container.innerHTML = `
+                        <div class="text-center py-14 space-y-2">
+                            <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
+                                <i class="fa-solid fa-inbox"></i>
+                            </div>
+                            <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
+                            <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
+                        </div>
+                    `;
                     return;
                 }
 
@@ -517,29 +1269,36 @@
                           
                           if (!msgSnapshot.empty) {
                               const lastMsgData = msgSnapshot.docs[0].data();
-                              const isMe = lastMsgData.senderUid === window.currentUser.uid;
-                              lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || "Attachment sent");
+                              lastMsgText = lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message");
                               lastTime = lastMsgData.time || "";
                           }
 
                           const div = document.createElement('div');
-                          div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border p-3 rounded-2xl cursor-pointer hover:border-teal-500 shadow-sm transition";
+                          div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
                           div.onclick = () => {
                               closeInboxModal();
                               activeChatRoomId = chat.chatRoomId;
+                              document.getElementById('chatSellerName').innerText = "Conversation";
                               document.getElementById('fullChatPage').style.display = 'flex';
                               loadChatMessages(chat.chatRoomId);
                           };
 
                           div.innerHTML = `
-                              <div class="overflow-hidden">
-                                  <div class="flex items-center gap-2">
-                                      <h4 class="font-bold text-xs text-gray-900 dark:text-white">Chat Conversation</h4>
-                                      <span class="text-[9px] text-gray-400">${lastTime}</span>
+                              <div class="flex items-center gap-3 overflow-hidden">
+                                  <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
+                                      <i class="fa-solid fa-user-shield"></i>
                                   </div>
-                                  <p class="text-[11px] text-gray-500 truncate mt-0.5">${lastMsgText}</p>
+                                  <div class="overflow-hidden">
+                                      <div class="flex items-center gap-2">
+                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                          <span class="text-[9px] text-gray-400">${lastTime}</span>
+                                      </div>
+                                      <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
+                                  </div>
                               </div>
-                              <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>
+                              <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
+                                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                              </div>
                           `;
                           container.appendChild(div);
                       });
@@ -569,17 +1328,84 @@
 
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
             document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
+            const sellerPhone = currentProduct.phone || '919876543210';
+            document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
+
             document.getElementById('fullChatPage').style.display = 'flex';
             loadChatMessages(activeChatRoomId);
+            trackUserStatus(sellerId);
+            watchTypingStatus(activeChatRoomId, sellerId);
         }
 
         function closeFullChatPage() {
             if (activeChatUnsubscribe) activeChatUnsubscribe();
+            if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
+        }
+
+        // Online & Last Seen Tracker
+        function trackUserStatus(otherUserId) {
+            if (activeStatusUnsubscribe) activeStatusUnsubscribe();
+            activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    const statusEl = document.getElementById('chatUserStatus');
+                    const dotEl = document.getElementById('chatOnlineDot');
+                    if(data.isOnline) {
+                        statusEl.innerText = "Online";
+                        statusEl.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
+                        if(dotEl) dotEl.style.display = 'block';
+                    } else if(data.lastSeen) {
+                        const date = data.lastSeen.toDate();
+                        statusEl.innerText = `Last seen at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                        statusEl.className = "text-[11px] text-gray-400 font-semibold";
+                        if(dotEl) dotEl.style.display = 'none';
+                    }
+                }
+            });
+        }
+
+        // Typing Indicator Listeners
+        document.getElementById('fullChatInput').addEventListener('input', () => {
+            if(!activeChatRoomId || !window.currentUser) return;
+            db.collection('chats').doc(activeChatRoomId).set({
+                [`typing_${window.currentUser.uid}`]: true
+            }, { merge: true });
+
+            clearTimeout(window.typingTimer);
+            window.typingTimer = setTimeout(() => {
+                db.collection('chats').doc(activeChatRoomId).set({
+                    [`typing_${window.currentUser.uid}`]: false
+                }, { merge: true });
+            }, 2000);
+        });
+
+        function watchTypingStatus(chatRoomId, otherUserId) {
+            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+                if(doc.exists) {
+                    const data = doc.data();
+                    const statusEl = document.getElementById('chatUserStatus');
+                    if(data[`typing_${otherUserId}`]) {
+                        statusEl.innerText = "typing...";
+                        statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
+                    }
+                }
+            });
         }
 
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
+            
+            // Mark unread messages as read (Blue Ticks)
+            db.collection('chats').doc(chatRoomId).collection('messages')
+              .where('senderUid', '!=', window.currentUser.uid)
+              .where('status', '==', 'sent')
+              .get().then(snapshot => {
+                  snapshot.forEach(doc => {
+                      doc.ref.update({ status: 'read' });
+                  });
+              });
+
             if (activeChatUnsubscribe) activeChatUnsubscribe();
 
             activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
@@ -593,53 +1419,48 @@
                   snapshot.forEach(doc => {
                       const msg = doc.data();
                       const isMe = msg.senderUid === window.currentUser.uid;
+                      
+                      let attachmentHTML = '';
+                      if (msg.attachment) {
+                          if (msg.attachment.type.startsWith('image/')) {
+                              attachmentHTML = `<img src="${msg.attachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                          } else {
+                              attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${msg.attachment.name}</span></div>`;
+                          }
+                      }
+
+                      // Single Tick & Blue Double Ticks Logic
+                      const tickIcon = isMe 
+                          ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
+                          : '';
+
                       const msgCard = document.createElement('div');
                       msgCard.className = `p-3 rounded-2xl max-w-[80%] text-xs shadow-sm ${isMe ? 'bg-primary text-white ml-auto' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 mr-auto border'}`;
-                      msgCard.innerHTML = `<p class="font-medium">${msg.text || ''}</p><span class="text-[9px] ${isMe ? 'text-teal-200' : 'text-gray-400'} block text-right mt-1">${msg.time || ''}</span>`;
+                      msgCard.innerHTML = `
+                          ${attachmentHTML}
+                          ${msg.text ? `<p class="font-medium">${msg.text}</p>` : ''}
+                          <div class="flex justify-end items-center gap-1 mt-1">
+                              <span class="text-[9px] ${isMe ? 'text-teal-200' : 'text-gray-400'}">${msg.time || ''}</span>
+                              ${tickIcon}
+                          </div>
+                      `;
                       container.appendChild(msgCard);
                   });
                   container.scrollTop = container.scrollHeight;
               });
         }
 
-        // 🛠️ UPDATED CHAT SENDING LOGIC TO REGISTER PARTICIPANTS PROPERLY
-        function checkScamAndSendChatMessage() {
-            const input = document.getElementById('fullChatInput');
-            const msg = input.value.trim();
-
-            if (!msg && !currentChatAttachment) return;
-            if (!activeChatRoomId || !window.currentUser) return;
-
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const sellerId = currentProduct ? currentProduct.sellerUid : '';
-            const buyerId = activeChatRoomId.split('_')[1];
-
-            db.collection('chats').doc(activeChatRoomId).set({
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                participants: [window.currentUser.uid, sellerId || buyerId],
-                productId: activeChatRoomId.split('_')[0]
-            }, { merge: true });
-
-            db.collection('chats').doc(activeChatRoomId).collection('messages').add({
-                text: msg,
-                attachment: currentChatAttachment || null,
-                senderUid: window.currentUser.uid,
-                senderName: window.currentUser.displayName || 'User',
-                status: 'sent',
-                time: timeStr,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                input.value = '';
-                clearChatAttachment();
-            });
-        }
-
         function handleChatFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(evt) {
-                currentChatAttachment = { name: file.name, type: file.type, data: evt.target.result };
+                currentChatAttachment = {
+                    name: file.name,
+                    type: file.type,
+                    data: evt.target.result
+                };
                 document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
                 document.getElementById('chatAttachmentPreview').style.display = 'flex';
             };
@@ -652,85 +1473,1053 @@
             document.getElementById('chatAttachmentPreview').style.display = 'none';
         }
 
+        function checkScamAndSendChatMessage() {
+            const input = document.getElementById('fullChatInput');
+            const msg = input.value.trim();
+
+            if (!msg && !currentChatAttachment) return;
+            if (!activeChatRoomId || !window.currentUser) return;
+
+            const lowerMsg = msg.toLowerCase();
+            const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
+            const isSuspicious = scamKeywords.some(keyword => lowerMsg.includes(keyword));
+
+            const warningBanner = document.getElementById('chatSafetyWarning');
+            const warningText = document.getElementById('chatSafetyWarningText');
+
+            if (isSuspicious) {
+                warningBanner.style.display = 'flex';
+                warningText.innerText = "⚠️ Caution: This message contains a suspicious link or scam attempt. Do not make online payments to strangers!";
+                showCustomAlert("Security Warning", "Message blocked due to suspected scam/fraud link.", "error");
+                return;
+            } else {
+                warningBanner.style.display = 'none';
+            }
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            db.collection('chats').doc(activeChatRoomId).collection('messages').add({
+                text: msg,
+                attachment: currentChatAttachment || null,
+                senderUid: window.currentUser.uid,
+                senderName: window.currentUser.displayName || 'User',
+                status: 'sent',
+                time: timeStr,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                input.value = '';
+                clearChatAttachment();
+                triggerPushNotification("New Message on OldX", `${window.currentUser.displayName || 'User'}: ${msg || 'Sent an attachment'}`);
+            }).catch(err => {
+                console.error("Error sending message: ", err);
+            });
+        }
+
+        function openEditProfileModal() {
+            if(!window.currentUser) return;
+            document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
+
+        async function saveProfileChangesWithFile() {
+            const newName = document.getElementById('editProfileNameInput').value.trim();
+            const photoFileInput = document.getElementById('editProfilePhotoFile');
+            const btn = document.getElementById('saveProfileBtn');
+
+            if(!window.currentUser) return;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            try {
+                let photoURL = window.currentUser.photoURL;
+
+                if (photoFileInput.files && photoFileInput.files[0]) {
+                    photoURL = await compressImage(photoFileInput.files[0]);
+                }
+
+                await window.currentUser.updateProfile({
+                    displayName: newName,
+                    photoURL: photoURL
+                });
+
+                closeEditProfileModal();
+                updateProfileDetails(window.currentUser);
+                showCustomAlert("Success", "Profile updated successfully!", "success");
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            } catch (error) {
+                showCustomAlert("Error", error.message, "error");
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            }
+        }
+
+        function shareProfile() {
+            const profileUrl = window.location.href;
+            if(navigator.share) {
+                navigator.share({ title: 'My OldX Profile', url: profileUrl });
+            } else {
+                navigator.clipboard.writeText(profileUrl);
+                showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
+            }
+        }
+
+        function openMyAdsModal() {
+            if(!window.currentUser) { 
+                showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
+                openAuthModal(); 
+                return; 
+            }
+            const container = document.getElementById('myAdsContainer');
+            container.innerHTML = '';
+            const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
+            
+            if(mine.length === 0) { 
+                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">You haven't posted any ads yet.</p>`; 
+            } else {
+                mine.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2";
+                    const isSold = p.isSold || false;
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                                    ${p.title}
+                                    ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
+                                </h4>
+                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 pt-1 border-t">
+                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1">
+                                <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('myAdsModal').style.display = 'flex';
+        }
+
+        function toggleAdStockStatus(docId, currentStatus) {
+            db.collection('products').doc(docId).update({
+                isSold: !currentStatus
+            }).then(() => {
+                openMyAdsModal();
+            });
+        }
+
+        function confirmDeleteAd(docId) {
+            pendingDeleteDocId = docId;
+            document.getElementById('myAdsModal').style.display = 'none';
+            document.getElementById('deleteConfirmModal').style.display = 'flex';
+            
+            document.getElementById('confirmDeleteBtn').onclick = function() {
+                if (pendingDeleteDocId) {
+                    db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
+                        closeDeleteConfirmModal();
+                        openMyAdsModal();
+                        showCustomAlert("Deleted", "Ad removed successfully!", "success");
+                    });
+                }
+            };
+        }
+
+        function closeDeleteConfirmModal() {
+            pendingDeleteDocId = null;
+            document.getElementById('deleteConfirmModal').style.display = 'none';
+            document.getElementById('myAdsModal').style.display = 'flex';
+        }
+
+        function openEditAdModal(docId) {
+            closeMyAdsModal();
+            window.location.hash = `edit-${docId}`;
+        }
+
+        function renderEditAdView(docId) {
+            const p = products.find(item => item.docId === docId);
+            if(!p) return;
+
+            document.getElementById('editDocId').value = p.docId;
+            document.getElementById('editTitle').value = p.title;
+            document.getElementById('editPrice').value = p.basePrice || 0;
+            document.getElementById('editDiscount').value = p.discountPercent || 0;
+            document.getElementById('editPhone').value = p.phone || '';
+            document.getElementById('editLocation').value = p.location || '';
+            document.getElementById('editDesc').value = p.desc || '';
+
+            const imgPreview = document.getElementById('editImagesPreview');
+            imgPreview.innerHTML = '';
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
+                });
+            }
+        }
+
+        function closeEditAdPage() {
+            window.location.hash = '';
+            setTimeout(() => openMyAdsModal(), 100);
+        }
+
+        async function handleEditAdSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('editSubmitBtn');
+            btn.innerText = 'Updating...'; btn.disabled = true;
+
+            try {
+                const docId = document.getElementById('editDocId').value;
+                const title = document.getElementById('editTitle').value;
+                const basePrice = parseFloat(document.getElementById('editPrice').value);
+                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
+                const phone = document.getElementById('editPhone').value;
+                const location = document.getElementById('editLocation').value;
+                const desc = document.getElementById('editDesc').value;
+                const newImgInput = document.getElementById('editNewImages');
+
+                const p = products.find(item => item.docId === docId);
+                let updatedImages = p ? p.images : [];
+
+                if (newImgInput.files && newImgInput.files.length > 0) {
+                    updatedImages = [];
+                    for (let i = 0; i < newImgInput.files.length; i++) {
+                        const compressed = await compressImage(newImgInput.files[i]);
+                        updatedImages.push(compressed);
+                    }
+                }
+
+                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+                await db.collection('products').doc(docId).update({
+                    title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
+                    images: updatedImages
+                });
+
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                closeEditAdPage();
+                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
+            } catch (err) {
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
+            }
+        }
+
+        function checkUserPinStatus(user) {
+            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
+            if(!userSavedPin) {
+                document.getElementById('setPinModal').style.display = 'flex';
+            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
+                document.getElementById('verifyPinModal').style.display = 'flex';
+            }
+        }
+
+        function saveUserPin() {
+            const input = document.getElementById('newPinInput').value;
+            if(input && input.length === 4 && !isNaN(input)) {
+                if(window.currentUser) {
+                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('setPinModal').style.display = 'none';
+                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
+                }
+            } else {
+                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
+            }
+        }
+
+        function verifyUserPin() {
+            const input = document.getElementById('verifyPinInput').value;
+            if(window.currentUser) {
+                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(input === correctPin) {
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('verifyPinModal').style.display = 'none';
+                    document.getElementById('verifyPinInput').value = '';
+                } else {
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
+                    document.getElementById('verifyPinInput').value = '';
+                }
+            }
+        }
+
+        function handleForgotPin() {
+            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
+                document.getElementById('verifyPinModal').style.display = 'none';
+                if(window.currentUser) {
+                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
+                }
+                auth.signOut().then(() => {
+                    openAuthModal();
+                });
+            }
+        }
+
+        function openSetPinModal() {
+            document.getElementById('setPinModal').style.display = 'flex';
+        }
+
+        function loginWithGoogle() { 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
+        }
+
+        function handleEmailAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            
+            auth.signInWithEmailAndPassword(email, password).then(() => {
+                closeAuthModal();
+            }).catch(() => {
+                auth.createUserWithEmailAndPassword(email, password).then(() => {
+                    closeAuthModal();
+                }).catch(err => showCustomAlert("Auth Error", err.message, "error"));
+            });
+        }
+
+        function continueAsGuest() {
+            closeAuthModal();
+            showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
+        }
+
+        function openProfilePage() { window.location.hash = 'profile'; }
+
+        function updateProfileDetails(user) {
+            if(!user) return;
+            document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
+            document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
+            if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
+            document.getElementById('profileUserBadge').innerText = 'Verified Member';
+            
+            const myCount = products.filter(p => p.sellerUid === user.uid).length;
+            document.getElementById('statMyAdsCount').innerText = myCount;
+            document.getElementById('statSavedAdsCount').innerText = getValidSavedCount();
+        }
+
+        function handleLogout() {
+            if(confirm('Are you sure you want to log out from OldX?')) {
+                if(window.currentUser) {
+                    db.collection('users').doc(window.currentUser.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                sessionStorage.removeItem('oldx_pin_unlocked');
+                auth.signOut().then(() => {
+                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
+                    window.location.hash = '';
+                });
+            }
+        }
+
+        function updateCartBadge() { 
+            const badge = document.getElementById('cartBadgeCount');
+            if(badge) badge.innerText = getValidSavedCount(); 
+        }
+
+        function toggleCartProduct(docId) {
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
+                openAuthModal();
+                return;
+            }
+            const idx = cartList.findIndex(id => id === docId);
+            if(idx > -1) { 
+                cartList.splice(idx, 1); 
+                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
+            } else { 
+                cartList.push(docId); 
+                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
+                triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
+            }
+            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
+            renderProducts();
+        }
+
+        function toggleCartCurrentProduct() {
+            if(currentProduct) toggleCartProduct(currentProduct.docId);
+        }
+
+        function openCartModal() {
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to view saved ads!", "error");
+                openAuthModal();
+                return;
+            }
+            const container = document.getElementById('cartItemsContainer');
+            container.innerHTML = '';
+            const validCartList = cartList.filter(id => products.some(p => p.docId === id));
+            
+            if(validCartList.length === 0) { 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
+            } else {
+                validCartList.forEach(id => {
+                    const p = products.find(item => item.docId === id);
+                    if(p) {
+                        const div = document.createElement('div');
+                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                        div.innerHTML = `
+                            <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${p.docId}')">
+                                <img src="${p.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                                <div><h4 class="font-bold text-xs truncate max-w-[180px]">${p.title}</h4><p class="text-teal-600 font-extrabold text-xs">${p.finalPriceStr}</p></div>
+                            </div>
+                            <button onclick="removeFromCart('${p.docId}')" class="text-red-500 p-2 text-xs font-bold"><i class="fa-solid fa-trash-can"></i></button>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            }
+            document.getElementById('cartModal').style.display = 'flex';
+        }
+
+        function removeFromCart(id) {
+            cartList = cartList.filter(item => item !== id);
+            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
+            openCartModal();
+        }
+
+        function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
+
+        /* RENDER BROWSE CATEGORIES */
+        function renderHomeCategories() {
+            const grid = document.getElementById('homeCatGrid');
+            const isAllSelected = currentFilterCat === 'all';
+
+            grid.innerHTML = `
+                <div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
+                </div>
+            `;
+
+            olxCategories.forEach(cat => {
+                const isSelected = currentFilterCat === cat.id;
+                const el = document.createElement('div');
+                el.className = `cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
+                el.onclick = () => filterCat(cat.id);
+                el.innerHTML = `
+                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
+                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                    </div>
+                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                `;
+                grid.appendChild(el);
+            });
+        }
+
+        function filterCat(catId) { 
+            currentFilterCat = catId; 
+            renderHomeCategories();
+            renderProducts(); 
+        }
+
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
+            updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
             handleHashChange();
         });
 
-        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+        function openProductDetailPage(docId) { 
+            const p = products.find(item => item.docId === docId);
+            if (p && p.category) {
+                userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
+                localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+            }
+            window.location.hash = `product-${docId}`; 
+        }
 
         function handleHashChange() {
             const hash = window.location.hash;
-            if(hash.startsWith('#product-')) {
+
+            if(hash.startsWith('#edit-')) {
+                const docId = hash.replace('#edit-', '');
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'block';
+                renderEditAdView(docId);
+                window.scrollTo(0,0);
+                return;
+            } else if(hash.startsWith('#product-')) {
                 const docId = hash.replace('#product-', '');
                 const p = products.find(item => item.docId === docId);
                 if(p) {
                     currentProduct = p;
                     document.getElementById('homeView').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'block';
-                    renderProductDetailView(p);
-                    window.scrollTo(0,0);
+                    document.getElementById('sellWizardPage').style.display = 'none';
+                    document.getElementById('profilePage').style.display = 'none';
+                    document.getElementById('fullEditPage').style.display = 'none';
+                    document.getElementById('productDetailView').style.display = 'none';
+                    document.getElementById('productSkeletonSlide').style.display = 'flex';
+
+                    setTimeout(() => {
+                        renderProductDetailView(p);
+                        document.getElementById('productSkeletonSlide').style.display = 'none';
+                        document.getElementById('productDetailView').style.display = 'block';
+                        window.scrollTo(0,0);
+                        initDetailMap(p);
+                    }, 400);
                     return;
                 }
             } else if(hash === '#sell') {
                 document.getElementById('homeView').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'block';
+                window.scrollTo(0,0);
+                setTimeout(() => initSellMapPicker(), 300);
+                return;
+            } else if(hash === '#profile') {
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    openAuthModal();
+                    return;
+                }
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'block';
+                updateProfileDetails(window.currentUser);
                 window.scrollTo(0,0);
                 return;
             }
+            
             document.getElementById('sellWizardPage').style.display = 'none';
+            document.getElementById('profilePage').style.display = 'none';
+            document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
+            document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
         }
 
         window.addEventListener('hashchange', handleHashChange);
+
         function closeProductDetailView() { window.location.hash = ''; }
         function closeSellWizardPage() { window.location.hash = ''; }
+
+        function initSellMapPicker() {
+            const mapContainer = document.getElementById('adMapPicker');
+            if (!mapContainer) return;
+            mapContainer.innerHTML = '';
+
+            createAdMap = L.map('adMapPicker').setView([selectedCoords.lat, selectedCoords.lng], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(createAdMap);
+            createAdMarker = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true }).addTo(createAdMap);
+
+            createAdMarker.on('dragend', function() {
+                const position = createAdMarker.getLatLng();
+                selectedCoords.lat = position.lat;
+                selectedCoords.lng = position.lng;
+            });
+
+            createAdMap.on('click', function(e) {
+                selectedCoords.lat = e.latlng.lat;
+                selectedCoords.lng = e.latlng.lng;
+                createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+            });
+
+            setTimeout(() => { createAdMap.invalidateSize(); }, 200);
+        }
+
+        function getCurrentLocationForAd() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    selectedCoords.lat = position.coords.latitude;
+                    selectedCoords.lng = position.coords.longitude;
+                    if (createAdMap && createAdMarker) {
+                        createAdMap.setView([selectedCoords.lat, selectedCoords.lng], 15);
+                        createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+                    }
+                    showCustomAlert("GPS Success", "Location successfully retrieved via GPS!", "success");
+                }, () => {
+                    showCustomAlert("GPS Error", "Unable to retrieve your location. Please click on the map.", "error");
+                });
+            } else {
+                showCustomAlert("Not Supported", "Geolocation is not supported by your browser.", "error");
+            }
+        }
+
+        function initDetailMap(p) {
+            const mapDiv = document.getElementById('detailMiniMap');
+            if (!mapDiv) return;
+            mapDiv.innerHTML = '';
+
+            const pLat = p.coords ? p.coords.lat : 22.3039;
+            const pLng = p.coords ? p.coords.lng : 70.8022;
+
+            const miniMap = L.map('detailMiniMap', { zoomControl: false, dragging: false }).setView([pLat, pLng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+            L.marker([pLat, pLng]).addTo(miniMap);
+
+            document.getElementById('detailNavigateBtn').href = `https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLng}`;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const uLat = position.coords.latitude;
+                    const uLng = position.coords.longitude;
+                    const distanceKm = calculateDistance(uLat, uLng, pLat, pLng);
+                    document.getElementById('detailDistanceBadge').innerText = `${distanceKm} km away`;
+                }, () => {
+                    document.getElementById('detailDistanceBadge').innerText = `Location unavailable`;
+                });
+            } else {
+                document.getElementById('detailDistanceBadge').innerText = `GPS not supported`;
+            }
+
+            setTimeout(() => { miniMap.invalidateSize(); }, 200);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c).toFixed(1);
+        }
+
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
 
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
+            
+            const mrpElem = document.getElementById('detailMrpPrice');
+            const discElem = document.getElementById('detailDiscountBadge');
+            
+            if (p.mrpPrice && p.mrpPrice > p.basePrice) {
+                mrpElem.innerText = `₹${p.mrpPrice.toLocaleString('en-IN')}`;
+                mrpElem.style.display = 'inline';
+                if (p.discountPercent > 0) {
+                    discElem.innerText = `${p.discountPercent}% OFF`;
+                    discElem.style.display = 'inline-block';
+                } else {
+                    discElem.style.display = 'none';
+                }
+            } else {
+                mrpElem.style.display = 'none';
+                discElem.style.display = 'none';
+            }
+
             document.getElementById('detailLocation').innerText = p.location;
             document.getElementById('detailDescription').innerText = p.desc;
+
             const slider = document.getElementById('detailImageSlider');
             slider.innerHTML = '';
             if(p.images && p.images.length > 0) {
                 p.images.forEach(img => {
                     slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
                 });
+                document.getElementById('detailImgBadge').innerText = `1/${p.images.length}`;
+            }
+
+            const grid = document.getElementById('detailHighlightsGrid');
+            grid.innerHTML = '';
+            if(p.extraDetails) {
+                for(let k in p.extraDetails) {
+                    if(p.extraDetails[k]) {
+                        grid.innerHTML += `
+                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
+                                <div><p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p><p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p></div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            const phone = p.phone || '919876543210';
+            const waMsg = encodeURIComponent(`Hi, I am interested in your item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
+        }
+
+        function updateImageCounter() {
+            const slider = document.getElementById('detailImageSlider');
+            if(!currentProduct || !currentProduct.images) return;
+            const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+            document.getElementById('detailImgBadge').innerText = `${index}/${currentProduct.images.length}`;
+        }
+
+        function shareProductLink() {
+            if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
+            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Link Copied", "Product link copied to clipboard!", "success"); }
+        }
+
+        function openOfferModal() {
+            const offer = prompt('Enter your offer price (₹):');
+            if(offer) {
+                showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
+                triggerPushNotification("New Offer Received!", `A buyer offered ₹${offer} on your ad!`);
             }
         }
 
-        function startSellWizard() { window.location.hash = 'sell'; }
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
-        function showCustomAlert(title, message) { alert(title + ": " + message); }
-        function closeCustomAlert() {}
-
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            if(!grid) return;
-            grid.innerHTML = '';
-            products.forEach(p => {
+        function startSellWizard() {
+            window.location.hash = 'sell';
+            const list = document.getElementById('wizardMainCatList');
+            list.innerHTML = '';
+            olxCategories.forEach(cat => {
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-3xl border p-4 shadow-sm cursor-pointer";
-                card.onclick = () => openProductDetailPage(p.docId);
-                card.innerHTML = `
-                    <div class="h-44 bg-gray-100 rounded-2xl overflow-hidden mb-3">
-                        <img src="${p.images?.[0] || ''}" class="w-full h-full object-cover">
+                card.className = "p-3 border rounded-2xl bg-white dark:bg-gray-800 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2 shadow-sm transition transform hover:-translate-y-1";
+                card.onclick = () => selectWizardMain(cat);
+                card.innerHTML = `<img src="${cat.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm"><span class="font-bold text-xs text-gray-800 dark:text-gray-100">${cat.name}</span>`;
+                list.appendChild(card);
+            });
+            document.getElementById('wizardStage1').style.display = 'block';
+            document.getElementById('wizardStage2').style.display = 'none';
+            document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('wizardStage4').style.display = 'none';
+        }
+
+        function selectWizardMain(cat) {
+            selectedMainCat = cat;
+            document.getElementById('wizardSubCatTitle').innerText = cat.name;
+            const subList = document.getElementById('wizardSubCatList');
+            subList.innerHTML = '';
+            cat.subs.forEach(sub => {
+                const item = document.createElement('div');
+                item.className = "p-4 border rounded-2xl bg-white dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center shadow-sm";
+                item.onclick = () => selectWizardSub(sub);
+                item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
+                subList.appendChild(item);
+            });
+            document.getElementById('wizardStage1').style.display = 'none';
+            document.getElementById('wizardStage2').style.display = 'block';
+        }
+
+        function selectWizardSub(sub) {
+            selectedSubCat = sub;
+            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
+            const dynContainer = document.getElementById('dynamicFormFields');
+            dynContainer.innerHTML = '';
+
+            if(selectedMainCat.id === 'cars') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Model / Variant *</label>
+                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                        </div>
                     </div>
-                    <h4 class="font-bold text-sm truncate">${p.title}</h4>
-                    <p class="text-teal-600 font-extrabold text-base mt-1">${p.finalPriceStr}</p>
                 `;
-                grid.appendChild(card);
+            } else {
+                dynContainer.innerHTML = `
+                    <div>
+                        <label class="block font-bold mb-1">Type / Details *</label>
+                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                `;
+            }
+
+            document.getElementById('wizardStage2').style.display = 'none';
+            document.getElementById('wizardStage3').style.display = 'block';
+        }
+
+        function autoGenerateText() {
+            const brand = document.getElementById('dynBrand')?.value || '';
+            const model = document.getElementById('dynModel')?.value || '';
+            const type = document.getElementById('dynType')?.value || selectedSubCat;
+
+            if(selectedMainCat.id === 'cars') {
+                document.getElementById('adTitle').value = `${brand} ${model}`;
+                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}. Excellent condition.`;
+            } else {
+                document.getElementById('adTitle').value = `${type} - Good Condition`;
+                document.getElementById('adDesc').value = `Selling ${type} in excellent condition. Contact for details.`;
+            }
+        }
+
+        function goToPhotoUploadStep(e) {
+            e.preventDefault();
+            document.getElementById('wizardStage3').style.display = 'none';
+            document.getElementById('wizardStage4').style.display = 'block';
+            updateWizardDistricts();
+            setTimeout(() => { if (createAdMap) createAdMap.invalidateSize(); }, 200);
+        }
+
+        function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
+        function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
+        function backToWizardStage3() { document.getElementById('wizardStage4').style.display = 'none'; document.getElementById('wizardStage3').style.display = 'block'; }
+
+        function updateWizardDistricts() {
+            const state = document.getElementById('adState').value;
+            const distSelect = document.getElementById('adDistrict');
+            distSelect.innerHTML = '';
+            (districtData[state] || ['General']).forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d;
+                distSelect.appendChild(opt);
             });
         }
 
+        function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width; let height = img.height;
+                        const maxDim = 800;
+                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleFinalAdSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('adSubmitBtn');
+            btn.innerText = 'Publishing...'; btn.disabled = true;
+
+            try {
+                const title = document.getElementById('adTitle').value;
+                const desc = document.getElementById('adDesc').value;
+                const basePrice = parseFloat(document.getElementById('adPrice').value);
+                const mrpPrice = parseFloat(document.getElementById('adMrpPrice').value) || basePrice;
+                const discountPercent = parseFloat(document.getElementById('adDiscount').value) || 0;
+                const phone = document.getElementById('adPhone').value;
+                const state = document.getElementById('adState').value;
+                const district = document.getElementById('adDistrict').value;
+                const village = document.getElementById('adVillage').value;
+                const imgInput = document.getElementById('adImages');
+                const isFeatured = document.getElementById('adIsFeatured').checked;
+
+                let extraDetails = {
+                    brand: document.getElementById('dynBrand')?.value || '',
+                    model: document.getElementById('dynModel')?.value || '',
+                    type: document.getElementById('dynType')?.value || ''
+                };
+
+                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+                let images = [];
+                if (imgInput.files && imgInput.files.length > 0) {
+                    for (let i = 0; i < imgInput.files.length; i++) {
+                        const compressed = await compressImage(imgInput.files[i]);
+                        images.push(compressed);
+                    }
+                }
+
+                const adData = {
+                    sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
+                    sellerName: window.currentUser ? window.currentUser.displayName : 'Seller',
+                    category: selectedMainCat.id,
+                    subCategory: selectedSubCat,
+                    title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
+                    extraDetails,
+                    coords: selectedCoords,
+                    location: `${village}, ${district}, ${state}`, 
+                    state, 
+                    images,
+                    isFeatured: isFeatured,
+                    isSold: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                db.collection('products').add(adData).then(() => {
+                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                    document.getElementById('successAdModal').style.display = 'flex';
+                });
+            } catch (err) {
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
+            }
+        }
+
+        function closeSuccessModalAndGoHome() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+        }
+
+        function closeSuccessModalAndOpenMyAds() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+            openMyAdsModal();
+        }
+
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+        function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
+
+        /* RENDER PRODUCTS */
+        function renderProducts() {
+            const grid = document.getElementById('productGrid');
+            const recSection = document.getElementById('aiRecommendedSection');
+            const recGrid = document.getElementById('recommendedProductGrid');
+            const featuredSection = document.getElementById('featuredSection');
+            const featuredGrid = document.getElementById('featuredProductGrid');
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const stateVal = document.getElementById('stateFilter').value;
+            
+            if(!grid) return;
+            grid.innerHTML = '';
+            if(recGrid) recGrid.innerHTML = '';
+            if(featuredGrid) featuredGrid.innerHTML = '';
+
+            if (currentFilterCat === 'all' && !searchVal && featuredSection && featuredGrid) {
+                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (featuredItems.length > 0) {
+                    featuredSection.style.display = 'block';
+                    featuredItems.forEach(p => {
+                        featuredGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    featuredSection.style.display = 'none';
+                }
+            } else if (featuredSection) {
+                featuredSection.style.display = 'none';
+            }
+
+            let topCat = null;
+            let maxViews = 0;
+            for (let cat in userCategoryViews) {
+                if (userCategoryViews[cat] > maxViews) {
+                    maxViews = userCategoryViews[cat];
+                    topCat = cat;
+                }
+            }
+
+            if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
+                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (recommendedItems.length > 0) {
+                    recSection.style.display = 'block';
+                    recommendedItems.forEach(p => {
+                        recGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    recSection.style.display = 'none';
+                }
+            } else if (recSection) {
+                recSection.style.display = 'none';
+            }
+
+            const filtered = products.filter(p => {
+                const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
+                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchState = (!stateVal || p.state === stateVal);
+                return matchCat && matchSearch && matchState;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No items found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.appendChild(createProductCard(p, false));
+            });
+        }
+
+        function createProductCard(p, isCarousel = false) {
+            const isSaved = cartList.includes(p.docId);
+            const card = document.createElement('div');
+            const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
+            
+            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
+            card.onclick = () => openProductDetailPage(p.docId);
+            
+            const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
+                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                : '';
+
+            const discBadge = (p.discountPercent && p.discountPercent > 0)
+                ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
+                : '';
+
+            const featuredBadge = p.isFeatured
+                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
+                : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">★ VERIFIED</span>`;
+
+            const soldBadge = p.isSold 
+                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                : '';
+
+            card.innerHTML = `
+                ${soldBadge}
+                <div>
+                    <div class="h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                        ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
+                        
+                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                            ${featuredBadge}
+                            ${discBadge}
+                        </div>
+
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-4 space-y-2">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                            <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
+                        </div>
+
+                        <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                            ${p.title}
+                        </h4>
+
+                        <div class="flex items-baseline gap-1 pt-1">
+                            <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
+                            ${mrpMarkup}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
+                    <span class="text-gray-400 font-semibold">Inspect & Buy</span>
+                </div>
+            `;
+            return card;
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
+            renderHomeCategories();
             handleHashChange();
+            updateCartBadge();
         });
     </script>
 </body>
