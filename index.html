@@ -13,8 +13,8 @@
         html { scroll-behavior: smooth; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .cat-card-hover { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); }
-        .cat-card-hover:hover { transform: translateY(-3px); }
+        .cat-card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .cat-card-hover:hover { transform: translateY(-4px) scale(1.02); }
         
         @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -121,19 +121,28 @@
         <!-- Categories & Products -->
         <main class="max-w-7xl mx-auto px-4 py-8">
             <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                    <i class="fa-solid fa-grid-2 text-teal-600"></i> Browse Categories
-                </h3>
+                <div>
+                    <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-teal-600"></i> Browse Categories
+                    </h3>
+                    <p class="text-xs text-gray-400 font-medium">Explore items by category</p>
+                </div>
             </div>
             
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4 mb-10" id="homeCatGrid"></div>
+            <!-- PREMIUM BROWSE CATEGORIES GRID -->
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 md:gap-5 mb-12" id="homeCatGrid"></div>
 
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                    <i class="fa-solid fa-sparkles text-amber-500"></i> Fresh Recommendations
-                </h3>
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                        <i class="fa-solid fa-fire text-amber-500"></i> Fresh Recommendations
+                    </h3>
+                    <p class="text-xs text-gray-400 font-medium">Handpicked listings near you</p>
+                </div>
             </div>
-            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5"></div>
+            
+            <!-- PREMIUM PRODUCT CARDS GRID -->
+            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
         </main>
     </div>
 
@@ -278,7 +287,7 @@
         </div>
     </div>
 
-    <!-- ATTRACTIVE DELETE CONFIRMATION MODAL -->
+    <!-- DELETE CONFIRMATION MODAL -->
     <div id="deleteConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-slide-up">
             <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
@@ -714,7 +723,7 @@
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
-        // USER AUTHENTICATION & HEADER BUTTON TOGGLE & PIN CHECK
+        // USER AUTHENTICATION
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
@@ -746,7 +755,6 @@
             }
         });
 
-        // AUTOMATIC DISCOUNT & PRICE CALCULATION LOGIC
         function calculatePrices(source) {
             const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
             const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
@@ -936,7 +944,6 @@
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        // FULL PAGE EDIT ROUTING FIX
         function openEditAdModal(docId) {
             closeMyAdsModal();
             window.location.hash = `edit-${docId}`;
@@ -1010,7 +1017,7 @@
             }
         }
 
-        // 4-DIGIT PIN LOGIC
+        // PIN LOGIC
         function checkUserPinStatus(user) {
             const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
             if(!userSavedPin) {
@@ -1117,24 +1124,28 @@
             if(badge) badge.innerText = getValidSavedCount(); 
         }
 
-        function toggleCartCurrentProduct() {
+        function toggleCartProduct(docId) {
             if(!window.currentUser) {
-                alert('Bookmark / Save karva mate maherbani kari ne pehla Login karo!');
+                alert('Bookmark / Save karva mate pehla Login karo!');
                 openAuthModal();
                 return;
             }
-            if(!currentProduct) return;
-            const idx = cartList.findIndex(id => id === currentProduct.docId);
-            if(idx > -1) { cartList.splice(idx, 1); alert('Ad removed!'); }
-            else { cartList.push(currentProduct.docId); alert('Ad saved!'); }
+            const idx = cartList.findIndex(id => id === docId);
+            if(idx > -1) { cartList.splice(idx, 1); alert('Ad Removed!'); }
+            else { cartList.push(docId); alert('Ad Saved!'); }
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
             updateCartBadge();
             if(window.currentUser) updateProfileDetails(window.currentUser);
+            renderProducts();
+        }
+
+        function toggleCartCurrentProduct() {
+            if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
         function openCartModal() {
             if(!window.currentUser) {
-                alert('Saved ads jovama mate maherbani kari ne pehla Login karo!');
+                alert('Saved ads jovama mate pehla Login karo!');
                 openAuthModal();
                 return;
             }
@@ -1174,24 +1185,40 @@
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
+        // REDESIGNED & POLISHED BROWSE CATEGORIES
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
+            const isAllSelected = currentFilterCat === 'all';
+
             grid.innerHTML = `
-                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border text-center cursor-pointer flex flex-col items-center justify-center gap-1.5">
-                    <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-border-all"></i></div>
-                    <p class="font-bold text-xs">All</p>
+                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
                 </div>
             `;
+
             olxCategories.forEach(cat => {
+                const isSelected = currentFilterCat === cat.id;
                 const el = document.createElement('div');
-                el.className = "cat-card-hover bg-white dark:bg-gray-800 p-2 rounded-2xl shadow-sm border text-center cursor-pointer flex flex-col items-center justify-center gap-1.5";
+                el.className = `cat-card-hover bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
                 el.onclick = () => filterCat(cat.id);
-                el.innerHTML = `<img src="${cat.img}" class="w-12 h-12 rounded-2xl object-cover shadow-sm"><p class="font-bold text-xs truncate w-full">${cat.name}</p>`;
+                el.innerHTML = `
+                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
+                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                    </div>
+                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                `;
                 grid.appendChild(el);
             });
         }
 
-        function filterCat(catId) { currentFilterCat = catId; renderProducts(); }
+        function filterCat(catId) { 
+            currentFilterCat = catId; 
+            renderHomeCategories();
+            renderProducts(); 
+        }
 
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             products = [];
@@ -1532,6 +1559,7 @@
 
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        // REDESIGNED & POLISHED FRESH RECOMMENDATIONS CARDS
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
@@ -1547,43 +1575,75 @@
             });
 
             if(filtered.length === 0) {
-                grid.innerHTML = `<p class="col-span-full text-center text-gray-400 py-6 font-semibold">No products found.</p>`;
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No recommendations found</p>
+                    </div>
+                `;
                 return;
             }
 
             filtered.forEach(p => {
+                const isSaved = cartList.includes(p.docId);
                 const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl border overflow-hidden flex flex-col justify-between transition cursor-pointer transform hover:-translate-y-1 active:scale-98 relative";
+                card.className = "bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
                 card.onclick = () => openProductDetailPage(p.docId);
                 
                 const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                    ? `<span class="text-xs text-gray-400 line-through ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                    ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
                     : '';
 
                 const discBadge = (p.discountPercent && p.discountPercent > 0)
-                    ? `<span class="absolute top-2 right-2 bg-red-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">${p.discountPercent}% OFF</span>`
+                    ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
                     : '';
 
                 const soldBadge = p.isSold 
-                    ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-10"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                    ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
                     : '';
 
                 card.innerHTML = `
                     ${soldBadge}
                     <div>
-                        <div class="h-48 bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden relative">
-                            ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-image text-3xl text-gray-400"></i>`}
-                            <span class="absolute top-2 left-2 bg-primary/80 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">FEATURED</span>
-                            ${discBadge}
+                        <!-- Image Area with Badges -->
+                        <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                            ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
+                            
+                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                                <span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">
+                                    ★ FEATURED
+                                </span>
+                                ${discBadge}
+                            </div>
+
+                            <!-- Heart Save Button -->
+                            <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
+                                <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
+                            </button>
                         </div>
-                        <div class="p-3.5">
-                            <span class="text-[10px] bg-teal-50 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200 border px-2 py-0.5 rounded-full font-bold inline-block mb-1">${p.location}</span>
-                            <h4 class="font-bold text-sm text-gray-900 dark:text-white line-clamp-1">${p.title}</h4>
-                            <div class="flex items-baseline gap-1 mt-1">
-                                <p class="text-primary dark:text-teal-400 font-black text-lg">${p.finalPriceStr}</p>
+
+                        <!-- Info Area -->
+                        <div class="p-4 space-y-2">
+                            <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                                <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                                <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
+                            </div>
+
+                            <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                                ${p.title}
+                            </h4>
+
+                            <div class="flex items-baseline gap-1 pt-1">
+                                <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
                                 ${mrpMarkup}
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Card Footer Badge -->
+                    <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
+                        <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
+                        <span class="text-gray-400 font-semibold">Inspect & Buy</span>
                     </div>
                 `;
                 grid.appendChild(card);
