@@ -300,8 +300,8 @@
         </div>
     </div>
 
-    <!-- FULL DEDICATED EDIT AD PAGE (NEW FULL PAGE VIEW WITH NEW IMAGE UPLOAD SUPPORT) -->
-    <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12 z-[70] relative">
+    <!-- FULL DEDICATED EDIT AD PAGE -->
+    <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="closeEditAdPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
                 <i class="fa-solid fa-arrow-left text-base"></i> Cancel & Back
@@ -314,7 +314,6 @@
             <form onsubmit="handleEditAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
                 <input type="hidden" id="editDocId">
 
-                <!-- Existing & New Images Preview Section -->
                 <div>
                     <label class="block font-bold mb-1">Current Photos</label>
                     <div id="editImagesPreview" class="flex gap-2 overflow-x-auto py-2 no-scrollbar"></div>
@@ -366,7 +365,7 @@
 
     <!-- FULL PAGE DEDICATED CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
-        <!-- Chat Header with Direct Call & Online Status -->
+        <!-- Chat Header -->
         <div class="bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-3">
                 <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black">
@@ -382,7 +381,6 @@
                 </div>
             </div>
             
-            <!-- DIRECT CALL & OPTIONS -->
             <div class="flex items-center gap-4 text-gray-600 dark:text-gray-300">
                 <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
                     <i class="fa-solid fa-phone"></i>
@@ -391,7 +389,6 @@
             </div>
         </div>
 
-        <!-- Chat Messages Area -->
         <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
             <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
                 <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
@@ -401,13 +398,11 @@
             </div>
         </div>
 
-        <!-- Attachment Preview Bar -->
         <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs">
             <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
             <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <!-- Input Bar with Photo/Video/File Send Options -->
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
             
@@ -771,17 +766,15 @@
             }
         }
 
-        // FULL PAGE CHAT FUNCTIONS WITH TICKS & DIRECT CALL
+        // FULL PAGE CHAT FUNCTIONS
         function openLiveChatModal() {
             if (!currentProduct) return;
             document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
             
-            // DIRECT PHONE CALL SETUP
             const sellerPhone = currentProduct.phone || '919876543210';
             document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
 
-            // Online/Offline presence simulation
-            const isOnline = Math.random() > 0.3; // 70% chance online
+            const isOnline = Math.random() > 0.3;
             const dot = document.getElementById('chatOnlineDot');
             const statusTxt = document.getElementById('chatUserStatus');
 
@@ -863,7 +856,6 @@
             input.value = '';
             clearChatAttachment();
 
-            // TICK SIMULATION: Single Tick (Sent) -> Double Blue Tick (Seen)
             setTimeout(() => {
                 const tickElem = document.getElementById(`${msgId}-status`);
                 if (tickElem) {
@@ -923,7 +915,6 @@
             });
         }
 
-        // FIXED DELETE POPUP OVERLAY LOGIC
         function confirmDeleteAd(docId) {
             pendingDeleteDocId = docId;
             document.getElementById('myAdsModal').style.display = 'none';
@@ -945,8 +936,13 @@
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        // UPDATED FULL-PAGE EDIT AD LOGIC WITH PHOTO EDIT SUPPORT
+        // FULL PAGE EDIT ROUTING FIX
         function openEditAdModal(docId) {
+            closeMyAdsModal();
+            window.location.hash = `edit-${docId}`;
+        }
+
+        function renderEditAdView(docId) {
             const p = products.find(item => item.docId === docId);
             if(!p) return;
 
@@ -958,7 +954,6 @@
             document.getElementById('editLocation').value = p.location || '';
             document.getElementById('editDesc').value = p.desc || '';
 
-            // Render existing images preview
             const imgPreview = document.getElementById('editImagesPreview');
             imgPreview.innerHTML = '';
             if(p.images && p.images.length > 0) {
@@ -966,15 +961,11 @@
                     imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
                 });
             }
-
-            document.getElementById('myAdsModal').style.display = 'none';
-            document.getElementById('fullEditPage').style.display = 'block';
-            window.scrollTo(0,0);
         }
 
         function closeEditAdPage() {
-            document.getElementById('fullEditPage').style.display = 'none';
-            document.getElementById('myAdsModal').style.display = 'flex';
+            window.location.hash = '';
+            setTimeout(() => openMyAdsModal(), 100);
         }
 
         async function handleEditAdSubmit(e) {
@@ -995,7 +986,6 @@
                 const p = products.find(item => item.docId === docId);
                 let updatedImages = p ? p.images : [];
 
-                // If user selected new photos, compress and replace them
                 if (newImgInput.files && newImgInput.files.length > 0) {
                     updatedImages = [];
                     for (let i = 0; i < newImgInput.files.length; i++) {
@@ -1014,7 +1004,6 @@
                 alert('Ad Updated Successfully!');
                 btn.innerText = 'Save Changes'; btn.disabled = false;
                 closeEditAdPage();
-                openMyAdsModal();
             } catch (err) {
                 alert("Error updating ad.");
                 btn.innerText = 'Save Changes'; btn.disabled = false;
@@ -1217,7 +1206,18 @@
 
         function handleHashChange() {
             const hash = window.location.hash;
-            if(hash.startsWith('#product-')) {
+
+            if(hash.startsWith('#edit-')) {
+                const docId = hash.replace('#edit-', '');
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'block';
+                renderEditAdView(docId);
+                window.scrollTo(0,0);
+                return;
+            } else if(hash.startsWith('#product-')) {
                 const docId = hash.replace('#product-', '');
                 const p = products.find(item => item.docId === docId);
                 if(p) {
@@ -1225,8 +1225,8 @@
                     document.getElementById('homeView').style.display = 'none';
                     document.getElementById('sellWizardPage').style.display = 'none';
                     document.getElementById('profilePage').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'none';
                     document.getElementById('fullEditPage').style.display = 'none';
+                    document.getElementById('productDetailView').style.display = 'none';
                     document.getElementById('productSkeletonSlide').style.display = 'flex';
 
                     setTimeout(() => {
