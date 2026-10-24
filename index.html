@@ -22,6 +22,12 @@
         }
         .animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
+        @keyframes scaleUp {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-up { animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
         @keyframes pulseSkeleton {
             0%, 100% { opacity: 0.6; }
             50% { opacity: 0.3; }
@@ -129,7 +135,6 @@
                 </div>
             </div>
             
-            <!-- PREMIUM BROWSE CATEGORIES GRID -->
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 md:gap-5 mb-12" id="homeCatGrid"></div>
 
             <div class="flex justify-between items-center mb-6">
@@ -141,7 +146,6 @@
                 </div>
             </div>
             
-            <!-- PREMIUM PRODUCT CARDS GRID -->
             <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
         </main>
     </div>
@@ -196,6 +200,28 @@
                 </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREMIUM SUCCESS POPUP MODAL (REPLACES BROWSER ALERT) -->
+    <div id="successAdModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold shadow-inner">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 class="text-xl font-black text-gray-900 dark:text-white">Ad Published Live!</h3>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">Your ad has been successfully posted and is now live for buyers across India.</p>
+            </div>
+            
+            <div class="space-y-2 pt-2">
+                <button onclick="closeSuccessModalAndGoHome()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i> Back to Home
+                </button>
+                <button onclick="closeSuccessModalAndOpenMyAds()" class="w-full bg-teal-50 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-boxes-packing"></i> View My Posted Ads
                 </button>
             </div>
         </div>
@@ -1185,7 +1211,6 @@
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
-        // REDESIGNED & POLISHED BROWSE CATEGORIES
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             const isAllSelected = currentFilterCat === 'all';
@@ -1544,9 +1569,9 @@
                 };
 
                 db.collection('products').add(adData).then(() => {
-                    alert('Ad Published Live Successfully!');
-                    closeSellWizardPage();
                     btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                    // Show custom professional success modal
+                    document.getElementById('successAdModal').style.display = 'flex';
                 });
             } catch (err) {
                 alert("Something went wrong.");
@@ -1554,12 +1579,22 @@
             }
         }
 
+        function closeSuccessModalAndGoHome() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+        }
+
+        function closeSuccessModalAndOpenMyAds() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+            openMyAdsModal();
+        }
+
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        // REDESIGNED & POLISHED FRESH RECOMMENDATIONS CARDS
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
