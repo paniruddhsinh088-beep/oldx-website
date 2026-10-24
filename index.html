@@ -207,7 +207,7 @@
         </main>
     </div>
 
-    <!-- ENHANCED AUTHENTICATION MODAL (Google + Email/Password + Quick PIN Login) -->
+    <!-- 🌟 ENHANCED AUTHENTICATION MODAL (Google + Email/Password + Quick PIN Login) -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 relative shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700 animate-scale-up">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition">
@@ -1008,7 +1008,7 @@
             }
         }
 
-        // 🌟 FULLY FIXED QUICK PIN LOGIN (Using email field query to fix permission errors)
+        // 🌟 FINAL SECURE QUICK PIN LOGIN
         async function loginWithQuickPin() {
             const email = document.getElementById('pinLoginEmail').value.trim();
             const enteredPin = document.getElementById('pinLoginInput').value.trim();
@@ -1019,11 +1019,10 @@
             }
 
             try {
-                // Querying Firestore users collection safely
                 const usersSnapshot = await db.collection('users').where('email', '==', email).get();
 
                 if(usersSnapshot.empty) {
-                    showCustomAlert("Incorrect", "Email or PIN is incorrect.", "error");
+                    showCustomAlert("Incorrect", "This email is not registered with a PIN.", "error");
                     return;
                 }
 
@@ -1053,7 +1052,7 @@
                 }
             } catch (err) {
                 console.error("PIN Login Error:", err);
-                showCustomAlert("Error", "Database error. Please check Firestore Rules.", "error");
+                showCustomAlert("Permission Error", "Please update your Firestore Rules to allow reading users collection.", "error");
             }
         }
 
