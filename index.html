@@ -1165,7 +1165,6 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
 
-                // Update Online Status in Firestore
                 db.collection('users').doc(user.uid).set({
                     isOnline: true,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -1220,7 +1219,7 @@
             }
         }
 
-        // PROFESSIONAL INBOX MODAL
+        /* 🛠️ UPDATED LIVE CHAT & INBOX LOGIC FOR MULTI-DEVICE (LAPTOP BUYER & MOBILE SELLER) */
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -1237,73 +1236,73 @@
             `;
             document.getElementById('inboxModal').style.display = 'flex';
 
-            db.collection('chats').onSnapshot(snapshot => {
-                container.innerHTML = '';
-                let myChats = [];
+            db.collection('chats')
+              .where('participants', 'array-contains', window.currentUser.uid)
+              .onSnapshot(snapshot => {
+                  container.innerHTML = '';
+                  let myChats = [];
 
-                snapshot.forEach(doc => {
-                    const chatRoomId = doc.id;
-                    if (chatRoomId.includes(window.currentUser.uid)) {
-                        myChats.push({ chatRoomId, ...doc.data() });
-                    }
-                });
+                  snapshot.forEach(doc => {
+                      myChats.push({ chatRoomId: doc.id, ...doc.data() });
+                  });
 
-                if(myChats.length === 0) {
-                    container.innerHTML = `
-                        <div class="text-center py-14 space-y-2">
-                            <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
-                                <i class="fa-solid fa-inbox"></i>
-                            </div>
-                            <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
-                            <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                myChats.forEach(chat => {
-                    db.collection('chats').doc(chat.chatRoomId).collection('messages')
-                      .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
-                          let lastMsgText = "Tap to view conversation";
-                          let lastTime = "";
-                          
-                          if (!msgSnapshot.empty) {
-                              const lastMsgData = msgSnapshot.docs[0].data();
-                              lastMsgText = lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message");
-                              lastTime = lastMsgData.time || "";
-                          }
-
-                          const div = document.createElement('div');
-                          div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
-                          div.onclick = () => {
-                              closeInboxModal();
-                              activeChatRoomId = chat.chatRoomId;
-                              document.getElementById('chatSellerName').innerText = "Conversation";
-                              document.getElementById('fullChatPage').style.display = 'flex';
-                              loadChatMessages(chat.chatRoomId);
-                          };
-
-                          div.innerHTML = `
-                              <div class="flex items-center gap-3 overflow-hidden">
-                                  <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
-                                      <i class="fa-solid fa-user-shield"></i>
-                                  </div>
-                                  <div class="overflow-hidden">
-                                      <div class="flex items-center gap-2">
-                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
-                                          <span class="text-[9px] text-gray-400">${lastTime}</span>
-                                      </div>
-                                      <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
-                                  </div>
+                  if(myChats.length === 0) {
+                      container.innerHTML = `
+                          <div class="text-center py-14 space-y-2">
+                              <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
+                                  <i class="fa-solid fa-inbox"></i>
                               </div>
-                              <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
-                                  <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                              </div>
-                          `;
-                          container.appendChild(div);
-                      });
-                });
-            });
+                              <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
+                              <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
+                          </div>
+                      `;
+                      return;
+                  }
+
+                  myChats.forEach(chat => {
+                      db.collection('chats').doc(chat.chatRoomId).collection('messages')
+                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
+                            let lastMsgText = "Tap to view conversation";
+                            let lastTime = "";
+                            
+                            if (!msgSnapshot.empty) {
+                                const lastMsgData = msgSnapshot.docs[0].data();
+                                const isMe = lastMsgData.senderUid === window.currentUser.uid;
+                                lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
+                                lastTime = lastMsgData.time || "";
+                            }
+
+                            const div = document.createElement('div');
+                            div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
+                            div.onclick = () => {
+                                closeInboxModal();
+                                activeChatRoomId = chat.chatRoomId;
+                                document.getElementById('chatSellerName').innerText = "Conversation";
+                                document.getElementById('fullChatPage').style.display = 'flex';
+                                loadChatMessages(chat.chatRoomId);
+                            };
+
+                            div.innerHTML = `
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                            <span class="text-[9px] text-gray-400">${lastTime}</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
+                                    </div>
+                                </div>
+                                <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
+                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                  });
+              });
         }
 
         function closeInboxModal() {
@@ -1343,7 +1342,6 @@
             document.getElementById('fullChatPage').style.display = 'none';
         }
 
-        // Online & Last Seen Tracker
         function trackUserStatus(otherUserId) {
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
@@ -1365,7 +1363,6 @@
             });
         }
 
-        // Typing Indicator Listeners
         document.getElementById('fullChatInput').addEventListener('input', () => {
             if(!activeChatRoomId || !window.currentUser) return;
             db.collection('chats').doc(activeChatRoomId).set({
@@ -1396,7 +1393,6 @@
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
             
-            // Mark unread messages as read (Blue Ticks)
             db.collection('chats').doc(chatRoomId).collection('messages')
               .where('senderUid', '!=', window.currentUser.uid)
               .where('status', '==', 'sent')
@@ -1429,7 +1425,6 @@
                           }
                       }
 
-                      // Single Tick & Blue Double Ticks Logic
                       const tickIcon = isMe 
                           ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
                           : '';
@@ -1497,6 +1492,14 @@
             }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            let sellerId = currentProduct ? currentProduct.sellerUid : '';
+
+            // Ensure participants array always contains both buyer and seller UIDs for multi-device cross-sync
+            db.collection('chats').doc(activeChatRoomId).set({
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
+                participants: [window.currentUser.uid, sellerId || activeChatRoomId.split('_')[1]],
+                productId: activeChatRoomId.split('_')[0]
+            }, { merge: true });
 
             db.collection('chats').doc(activeChatRoomId).collection('messages').add({
                 text: msg,
