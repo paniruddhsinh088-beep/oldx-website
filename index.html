@@ -38,7 +38,7 @@
         }
         .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
 
-        /* Custom PIN Input Styling */
+        /* Custom PIN Input Styling - Visible text so user can see what they type */
         #userPinInput, #pinLoginInput, #verifyPinInput, #newPinInput {
             letter-spacing: 8px;
             font-size: 20px;
@@ -251,15 +251,15 @@
                 </button>
             </form>
 
-            <!-- Quick PIN Login Form -->
+            <!-- Quick PIN Login Form (PIN set to type="text" so user can see what they type) -->
             <div id="pinAuthForm" style="display: none;" class="space-y-3 text-xs pt-1">
                 <div>
                     <label class="block font-bold mb-1">Email Address</label>
                     <input type="email" id="pinLoginEmail" placeholder="name@domain.com" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">4-Digit Quick PIN</label>
-                    <input type="password" id="pinLoginInput" maxlength="4" placeholder="••••" class="w-full py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none tracking-widest text-center">
+                    <label class="block font-bold mb-1">4-Digit Quick PIN (Visible)</label>
+                    <input type="text" id="pinLoginInput" maxlength="4" placeholder="1234" class="w-full py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none tracking-widest text-center">
                 </div>
                 <button onclick="loginWithQuickPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
                     Login with PIN
@@ -279,7 +279,7 @@
         </div>
     </div>
 
-    <!-- SET 4-DIGIT PIN MODAL -->
+    <!-- SET 4-DIGIT PIN MODAL (Visible Text Input) -->
     <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up">
             <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -288,7 +288,7 @@
             <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
             <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
             
-            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <input type="text" id="newPinInput" maxlength="4" placeholder="1234" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
             <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
                 Save & Continue
@@ -296,7 +296,7 @@
         </div>
     </div>
 
-    <!-- QUICK PIN VERIFY MODAL -->
+    <!-- QUICK PIN VERIFY MODAL (Visible Text Input) -->
     <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -305,7 +305,7 @@
             <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
             <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
             
-            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <input type="text" id="verifyPinInput" maxlength="4" placeholder="1234" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
             <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
                 Unlock Account
@@ -1021,7 +1021,7 @@
             try {
                 const userQuery = await db.collection('users').where('email', '==', email).get();
                 if(userQuery.empty) {
-                    showCustomAlert("Not Found", "No account found with this email.", "error");
+                    showCustomAlert("Not Found", "No account found with this email. Please login with Google or Password once to register your account.", "error");
                     return;
                 }
 
@@ -1276,7 +1276,9 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
 
+                // Automatically save user to Firestore so Quick PIN login works correctly!
                 db.collection('users').doc(user.uid).set({
+                    email: user.email,
                     isOnline: true,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
@@ -1869,7 +1871,14 @@
         function checkUserPinStatus(user) {
             const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
             if(!userSavedPin) {
-                document.getElementById('setPinModal').style.display = 'flex';
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    if(doc.exists && doc.data().pin) {
+                        localStorage.setItem(`oldx_pin_${user.uid}`, doc.data().pin);
+                        sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    } else {
+                        document.getElementById('setPinModal').style.display = 'flex';
+                    }
+                });
             } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
                 document.getElementById('verifyPinModal').style.display = 'flex';
             }
