@@ -37,6 +37,14 @@
             50% { opacity: 0.3; }
         }
         .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
+
+        /* Custom PIN Input Styling */
+        #userPinInput, #pinLoginInput, #verifyPinInput, #newPinInput {
+            letter-spacing: 8px;
+            font-size: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
     </style>
 
     <!-- Firebase SDKs -->
@@ -199,6 +207,116 @@
         </main>
     </div>
 
+    <!-- 🌟 ENHANCED AUTHENTICATION MODAL (Google + Email/Password + Quick PIN Login) -->
+    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 relative shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700 animate-scale-up">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+            
+            <div class="text-center">
+                <h3 class="text-2xl font-black text-primary dark:text-teal-400 tracking-tight">Welcome to OldX</h3>
+                <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
+            </div>
+
+            <!-- Google Login -->
+            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-3 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition">
+                <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
+            </button>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase tracking-wider">OR LOGIN OPTIONS</span>
+                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+
+            <!-- Tabs Switcher for Email/Password vs Quick PIN Login -->
+            <div class="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl">
+                <button type="button" id="tabPasswordBtn" onclick="switchAuthTab('password')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-800 text-primary dark:text-teal-300 shadow-sm transition">Password Login</button>
+                <button type="button" id="tabPinBtn" onclick="switchAuthTab('pin')" class="flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition">Quick PIN Login</button>
+            </div>
+
+            <!-- Password Form -->
+            <form id="passwordAuthForm" onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs pt-1">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
+                    Login / Sign Up
+                </button>
+            </form>
+
+            <!-- Quick PIN Login Form -->
+            <div id="pinAuthForm" style="display: none;" class="space-y-3 text-xs pt-1">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="pinLoginEmail" placeholder="name@domain.com" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">4-Digit Quick PIN</label>
+                    <input type="password" id="pinLoginInput" maxlength="4" placeholder="••••" class="w-full py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none tracking-widest text-center">
+                </div>
+                <button onclick="loginWithQuickPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
+                    Login with PIN
+                </button>
+                <p class="text-[10px] text-gray-400 text-center">First time? Login with Google/Password first, then set your PIN in Profile.</p>
+            </div>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
+                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
+            </div>
+
+            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
+                <i class="fa-solid fa-user-secret"></i> Continue as Guest
+            </button>
+        </div>
+    </div>
+
+    <!-- SET 4-DIGIT PIN MODAL -->
+    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up">
+            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
+            
+            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- QUICK PIN VERIFY MODAL -->
+    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
+            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
+            
+            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Unlock Account
+            </button>
+
+            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
+                Forgot PIN? Re-authenticate
+            </button>
+        </div>
+    </div>
+
     <!-- PROFESSIONAL INBOX MODAL -->
     <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
@@ -355,92 +473,6 @@
                     <i class="fa-solid fa-boxes-packing"></i> View My Posted Ads
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- MAIN AUTH MODAL -->
-    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            
-            <div class="text-center">
-                <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome to OldX</h3>
-                <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
-            </div>
-
-            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition">
-                <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
-            </button>
-
-            <div class="flex items-center my-2">
-                <div class="flex-1 border-t"></div>
-                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR Email Login</span>
-                <div class="flex-1 border-t"></div>
-            </div>
-
-            <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Password</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition">
-                    Login / Sign Up
-                </button>
-            </form>
-
-            <div class="flex items-center my-2">
-                <div class="flex-1 border-t"></div>
-                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
-                <div class="flex-1 border-t"></div>
-            </div>
-
-            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition">
-                <i class="fa-solid fa-user-secret"></i> Continue as Guest
-            </button>
-        </div>
-    </div>
-
-    <!-- SET 4-DIGIT PIN MODAL -->
-    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
-            
-            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Save & Continue
-            </button>
-        </div>
-    </div>
-
-    <!-- QUICK PIN VERIFY MODAL -->
-    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
-            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
-            
-            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Unlock Account
-            </button>
-
-            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
-                Forgot PIN? Re-authenticate
-            </button>
         </div>
     </div>
 
@@ -955,6 +987,90 @@
         let createAdMap = null;
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
+
+        // 🌟 Tab Switcher inside Auth Modal (Password vs Quick PIN)
+        function switchAuthTab(tab) {
+            const pwdForm = document.getElementById('passwordAuthForm');
+            const pinForm = document.getElementById('pinAuthForm');
+            const pwdBtn = document.getElementById('tabPasswordBtn');
+            const pinBtn = document.getElementById('tabPinBtn');
+
+            if(tab === 'password') {
+                pwdForm.style.display = 'block';
+                pinForm.style.display = 'none';
+                pwdBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-800 text-primary dark:text-teal-300 shadow-sm transition";
+                pinBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition";
+            } else {
+                pwdForm.style.display = 'none';
+                pinForm.style.display = 'block';
+                pinBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white dark:bg-gray-800 text-primary dark:text-teal-300 shadow-sm transition";
+                pwdBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-gray-500 hover:text-gray-900 transition";
+            }
+        }
+
+        // 🌟 Quick PIN Login Logic
+        async function loginWithQuickPin() {
+            const email = document.getElementById('pinLoginEmail').value.trim();
+            const enteredPin = document.getElementById('pinLoginInput').value.trim();
+
+            if(!email || !enteredPin || enteredPin.length !== 4) {
+                showCustomAlert("Error", "Please enter a valid email and 4-digit PIN.", "error");
+                return;
+            }
+
+            try {
+                const userQuery = await db.collection('users').where('email', '==', email).get();
+                if(userQuery.empty) {
+                    showCustomAlert("Not Found", "No account found with this email.", "error");
+                    return;
+                }
+
+                let userData = null;
+                let userId = null;
+                userQuery.forEach(doc => {
+                    userData = doc.data();
+                    userId = doc.id;
+                });
+
+                if(userData.pin && userData.pin === enteredPin) {
+                    localStorage.setItem(`oldx_pin_${userId}`, enteredPin);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    closeAuthModal();
+                    showCustomAlert("Success", "Login with PIN Successful!", "success");
+                    window.location.reload();
+                } else {
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN. Please try again.", "error");
+                }
+            } catch (err) {
+                showCustomAlert("Error", "Login failed. Please try again.", "error");
+            }
+        }
+
+        // 🌟 Save Quick PIN in Firestore & LocalStorage
+        async function saveUserPin() {
+            const newPin = document.getElementById('newPinInput').value.trim();
+            if(!window.currentUser) return;
+
+            if(newPin.length !== 4 || isNaN(newPin)) {
+                showCustomAlert("Invalid PIN", "PIN must be exactly 4 digits numbers.", "error");
+                return;
+            }
+
+            try {
+                await db.collection('users').doc(window.currentUser.uid).set({
+                    pin: newPin,
+                    email: window.currentUser.email,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, newPin);
+                sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                document.getElementById('setPinModal').style.display = 'none';
+                showCustomAlert("Success", "Quick PIN saved successfully!", "success");
+            } catch (err) {
+                showCustomAlert("Error", "Failed to save PIN.", "error");
+            }
+        }
 
         function requestPushNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted") {
@@ -1756,20 +1872,6 @@
                 document.getElementById('setPinModal').style.display = 'flex';
             } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
                 document.getElementById('verifyPinModal').style.display = 'flex';
-            }
-        }
-
-        function saveUserPin() {
-            const input = document.getElementById('newPinInput').value;
-            if(input && input.length === 4 && !isNaN(input)) {
-                if(window.currentUser) {
-                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    document.getElementById('setPinModal').style.display = 'none';
-                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
-                }
-            } else {
-                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
             }
         }
 
