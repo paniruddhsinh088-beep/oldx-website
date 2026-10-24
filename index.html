@@ -278,6 +278,59 @@
         </div>
     </div>
 
+    <!-- FULL PAGE DEDICATED CHAT VIEW -->
+    <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
+        <!-- Chat Header with User Status -->
+        <div class="bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3">
+                <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black">
+                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                </button>
+                <div class="relative">
+                    <img id="chatSellerPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-10 h-10 rounded-full object-cover border">
+                    <span id="chatOnlineDot" class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                </div>
+                <div>
+                    <h3 id="chatSellerName" class="font-bold text-sm text-gray-900 dark:text-white">Seller Name</h3>
+                    <p id="chatUserStatus" class="text-[11px] text-green-600 dark:text-green-400 font-semibold">Online</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 text-gray-500">
+                <i class="fa-solid fa-phone text-sm cursor-pointer hover:text-primary"></i>
+                <i class="fa-solid fa-ellipsis-vertical text-sm cursor-pointer hover:text-primary"></i>
+            </div>
+        </div>
+
+        <!-- Chat Messages Area -->
+        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
+                <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
+                <span class="text-[9px] text-gray-400 block text-right mt-1">10:15 AM</span>
+            </div>
+        </div>
+
+        <!-- Attachment Preview Bar -->
+        <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs">
+            <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
+            <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <!-- Input Bar with Photo/Video/File Send Options -->
+        <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
+            <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
+            
+            <button onclick="document.getElementById('chatFileInput').click()" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 p-2.5 rounded-full text-base flex items-center justify-center transition">
+                <i class="fa-solid fa-paperclip"></i>
+            </button>
+
+            <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="sendFullChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- FULL PAGE DEDICATED SELL FLOW PAGE -->
     <div id="sellWizardPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
@@ -347,7 +400,6 @@
                         <input type="file" id="adImages" required multiple accept="image/*" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
                     </div>
 
-                    <!-- UPDATED PRICE & DISCOUNT SECTION -->
                     <div class="grid grid-cols-3 gap-2">
                         <div>
                             <label class="block font-bold mb-1 text-xs">MRP Price (₹) *</label>
@@ -512,21 +564,6 @@
         </div>
     </div>
 
-    <!-- Chat Modal -->
-    <div id="chatModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-2xl p-4 relative flex flex-col h-[400px]">
-            <button onclick="closeChatModal()" class="absolute top-3 right-3 text-gray-500"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="font-bold border-b pb-2 text-sm">Direct Chat with Seller</h3>
-            <div id="chatMessages" class="flex-1 overflow-y-auto py-3 space-y-2 text-xs">
-                <div class="bg-teal-50 p-2.5 rounded-lg max-w-[80%] text-gray-800">Hello! Is this item available?</div>
-            </div>
-            <div class="flex gap-2 pt-2 border-t">
-                <input type="text" id="chatInput" placeholder="Type a message..." class="flex-1 border px-3 py-2 rounded-lg text-xs dark:bg-gray-700">
-                <button onclick="sendChatMessage()" class="bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold">Send</button>
-            </div>
-        </div>
-    </div>
-
     <!-- My Ads Modal -->
     <div id="myAdsModal" style="display: none;" class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-6 relative max-h-[80vh] overflow-y-auto">
@@ -560,6 +597,7 @@
         let selectedMainCat = null;
         let selectedSubCat = null;
         let currentFilterCat = 'all';
+        let currentChatAttachment = null;
 
         const olxCategories = [
             { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
@@ -637,6 +675,91 @@
                     document.getElementById('adDiscount').value = calcDiscount;
                 }
             }
+        }
+
+        // FULL PAGE CHAT FUNCTIONS
+        function openLiveChatModal() {
+            if (!currentProduct) return;
+            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
+            
+            // Online/Offline presence simulation
+            const isOnline = Math.random() > 0.3; // 70% chance online
+            const dot = document.getElementById('chatOnlineDot');
+            const statusTxt = document.getElementById('chatUserStatus');
+
+            if(isOnline) {
+                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full";
+                statusTxt.innerText = "Online";
+                statusTxt.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
+            } else {
+                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full";
+                statusTxt.innerText = "Last seen today at 10:05 AM";
+                statusTxt.className = "text-[11px] text-gray-400 font-medium";
+            }
+
+            document.getElementById('fullChatPage').style.display = 'flex';
+        }
+
+        function closeFullChatPage() {
+            document.getElementById('fullChatPage').style.display = 'none';
+        }
+
+        function handleChatFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                currentChatAttachment = {
+                    name: file.name,
+                    type: file.type,
+                    data: evt.target.result
+                };
+                document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
+                document.getElementById('chatAttachmentPreview').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearChatAttachment() {
+            currentChatAttachment = null;
+            document.getElementById('chatFileInput').value = '';
+            document.getElementById('chatAttachmentPreview').style.display = 'none';
+        }
+
+        function sendFullChatMessage() {
+            const input = document.getElementById('fullChatInput');
+            const msg = input.value.trim();
+
+            if (!msg && !currentChatAttachment) return;
+
+            const container = document.getElementById('fullChatMessages');
+            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let attachmentHTML = '';
+            if (currentChatAttachment) {
+                if (currentChatAttachment.type.startsWith('image/')) {
+                    attachmentHTML = `<img src="${currentChatAttachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                } else if (currentChatAttachment.type.startsWith('video/')) {
+                    attachmentHTML = `<video src="${currentChatAttachment.data}" controls class="rounded-lg max-h-48 mb-1"></video>`;
+                } else {
+                    attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${currentChatAttachment.name}</span></div>`;
+                }
+            }
+
+            const msgCard = document.createElement('div');
+            msgCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[80%] ml-auto text-xs shadow-sm";
+            msgCard.innerHTML = `
+                ${attachmentHTML}
+                ${msg ? `<p class="font-medium">${msg}</p>` : ''}
+                <span class="text-[9px] text-teal-200 block text-right mt-1">${now}</span>
+            `;
+
+            container.appendChild(msgCard);
+            container.scrollTop = container.scrollHeight;
+
+            input.value = '';
+            clearChatAttachment();
         }
 
         // 4-DIGIT PIN LOGIC
@@ -892,7 +1015,6 @@
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
             
-            // MRP & DISCOUNT DISPLAY IN DETAIL VIEW
             const mrpElem = document.getElementById('detailMrpPrice');
             const discElem = document.getElementById('detailDiscountBadge');
             
@@ -952,17 +1074,6 @@
         function shareProductLink() {
             if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
             else { navigator.clipboard.writeText(window.location.href); alert('Link copied!'); }
-        }
-
-        function openLiveChatModal() { document.getElementById('chatModal').style.display = 'flex'; }
-        function closeChatModal() { document.getElementById('chatModal').style.display = 'none'; }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chatInput');
-            if(!input.value.trim()) return;
-            const box = document.getElementById('chatMessages');
-            box.innerHTML += `<div class="bg-primary text-white p-2.5 rounded-lg max-w-[80%] ml-auto text-right font-medium">${input.value}</div>`;
-            input.value = ''; box.scrollTop = box.scrollHeight;
         }
 
         function openOfferModal() {
@@ -1130,6 +1241,7 @@
 
                 const adData = {
                     sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
+                    sellerName: window.currentUser ? window.currentUser.displayName : 'Seller',
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
                     title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
