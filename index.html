@@ -103,7 +103,7 @@
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
-                <!-- Search Bar -->
+                <!-- Search Bar with Voice Search (Point 5) -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
                         <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
@@ -119,6 +119,11 @@
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3">
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base"></i>
                         <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes, Properties..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
+                        
+                        <!-- Multilingual Voice Search Button -->
+                        <button onclick="startVoiceSearch()" title="બોલીને સર્ચ કરો (Voice Search)" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9">
+                            <i class="fa-solid fa-microphone"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -136,6 +141,19 @@
             </div>
             
             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 md:gap-5 mb-12" id="homeCatGrid"></div>
+
+            <!-- AI Recommendation Section (Point 4) -->
+            <div id="aiRecommendedSection" style="display: none;" class="mb-10">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Recommended For You (AI Pick)
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium">Based on your recent interests & activity</p>
+                    </div>
+                </div>
+                <div id="recommendedProductGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+            </div>
 
             <div class="flex justify-between items-center mb-6">
                 <div>
@@ -775,7 +793,7 @@
         </div>
     </div>
 
-    <!-- AI Smart Chatbot Widget (Multilingual - Moved to Left Bottom to avoid overlapping In-App Chat Send button) -->
+    <!-- AI Smart Chatbot Widget (Multilingual) -->
     <div id="aiChatbotContainer" class="fixed bottom-4 left-4 z-30">
         <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
             <i class="fa-solid fa-robot"></i>
@@ -846,6 +864,38 @@
         let currentChatAttachment = null;
         let pendingDeleteDocId = null;
         let activeChatRoomId = null;
+        
+        // Track user's most viewed category for AI Recommendation Engine (Point 4)
+        let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
+
+        // Point 5: Multilingual Voice Search Implementation
+        function startVoiceSearch() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showCustomAlert("Not Supported", "તમારા બ્રાઉઝરમાં વોઇસ સર્ચ સપોર્ટેડ નથી.", "error");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'gu-IN'; // Set to Gujarati (can also understand Hindi/English seamlessly)
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            showCustomAlert("Listening...", "કૃપા કરીને બોલો (જેમ કે 'કાર' કે 'મોબાઈલ')...", "success");
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                document.getElementById('searchInput').value = speechResult;
+                renderProducts();
+                closeCustomAlert();
+            };
+
+            recognition.onerror = function(event) {
+                showCustomAlert("Voice Error", "અવાજ પકડવામાં તકલીફ થઈ. ફરીથી પ્રયત્ન કરો.", "error");
+            };
+
+            recognition.start();
+        }
 
         // Multilingual AI Chatbot Functions
         function toggleAiChatbot() {
@@ -888,7 +938,6 @@
                 const lowerMsg = msg.toLowerCase();
                 let aiReply = "I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
 
-                // Language Detection & Response Generation
                 const isHindi = /[\u0900-\u097F]/.test(msg) || lowerMsg.includes('car') || lowerMsg.includes('kaise') || lowerMsg.includes('kya') || lowerMsg.includes('खरीदनी') || lowerMsg.includes('बेचना');
                 const isGujarati = /[\u0A80-\u0AFF]/.test(msg) || lowerMsg.includes('kem') || lowerMsg.includes('su') || lowerMsg.includes('karvu') || lowerMsg.includes('મૂકવી');
 
@@ -913,7 +962,6 @@
                         aiReply = "નમસ્તે! આજે હું તમને કઈ વસ્તુ શોધવામાં મદદ કરું?";
                     }
                 } else {
-                    // English default responses
                     if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
                         aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
                     } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
@@ -1632,7 +1680,15 @@
             handleHashChange();
         });
 
-        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+        function openProductDetailPage(docId) { 
+            // Track view for Point 4 (AI Recommendation Engine)
+            const p = products.find(item => item.docId === docId);
+            if (p && p.category) {
+                userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
+                localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+            }
+            window.location.hash = `product-${docId}`; 
+        }
 
         function handleHashChange() {
             const hash = window.location.hash;
@@ -1972,12 +2028,42 @@
 
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        // Point 4: Render AI Recommendations & Main Products
         function renderProducts() {
             const grid = document.getElementById('productGrid');
+            const recSection = document.getElementById('aiRecommendedSection');
+            const recGrid = document.getElementById('recommendedProductGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const stateVal = document.getElementById('stateFilter').value;
+            
             if(!grid) return;
             grid.innerHTML = '';
+            if(recGrid) recGrid.innerHTML = '';
+
+            // Find most viewed category by user
+            let topCat = null;
+            let maxViews = 0;
+            for (let cat in userCategoryViews) {
+                if (userCategoryViews[cat] > maxViews) {
+                    maxViews = userCategoryViews[cat];
+                    topCat = cat;
+                }
+            }
+
+            // Render AI Recommendations if user has history
+            if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
+                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 4);
+                if (recommendedItems.length > 0) {
+                    recSection.style.display = 'block';
+                    recommendedItems.forEach(p => {
+                        recGrid.appendChild(createProductCard(p));
+                    });
+                } else {
+                    recSection.style.display = 'none';
+                }
+            } else if (recSection) {
+                recSection.style.display = 'none';
+            }
 
             const filtered = products.filter(p => {
                 const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
@@ -1997,69 +2083,73 @@
             }
 
             filtered.forEach(p => {
-                const isSaved = cartList.includes(p.docId);
-                const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
-                card.onclick = () => openProductDetailPage(p.docId);
-                
-                const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                    ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
-                    : '';
-
-                const discBadge = (p.discountPercent && p.discountPercent > 0)
-                    ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
-                    : '';
-
-                const soldBadge = p.isSold 
-                    ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
-                    : '';
-
-                card.innerHTML = `
-                    ${soldBadge}
-                    <div>
-                        <!-- Image Area with Badges -->
-                        <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
-                            ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
-                            
-                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
-                                <span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">
-                                    ★ FEATURED
-                                </span>
-                                ${discBadge}
-                            </div>
-
-                            <!-- Heart Save Button -->
-                            <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
-                                <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
-                            </button>
-                        </div>
-
-                        <!-- Info Area -->
-                        <div class="p-4 space-y-2">
-                            <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                                <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
-                                <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
-                            </div>
-
-                            <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
-                                ${p.title}
-                            </h4>
-
-                            <div class="flex items-baseline gap-1 pt-1">
-                                <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
-                                ${mrpMarkup}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card Footer Badge -->
-                    <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
-                        <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
-                        <span class="text-gray-400 font-semibold">Inspect & Buy</span>
-                    </div>
-                `;
-                grid.appendChild(card);
+                grid.appendChild(createProductCard(p));
             });
+        }
+
+        function createProductCard(p) {
+            const isSaved = cartList.includes(p.docId);
+            const card = document.createElement('div');
+            card.className = "bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
+            card.onclick = () => openProductDetailPage(p.docId);
+            
+            const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
+                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                : '';
+
+            const discBadge = (p.discountPercent && p.discountPercent > 0)
+                ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
+                : '';
+
+            const soldBadge = p.isSold 
+                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                : '';
+
+            card.innerHTML = `
+                ${soldBadge}
+                <div>
+                    <!-- Image Area with Badges -->
+                    <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                        ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
+                        
+                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                            <span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">
+                                ★ FEATURED
+                            </span>
+                            ${discBadge}
+                        </div>
+
+                        <!-- Heart Save Button -->
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
+                        </button>
+                    </div>
+
+                    <!-- Info Area -->
+                    <div class="p-4 space-y-2">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                            <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
+                        </div>
+
+                        <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                            ${p.title}
+                        </h4>
+
+                        <div class="flex items-baseline gap-1 pt-1">
+                            <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
+                            ${mrpMarkup}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Footer Badge -->
+                <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
+                    <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
+                    <span class="text-gray-400 font-semibold">Inspect & Buy</span>
+                </div>
+            `;
+            return card;
         }
 
         window.addEventListener('DOMContentLoaded', () => {
