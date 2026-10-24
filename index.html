@@ -18,7 +18,7 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .cat-card-hover { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .cat-card-hover:hover { transform: translateY(-4px) scale(1.02); }
+        .cat-card-hover:hover { transform: translateY(-4px) scale(1.03); }
         
         @keyframes slideUp {
             from { transform: translateY(100%); opacity: 0; }
@@ -101,6 +101,7 @@
 
     <!-- MAIN HOME VIEW -->
     <div id="homeView">
+        <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
                 <span class="bg-white/10 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
@@ -133,55 +134,66 @@
             </div>
         </section>
 
-        <!-- Categories & Products -->
-        <main class="max-w-7xl mx-auto px-4 py-8">
-            <div class="flex justify-between items-center mb-5">
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-teal-600"></i> Browse Categories
-                    </h3>
-                    <p class="text-xs text-gray-400 font-medium">Explore items by category</p>
-                </div>
-            </div>
+        <!-- MAIN LAYOUT SECTIONS -->
+        <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
             
-            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3.5 md:gap-5 mb-12" id="homeCatGrid"></div>
-
-            <!-- Point 6: Featured / Boosted Ads Carousel / Grid Section -->
-            <div id="featuredSection" class="mb-10" style="display: none;">
-                <div class="flex justify-between items-center mb-4">
+            <!-- 2. BROWSE CATEGORIES (Optimized Carousel on Mobile, Grid on Desktop) -->
+            <section class="space-y-4">
+                <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-bolt text-amber-500"></i> Featured & Boosted Ads
+                            <i class="fa-solid fa-layer-group text-teal-600"></i> Browse Categories
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium">Explore top items by category</p>
+                    </div>
+                </div>
+                
+                <!-- Horizontal scroll on mobile / Flex Grid on Desktop -->
+                <div class="flex items-center gap-3 overflow-x-auto no-scrollbar md:grid md:grid-cols-6 md:gap-4 pb-2" id="homeCatGrid"></div>
+            </section>
+
+            <!-- 3. FEATURED / BOOSTED ADS SECTION -->
+            <section id="featuredSection" style="display: none;" class="space-y-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent p-4 md:p-6 rounded-3xl border border-amber-200/60 dark:border-amber-500/20">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-bolt text-amber-500 animate-bounce"></i> Featured & Boosted Ads
                         </h3>
                         <p class="text-xs text-gray-400 font-medium">Top promoted listings across India</p>
                     </div>
+                    <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300">Sponsored</span>
                 </div>
-                <div id="featuredProductGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
-            </div>
+                <!-- Horizontal Carousel for Featured Ads -->
+                <div id="featuredProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
+            </section>
 
-            <!-- AI Recommendation Section -->
-            <div id="aiRecommendedSection" style="display: none;" class="mb-10">
-                <div class="flex justify-between items-center mb-4">
+            <!-- 4. RECOMMENDED FOR YOU (AI PICK) SECTION -->
+            <section id="aiRecommendedSection" style="display: none;" class="space-y-4 bg-teal-50/40 dark:bg-gray-800/40 p-4 md:p-6 rounded-3xl border border-teal-100 dark:border-gray-700">
+                <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Recommended For You (AI Pick)
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Recommended For You
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Based on your recent interests & activity</p>
+                        <p class="text-xs text-gray-400 font-medium">AI Picks based on your recent activity & preferences</p>
                     </div>
                 </div>
-                <div id="recommendedProductGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
-            </div>
+                <!-- Carousel Grid for Recommended Products -->
+                <div id="recommendedProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
+            </section>
 
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                        <i class="fa-solid fa-fire text-amber-500"></i> Fresh Recommendations
-                    </h3>
-                    <p class="text-xs text-gray-400 font-medium">Handpicked listings near you</p>
+            <!-- 5. FRESH RECOMMENDATIONS / ALL PRODUCTS -->
+            <section class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-amber-500"></i> Fresh Recommendations
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium">Handpicked local listings near you</p>
+                    </div>
                 </div>
-            </div>
-            
-            <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+                
+                <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+            </section>
         </main>
     </div>
 
@@ -917,7 +929,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // Point 5: Request Notification Permission on Load
+        // Request Notification Permission on Load
         function requestPushNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted") {
                 Notification.requestPermission().then(permission => {
@@ -1289,7 +1301,6 @@
             }).then(() => {
                 input.value = '';
                 clearChatAttachment();
-                // Point 5: Trigger simulated Push Notification
                 triggerPushNotification("New Message on OldX", `${window.currentUser.displayName || 'User'}: ${msg || 'Sent an attachment'}`);
             }).catch(err => {
                 console.error("Error sending message: ", err);
@@ -1614,7 +1625,6 @@
             } else { 
                 cartList.push(docId); 
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
-                // Point 5: Trigger simulated Push Notification on bookmark
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
@@ -1669,12 +1679,13 @@
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
+        /* RENDER BROWSE CATEGORIES (Responsive Horizontal Carousel / Grid) */
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             const isAllSelected = currentFilterCat === 'all';
 
             grid.innerHTML = `
-                <div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3.5 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                <div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
                     <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
                         <i class="fa-solid fa-border-all"></i>
                     </div>
@@ -1685,7 +1696,7 @@
             olxCategories.forEach(cat => {
                 const isSelected = currentFilterCat === cat.id;
                 const el = document.createElement('div');
-                el.className = `cat-card-hover bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
+                el.className = `cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
                 el.onclick = () => filterCat(cat.id);
                 el.innerHTML = `
                     <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
@@ -1947,7 +1958,6 @@
             const offer = prompt('Enter your offer price (₹):');
             if(offer) {
                 showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
-                // Point 5: Trigger push notification for offer
                 triggerPushNotification("New Offer Received!", `A buyer offered ₹${offer} on your ad!`);
             }
         }
@@ -2094,7 +2104,7 @@
                 const district = document.getElementById('adDistrict').value;
                 const village = document.getElementById('adVillage').value;
                 const imgInput = document.getElementById('adImages');
-                const isFeatured = document.getElementById('adIsFeatured').checked; // Point 6
+                const isFeatured = document.getElementById('adIsFeatured').checked;
 
                 let extraDetails = {
                     brand: document.getElementById('dynBrand')?.value || '',
@@ -2123,7 +2133,7 @@
                     location: `${village}, ${district}, ${state}`, 
                     state, 
                     images,
-                    isFeatured: isFeatured, // Point 6
+                    isFeatured: isFeatured,
                     isSold: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
@@ -2153,12 +2163,13 @@
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        /* RENDER PRODUCTS (LAYOUT & SECTION LOGIC) */
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const recSection = document.getElementById('aiRecommendedSection');
             const recGrid = document.getElementById('recommendedProductGrid');
-            const featuredSection = document.getElementById('featuredSection'); // Point 6
-            const featuredGrid = document.getElementById('featuredProductGrid'); // Point 6
+            const featuredSection = document.getElementById('featuredSection');
+            const featuredGrid = document.getElementById('featuredProductGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const stateVal = document.getElementById('stateFilter').value;
             
@@ -2167,13 +2178,13 @@
             if(recGrid) recGrid.innerHTML = '';
             if(featuredGrid) featuredGrid.innerHTML = '';
 
-            // Point 6: Render Featured Ads Section at Top
+            // 1. Render Featured Ads Carousel Section at Top
             if (currentFilterCat === 'all' && !searchVal && featuredSection && featuredGrid) {
-                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 4);
+                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 6);
                 if (featuredItems.length > 0) {
                     featuredSection.style.display = 'block';
                     featuredItems.forEach(p => {
-                        featuredGrid.appendChild(createProductCard(p));
+                        featuredGrid.appendChild(createProductCard(p, true));
                     });
                 } else {
                     featuredSection.style.display = 'none';
@@ -2182,6 +2193,7 @@
                 featuredSection.style.display = 'none';
             }
 
+            // 2. AI Recommendation Logic
             let topCat = null;
             let maxViews = 0;
             for (let cat in userCategoryViews) {
@@ -2192,11 +2204,11 @@
             }
 
             if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
-                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 4);
+                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 6);
                 if (recommendedItems.length > 0) {
                     recSection.style.display = 'block';
                     recommendedItems.forEach(p => {
-                        recGrid.appendChild(createProductCard(p));
+                        recGrid.appendChild(createProductCard(p, true));
                     });
                 } else {
                     recSection.style.display = 'none';
@@ -2205,6 +2217,7 @@
                 recSection.style.display = 'none';
             }
 
+            // 3. Render Main / Fresh Recommendations Grid
             const filtered = products.filter(p => {
                 const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
                 const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
@@ -2216,21 +2229,26 @@
                 grid.innerHTML = `
                     <div class="col-span-full text-center py-12">
                         <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
-                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No recommendations found</p>
+                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No items found</p>
                     </div>
                 `;
                 return;
             }
 
             filtered.forEach(p => {
-                grid.appendChild(createProductCard(p));
+                grid.appendChild(createProductCard(p, false));
             });
         }
 
-        function createProductCard(p) {
+        /* CREATE ATTRACTIVE PRODUCT CARD */
+        function createProductCard(p, isCarousel = false) {
             const isSaved = cartList.includes(p.docId);
             const card = document.createElement('div');
-            card.className = "bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
+            
+            // Width styling for carousel vs regular grid
+            const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
+            
+            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
             card.onclick = () => openProductDetailPage(p.docId);
             
             const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
@@ -2241,7 +2259,6 @@
                 ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
                 : '';
 
-            // Point 6: Featured / Urgent Tag Badge
             const featuredBadge = p.isFeatured
                 ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
                 : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">★ VERIFIED</span>`;
@@ -2253,7 +2270,7 @@
             card.innerHTML = `
                 ${soldBadge}
                 <div>
-                    <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                    <div class="h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
                         ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
                         
                         <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
@@ -2268,7 +2285,7 @@
 
                     <div class="p-4 space-y-2">
                         <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                            <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
                             <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
                         </div>
 
