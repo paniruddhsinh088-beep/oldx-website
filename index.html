@@ -142,7 +142,7 @@
         <!-- MAIN LAYOUT SECTIONS -->
         <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
             
-            <!-- 2. BROWSE CATEGORIES (Optimized Carousel on Mobile, Grid on Desktop) -->
+            <!-- 2. BROWSE CATEGORIES -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -153,7 +153,6 @@
                     </div>
                 </div>
                 
-                <!-- Horizontal scroll on mobile / Flex Grid on Desktop -->
                 <div class="flex items-center gap-3 overflow-x-auto no-scrollbar md:grid md:grid-cols-6 md:gap-4 pb-2" id="homeCatGrid"></div>
             </section>
 
@@ -168,7 +167,6 @@
                     </div>
                     <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300">Sponsored</span>
                 </div>
-                <!-- Horizontal Carousel for Featured Ads -->
                 <div id="featuredProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
             </section>
 
@@ -182,7 +180,6 @@
                         <p class="text-xs text-gray-400 font-medium">AI Picks based on your recent activity & preferences</p>
                     </div>
                 </div>
-                <!-- Carousel Grid for Recommended Products -->
                 <div id="recommendedProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
             </section>
 
@@ -221,9 +218,7 @@
 
             <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
             
-            <div id="inboxConversationsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-2">
-                <!-- Dynamic Chat Rooms -->
-            </div>
+            <div id="inboxConversationsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-2"></div>
         </div>
     </div>
 
@@ -724,7 +719,7 @@
                         <p class="text-[10px] text-gray-400">Click anywhere on the map or use GPS to set the exact seller location.</p>
                     </div>
 
-                    <!-- Point 6: Featured / Boost Ad Option -->
+                    <!-- Featured / Boost Ad Option -->
                     <div class="bg-amber-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-amber-200 space-y-2">
                         <div class="flex items-center justify-between">
                             <label class="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
@@ -1276,9 +1271,15 @@
                             div.onclick = () => {
                                 closeInboxModal();
                                 activeChatRoomId = chat.chatRoomId;
+                                
+                                const otherUid = chat.participants.find(id => id !== window.currentUser.uid);
+                                const otherUserId = otherUid || chat.productId;
+
                                 document.getElementById('chatSellerName').innerText = "Conversation";
                                 document.getElementById('fullChatPage').style.display = 'flex';
                                 loadChatMessages(chat.chatRoomId);
+                                trackUserStatus(otherUserId);
+                                watchTypingStatus(chat.chatRoomId, otherUserId);
                             };
 
                             div.innerHTML = `
@@ -1325,14 +1326,23 @@
             }
 
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
-            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
+            
+            const otherUserId = (window.currentUser.uid === sellerId) ? buyerId : sellerId;
+            
+            document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
             const sellerPhone = currentProduct.phone || '919876543210';
             document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
 
             document.getElementById('fullChatPage').style.display = 'flex';
+            
+            db.collection('chats').doc(activeChatRoomId).set({
+                participants: [buyerId, sellerId],
+                productId: currentProduct.docId
+            }, { merge: true });
+
             loadChatMessages(activeChatRoomId);
-            trackUserStatus(sellerId);
-            watchTypingStatus(activeChatRoomId, sellerId);
+            trackUserStatus(otherUserId);
+            watchTypingStatus(activeChatRoomId, otherUserId);
         }
 
         function closeFullChatPage() {
@@ -1342,6 +1352,7 @@
         }
 
         function trackUserStatus(otherUserId) {
+            if(!otherUserId) return;
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
                 if(doc.exists) {
@@ -1362,7 +1373,6 @@
             });
         }
 
-        // 🛠️ ROBUST MOBILE & DESKTOP TYPING SENDER LOGIC
         const chatInputEl = document.getElementById('fullChatInput');
         if (chatInputEl) {
             ['input', 'keyup', 'keydown'].forEach(eventType => {
@@ -1385,7 +1395,6 @@
             });
         }
 
-        // 🛠️ REAL-TIME TYPING RECEIVER WATCHER
         function watchTypingStatus(chatRoomId, otherUserId) {
             if(!chatRoomId || !otherUserId) return;
 
@@ -1517,11 +1526,11 @@
             }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            let sellerId = currentProduct ? currentProduct.sellerUid : '';
+            let sellerId = currentProduct ? currentProduct.sellerUid : (activeChatRoomId.split('_')[1] || '');
 
             db.collection('chats').doc(activeChatRoomId).set({
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                participants: [window.currentUser.uid, sellerId || activeChatRoomId.split('_')[1]],
+                participants: [window.currentUser.uid, sellerId],
                 productId: activeChatRoomId.split('_')[0]
             }, { merge: true });
 
