@@ -205,7 +205,24 @@
         </div>
     </div>
 
-    <!-- PREMIUM SUCCESS POPUP MODAL (REPLACES BROWSER ALERT) -->
+    <!-- UNIVERSAL ATTRACTIVE CUSTOM ALERT MODAL -->
+    <div id="customAlertModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div id="customAlertIconBox" class="w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+                <i id="customAlertIcon" class="fa-solid fa-bell"></i>
+            </div>
+            <div>
+                <h3 id="customAlertTitle" class="text-lg font-black text-gray-900 dark:text-white">Notification</h3>
+                <p id="customAlertDesc" class="text-xs text-gray-500 mt-1 leading-relaxed">Message description goes here...</p>
+            </div>
+            
+            <button onclick="closeCustomAlert()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-2.5 rounded-xl text-xs shadow-md transition">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <!-- SUCCESS POPUP MODAL (FOR NEW AD PUBLISHED) -->
     <div id="successAdModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-3xl font-bold shadow-inner">
@@ -723,6 +740,32 @@
         let currentChatAttachment = null;
         let pendingDeleteDocId = null;
 
+        // UNIVERSAL CUSTOM ALERT FUNCTION
+        function showCustomAlert(title, message, type = 'success') {
+            document.getElementById('customAlertTitle').innerText = title;
+            document.getElementById('customAlertDesc').innerText = message;
+            
+            const iconBox = document.getElementById('customAlertIconBox');
+            const icon = document.getElementById('customAlertIcon');
+
+            if(type === 'success') {
+                iconBox.className = "w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-circle-check";
+            } else if(type === 'error') {
+                iconBox.className = "w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-triangle-exclamation";
+            } else {
+                iconBox.className = "w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-bell";
+            }
+
+            document.getElementById('customAlertModal').style.display = 'flex';
+        }
+
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
+
         const olxCategories = [
             { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
             { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
@@ -900,7 +943,11 @@
 
         // MY ADS MANAGEMENT
         function openMyAdsModal() {
-            if(!window.currentUser) { alert('Please login first!'); openAuthModal(); return; }
+            if(!window.currentUser) { 
+                showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
+                openAuthModal(); 
+                return; 
+            }
             const container = document.getElementById('myAdsContainer');
             container.innerHTML = '';
             const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
@@ -959,6 +1006,7 @@
                     db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
                         closeDeleteConfirmModal();
                         openMyAdsModal();
+                        showCustomAlert("Deleted", "Ad removed successfully!", "success");
                     });
                 }
             };
@@ -1034,12 +1082,12 @@
                     images: updatedImages
                 });
 
-                alert('Ad Updated Successfully!');
                 btn.innerText = 'Save Changes'; btn.disabled = false;
                 closeEditAdPage();
+                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
             } catch (err) {
-                alert("Error updating ad.");
                 btn.innerText = 'Save Changes'; btn.disabled = false;
+                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
             }
         }
 
@@ -1060,10 +1108,10 @@
                     localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
                     sessionStorage.setItem('oldx_pin_unlocked', 'true');
                     document.getElementById('setPinModal').style.display = 'none';
-                    alert('4-Digit PIN created successfully!');
+                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
                 }
             } else {
-                alert('Please enter a valid 4-digit PIN!');
+                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
             }
         }
 
@@ -1076,7 +1124,7 @@
                     document.getElementById('verifyPinModal').style.display = 'none';
                     document.getElementById('verifyPinInput').value = '';
                 } else {
-                    alert('Incorrect PIN! Try again.');
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
                     document.getElementById('verifyPinInput').value = '';
                 }
             }
@@ -1112,13 +1160,13 @@
             }).catch(() => {
                 auth.createUserWithEmailAndPassword(email, password).then(() => {
                     closeAuthModal();
-                }).catch(err => alert(err.message));
+                }).catch(err => showCustomAlert("Auth Error", err.message, "error"));
             });
         }
 
         function continueAsGuest() {
             closeAuthModal();
-            alert('Continuing in Guest Mode. You can browse all ads freely!');
+            showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
         }
 
         function openProfilePage() { window.location.hash = 'profile'; }
@@ -1139,7 +1187,7 @@
             if(confirm('Are you sure you want to log out from OldX?')) {
                 sessionStorage.removeItem('oldx_pin_unlocked');
                 auth.signOut().then(() => {
-                    alert('Logged out successfully!');
+                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
                     window.location.hash = '';
                 });
             }
@@ -1152,13 +1200,18 @@
 
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
-                alert('Bookmark / Save karva mate pehla Login karo!');
+                showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
                 openAuthModal();
                 return;
             }
             const idx = cartList.findIndex(id => id === docId);
-            if(idx > -1) { cartList.splice(idx, 1); alert('Ad Removed!'); }
-            else { cartList.push(docId); alert('Ad Saved!'); }
+            if(idx > -1) { 
+                cartList.splice(idx, 1); 
+                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
+            } else { 
+                cartList.push(docId); 
+                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
+            }
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
             updateCartBadge();
             if(window.currentUser) updateProfileDetails(window.currentUser);
@@ -1171,7 +1224,7 @@
 
         function openCartModal() {
             if(!window.currentUser) {
-                alert('Saved ads jovama mate pehla Login karo!');
+                showCustomAlert("Login Required", "Please login to view saved ads!", "error");
                 openAuthModal();
                 return;
             }
@@ -1388,12 +1441,12 @@
 
         function shareProductLink() {
             if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
-            else { navigator.clipboard.writeText(window.location.href); alert('Link copied!'); }
+            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Link Copied", "Product link copied to clipboard!", "success"); }
         }
 
         function openOfferModal() {
             const offer = prompt('Enter your offer price (₹):');
-            if(offer) alert(`Offer of ₹${offer} sent to seller!`);
+            if(offer) showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
         }
 
         function startSellWizard() {
@@ -1570,12 +1623,11 @@
 
                 db.collection('products').add(adData).then(() => {
                     btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
-                    // Show custom professional success modal
                     document.getElementById('successAdModal').style.display = 'flex';
                 });
             } catch (err) {
-                alert("Something went wrong.");
                 btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
             }
         }
 
