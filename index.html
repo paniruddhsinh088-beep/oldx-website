@@ -65,7 +65,6 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-2 md:space-x-3">
-                <!-- Saved Button: Hide by default when not logged in -->
                 <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-heart text-red-500 text-sm"></i>
                     <span class="hidden md:inline">Saved</span>
@@ -92,7 +91,6 @@
 
     <!-- MAIN HOME VIEW -->
     <div id="homeView">
-        <!-- Hero Banner -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
                 <span class="bg-white/10 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
@@ -183,6 +181,10 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-heart text-red-500"></i> Saved Bookmarks</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
+                <div onclick="openSetPinModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
                 </button>
@@ -190,7 +192,7 @@
         </div>
     </div>
 
-    <!-- ADVANCED MULTI-OPTION AUTH MODAL (Google, Email/Pass, Guest) -->
+    <!-- MAIN AUTH MODAL -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold">
@@ -202,7 +204,6 @@
                 <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
             </div>
 
-            <!-- 1. Google Login -->
             <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition">
                 <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
             </button>
@@ -213,7 +214,6 @@
                 <div class="flex-1 border-t"></div>
             </div>
 
-            <!-- 2. Email / Password Form -->
             <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
                 <div>
                     <label class="block font-bold mb-1">Email Address</label>
@@ -234,9 +234,47 @@
                 <div class="flex-1 border-t"></div>
             </div>
 
-            <!-- 3. Continue as Guest -->
             <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition">
                 <i class="fa-solid fa-user-secret"></i> Continue as Guest
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. SET 4-DIGIT PIN MODAL (FIRST TIME SETUP) -->
+    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
+            
+            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. QUICK PIN VERIFY MODAL (WITH FORGOT PIN OPTION) -->
+    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
+            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
+            
+            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Unlock Account
+            </button>
+
+            <!-- FORGOT PIN BUTTON -->
+            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
+                Forgot PIN? Re-authenticate
             </button>
         </div>
     </div>
@@ -502,6 +540,8 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
         window.currentUser = null;
         let products = [];
         let currentProduct = null;
@@ -536,7 +576,7 @@
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
-        // USER AUTHENTICATION & HEADER BUTTON TOGGLE
+        // USER AUTHENTICATION & HEADER BUTTON TOGGLE & PIN CHECK
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
@@ -544,7 +584,6 @@
             const myAdsBtn = document.getElementById('headerMyAdsBtn');
 
             if(user) {
-                // Show Saved & My Ads buttons when logged in
                 if(savedBtn) savedBtn.style.display = 'flex';
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
 
@@ -556,8 +595,8 @@
                     </div>
                 `;
                 updateProfileDetails(user);
+                checkUserPinStatus(user);
             } else {
-                // Hide Saved & My Ads buttons when logged out
                 if(savedBtn) savedBtn.style.display = 'none';
                 if(myAdsBtn) myAdsBtn.style.display = 'none';
 
@@ -568,6 +607,61 @@
                 `;
             }
         });
+
+        // 4-DIGIT PIN LOGIC
+        function checkUserPinStatus(user) {
+            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
+            if(!userSavedPin) {
+                document.getElementById('setPinModal').style.display = 'flex';
+            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
+                document.getElementById('verifyPinModal').style.display = 'flex';
+            }
+        }
+
+        function saveUserPin() {
+            const input = document.getElementById('newPinInput').value;
+            if(input && input.length === 4 && !isNaN(input)) {
+                if(window.currentUser) {
+                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('setPinModal').style.display = 'none';
+                    alert('4-Digit PIN created successfully!');
+                }
+            } else {
+                alert('Please enter a valid 4-digit PIN!');
+            }
+        }
+
+        function verifyUserPin() {
+            const input = document.getElementById('verifyPinInput').value;
+            if(window.currentUser) {
+                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(input === correctPin) {
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('verifyPinModal').style.display = 'none';
+                    document.getElementById('verifyPinInput').value = '';
+                } else {
+                    alert('Incorrect PIN! Try again.');
+                    document.getElementById('verifyPinInput').value = '';
+                }
+            }
+        }
+
+        function handleForgotPin() {
+            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
+                document.getElementById('verifyPinModal').style.display = 'none';
+                if(window.currentUser) {
+                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
+                }
+                auth.signOut().then(() => {
+                    openAuthModal();
+                });
+            }
+        }
+
+        function openSetPinModal() {
+            document.getElementById('setPinModal').style.display = 'flex';
+        }
 
         function loginWithGoogle() { 
             auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
@@ -608,6 +702,7 @@
 
         function handleLogout() {
             if(confirm('Are you sure you want to log out from OldX?')) {
+                sessionStorage.removeItem('oldx_pin_unlocked');
                 auth.signOut().then(() => {
                     alert('Logged out successfully!');
                     window.location.hash = '';
