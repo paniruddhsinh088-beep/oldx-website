@@ -1219,7 +1219,6 @@
             }
         }
 
-        /* 🛠️ UPDATED LIVE CHAT & INBOX LOGIC FOR MULTI-DEVICE (LAPTOP BUYER & MOBILE SELLER) */
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -1363,28 +1362,36 @@
             });
         }
 
+        // 🛠️ FIXED TYPING EVENT LISTENER WITH AUTO RESET TIMER
         document.getElementById('fullChatInput').addEventListener('input', () => {
             if(!activeChatRoomId || !window.currentUser) return;
+            
             db.collection('chats').doc(activeChatRoomId).set({
                 [`typing_${window.currentUser.uid}`]: true
             }, { merge: true });
 
             clearTimeout(window.typingTimer);
             window.typingTimer = setTimeout(() => {
-                db.collection('chats').doc(activeChatRoomId).set({
-                    [`typing_${window.currentUser.uid}`]: false
-                }, { merge: true });
-            }, 2000);
+                if(activeChatRoomId && window.currentUser) {
+                    db.collection('chats').doc(activeChatRoomId).set({
+                        [`typing_${window.currentUser.uid}`]: false
+                    }, { merge: true });
+                }
+            }, 1500);
         });
 
+        // 🛠️ FIXED WATCH TYPING STATUS (RESTORES ONLINE WHEN TYPING STOPS)
         function watchTypingStatus(chatRoomId, otherUserId) {
             db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
                 if(doc.exists) {
                     const data = doc.data();
                     const statusEl = document.getElementById('chatUserStatus');
-                    if(data[`typing_${otherUserId}`]) {
+                    
+                    if(data && data[`typing_${otherUserId}`] === true) {
                         statusEl.innerText = "typing...";
                         statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
+                    } else {
+                        trackUserStatus(otherUserId);
                     }
                 }
             });
@@ -1491,10 +1498,14 @@
                 warningBanner.style.display = 'none';
             }
 
+            // Immediately clear typing state on send
+            db.collection('chats').doc(activeChatRoomId).set({
+                [`typing_${window.currentUser.uid}`]: false
+            }, { merge: true });
+
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             let sellerId = currentProduct ? currentProduct.sellerUid : '';
 
-            // Ensure participants array always contains both buyer and seller UIDs for multi-device cross-sync
             db.collection('chats').doc(activeChatRoomId).set({
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
                 participants: [window.currentUser.uid, sellerId || activeChatRoomId.split('_')[1]],
@@ -2511,10 +2522,9 @@
                     </div>
                 </div>
 
-                <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
-                    <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
-                    <span class="text-gray-400 font-semibold">Inspect & Buy</span>
-                </div>
+                <button class="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fa-solid fa-paper-plane"></i> Send Message
+                </button>
             `;
             return card;
         }
