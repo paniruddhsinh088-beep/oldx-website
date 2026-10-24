@@ -1165,7 +1165,6 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
 
-                // Update Online Status in Firestore
                 db.collection('users').doc(user.uid).set({
                     isOnline: true,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
@@ -1220,7 +1219,7 @@
             }
         }
 
-        // PROFESSIONAL INBOX MODAL
+        // PROFESSIONAL INBOX MODAL (UPDATED SENDER LOGIC)
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -1266,19 +1265,32 @@
                       .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
                           let lastMsgText = "Tap to view conversation";
                           let lastTime = "";
+                          let senderPrefix = "";
                           
                           if (!msgSnapshot.empty) {
                               const lastMsgData = msgSnapshot.docs[0].data();
-                              lastMsgText = lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message");
+                              const isMe = lastMsgData.senderUid === window.currentUser.uid;
+                              
+                              senderPrefix = isMe ? "You: " : "";
+                              lastMsgText = senderPrefix + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
                               lastTime = lastMsgData.time || "";
                           }
 
                           const div = document.createElement('div');
                           div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
+                          
                           div.onclick = () => {
                               closeInboxModal();
                               activeChatRoomId = chat.chatRoomId;
-                              document.getElementById('chatSellerName').innerText = "Conversation";
+                              
+                              const prodId = chat.chatRoomId.split('_')[0];
+                              const currentProd = products.find(p => p.docId === prodId);
+                              
+                              const otherName = (currentProd && currentProd.sellerUid !== window.currentUser.uid) 
+                                  ? currentProd.sellerName 
+                                  : "Buyer Conversation";
+
+                              document.getElementById('chatSellerName').innerText = otherName;
                               document.getElementById('fullChatPage').style.display = 'flex';
                               loadChatMessages(chat.chatRoomId);
                           };
@@ -1286,11 +1298,11 @@
                           div.innerHTML = `
                               <div class="flex items-center gap-3 overflow-hidden">
                                   <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
-                                      <i class="fa-solid fa-user-shield"></i>
+                                      <i class="fa-solid fa-user"></i>
                                   </div>
                                   <div class="overflow-hidden">
                                       <div class="flex items-center gap-2">
-                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Conversation</h4>
                                           <span class="text-[9px] text-gray-400">${lastTime}</span>
                                       </div>
                                       <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
@@ -1343,7 +1355,6 @@
             document.getElementById('fullChatPage').style.display = 'none';
         }
 
-        // Online & Last Seen Tracker
         function trackUserStatus(otherUserId) {
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
@@ -1365,7 +1376,6 @@
             });
         }
 
-        // Typing Indicator Listeners
         document.getElementById('fullChatInput').addEventListener('input', () => {
             if(!activeChatRoomId || !window.currentUser) return;
             db.collection('chats').doc(activeChatRoomId).set({
@@ -1396,7 +1406,6 @@
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
             
-            // Mark unread messages as read (Blue Ticks)
             db.collection('chats').doc(chatRoomId).collection('messages')
               .where('senderUid', '!=', window.currentUser.uid)
               .where('status', '==', 'sent')
@@ -1429,7 +1438,6 @@
                           }
                       }
 
-                      // Single Tick & Blue Double Ticks Logic
                       const tickIcon = isMe 
                           ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
                           : '';
