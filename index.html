@@ -759,6 +759,56 @@
         </div>
     </div>
 
+    <!-- AI Smart Chatbot Widget -->
+    <div id="aiChatbotContainer" class="fixed bottom-4 right-4 z-50">
+        <!-- Chat Toggle Button -->
+        <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
+            <i class="fa-solid fa-robot"></i>
+        </button>
+
+        <!-- Chat Window (Hidden by Default) -->
+        <div id="aiChatWindow" style="display: none;" class="absolute bottom-16 right-0 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden animate-scale-up h-[450px]">
+            <!-- Chat Header -->
+            <div class="bg-primary text-white p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-amber-400 text-primary flex items-center justify-center font-bold text-sm">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-xs">OldX AI Assistant</h4>
+                        <p class="text-[10px] text-teal-200">Online | Ask me anything</p>
+                    </div>
+                </div>
+                <button onclick="toggleAiChatbot()" class="text-white hover:text-gray-300 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Messages Area -->
+            <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-gray-50 dark:bg-gray-900">
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
+                    <p class="font-semibold">નમસ્તે! 👋 હું OldX નો AI અસિસ્ટન્ટ છું. હું તમને કાર, મોબાઇલ કે પ્રોપર્ટી શોધવામાં અથવા એડ પોસ્ટ કરવામાં કેવી રીતે મદદ કરી શકું?</p>
+                    <span class="text-[9px] text-gray-400 mt-1 block">Just now</span>
+                </div>
+            </div>
+
+            <!-- Quick Suggestions -->
+            <div class="px-3 py-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-1 overflow-x-auto no-scrollbar text-[10px]">
+                <button onclick="sendQuickAiQuery('એડ કેવી રીતે પોસ્ટ કરવી?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">એડ કેવી રીતે મૂકવી?</button>
+                <button onclick="sendQuickAiQuery('મારી નજીક કાર કઈ છે?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">કાર શોધવી છે</button>
+                <button onclick="sendQuickAiQuery('સુરક્ષિત કેવી રીતે રહેવું?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">સેફ્ટી ટિપ્સ</button>
+            </div>
+
+            <!-- Input Bar -->
+            <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
+                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="અહીં સવાલ પૂછો..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                <button onclick="sendAiMessage()" class="bg-primary hover:bg-teal-800 text-white w-9 h-9 rounded-full flex items-center justify-center text-xs shadow transition cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Main Logic Script -->
     <script>
         const firebaseConfig = {
@@ -786,6 +836,65 @@
         let currentChatAttachment = null;
         let pendingDeleteDocId = null;
         let activeChatRoomId = null;
+
+        // AI Chatbot Functions
+        function toggleAiChatbot() {
+            const windowEl = document.getElementById('aiChatWindow');
+            if (windowEl.style.display === 'none' || windowEl.style.display === '') {
+                windowEl.style.display = 'flex';
+            } else {
+                windowEl.style.display = 'none';
+            }
+        }
+
+        function handleAiKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
+        }
+
+        function sendQuickAiQuery(text) {
+            document.getElementById('aiChatInput').value = text;
+            sendAiMessage();
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const container = document.getElementById('aiChatMessages');
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const userCard = document.createElement('div');
+            userCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm";
+            userCard.innerHTML = `<p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span>`;
+            container.appendChild(userCard);
+            
+            input.value = '';
+            container.scrollTop = container.scrollHeight;
+
+            setTimeout(() => {
+                let aiReply = "મને સમજ ન પડી. તમે 'કાર', 'મોબાઈલ' અથવા 'એડ પોસ્ટ' વિશે પૂછી શકો છો.";
+                const lowerMsg = msg.toLowerCase();
+
+                if (lowerMsg.includes('એડ') || lowerMsg.includes('ad') || lowerMsg.includes('મૂકવી')) {
+                    aiReply = "નવી એડ પોસ્ટ કરવા માટે ઉપર આપેલા પીળા રંગના **'SELL'** બટન પર ક્લિક કરો અને તમારી કેટેગરી પસંદ કરો!";
+                } else if (lowerMsg.includes('કાર') || lowerMsg.includes('car') || lowerMsg.includes('ગાડી')) {
+                    aiReply = "સેકન્ડ હેન્ડ કાર જોવા માટે હોમ પેજ પર 'Cars' કેટેગરી પર ક્લિક કરો અથવા સર્ચબારમાં 'Cars' લખો.";
+                } else if (lowerMsg.includes('સેફ્ટી') || lowerMsg.includes('safe') || lowerMsg.includes('fraud')) {
+                    aiReply = "સુરક્ષિત રહેવા માટે હંમેશાં રૂબરૂ મળીને વસ્તુ ચકાસીને જ પૈસા આપો. અગાઉથી ઓનલાઈન પૂરેપૂરું પેમેન્ટ કરવાનું ટાળો.";
+                } else if (lowerMsg.includes('નમસ્તે') || lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
+                    aiReply = "નમસ્તે! આજે હું તમને કઈ વસ્તુ શોધવામાં મદદ કરું?";
+                }
+
+                const aiCard = document.createElement('div');
+                aiCard.className = "bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200";
+                aiCard.innerHTML = `<p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span>`;
+                container.appendChild(aiCard);
+                container.scrollTop = container.scrollHeight;
+            }, 600);
+        }
 
         // UNIVERSAL CUSTOM ALERT FUNCTION
         function showCustomAlert(title, message, type = 'success') {
