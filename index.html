@@ -228,7 +228,7 @@
         </div>
     </div>
 
-    <!-- EDIT PROFILE MODAL -->
+    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
     <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -240,11 +240,11 @@
                     <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">Profile Photo URL</label>
-                    <input type="text" id="editProfilePhotoInput" placeholder="https://image-link.com" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
+                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
                 </div>
-                <button onclick="saveProfileChanges()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
-                    Save Profile
+                <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
+                    Save Profile Changes
                 </button>
             </div>
         </div>
@@ -990,7 +990,6 @@
         function openEditProfileModal() {
             if(!window.currentUser) return;
             document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
-            document.getElementById('editProfilePhotoInput').value = window.currentUser.photoURL || '';
             document.getElementById('editProfileModal').style.display = 'flex';
         }
 
@@ -998,22 +997,34 @@
             document.getElementById('editProfileModal').style.display = 'none';
         }
 
-        function saveProfileChanges() {
+        async function saveProfileChangesWithFile() {
             const newName = document.getElementById('editProfileNameInput').value.trim();
-            const newPhoto = document.getElementById('editProfilePhotoInput').value.trim();
+            const photoFileInput = document.getElementById('editProfilePhotoFile');
+            const btn = document.getElementById('saveProfileBtn');
 
             if(!window.currentUser) return;
+            btn.innerText = 'Saving...'; btn.disabled = true;
 
-            window.currentUser.updateProfile({
-                displayName: newName,
-                photoURL: newPhoto
-            }).then(() => {
+            try {
+                let photoURL = window.currentUser.photoURL;
+
+                if (photoFileInput.files && photoFileInput.files[0]) {
+                    photoURL = await compressImage(photoFileInput.files[0]);
+                }
+
+                await window.currentUser.updateProfile({
+                    displayName: newName,
+                    photoURL: photoURL
+                });
+
                 closeEditProfileModal();
                 updateProfileDetails(window.currentUser);
                 showCustomAlert("Success", "Profile updated successfully!", "success");
-            }).catch(error => {
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            } catch (error) {
                 showCustomAlert("Error", error.message, "error");
-            });
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            }
         }
 
         function shareProfile() {
@@ -1617,217 +1628,3 @@
 
         function goToPhotoUploadStep(e) {
             e.preventDefault();
-            document.getElementById('wizardStage3').style.display = 'none';
-            document.getElementById('wizardStage4').style.display = 'block';
-            updateWizardDistricts();
-        }
-
-        function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
-        function backToWizardStage2() { document.getElementById('wizardStage3').style.display = 'none'; document.getElementById('wizardStage2').style.display = 'block'; }
-        function backToWizardStage3() { document.getElementById('wizardStage4').style.display = 'none'; document.getElementById('wizardStage3').style.display = 'block'; }
-
-        function updateWizardDistricts() {
-            const state = document.getElementById('adState').value;
-            const distSelect = document.getElementById('adDistrict');
-            distSelect.innerHTML = '';
-            (districtData[state] || ['General']).forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d; opt.textContent = d;
-                distSelect.appendChild(opt);
-            });
-        }
-
-        function compressImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width; let height = img.height;
-                        const maxDim = 800;
-                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
-                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
-                    };
-                    img.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        async function handleFinalAdSubmit(e) {
-            e.preventDefault();
-            const btn = document.getElementById('adSubmitBtn');
-            btn.innerText = 'Publishing...'; btn.disabled = true;
-
-            try {
-                const title = document.getElementById('adTitle').value;
-                const desc = document.getElementById('adDesc').value;
-                const basePrice = parseFloat(document.getElementById('adPrice').value);
-                const mrpPrice = parseFloat(document.getElementById('adMrpPrice').value) || basePrice;
-                const discountPercent = parseFloat(document.getElementById('adDiscount').value) || 0;
-                const phone = document.getElementById('adPhone').value;
-                const state = document.getElementById('adState').value;
-                const district = document.getElementById('adDistrict').value;
-                const village = document.getElementById('adVillage').value;
-                const imgInput = document.getElementById('adImages');
-
-                let extraDetails = {
-                    brand: document.getElementById('dynBrand')?.value || '',
-                    model: document.getElementById('dynModel')?.value || '',
-                    type: document.getElementById('dynType')?.value || ''
-                };
-
-                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
-
-                let images = [];
-                if (imgInput.files && imgInput.files.length > 0) {
-                    for (let i = 0; i < imgInput.files.length; i++) {
-                        const compressed = await compressImage(imgInput.files[i]);
-                        images.push(compressed);
-                    }
-                }
-
-                const adData = {
-                    sellerUid: window.currentUser ? window.currentUser.uid : 'guest',
-                    sellerName: window.currentUser ? window.currentUser.displayName : 'Seller',
-                    category: selectedMainCat.id,
-                    subCategory: selectedSubCat,
-                    title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
-                    extraDetails,
-                    location: `${village}, ${district}, ${state}`, 
-                    state, 
-                    images,
-                    isSold: false,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                };
-
-                db.collection('products').add(adData).then(() => {
-                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
-                    document.getElementById('successAdModal').style.display = 'flex';
-                });
-            } catch (err) {
-                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
-                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
-            }
-        }
-
-        function closeSuccessModalAndGoHome() {
-            document.getElementById('successAdModal').style.display = 'none';
-            window.location.hash = '';
-        }
-
-        function closeSuccessModalAndOpenMyAds() {
-            document.getElementById('successAdModal').style.display = 'none';
-            window.location.hash = '';
-            openMyAdsModal();
-        }
-
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
-        function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
-
-        function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
-
-        function renderProducts() {
-            const grid = document.getElementById('productGrid');
-            const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const stateVal = document.getElementById('stateFilter').value;
-            if(!grid) return;
-            grid.innerHTML = '';
-
-            const filtered = products.filter(p => {
-                const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
-                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
-                const matchState = (!stateVal || p.state === stateVal);
-                return matchCat && matchSearch && matchState;
-            });
-
-            if(filtered.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
-                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No recommendations found</p>
-                    </div>
-                `;
-                return;
-            }
-
-            filtered.forEach(p => {
-                const isSaved = cartList.includes(p.docId);
-                const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
-                card.onclick = () => openProductDetailPage(p.docId);
-                
-                const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                    ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
-                    : '';
-
-                const discBadge = (p.discountPercent && p.discountPercent > 0)
-                    ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
-                    : '';
-
-                const soldBadge = p.isSold 
-                    ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
-                    : '';
-
-                card.innerHTML = `
-                    ${soldBadge}
-                    <div>
-                        <!-- Image Area with Badges -->
-                        <div class="h-48 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
-                            ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
-                            
-                            <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
-                                <span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">
-                                    ★ FEATURED
-                                </span>
-                                ${discBadge}
-                            </div>
-
-                            <!-- Heart Save Button -->
-                            <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10">
-                                <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
-                            </button>
-                        </div>
-
-                        <!-- Info Area -->
-                        <br>
-                        <div class="p-4 space-y-2">
-                            <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                                <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
-                                <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
-                            </div>
-
-                            <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
-                                ${p.title}
-                            </h4>
-
-                            <div class="flex items-baseline gap-1 pt-1">
-                                <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
-                                ${mrpMarkup}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Card Footer Badge -->
-                    <div class="px-4 py-2 bg-gray-50/80 dark:bg-gray-700/40 border-t border-gray-100 dark:border-gray-700/80 flex items-center justify-between text-[10px] font-extrabold text-teal-700 dark:text-teal-300">
-                        <span class="flex items-center gap-1"><i class="fa-solid fa-shield-check text-teal-600"></i> Direct Deal</span>
-                        <span class="text-gray-400 font-semibold">Inspect & Buy</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderHomeCategories();
-            handleHashChange();
-            updateCartBadge();
-        });
-    </script>
-</body>
-</html>
