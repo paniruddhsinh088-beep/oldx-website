@@ -1951,7 +1951,16 @@
             showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
         }
 
-        function openProfilePage() { window.location.hash = 'profile'; }
+        // 🌟 Fixed & Safe openProfilePage
+        function openProfilePage() { 
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login first to view your profile!", "error");
+                openAuthModal();
+                return;
+            }
+            sessionStorage.setItem('oldx_pin_unlocked', 'true');
+            window.location.hash = 'profile'; 
+        }
 
         function updateProfileDetails(user) {
             if(!user) return;
