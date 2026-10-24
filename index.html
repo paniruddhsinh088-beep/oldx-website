@@ -251,7 +251,7 @@
                 </button>
             </form>
 
-            <!-- Quick PIN Login Form (PIN set to type="text" so user can see what they type) -->
+            <!-- Quick PIN Login Form -->
             <div id="pinAuthForm" style="display: none;" class="space-y-3 text-xs pt-1">
                 <div>
                     <label class="block font-bold mb-1">Email Address</label>
@@ -279,7 +279,7 @@
         </div>
     </div>
 
-    <!-- SET 4-DIGIT PIN MODAL (Visible Text Input) -->
+    <!-- SET 4-DIGIT PIN MODAL -->
     <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up">
             <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -296,7 +296,7 @@
         </div>
     </div>
 
-    <!-- QUICK PIN VERIFY MODAL (Visible Text Input) -->
+    <!-- QUICK PIN VERIFY MODAL -->
     <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -1008,7 +1008,7 @@
             }
         }
 
-        // 🌟 Quick PIN Login Logic (Fixed with page reload)
+        // 🌟 FIXED QUICK PIN LOGIN (Smooth query matching with public rules & Page Refresh)
         async function loginWithQuickPin() {
             const email = document.getElementById('pinLoginEmail').value.trim();
             const enteredPin = document.getElementById('pinLoginInput').value.trim();
@@ -1019,35 +1019,34 @@
             }
 
             try {
-                const userQuery = await db.collection('users').where('email', '==', email).get();
-                if(userQuery.empty) {
-                    showCustomAlert("Not Found", "No account found with this email. Please login with Google or Password once to register your account.", "error");
-                    return;
-                }
+                const usersSnapshot = await db.collection('users').get();
+                let foundUser = false;
+                let matchedUserId = null;
 
-                let userData = null;
-                let userId = null;
-                userQuery.forEach(doc => {
-                    userData = doc.data();
-                    userId = doc.id;
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.email === email && data.pin === enteredPin) {
+                        foundUser = true;
+                        matchedUserId = doc.id;
+                    }
                 });
 
-                if(userData.pin && userData.pin === enteredPin) {
-                    localStorage.setItem(`oldx_pin_${userId}`, enteredPin);
+                if(foundUser) {
+                    localStorage.setItem(`oldx_pin_${matchedUserId}`, enteredPin);
                     sessionStorage.setItem('oldx_pin_unlocked', 'true');
                     
                     closeAuthModal();
                     showCustomAlert("Success", "Login with PIN Successful!", "success");
                     
-                    // 🌟 Page reload to update user state across the app successfully
                     setTimeout(() => {
                         window.location.reload();
                     }, 800);
                 } else {
-                    showCustomAlert("Incorrect PIN", "Incorrect PIN. Please try again.", "error");
+                    showCustomAlert("Incorrect PIN", "Invalid email or 4-digit PIN. Please check.", "error");
                 }
             } catch (err) {
-                showCustomAlert("Error", "Login failed. Please try again.", "error");
+                console.error(err);
+                showCustomAlert("Error", "Database error. Please check Firestore Rules.", "error");
             }
         }
 
