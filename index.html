@@ -500,6 +500,12 @@
             <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
+        <!-- Smart Fraud Detection Safety Banner -->
+        <div id="chatSafetyWarning" style="display: none;" class="bg-red-50 dark:bg-red-950/50 border-t border-red-200 px-4 py-2 flex items-center gap-2 text-red-600 dark:text-red-300 text-xs font-semibold">
+            <i class="fa-solid fa-shield-halved text-sm animate-bounce"></i>
+            <span id="chatSafetyWarningText">સાવધાન: આ મેસેજમાં શંકાસ્પદ લિંક કે ફ્રોડ હોઈ શકે છે!</span>
+        </div>
+
         <!-- Chat Input Bar -->
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
@@ -510,7 +516,7 @@
 
             <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
-            <button onclick="sendFullChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow">
+            <button onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
@@ -1168,12 +1174,29 @@
             document.getElementById('chatAttachmentPreview').style.display = 'none';
         }
 
-        function sendFullChatMessage() {
+        // Smart Fraud & Scam Detection Function
+        function checkScamAndSendChatMessage() {
             const input = document.getElementById('fullChatInput');
             const msg = input.value.trim();
 
             if (!msg && !currentChatAttachment) return;
             if (!activeChatRoomId || !window.currentUser) return;
+
+            const lowerMsg = msg.toLowerCase();
+            const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
+            const isSuspicious = scamKeywords.some(keyword => lowerMsg.includes(keyword));
+
+            const warningBanner = document.getElementById('chatSafetyWarning');
+            const warningText = document.getElementById('chatSafetyWarningText');
+
+            if (isSuspicious) {
+                warningBanner.style.display = 'flex';
+                warningText.innerText = "⚠️ સાવધાન: સિસ્ટમને આ મેસેજમાં શંકાસ્પદ લિંક અથવા ફ્રોડ શંકા લાગી છે. કૃપા કરીને અજાણ્યા વ્યક્તિઓને ઓનલાઈન પેમેન્ટ ન કરો!";
+                showCustomAlert("Security Warning", "આ મેસેજમાં ફ્રોડ અથવા સ્કેમની શંકા હોવાથી સુરક્ષા ખાતર બ્લોક કરવામાં આવ્યો છે.", "error");
+                return;
+            } else {
+                warningBanner.style.display = 'none';
+            }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
