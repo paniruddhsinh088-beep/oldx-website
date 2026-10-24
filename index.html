@@ -460,7 +460,7 @@
         </div>
     </div>
 
-    <!-- FULL PAGE DEDICATED CHAT VIEW -->
+    <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
         <!-- Chat Header -->
         <div class="bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm">
@@ -482,10 +482,10 @@
                 <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
                     <i class="fa-solid fa-phone"></i>
                 </a>
-                <i class="fa-solid fa-ellipsis-vertical text-lg cursor-pointer hover:text-primary"></i>
             </div>
         </div>
 
+        <!-- Chat Messages Container -->
         <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
             <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
                 <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
@@ -500,6 +500,7 @@
             <button onclick="clearChatAttachment()" class="text-red-500 font-bold"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
+        <!-- Chat Input Bar -->
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
             
@@ -721,10 +722,10 @@
 
         <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
             <div class="max-w-3xl mx-auto flex items-center gap-2">
-                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50">
-                    <i class="fa-regular fa-comments text-base"></i> Chat
+                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50 cursor-pointer">
+                    <i class="fa-regular fa-comments text-base"></i> In-App Chat
                 </button>
-                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow">
+                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow cursor-pointer">
                     <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
                 </button>
                 <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 shadow">
@@ -784,6 +785,7 @@
         let currentFilterCat = 'all';
         let currentChatAttachment = null;
         let pendingDeleteDocId = null;
+        let activeChatRoomId = null;
 
         // UNIVERSAL CUSTOM ALERT FUNCTION
         function showCustomAlert(title, message, type = 'success') {
@@ -888,33 +890,75 @@
             }
         }
 
-        // FULL PAGE CHAT FUNCTIONS
+        // FULL PAGE LIVE IN-APP CHAT FUNCTIONS
         function openLiveChatModal() {
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "ચેટ શરૂ કરવા માટે કૃપા કરીને લોગિન કરો!", "error");
+                openAuthModal();
+                return;
+            }
             if (!currentProduct) return;
-            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
+
+            const buyerId = window.currentUser.uid;
+            const sellerId = currentProduct.sellerUid;
             
+            if (buyerId === sellerId) {
+                showCustomAlert("Notice", "તમે તમારી પોતાની જ એડ પર ચેટ ન કરી શકો.", "error");
+                return;
+            }
+
+            activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
+            
+            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
             const sellerPhone = currentProduct.phone || '919876543210';
             document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
 
-            const isOnline = Math.random() > 0.3;
-            const dot = document.getElementById('chatOnlineDot');
-            const statusTxt = document.getElementById('chatUserStatus');
-
-            if(isOnline) {
-                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full";
-                statusTxt.innerText = "Online";
-                statusTxt.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
-            } else {
-                dot.className = "absolute bottom-0 right-0 w-3 h-3 bg-gray-400 border-2 border-white rounded-full";
-                statusTxt.innerText = "Last seen today at 10:05 AM";
-                statusTxt.className = "text-[11px] text-gray-400 font-medium";
-            }
-
             document.getElementById('fullChatPage').style.display = 'flex';
+            loadChatMessages(activeChatRoomId);
         }
 
         function closeFullChatPage() {
             document.getElementById('fullChatPage').style.display = 'none';
+        }
+
+        function loadChatMessages(chatRoomId) {
+            const container = document.getElementById('fullChatMessages');
+            
+            db.collection('chats').doc(chatRoomId).collection('messages')
+              .orderBy('createdAt', 'asc')
+              .onSnapshot(snapshot => {
+                  container.innerHTML = '';
+                  if(snapshot.empty) {
+                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">હજી કોઈ વાતચીત નથી થઈ. હેલો કહીને શરૂઆત કરો!</p>`;
+                      return;
+                  }
+                  snapshot.forEach(doc => {
+                      const msg = doc.data();
+                      const isMe = msg.senderUid === window.currentUser.uid;
+                      
+                      let attachmentHTML = '';
+                      if (msg.attachment) {
+                          if (msg.attachment.type.startsWith('image/')) {
+                              attachmentHTML = `<img src="${msg.attachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                          } else {
+                              attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${msg.attachment.name}</span></div>`;
+                          }
+                      }
+
+                      const msgCard = document.createElement('div');
+                      msgCard.className = `p-3 rounded-2xl max-w-[80%] text-xs shadow-sm ${isMe ? 'bg-primary text-white ml-auto' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 mr-auto border'}`;
+                      msgCard.innerHTML = `
+                          ${attachmentHTML}
+                          ${msg.text ? `<p class="font-medium">${msg.text}</p>` : ''}
+                          <div class="flex justify-end items-center gap-1 mt-1">
+                              <span class="text-[9px] ${isMe ? 'text-teal-200' : 'text-gray-400'}">${msg.time || ''}</span>
+                              ${isMe ? '<i class="fa-solid fa-check-double text-[10px] text-teal-300"></i>' : ''}
+                          </div>
+                      `;
+                      container.appendChild(msgCard);
+                  });
+                  container.scrollTop = container.scrollHeight;
+              });
         }
 
         function handleChatFileUpload(e) {
@@ -945,45 +989,23 @@
             const msg = input.value.trim();
 
             if (!msg && !currentChatAttachment) return;
+            if (!activeChatRoomId || !window.currentUser) return;
 
-            const container = document.getElementById('fullChatMessages');
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            let attachmentHTML = '';
-            if (currentChatAttachment) {
-                if (currentChatAttachment.type.startsWith('image/')) {
-                    attachmentHTML = `<img src="${currentChatAttachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
-                } else if (currentChatAttachment.type.startsWith('video/')) {
-                    attachmentHTML = `<video src="${currentChatAttachment.data}" controls class="rounded-lg max-h-48 mb-1"></video>`;
-                } else {
-                    attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${currentChatAttachment.name}</span></div>`;
-                }
-            }
-
-            const msgId = 'msg-' + Date.now();
-            const msgCard = document.createElement('div');
-            msgCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[80%] ml-auto text-xs shadow-sm";
-            msgCard.innerHTML = `
-                ${attachmentHTML}
-                ${msg ? `<p class="font-medium">${msg}</p>` : ''}
-                <div class="flex justify-end items-center gap-1 mt-1">
-                    <span class="text-[9px] text-teal-200">${now}</span>
-                    <i id="${msgId}-status" class="fa-solid fa-check text-teal-300 text-[10px]"></i>
-                </div>
-            `;
-
-            container.appendChild(msgCard);
-            container.scrollTop = container.scrollHeight;
-
-            input.value = '';
-            clearChatAttachment();
-
-            setTimeout(() => {
-                const tickElem = document.getElementById(`${msgId}-status`);
-                if (tickElem) {
-                    tickElem.className = "fa-solid fa-check-double text-blue-400 text-[10px]";
-                }
-            }, 1500);
+            db.collection('chats').doc(activeChatRoomId).collection('messages').add({
+                text: msg,
+                attachment: currentChatAttachment || null,
+                senderUid: window.currentUser.uid,
+                senderName: window.currentUser.displayName || 'User',
+                time: timeStr,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                input.value = '';
+                clearChatAttachment();
+            }).catch(err => {
+                console.error("Error sending message: ", err);
+            });
         }
 
         // EDIT PROFILE FUNCTIONS
