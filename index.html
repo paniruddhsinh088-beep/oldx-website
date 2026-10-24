@@ -1008,7 +1008,7 @@
             }
         }
 
-        // 🌟 Quick PIN Login Logic
+        // 🌟 Quick PIN Login Logic (Fixed with page reload)
         async function loginWithQuickPin() {
             const email = document.getElementById('pinLoginEmail').value.trim();
             const enteredPin = document.getElementById('pinLoginInput').value.trim();
@@ -1035,9 +1035,14 @@
                 if(userData.pin && userData.pin === enteredPin) {
                     localStorage.setItem(`oldx_pin_${userId}`, enteredPin);
                     sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    
                     closeAuthModal();
                     showCustomAlert("Success", "Login with PIN Successful!", "success");
-                    window.location.reload();
+                    
+                    // 🌟 Page reload to update user state across the app successfully
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 800);
                 } else {
                     showCustomAlert("Incorrect PIN", "Incorrect PIN. Please try again.", "error");
                 }
@@ -1276,7 +1281,6 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
 
-                // Automatically save user to Firestore so Quick PIN login works correctly!
                 db.collection('users').doc(user.uid).set({
                     email: user.email,
                     isOnline: true,
