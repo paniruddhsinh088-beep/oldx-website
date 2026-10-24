@@ -150,7 +150,7 @@
         </main>
     </div>
 
-    <!-- DEDICATED PROFILE PAGE -->
+    <!-- ENHANCED DEDICATED PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300">
@@ -161,16 +161,29 @@
         </div>
 
         <div class="max-w-xl mx-auto p-4 md:p-6 space-y-5">
+            <!-- Profile Card with Edit Button & Rating -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-r from-teal-700 to-primary"></div>
-                <div class="relative z-10 pt-6">
-                    <img id="profileUserPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 mx-auto object-cover shadow-md">
+                <div class="absolute top-0 left-0 right-0 h-24 bg-gradient-to-r from-teal-700 to-primary"></div>
+                <div class="relative z-10 pt-4">
+                    <div class="relative w-24 h-24 mx-auto">
+                        <img id="profileUserPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 object-cover shadow-md">
+                    </div>
+                    
                     <h3 id="profileUserName" class="text-xl font-black text-gray-900 dark:text-white mt-3">Guest User</h3>
                     <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
-                    <span id="profileUserBadge" class="mt-2 inline-block bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
+                    
+                    <div class="flex justify-center items-center gap-2 mt-2">
+                        <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
+                        <span class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <i class="fa-solid fa-star text-amber-500"></i> 4.9 Rating
+                        </span>
+                    </div>
+
+                    <p class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since 2026</p>
                 </div>
             </div>
 
+            <!-- Stats Grid -->
             <div class="grid grid-cols-2 gap-3">
                 <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
                     <i class="fa-solid fa-boxes-packing text-2xl text-teal-600 mb-1"></i>
@@ -184,8 +197,14 @@
                 </div>
             </div>
 
+            <!-- Account Options List -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
+                
+                <div onclick="openEditProfileModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-user-pen text-teal-600"></i> Edit Profile Name & Photo</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <div onclick="openMyAdsModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-teal-600"></i> Manage My Ads</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
@@ -198,8 +217,34 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
+                <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-black text-gray-900 dark:text-white"><i class="fa-solid fa-user-pen mr-1 text-teal-600"></i> Edit Profile</h3>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Full Name</label>
+                    <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Profile Photo URL</label>
+                    <input type="text" id="editProfilePhotoInput" placeholder="https://image-link.com" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button onclick="saveProfileChanges()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
+                    Save Profile
                 </button>
             </div>
         </div>
@@ -939,6 +984,46 @@
                     tickElem.className = "fa-solid fa-check-double text-blue-400 text-[10px]";
                 }
             }, 1500);
+        }
+
+        // EDIT PROFILE FUNCTIONS
+        function openEditProfileModal() {
+            if(!window.currentUser) return;
+            document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
+            document.getElementById('editProfilePhotoInput').value = window.currentUser.photoURL || '';
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
+
+        function saveProfileChanges() {
+            const newName = document.getElementById('editProfileNameInput').value.trim();
+            const newPhoto = document.getElementById('editProfilePhotoInput').value.trim();
+
+            if(!window.currentUser) return;
+
+            window.currentUser.updateProfile({
+                displayName: newName,
+                photoURL: newPhoto
+            }).then(() => {
+                closeEditProfileModal();
+                updateProfileDetails(window.currentUser);
+                showCustomAlert("Success", "Profile updated successfully!", "success");
+            }).catch(error => {
+                showCustomAlert("Error", error.message, "error");
+            });
+        }
+
+        function shareProfile() {
+            const profileUrl = window.location.href;
+            if(navigator.share) {
+                navigator.share({ title: 'My OldX Profile', url: profileUrl });
+            } else {
+                navigator.clipboard.writeText(profileUrl);
+                showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
+            }
         }
 
         // MY ADS MANAGEMENT
@@ -1710,6 +1795,7 @@
                         </div>
 
                         <!-- Info Area -->
+                        <br>
                         <div class="p-4 space-y-2">
                             <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
                                 <span class="truncate max-w-[140px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
