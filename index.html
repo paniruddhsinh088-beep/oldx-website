@@ -65,13 +65,14 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-2 md:space-x-3">
-                <button onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
+                <!-- Saved Button: Hide by default when not logged in -->
+                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-heart text-red-500 text-sm"></i>
                     <span class="hidden md:inline">Saved</span>
                     <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">0</span>
                 </button>
 
-                <button onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition hidden sm:flex items-center">
+                <button id="headerMyAdsBtn" style="display: none;" onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center">
                     <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
                 </button>
 
@@ -149,7 +150,6 @@
         </div>
 
         <div class="max-w-xl mx-auto p-4 md:p-6 space-y-5">
-            <!-- User Info Card -->
             <div class="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 text-center relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-20 bg-gradient-to-r from-teal-700 to-primary"></div>
                 <div class="relative z-10 pt-6">
@@ -160,7 +160,6 @@
                 </div>
             </div>
 
-            <!-- Dashboard Quick Stats -->
             <div class="grid grid-cols-2 gap-3">
                 <div onclick="openMyAdsModal()" class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border cursor-pointer hover:border-teal-500 transition text-center">
                     <i class="fa-solid fa-boxes-packing text-2xl text-teal-600 mb-1"></i>
@@ -174,7 +173,6 @@
                 </div>
             </div>
 
-            <!-- Profile Settings Card -->
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
                 <div onclick="openMyAdsModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
@@ -534,16 +532,22 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
-        // VALID SAVED COUNT HELPER (FIXES GHOST SAVED ITEMS BUG)
         function getValidSavedCount() {
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
-        // USER AUTHENTICATION & PROFILE LOGIC
+        // USER AUTHENTICATION & HEADER BUTTON TOGGLE
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
+            const savedBtn = document.getElementById('headerSavedBtn');
+            const myAdsBtn = document.getElementById('headerMyAdsBtn');
+
             if(user) {
+                // Show Saved & My Ads buttons when logged in
+                if(savedBtn) savedBtn.style.display = 'flex';
+                if(myAdsBtn) myAdsBtn.style.display = 'flex';
+
                 const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
                 container.innerHTML = `
                     <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
@@ -553,6 +557,10 @@
                 `;
                 updateProfileDetails(user);
             } else {
+                // Hide Saved & My Ads buttons when logged out
+                if(savedBtn) savedBtn.style.display = 'none';
+                if(myAdsBtn) myAdsBtn.style.display = 'none';
+
                 container.innerHTML = `
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -587,6 +595,7 @@
         function openProfilePage() { window.location.hash = 'profile'; }
 
         function updateProfileDetails(user) {
+            if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
             document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
             if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
@@ -612,6 +621,11 @@
         }
 
         function toggleCartCurrentProduct() {
+            if(!window.currentUser) {
+                alert('Bookmark / Save karva mate maherbani kari ne pehla Login karo!');
+                openAuthModal();
+                return;
+            }
             if(!currentProduct) return;
             const idx = cartList.findIndex(id => id === currentProduct.docId);
             if(idx > -1) { cartList.splice(idx, 1); alert('Ad removed!'); }
@@ -622,6 +636,11 @@
         }
 
         function openCartModal() {
+            if(!window.currentUser) {
+                alert('Saved ads jovama mate maherbani kari ne pehla Login karo!');
+                openAuthModal();
+                return;
+            }
             const container = document.getElementById('cartItemsContainer');
             container.innerHTML = '';
             const validCartList = cartList.filter(id => products.some(p => p.docId === id));
@@ -717,11 +736,16 @@
                 window.scrollTo(0,0);
                 return;
             } else if(hash === '#profile') {
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    openAuthModal();
+                    return;
+                }
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'block';
-                if(window.currentUser) updateProfileDetails(window.currentUser);
+                updateProfileDetails(window.currentUser);
                 window.scrollTo(0,0);
                 return;
             }
