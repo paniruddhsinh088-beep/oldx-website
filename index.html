@@ -759,16 +759,13 @@
         </div>
     </div>
 
-    <!-- AI Smart Chatbot Widget -->
+    <!-- AI Smart Chatbot Widget (Multilingual) -->
     <div id="aiChatbotContainer" class="fixed bottom-4 right-4 z-50">
-        <!-- Chat Toggle Button -->
         <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
             <i class="fa-solid fa-robot"></i>
         </button>
 
-        <!-- Chat Window (Hidden by Default) -->
         <div id="aiChatWindow" style="display: none;" class="absolute bottom-16 right-0 w-80 md:w-96 bg-white dark:bg-gray-800 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 flex flex-col overflow-hidden animate-scale-up h-[450px]">
-            <!-- Chat Header -->
             <div class="bg-primary text-white p-4 flex justify-between items-center">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded-full bg-amber-400 text-primary flex items-center justify-center font-bold text-sm">
@@ -776,7 +773,7 @@
                     </div>
                     <div>
                         <h4 class="font-black text-xs">OldX AI Assistant</h4>
-                        <p class="text-[10px] text-teal-200">Online | Ask me anything</p>
+                        <p class="text-[10px] text-teal-200">Online | Multilingual Support 🇮🇳</p>
                     </div>
                 </div>
                 <button onclick="toggleAiChatbot()" class="text-white hover:text-gray-300 cursor-pointer">
@@ -784,24 +781,21 @@
                 </button>
             </div>
 
-            <!-- Messages Area -->
             <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-gray-50 dark:bg-gray-900">
                 <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                    <p class="font-semibold">નમસ્તે! 👋 હું OldX નો AI અસિસ્ટન્ટ છું. હું તમને કાર, મોબાઇલ કે પ્રોપર્ટી શોધવામાં અથવા એડ પોસ્ટ કરવામાં કેવી રીતે મદદ કરી શકું?</p>
+                    <p class="font-semibold">नमस्ते! 👋 I am your OldX AI Assistant. Ask me anything in Gujarati, Hindi or English about cars, mobiles, or posting ads!</p>
                     <span class="text-[9px] text-gray-400 mt-1 block">Just now</span>
                 </div>
             </div>
 
-            <!-- Quick Suggestions -->
             <div class="px-3 py-2 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex gap-1 overflow-x-auto no-scrollbar text-[10px]">
-                <button onclick="sendQuickAiQuery('એડ કેવી રીતે પોસ્ટ કરવી?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">એડ કેવી રીતે મૂકવી?</button>
-                <button onclick="sendQuickAiQuery('મારી નજીક કાર કઈ છે?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">કાર શોધવી છે</button>
-                <button onclick="sendQuickAiQuery('સુરક્ષિત કેવી રીતે રહેવું?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">સેફ્ટી ટિપ્સ</button>
+                <button onclick="sendQuickAiQuery('એડ કેવી રીતે પોસ્ટ કરવી?')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">એડ મૂકવી?</button>
+                <button onclick="sendQuickAiQuery('मुझे कार खरीदनी है')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">कार खोजें</button>
+                <button onclick="sendQuickAiQuery('Safety tips')" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2.5 py-1 rounded-full whitespace-nowrap font-bold hover:bg-teal-100 cursor-pointer">Safety Tips</button>
             </div>
 
-            <!-- Input Bar -->
             <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2">
-                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="અહીં સવાલ પૂછો..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                <input type="text" id="aiChatInput" onkeypress="handleAiKeyPress(event)" placeholder="Ask in Gujarati, Hindi, English..." class="flex-1 border px-3 py-2 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 <button onclick="sendAiMessage()" class="bg-primary hover:bg-teal-800 text-white w-9 h-9 rounded-full flex items-center justify-center text-xs shadow transition cursor-pointer">
                     <i class="fa-solid fa-paper-plane"></i>
                 </button>
@@ -837,7 +831,7 @@
         let pendingDeleteDocId = null;
         let activeChatRoomId = null;
 
-        // AI Chatbot Functions
+        // Multilingual AI Chatbot Functions
         function toggleAiChatbot() {
             const windowEl = document.getElementById('aiChatWindow');
             if (windowEl.style.display === 'none' || windowEl.style.display === '') {
@@ -875,17 +869,44 @@
             container.scrollTop = container.scrollHeight;
 
             setTimeout(() => {
-                let aiReply = "મને સમજ ન પડી. તમે 'કાર', 'મોબાઈલ' અથવા 'એડ પોસ્ટ' વિશે પૂછી શકો છો.";
                 const lowerMsg = msg.toLowerCase();
+                let aiReply = "I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
 
-                if (lowerMsg.includes('એડ') || lowerMsg.includes('ad') || lowerMsg.includes('મૂકવી')) {
-                    aiReply = "નવી એડ પોસ્ટ કરવા માટે ઉપર આપેલા પીળા રંગના **'SELL'** બટન પર ક્લિક કરો અને તમારી કેટેગરી પસંદ કરો!";
-                } else if (lowerMsg.includes('કાર') || lowerMsg.includes('car') || lowerMsg.includes('ગાડી')) {
-                    aiReply = "સેકન્ડ હેન્ડ કાર જોવા માટે હોમ પેજ પર 'Cars' કેટેગરી પર ક્લિક કરો અથવા સર્ચબારમાં 'Cars' લખો.";
-                } else if (lowerMsg.includes('સેફ્ટી') || lowerMsg.includes('safe') || lowerMsg.includes('fraud')) {
-                    aiReply = "સુરક્ષિત રહેવા માટે હંમેશાં રૂબરૂ મળીને વસ્તુ ચકાસીને જ પૈસા આપો. અગાઉથી ઓનલાઈન પૂરેપૂરું પેમેન્ટ કરવાનું ટાળો.";
-                } else if (lowerMsg.includes('નમસ્તે') || lowerMsg.includes('hello') || lowerMsg.includes('hi')) {
-                    aiReply = "નમસ્તે! આજે હું તમને કઈ વસ્તુ શોધવામાં મદદ કરું?";
+                // Language Detection & Response Generation
+                const isHindi = /[\u0900-\u097F]/.test(msg) || lowerMsg.includes('car') || lowerMsg.includes('kaise') || lowerMsg.includes('kya') || lowerMsg.includes('खरीदनी') || lowerMsg.includes('बेचना');
+                const isGujarati = /[\u0A80-\u0AFF]/.test(msg) || lowerMsg.includes('kem') || lowerMsg.includes('su') || lowerMsg.includes('karvu') || lowerMsg.includes('મૂકવી');
+
+                if (isHindi || (lowerMsg.includes('hindi') || lowerMsg.includes('car') && !isGujarati)) {
+                    if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('बेचना')) {
+                        aiReply = "नई विज्ञापन पोस्ट करने के लिए ऊपर दिए गए पीले **'SELL'** बटन पर क्लिक करें!";
+                    } else if (lowerMsg.includes('car') || lowerMsg.includes('कार') || lowerMsg.includes('गाड़ी')) {
+                        aiReply = "सेकेंड हैंड कार देखने के लिए होम पेज पर 'Cars' कैटेगरी पर क्लिक करें या सर्च बार में 'Cars' टाइप करें।";
+                    } else if (lowerMsg.includes('safe') || lowerMsg.includes('fraud') || lowerMsg.includes('सुरक्षा')) {
+                        aiReply = "सुरक्षित रहने के लिए हमेशा आमने-सामने मिलकर वस्तु की जांच करें और सीधे नकद या यूपीआई से भुगतान करें।";
+                    } else {
+                        aiReply = "नमस्ते! मैं आपकी क्या सहायता कर सकता हूँ? आप कार, मोबाइल या प्रॉपर्टी के बारे में पूछ सकते हैं।";
+                    }
+                } else if (isGujarati) {
+                    if (lowerMsg.includes('એડ') || lowerMsg.includes('ad') || lowerMsg.includes('મૂકવી')) {
+                        aiReply = "નવી એડ પોસ્ટ કરવા માટે ઉપર આપેલા પીળા રંગના **'SELL'** બટન પર ક્લિક કરો!";
+                    } else if (lowerMsg.includes('કાર') || lowerMsg.includes('car') || lowerMsg.includes('ગાડી')) {
+                        aiReply = "સેકન્ડ હેન્ડ કાર જોવા માટે હોમ પેજ પર 'Cars' કેટેગરી પર ક્લિક કરો.";
+                    } else if (lowerMsg.includes('સેફ્ટી') || lowerMsg.includes('safe') || lowerMsg.includes('fraud')) {
+                        aiReply = "સુરક્ષિત રહેવા માટે હંમેશાં રૂબરૂ મળીને વસ્તુ ચકાસીને જ પૈસા આપો.";
+                    } else {
+                        aiReply = "નમસ્તે! આજે હું તમને કઈ વસ્તુ શોધવામાં મદદ કરું?";
+                    }
+                } else {
+                    // English default responses
+                    if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
+                        aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
+                    } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
+                        aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
+                    } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
+                        aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
+                    } else {
+                        aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
+                    }
                 }
 
                 const aiCard = document.createElement('div');
