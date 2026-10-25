@@ -1848,16 +1848,16 @@
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
             }).catch((signInError) => {
-                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
-                    auth.createUserWithEmailAndPassword(email, password).then(() => {
-                        closeAuthModal();
-                        showCustomAlert("Success", "Account created & logged in successfully!", "success");
-                    }).catch(createError => {
+                auth.createUserWithEmailAndPassword(email, password).then(() => {
+                    closeAuthModal();
+                    showCustomAlert("Success", "Account created & logged in successfully!", "success");
+                }).catch((createError) => {
+                    if (createError.code === 'auth/email-already-in-use') {
+                        showCustomAlert("Login Error", "Password khoto chhe! Please sacho password nakhsho.", "error");
+                    } else {
                         showCustomAlert("Auth Error", createError.message, "error");
-                    });
-                } else {
-                    showCustomAlert("Auth Error", signInError.message, "error");
-                }
+                    }
+                });
             });
         }
 
