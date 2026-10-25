@@ -1841,8 +1841,8 @@
 
         function handleEmailAuth(e) {
             e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
+            const email = document.getElementById('authEmail').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
             
             auth.signInWithEmailAndPassword(email, password).then(() => {
                 closeAuthModal();
