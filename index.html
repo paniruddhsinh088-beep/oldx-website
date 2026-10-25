@@ -1319,7 +1319,7 @@
             updateCartBadge();
         });
 
-        // Inbox unread messages listener with real-time Firestore synchronization & notifications
+        // Fixed Inbox unread messages listener to accurately calculate and display total unread messages count on inbox badge
         function startInboxUnreadListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1341,7 +1341,6 @@
                             .get().then(msgSnap => {
                                 if (msgSnap.size > 0) {
                                     totalUnread += msgSnap.size;
-                                    // Trigger push notification for new message
                                     triggerPushNotification("New Message on OldX", "You have unread messages in your inbox!");
                                 }
                                 pendingChecks--;
@@ -1569,7 +1568,7 @@
             });
         }
 
-        // Two-way typing status watcher (Fixes Issue 4: both buyer and seller typing sync)
+        // Two-way typing status watcher
         function watchTypingStatus(chatRoomId, otherUserId) {
             if(!chatRoomId || !otherUserId) return;
 
@@ -2203,7 +2202,7 @@
             }
         }
 
-        // Fixes Issue 1: Saving products properly updates count badges and heart states
+        // Fixed Issue 1: Saved Products Count properly updates both localStorage and UI badge
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2899,7 +2898,7 @@
                     </div>
 
                     <div class="p-4 space-y-2">
-                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400.">
                             <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
                             <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
                         </div>
