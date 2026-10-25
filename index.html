@@ -936,6 +936,25 @@
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
+        // Website traffic tracking function
+        async function trackVisitorTraffic() {
+            try {
+                const statsRef = db.collection('stats').doc('traffic');
+                const docSnap = await statsRef.get();
+                
+                if (docSnap.exists) {
+                    statsRef.update({
+                        totalViews: firebase.firestore.FieldValue.increment(1)
+                    });
+                } else {
+                    statsRef.set({ totalViews: 1 });
+                }
+            } catch (err) {
+                console.log("Traffic tracking error:", err);
+            }
+        }
+        trackVisitorTraffic();
+
         window.currentUser = null;
         let products = [];
         let currentProduct = null;
