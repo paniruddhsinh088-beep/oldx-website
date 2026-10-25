@@ -90,6 +90,11 @@
                     <i class="fa-solid fa-comments text-teal-600"></i> Inbox
                 </button>
 
+                <!-- Admin Button Link -->
+                <a href="admin.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
+                </a>
+
                 <!-- Dynamic Profile / Auth Container -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
@@ -109,7 +114,7 @@
         <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/10 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
@@ -1844,6 +1849,7 @@
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
             
+            // Auto sign-in or create user fallback (registers if not existing)
             auth.signInWithEmailAndPassword(email, password).then(() => {
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
@@ -1852,8 +1858,8 @@
                     closeAuthModal();
                     showCustomAlert("Success", "Account created & logged in successfully!", "success");
                 }).catch((createError) => {
-                    if (createError.code === 'auth/email-already-in-use') {
-                        showCustomAlert("Login Error", "Password khoto chhe! Please sacho password nakhsho.", "error");
+                    if (createError.code === 'auth/email-already-in-use' || createError.code === 'auth/wrong-password' || createError.code === 'auth/invalid-credential') {
+                        showCustomAlert("Login Error", "Incorrect password! Please enter the correct password.", "error");
                     } else {
                         showCustomAlert("Auth Error", createError.message, "error");
                     }
