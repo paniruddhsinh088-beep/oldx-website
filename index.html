@@ -1309,7 +1309,7 @@
             updateCartBadge();
         });
 
-        // Inbox unread messages listener to show number badge on Inbox button
+        // Inbox unread messages listener with real-time Firestore synchronization
         function startInboxUnreadListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1339,6 +1339,8 @@
                                 if (pendingChecks === 0) updateInboxBadge(totalUnread);
                             });
                     });
+                }, error => {
+                    console.log("Inbox listener error:", error);
                 });
         }
 
