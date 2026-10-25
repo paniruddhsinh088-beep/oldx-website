@@ -85,9 +85,10 @@
                     <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
                 </button>
 
-                <!-- Professional Inbox Button -->
-                <button id="headerMessagesBtn" style="display: none;" onclick="openInboxModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer">
+                <!-- Professional Inbox Button with Unread Badge -->
+                <button id="headerMessagesBtn" style="display: none;" onclick="openInboxModal()" class="relative bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-comments text-teal-600"></i> Inbox
+                    <span id="inboxBadgeCount" style="display: none;" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">0</span>
                 </button>
 
                 <!-- Admin Button Link (Hidden by default, shown only for Admin) -->
@@ -255,6 +256,13 @@
                         <span id="profileUserRatingBadge" class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                             <i class="fa-solid fa-star text-amber-500"></i> <span id="profileRatingText">New Seller</span>
                         </span>
+                    </div>
+
+                    <!-- Manual Verification Button Container -->
+                    <div id="verificationSection" class="mt-3 text-center" style="display: none;">
+                        <button id="verifyAccountBtn" onclick="requestAccountVerification()" class="bg-amber-500 hover:bg-amber-600 text-primary font-black px-4 py-2 rounded-xl text-xs shadow transition cursor-pointer">
+                            <i class="fa-solid fa-shield-check mr-1"></i> Verify My Account Now
+                        </button>
                     </div>
 
                     <!-- Dynamic Member Since Date -->
@@ -1032,6 +1040,7 @@
         let activeChatRoomId = null;
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
+        let inboxListenerUnsubscribe = null;
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
@@ -1243,7 +1252,10 @@
             if(user) {
                 if(savedBtn) savedBtn.style.display = 'flex';
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
-                if(inboxBtn) inboxBtn.style.display = 'flex';
+                if(inboxBtn) {
+                    inboxBtn.style.display = 'flex';
+                    startInboxUnreadListener(user.uid);
+                }
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
                     if(adminBtn) adminBtn.style.display = 'flex';
@@ -1286,6 +1298,7 @@
                 if(myAdsBtn) myAdsBtn.style.display = 'none';
                 if(inboxBtn) inboxBtn.style.display = 'none';
                 if(adminBtn) adminBtn.style.display = 'none';
+                if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
                 container.innerHTML = `
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
@@ -1293,7 +1306,52 @@
                     </button>
                 `;
             }
+            updateCartBadge();
         });
+
+        // Inbox unread messages listener to show number badge on Inbox button
+        function startInboxUnreadListener(userId) {
+            if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
+
+            inboxListenerUnsubscribe = db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .onSnapshot(snapshot => {
+                    let totalUnread = 0;
+                    let pendingChecks = snapshot.docs.length;
+
+                    if (pendingChecks === 0) {
+                        updateInboxBadge(0);
+                        return;
+                    }
+
+                    snapshot.forEach(docSnap => {
+                        db.collection('chats').doc(docSnap.id).collection('messages')
+                            .where('senderUid', '!=', userId)
+                            .where('status', '==', 'sent')
+                            .get().then(msgSnap => {
+                                totalUnread += msgSnap.size;
+                                pendingChecks--;
+                                if (pendingChecks === 0) {
+                                    updateInboxBadge(totalUnread);
+                                }
+                            }).catch(() => {
+                                pendingChecks--;
+                                if (pendingChecks === 0) updateInboxBadge(totalUnread);
+                            });
+                    });
+                });
+        }
+
+        function updateInboxBadge(count) {
+            const badge = document.getElementById('inboxBadgeCount');
+            if (!badge) return;
+            if (count > 0) {
+                badge.innerText = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
 
         function calculatePrices(source) {
             const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
@@ -1332,7 +1390,7 @@
 
             db.collection('chats')
               .where('participants', 'array-contains', window.currentUser.uid)
-              .onSnapshot(snapshot => {
+              .get().then(snapshot => {
                   container.innerHTML = '';
                   let myChats = [];
 
@@ -2069,12 +2127,16 @@
             const isEmailVerified = user.emailVerified || isGoogleUser;
             
             const badgeEl = document.getElementById('profileUserBadge');
+            const verifySection = document.getElementById('verificationSection');
+
             if (isEmailVerified) {
                 badgeEl.innerText = 'Verified Member';
                 badgeEl.className = "bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'none';
             } else {
                 badgeEl.innerText = 'Unverified Email';
                 badgeEl.className = "bg-amber-100 text-amber-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'block';
             }
 
             // Dynamic Member Since Date from Firebase Metadata
@@ -2104,6 +2166,16 @@
             document.getElementById('statSavedAdsCount').innerText = getValidSavedCount();
         }
 
+        function requestAccountVerification() {
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+            user.sendEmailVerification().then(() => {
+                showCustomAlert("Verification Sent", "Verification email tamara inbox ma mokli didhel chhe. Link open kari verify karo!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
+            });
+        }
+
         function handleLogout() {
             if(confirm('Are you sure you want to log out from OldX?')) {
                 if(window.currentUser) {
@@ -2122,7 +2194,11 @@
 
         function updateCartBadge() { 
             const badge = document.getElementById('cartBadgeCount');
-            if(badge) badge.innerText = getValidSavedCount(); 
+            if(badge) {
+                const count = getValidSavedCount();
+                badge.innerText = count;
+                badge.style.display = 'inline-block';
+            }
         }
 
         function toggleCartProduct(docId) {
