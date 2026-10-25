@@ -37,14 +37,6 @@
             50% { opacity: 0.3; }
         }
         .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
-
-        /* Custom PIN Input Styling - Visible text so user can see what they type */
-        #userPinInput, #pinLoginInput, #verifyPinInput, #newPinInput {
-            letter-spacing: 8px;
-            font-size: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
     </style>
 
     <!-- Firebase SDKs -->
@@ -100,7 +92,7 @@
 
                 <!-- Dynamic Profile / Auth Container -->
                 <div id="authContainer">
-                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                    <button onclick="openAuthModal('login')" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 </div>
@@ -207,30 +199,58 @@
         </main>
     </div>
 
-    <!-- 🌟 ONLY QUICK PIN LOGIN AUTH MODAL -->
+    <!-- 🌟 SIGN IN & LOGIN MODAL -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 relative shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700 animate-scale-up">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition">
                 <i class="fa-solid fa-xmark text-sm"></i>
             </button>
             
-            <div class="text-center">
-                <h3 class="text-2xl font-black text-primary dark:text-teal-400 tracking-tight">Quick PIN Login</h3>
-                <p class="text-xs text-gray-500 mt-1">Enter your email and 4-digit PIN to login</p>
+            <!-- Tabs for Sign In & Login -->
+            <div class="flex rounded-2xl bg-gray-100 dark:bg-gray-700 p-1">
+                <button id="loginTabBtn" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm">Log In</button>
+                <button id="signupTabBtn" onclick="switchAuthTab('signup')" class="flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300">Sign Up</button>
             </div>
 
-            <!-- Quick PIN Login Form -->
-            <div class="space-y-3 text-xs pt-2">
-                <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="pinLoginEmail" placeholder="name@domain.com" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <!-- LOGIN FORM -->
+            <div id="loginFormContainer" class="space-y-3 text-xs pt-2">
+                <div class="text-center mb-2">
+                    <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome Back</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Enter your mobile number and password</p>
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">4-Digit Quick PIN (Visible)</label>
-                    <input type="text" id="pinLoginInput" maxlength="4" placeholder="1234" class="w-full py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none tracking-widest text-center">
+                    <label class="block font-bold mb-1">Mobile Number</label>
+                    <input type="tel" id="loginPhoneInput" placeholder="9876543210" maxlength="10" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
-                <button onclick="loginWithQuickPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
-                    Login with PIN
+                <div>
+                    <label class="block font-bold mb-1">Password</label>
+                    <input type="password" id="loginPasswordInput" placeholder="••••••••" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button onclick="handleUserLogin()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
+                    Log In
+                </button>
+            </div>
+
+            <!-- SIGN UP FORM -->
+            <div id="signupFormContainer" style="display: none;" class="space-y-3 text-xs pt-2">
+                <div class="text-center mb-2">
+                    <h3 class="text-xl font-black text-primary dark:text-teal-400">Create Account</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Enter your details to sign up</p>
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Full Name</label>
+                    <input type="text" id="signupNameInput" placeholder="Rahul Sharma" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Mobile Number</label>
+                    <input type="tel" id="signupPhoneInput" placeholder="9876543210" maxlength="10" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Set Password</label>
+                    <input type="password" id="signupPasswordInput" placeholder="••••••••" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button onclick="handleUserSignup()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
+                    Sign Up
                 </button>
             </div>
 
@@ -242,40 +262,6 @@
 
             <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
                 <i class="fa-solid fa-user-secret"></i> Continue as Guest
-            </button>
-        </div>
-    </div>
-
-    <!-- SET 4-DIGIT PIN MODAL -->
-    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up">
-            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
-            
-            <input type="text" id="newPinInput" maxlength="4" placeholder="1234" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Save & Continue
-            </button>
-        </div>
-    </div>
-
-    <!-- QUICK PIN VERIFY MODAL -->
-    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
-            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
-            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
-            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
-            
-            <input type="text" id="verifyPinInput" maxlength="4" placeholder="1234" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-            
-            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
-                Unlock Account
             </button>
         </div>
     </div>
@@ -322,7 +308,7 @@
                     </div>
                     
                     <h3 id="profileUserName" class="text-xl font-black text-gray-900 dark:text-white mt-3">Guest User</h3>
-                    <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
+                    <p id="profileUserPhone" class="text-xs text-gray-500 dark:text-gray-400 font-medium">+91 9876543210</p>
                     
                     <div class="flex justify-center items-center gap-2 mt-2">
                         <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
@@ -351,10 +337,6 @@
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
                 
-                <div onclick="openEditProfileModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-user-pen text-teal-600"></i> Edit Profile Name & Photo</span>
-                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
-                </div>
                 <div onclick="openMyAdsModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-teal-600"></i> Manage My Ads</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
@@ -363,38 +345,12 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-heart text-red-500"></i> Saved Bookmarks</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
-                <div onclick="openSetPinModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
-                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
-                </div>
                 <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
-    <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
-            <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
-            <h3 class="text-lg font-black text-gray-900 dark:text-white"><i class="fa-solid fa-user-pen mr-1 text-teal-600"></i> Edit Profile</h3>
-            
-            <div class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold mb-1">Full Name</label>
-                    <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
-                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
-                </div>
-                <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
-                    Save Profile Changes
                 </button>
             </div>
         </div>
@@ -951,96 +907,160 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // 🌟 QUICK PIN LOGIN & AUTOMATIC ACCOUNT CREATION (100% Working)
-        async function loginWithQuickPin() {
-            const emailInput = document.getElementById('pinLoginEmail').value.trim().toLowerCase();
-            const enteredPin = document.getElementById('pinLoginInput').value.trim();
+        // 🌟 Switch between Log In and Sign Up Tabs
+        function switchAuthTab(tab) {
+            const loginTab = document.getElementById('loginTabBtn');
+            const signupTab = document.getElementById('signupTabBtn');
+            const loginForm = document.getElementById('loginFormContainer');
+            const signupForm = document.getElementById('signupFormContainer');
 
-            if(!emailInput || !enteredPin || enteredPin.length !== 4) {
-                showCustomAlert("Error", "Please enter a valid email and 4-digit PIN.", "error");
+            if(tab === 'login') {
+                loginTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm";
+                signupTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300";
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                signupTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm";
+                loginTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300";
+                signupForm.style.display = 'block';
+                loginForm.style.display = 'none';
+            }
+        }
+
+        // 🌟 1. Sign Up Function (Naam, Mobile, Password save karse)
+        async function handleUserSignup() {
+            const name = document.getElementById('signupNameInput').value.trim();
+            const phone = document.getElementById('signupPhoneInput').value.trim();
+            const password = document.getElementById('signupPasswordInput').value.trim();
+
+            if(!name || !phone || phone.length !== 10 || !password) {
+                showCustomAlert("Error", "Please enter valid name, 10-digit mobile number and password.", "error");
                 return;
             }
 
             try {
-                const usersSnapshot = await db.collection('users').get();
-
-                let matchedDocId = null;
-                let existingPin = null;
-
-                usersSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const dbEmail = (data.email || '').trim().toLowerCase();
-                    if(dbEmail === emailInput) {
-                        matchedDocId = doc.id;
-                        existingPin = String(data.pin || '').trim();
-                    }
-                });
-
-                // Jo user pehla thi na hoy (Navo User), to automatic account banavi do
-                if(!matchedDocId) {
-                    const newUserRef = await db.collection('users').add({
-                        email: emailInput,
-                        pin: enteredPin,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-
-                    localStorage.setItem(`oldx_pin_${newUserRef.id}`, enteredPin);
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    
-                    closeAuthModal();
-                    showCustomAlert("Success", "New Account Created & Login Successful!", "success");
-                    
-                    setTimeout(() => {
-                        window.location.hash = 'profile';
-                        window.location.reload();
-                    }, 800);
+                // Check if mobile already exists
+                const existing = await db.collection('users').where('phone', '==', phone).get();
+                if(!existing.empty) {
+                    showCustomAlert("Error", "Mobile number already registered. Please Log In.", "error");
+                    switchAuthTab('login');
+                    document.getElementById('loginPhoneInput').value = phone;
                     return;
                 }
 
-                // Jo user pehla thi hovo, to PIN match karo
-                if(existingPin === enteredPin) {
-                    localStorage.setItem(`oldx_pin_${matchedDocId}`, enteredPin);
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    
+                // Create new user record in Firestore
+                const userRef = await db.collection('users').add({
+                    name: name,
+                    phone: phone,
+                    password: password,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const userData = { uid: userRef.id, displayName: name, phoneNumber: phone };
+                localStorage.setItem('oldx_logged_user', JSON.stringify(userData));
+                window.currentUser = userData;
+
+                closeAuthModal();
+                showCustomAlert("Success", "Account created successfully!", "success");
+                
+                setTimeout(() => {
+                    window.location.hash = 'profile';
+                    window.location.reload();
+                }, 800);
+            } catch (err) {
+                console.error("Signup Error:", err);
+                showCustomAlert("Error", "Failed to create account.", "error");
+            }
+        }
+
+        // 🌟 2. Log In Function (Mobile ane Password check karse)
+        async function handleUserLogin() {
+            const phone = document.getElementById('loginPhoneInput').value.trim();
+            const password = document.getElementById('loginPasswordInput').value.trim();
+
+            if(!phone || phone.length !== 10 || !password) {
+                showCustomAlert("Error", "Please enter your 10-digit mobile number and password.", "error");
+                return;
+            }
+
+            try {
+                const snapshot = await db.collection('users').where('phone', '==', phone).get();
+
+                if(snapshot.empty) {
+                    showCustomAlert("Error", "Mobile number not found. Please Sign Up first.", "error");
+                    switchAuthTab('signup');
+                    document.getElementById('signupPhoneInput').value = phone;
+                    return;
+                }
+
+                let validUser = null;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if(data.password === password) {
+                        validUser = { uid: doc.id, displayName: data.name, phoneNumber: data.phone };
+                    }
+                });
+
+                if(validUser) {
+                    localStorage.setItem('oldx_logged_user', JSON.stringify(validUser));
+                    window.currentUser = validUser;
+
                     closeAuthModal();
-                    showCustomAlert("Success", "Login with PIN Successful!", "success");
+                    showCustomAlert("Success", "Logged In Successfully!", "success");
                     
                     setTimeout(() => {
                         window.location.hash = 'profile';
                         window.location.reload();
                     }, 800);
                 } else {
-                    showCustomAlert("Incorrect PIN", "Wrong 4-Digit PIN for this email. Please check.", "error");
+                    showCustomAlert("Incorrect Password", "Wrong password entered. Please check.", "error");
                 }
             } catch (err) {
-                console.error("PIN Login Error:", err);
-                showCustomAlert("Permission Error", "Please check your Firestore Rules.", "error");
+                console.error("Login Error:", err);
+                showCustomAlert("Error", "Login failed. Check database connection.", "error");
             }
         }
 
-        // 🌟 Save Quick PIN in Firestore & LocalStorage
-        async function saveUserPin() {
-            const newPin = document.getElementById('newPinInput').value.trim();
-            if(!window.currentUser) return;
-
-            if(newPin.length !== 4 || isNaN(newPin)) {
-                showCustomAlert("Invalid PIN", "PIN must be exactly 4 digits numbers.", "error");
-                return;
+        // Check active session on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedUser = localStorage.getItem('oldx_logged_user');
+            if(savedUser) {
+                window.currentUser = JSON.parse(savedUser);
             }
+            updateNavbarAuthUI();
+            renderHomeCategories();
+            handleHashChange();
+            updateCartBadge();
+        });
 
-            try {
-                await db.collection('users').doc(window.currentUser.uid).set({
-                    pin: newPin,
-                    email: window.currentUser.email,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+        function updateNavbarAuthUI() {
+            const container = document.getElementById('authContainer');
+            const savedBtn = document.getElementById('headerSavedBtn');
+            const myAdsBtn = document.getElementById('headerMyAdsBtn');
+            const inboxBtn = document.getElementById('headerMessagesBtn');
 
-                localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, newPin);
-                sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                document.getElementById('setPinModal').style.display = 'none';
-                showCustomAlert("Success", "Quick PIN saved successfully!", "success");
-            } catch (err) {
-                showCustomAlert("Error", "Failed to save PIN.", "error");
+            if(window.currentUser) {
+                if(savedBtn) savedBtn.style.display = 'flex';
+                if(myAdsBtn) myAdsBtn.style.display = 'flex';
+                if(inboxBtn) inboxBtn.style.display = 'flex';
+
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
+                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-7 h-7 rounded-full border border-teal-500 object-cover">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200 max-w-[80px] truncate">${window.currentUser.displayName || 'User'}</span>
+                    </div>
+                `;
+                updateProfileDetails(window.currentUser);
+            } else {
+                if(savedBtn) savedBtn.style.display = 'none';
+                if(myAdsBtn) myAdsBtn.style.display = 'none';
+                if(inboxBtn) inboxBtn.style.display = 'none';
+
+                container.innerHTML = `
+                    <button onclick="openAuthModal('login')" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                        <i class="fa-solid fa-user-check mr-1"></i> Login
+                    </button>
+                `;
             }
         }
 
@@ -1236,16 +1256,6 @@
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
-        // Mocking user session for standalone PIN operation if needed
-        window.currentUser = null;
-
-        // Auto Login check from localStorage / Session
-        window.addEventListener('DOMContentLoaded', () => {
-            renderHomeCategories();
-            handleHashChange();
-            updateCartBadge();
-        });
-
         function calculatePrices(source) {
             const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
             const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
@@ -1268,7 +1278,7 @@
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
-                openAuthModal();
+                openAuthModal('login');
                 return;
             }
 
@@ -1363,7 +1373,7 @@
         function openLiveChatModal() {
             if (!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to start chat!", "error");
-                openAuthModal();
+                openAuthModal('login');
                 return;
             }
             if (!currentProduct) return;
@@ -1602,46 +1612,6 @@
             });
         }
 
-        function openEditProfileModal() {
-            if(!window.currentUser) return;
-            document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
-            document.getElementById('editProfileModal').style.display = 'flex';
-        }
-
-        function closeEditProfileModal() {
-            document.getElementById('editProfileModal').style.display = 'none';
-        }
-
-        async function saveProfileChangesWithFile() {
-            const newName = document.getElementById('editProfileNameInput').value.trim();
-            const photoFileInput = document.getElementById('editProfilePhotoFile');
-            const btn = document.getElementById('saveProfileBtn');
-
-            if(!window.currentUser) return;
-            btn.innerText = 'Saving...'; btn.disabled = true;
-
-            try {
-                let photoURL = window.currentUser.photoURL;
-
-                if (photoFileInput.files && photoFileInput.files[0]) {
-                    photoURL = await compressImage(photoFileInput.files[0]);
-                }
-
-                await window.currentUser.updateProfile({
-                    displayName: newName,
-                    photoURL: photoURL
-                });
-
-                closeEditProfileModal();
-                updateProfileDetails(window.currentUser);
-                showCustomAlert("Success", "Profile updated successfully!", "success");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
-            } catch (error) {
-                showCustomAlert("Error", error.message, "error");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
-            }
-        }
-
         function shareProfile() {
             const profileUrl = window.location.href;
             if(navigator.share) {
@@ -1655,7 +1625,7 @@
         function openMyAdsModal() {
             if(!window.currentUser) { 
                 showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
-                openAuthModal(); 
+                openAuthModal('login'); 
                 return; 
             }
             const container = document.getElementById('myAdsContainer');
@@ -1801,41 +1771,6 @@
             }
         }
 
-        function checkUserPinStatus(user) {
-            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
-            if(!userSavedPin) {
-                db.collection('users').doc(user.uid).get().then(doc => {
-                    if(doc.exists && doc.data().pin) {
-                        localStorage.setItem(`oldx_pin_${user.uid}`, doc.data().pin);
-                        sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    } else {
-                        document.getElementById('setPinModal').style.display = 'flex';
-                    }
-                });
-            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
-                document.getElementById('verifyPinModal').style.display = 'flex';
-            }
-        }
-
-        function verifyUserPin() {
-            const input = document.getElementById('verifyPinInput').value;
-            if(window.currentUser) {
-                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
-                if(input === correctPin) {
-                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                    document.getElementById('verifyPinModal').style.display = 'none';
-                    document.getElementById('verifyPinInput').value = '';
-                } else {
-                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
-                    document.getElementById('verifyPinInput').value = '';
-                }
-            }
-        }
-
-        function openSetPinModal() {
-            document.getElementById('setPinModal').style.display = 'flex';
-        }
-
         function continueAsGuest() {
             closeAuthModal();
             showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
@@ -1844,18 +1779,16 @@
         function openProfilePage() { 
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login first to view your profile!", "error");
-                openAuthModal();
+                openAuthModal('login');
                 return;
             }
-            sessionStorage.setItem('oldx_pin_unlocked', 'true');
             window.location.hash = 'profile'; 
         }
 
         function updateProfileDetails(user) {
             if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
-            document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
-            if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
+            document.getElementById('profileUserPhone').innerText = `+91 ${user.phoneNumber || '9876543210'}`;
             document.getElementById('profileUserBadge').innerText = 'Verified Member';
             
             const myCount = products.filter(p => p.sellerUid === user.uid).length;
@@ -1865,17 +1798,11 @@
 
         function handleLogout() {
             if(confirm('Are you sure you want to log out from OldX?')) {
-                if(window.currentUser) {
-                    db.collection('users').doc(window.currentUser.uid).set({
-                        isOnline: false,
-                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                }
-                sessionStorage.removeItem('oldx_pin_unlocked');
-                auth.signOut().then(() => {
-                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
-                    window.location.hash = '';
-                });
+                localStorage.removeItem('oldx_logged_user');
+                window.currentUser = null;
+                showCustomAlert("Logged Out", "Logged out successfully!", "success");
+                window.location.hash = '';
+                setTimeout(() => window.location.reload(), 600);
             }
         }
 
@@ -1887,7 +1814,7 @@
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
-                openAuthModal();
+                openAuthModal('login');
                 return;
             }
             const idx = cartList.findIndex(id => id === docId);
@@ -1912,7 +1839,7 @@
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
-                openAuthModal();
+                openAuthModal('login');
                 return;
             }
             const container = document.getElementById('cartItemsContainer');
@@ -2049,7 +1976,7 @@
             } else if(hash === '#profile') {
                 if(!window.currentUser) {
                     window.location.hash = '';
-                    openAuthModal();
+                    openAuthModal('login');
                     return;
                 }
                 document.getElementById('homeView').style.display = 'none';
@@ -2430,7 +2357,10 @@
             openMyAdsModal();
         }
 
-        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
+        function openAuthModal(mode = 'login') { 
+            switchAuthTab(mode);
+            document.getElementById('authModal').style.display = 'flex'; 
+        }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
