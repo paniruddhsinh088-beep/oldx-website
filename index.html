@@ -92,7 +92,7 @@
 
                 <!-- Dynamic Profile / Auth Container -->
                 <div id="authContainer">
-                    <button onclick="openAuthModal('login')" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 </div>
@@ -199,73 +199,6 @@
         </main>
     </div>
 
-    <!-- 🌟 SIGN IN & LOGIN MODAL -->
-    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-6 relative shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700 animate-scale-up">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-            
-            <!-- Tabs for Sign In & Login -->
-            <div class="flex rounded-2xl bg-gray-100 dark:bg-gray-700 p-1">
-                <button id="loginTabBtn" onclick="switchAuthTab('login')" class="flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm">Log In</button>
-                <button id="signupTabBtn" onclick="switchAuthTab('signup')" class="flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300">Sign Up</button>
-            </div>
-
-            <!-- LOGIN FORM -->
-            <div id="loginFormContainer" class="space-y-3 text-xs pt-2">
-                <div class="text-center mb-2">
-                    <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome Back</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Enter your mobile number and password</p>
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Mobile Number</label>
-                    <input type="tel" id="loginPhoneInput" placeholder="9876543210" maxlength="10" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Password</label>
-                    <input type="password" id="loginPasswordInput" placeholder="••••••••" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <button onclick="handleUserLogin()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
-                    Log In
-                </button>
-            </div>
-
-            <!-- SIGN UP FORM -->
-            <div id="signupFormContainer" style="display: none;" class="space-y-3 text-xs pt-2">
-                <div class="text-center mb-2">
-                    <h3 class="text-xl font-black text-primary dark:text-teal-400">Create Account</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Enter your details to sign up</p>
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Full Name</label>
-                    <input type="text" id="signupNameInput" placeholder="Rahul Sharma" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Mobile Number</label>
-                    <input type="tel" id="signupPhoneInput" placeholder="9876543210" maxlength="10" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Set Password</label>
-                    <input type="password" id="signupPasswordInput" placeholder="••••••••" class="w-full px-3.5 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <button onclick="handleUserSignup()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl shadow transition">
-                    Sign Up
-                </button>
-            </div>
-
-            <div class="flex items-center my-2">
-                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
-                <div class="flex-1 border-t border-gray-200 dark:border-gray-700"></div>
-            </div>
-
-            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-600 transition">
-                <i class="fa-solid fa-user-secret"></i> Continue as Guest
-            </button>
-        </div>
-    </div>
-
     <!-- PROFESSIONAL INBOX MODAL -->
     <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
@@ -308,7 +241,7 @@
                     </div>
                     
                     <h3 id="profileUserName" class="text-xl font-black text-gray-900 dark:text-white mt-3">Guest User</h3>
-                    <p id="profileUserPhone" class="text-xs text-gray-500 dark:text-gray-400 font-medium">+91 9876543210</p>
+                    <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
                     
                     <div class="flex justify-center items-center gap-2 mt-2">
                         <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
@@ -337,6 +270,10 @@
             <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4 text-xs font-semibold">
                 <h4 class="font-black text-sm text-gray-900 dark:text-white border-b pb-2">Account Options</h4>
                 
+                <div onclick="openEditProfileModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-user-pen text-teal-600"></i> Edit Profile Name & Photo</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <div onclick="openMyAdsModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-list-check text-teal-600"></i> Manage My Ads</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
@@ -345,12 +282,38 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-heart text-red-500"></i> Saved Bookmarks</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
+                <div onclick="openSetPinModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
                 <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
+    <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <h3 class="text-lg font-black text-gray-900 dark:text-white"><i class="fa-solid fa-user-pen mr-1 text-teal-600"></i> Edit Profile</h3>
+            
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Full Name</label>
+                    <input type="text" id="editProfileNameInput" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
+                    <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                </div>
+                <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition">
+                    Save Profile Changes
                 </button>
             </div>
         </div>
@@ -392,6 +355,92 @@
                     <i class="fa-solid fa-boxes-packing"></i> View My Posted Ads
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- MAIN AUTH MODAL -->
+    <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="text-center">
+                <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome to OldX</h3>
+                <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
+            </div>
+
+            <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition">
+                <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
+            </button>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR Email Login</span>
+                <div class="flex-1 border-t"></div>
+            </div>
+
+            <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Password</label>
+                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition">
+                    Login / Sign Up
+                </button>
+            </form>
+
+            <div class="flex items-center my-2">
+                <div class="flex-1 border-t"></div>
+                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
+                <div class="flex-1 border-t"></div>
+            </div>
+
+            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition">
+                <i class="fa-solid fa-user-secret"></i> Continue as Guest
+            </button>
+        </div>
+    </div>
+
+    <!-- SET 4-DIGIT PIN MODAL -->
+    <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
+            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
+            
+            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Save & Continue
+            </button>
+        </div>
+    </div>
+
+    <!-- QUICK PIN VERIFY MODAL -->
+    <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
+            <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
+            
+            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            
+            <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition">
+                Unlock Account
+            </button>
+
+            <button onclick="handleForgotPin()" class="text-xs text-red-500 font-bold hover:underline block mx-auto pt-1">
+                Forgot PIN? Re-authenticate
+            </button>
         </div>
     </div>
 
@@ -907,163 +956,6 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // 🌟 Switch between Log In and Sign Up Tabs
-        function switchAuthTab(tab) {
-            const loginTab = document.getElementById('loginTabBtn');
-            const signupTab = document.getElementById('signupTabBtn');
-            const loginForm = document.getElementById('loginFormContainer');
-            const signupForm = document.getElementById('signupFormContainer');
-
-            if(tab === 'login') {
-                loginTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm";
-                signupTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300";
-                loginForm.style.display = 'block';
-                signupForm.style.display = 'none';
-            } else {
-                signupTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition bg-white dark:bg-gray-800 text-primary dark:text-teal-400 shadow-sm";
-                loginTab.className = "flex-1 py-2.5 rounded-xl font-black text-xs transition text-gray-500 dark:text-gray-300";
-                signupForm.style.display = 'block';
-                loginForm.style.display = 'none';
-            }
-        }
-
-        // 🌟 1. Sign Up Function (Naam, Mobile, Password save karse)
-        async function handleUserSignup() {
-            const name = document.getElementById('signupNameInput').value.trim();
-            const phone = document.getElementById('signupPhoneInput').value.trim();
-            const password = document.getElementById('signupPasswordInput').value.trim();
-
-            if(!name || !phone || phone.length !== 10 || !password) {
-                showCustomAlert("Error", "Please enter valid name, 10-digit mobile number and password.", "error");
-                return;
-            }
-
-            try {
-                // Check if mobile already exists
-                const existing = await db.collection('users').where('phone', '==', phone).get();
-                if(!existing.empty) {
-                    showCustomAlert("Error", "Mobile number already registered. Please Log In.", "error");
-                    switchAuthTab('login');
-                    document.getElementById('loginPhoneInput').value = phone;
-                    return;
-                }
-
-                // Create new user record in Firestore
-                const userRef = await db.collection('users').add({
-                    name: name,
-                    phone: phone,
-                    password: password,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                const userData = { uid: userRef.id, displayName: name, phoneNumber: phone };
-                localStorage.setItem('oldx_logged_user', JSON.stringify(userData));
-                window.currentUser = userData;
-
-                closeAuthModal();
-                showCustomAlert("Success", "Account created successfully!", "success");
-                
-                setTimeout(() => {
-                    window.location.hash = 'profile';
-                    window.location.reload();
-                }, 800);
-            } catch (err) {
-                console.error("Signup Error:", err);
-                showCustomAlert("Error", "Failed to create account.", "error");
-            }
-        }
-
-        // 🌟 2. Log In Function (Mobile ane Password check karse)
-        async function handleUserLogin() {
-            const phone = document.getElementById('loginPhoneInput').value.trim();
-            const password = document.getElementById('loginPasswordInput').value.trim();
-
-            if(!phone || phone.length !== 10 || !password) {
-                showCustomAlert("Error", "Please enter your 10-digit mobile number and password.", "error");
-                return;
-            }
-
-            try {
-                const snapshot = await db.collection('users').where('phone', '==', phone).get();
-
-                if(snapshot.empty) {
-                    showCustomAlert("Error", "Mobile number not found. Please Sign Up first.", "error");
-                    switchAuthTab('signup');
-                    document.getElementById('signupPhoneInput').value = phone;
-                    return;
-                }
-
-                let validUser = null;
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    if(data.password === password) {
-                        validUser = { uid: doc.id, displayName: data.name, phoneNumber: data.phone };
-                    }
-                });
-
-                if(validUser) {
-                    localStorage.setItem('oldx_logged_user', JSON.stringify(validUser));
-                    window.currentUser = validUser;
-
-                    closeAuthModal();
-                    showCustomAlert("Success", "Logged In Successfully!", "success");
-                    
-                    setTimeout(() => {
-                        window.location.hash = 'profile';
-                        window.location.reload();
-                    }, 800);
-                } else {
-                    showCustomAlert("Incorrect Password", "Wrong password entered. Please check.", "error");
-                }
-            } catch (err) {
-                console.error("Login Error:", err);
-                showCustomAlert("Error", "Login failed. Check database connection.", "error");
-            }
-        }
-
-        // Check active session on load
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedUser = localStorage.getItem('oldx_logged_user');
-            if(savedUser) {
-                window.currentUser = JSON.parse(savedUser);
-            }
-            updateNavbarAuthUI();
-            renderHomeCategories();
-            handleHashChange();
-            updateCartBadge();
-        });
-
-        function updateNavbarAuthUI() {
-            const container = document.getElementById('authContainer');
-            const savedBtn = document.getElementById('headerSavedBtn');
-            const myAdsBtn = document.getElementById('headerMyAdsBtn');
-            const inboxBtn = document.getElementById('headerMessagesBtn');
-
-            if(window.currentUser) {
-                if(savedBtn) savedBtn.style.display = 'flex';
-                if(myAdsBtn) myAdsBtn.style.display = 'flex';
-                if(inboxBtn) inboxBtn.style.display = 'flex';
-
-                container.innerHTML = `
-                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
-                        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-7 h-7 rounded-full border border-teal-500 object-cover">
-                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200 max-w-[80px] truncate">${window.currentUser.displayName || 'User'}</span>
-                    </div>
-                `;
-                updateProfileDetails(window.currentUser);
-            } else {
-                if(savedBtn) savedBtn.style.display = 'none';
-                if(myAdsBtn) myAdsBtn.style.display = 'none';
-                if(inboxBtn) inboxBtn.style.display = 'none';
-
-                container.innerHTML = `
-                    <button onclick="openAuthModal('login')" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
-                        <i class="fa-solid fa-user-check mr-1"></i> Login
-                    </button>
-                `;
-            }
-        }
-
         function requestPushNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted") {
                 Notification.requestPermission().then(permission => {
@@ -1256,6 +1148,53 @@
             return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
+        auth.onAuthStateChanged(user => {
+            window.currentUser = user;
+            const container = document.getElementById('authContainer');
+            const savedBtn = document.getElementById('headerSavedBtn');
+            const myAdsBtn = document.getElementById('headerMyAdsBtn');
+            const inboxBtn = document.getElementById('headerMessagesBtn');
+
+            if(user) {
+                if(savedBtn) savedBtn.style.display = 'flex';
+                if(myAdsBtn) myAdsBtn.style.display = 'flex';
+                if(inboxBtn) inboxBtn.style.display = 'flex';
+
+                db.collection('users').doc(user.uid).set({
+                    isOnline: true,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+
+                window.addEventListener('beforeunload', () => {
+                    db.collection('users').doc(user.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+
+                const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+                container.innerHTML = `
+                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
+                        <img src="${photo}" class="w-7 h-7 rounded-full border border-teal-500 object-cover">
+                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200 max-w-[80px] truncate">${user.displayName || 'User'}</span>
+                    </div>
+                `;
+                updateProfileDetails(user);
+                checkUserPinStatus(user);
+                requestPushNotificationPermission();
+            } else {
+                if(savedBtn) savedBtn.style.display = 'none';
+                if(myAdsBtn) myAdsBtn.style.display = 'none';
+                if(inboxBtn) inboxBtn.style.display = 'none';
+
+                container.innerHTML = `
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                        <i class="fa-solid fa-user-check mr-1"></i> Login
+                    </button>
+                `;
+            }
+        });
+
         function calculatePrices(source) {
             const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
             const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
@@ -1278,7 +1217,7 @@
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
-                openAuthModal('login');
+                openAuthModal();
                 return;
             }
 
@@ -1373,7 +1312,7 @@
         function openLiveChatModal() {
             if (!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to start chat!", "error");
-                openAuthModal('login');
+                openAuthModal();
                 return;
             }
             if (!currentProduct) return;
@@ -1612,6 +1551,46 @@
             });
         }
 
+        function openEditProfileModal() {
+            if(!window.currentUser) return;
+            document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
+            document.getElementById('editProfileModal').style.display = 'flex';
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
+
+        async function saveProfileChangesWithFile() {
+            const newName = document.getElementById('editProfileNameInput').value.trim();
+            const photoFileInput = document.getElementById('editProfilePhotoFile');
+            const btn = document.getElementById('saveProfileBtn');
+
+            if(!window.currentUser) return;
+            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            try {
+                let photoURL = window.currentUser.photoURL;
+
+                if (photoFileInput.files && photoFileInput.files[0]) {
+                    photoURL = await compressImage(photoFileInput.files[0]);
+                }
+
+                await window.currentUser.updateProfile({
+                    displayName: newName,
+                    photoURL: photoURL
+                });
+
+                closeEditProfileModal();
+                updateProfileDetails(window.currentUser);
+                showCustomAlert("Success", "Profile updated successfully!", "success");
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            } catch (error) {
+                showCustomAlert("Error", error.message, "error");
+                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+            }
+        }
+
         function shareProfile() {
             const profileUrl = window.location.href;
             if(navigator.share) {
@@ -1625,7 +1604,7 @@
         function openMyAdsModal() {
             if(!window.currentUser) { 
                 showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
-                openAuthModal('login'); 
+                openAuthModal(); 
                 return; 
             }
             const container = document.getElementById('myAdsContainer');
@@ -1771,24 +1750,90 @@
             }
         }
 
+        function checkUserPinStatus(user) {
+            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
+            if(!userSavedPin) {
+                document.getElementById('setPinModal').style.display = 'flex';
+            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
+                document.getElementById('verifyPinModal').style.display = 'flex';
+            }
+        }
+
+        function saveUserPin() {
+            const input = document.getElementById('newPinInput').value;
+            if(input && input.length === 4 && !isNaN(input)) {
+                if(window.currentUser) {
+                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('setPinModal').style.display = 'none';
+                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
+                }
+            } else {
+                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
+            }
+        }
+
+        function verifyUserPin() {
+            const input = document.getElementById('verifyPinInput').value;
+            if(window.currentUser) {
+                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(input === correctPin) {
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('verifyPinModal').style.display = 'none';
+                    document.getElementById('verifyPinInput').value = '';
+                } else {
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
+                    document.getElementById('verifyPinInput').value = '';
+                }
+            }
+        }
+
+        function handleForgotPin() {
+            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
+                document.getElementById('verifyPinModal').style.display = 'none';
+                if(window.currentUser) {
+                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
+                }
+                auth.signOut().then(() => {
+                    openAuthModal();
+                });
+            }
+        }
+
+        function openSetPinModal() {
+            document.getElementById('setPinModal').style.display = 'flex';
+        }
+
+        function loginWithGoogle() { 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
+        }
+
+        function handleEmailAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            
+            auth.signInWithEmailAndPassword(email, password).then(() => {
+                closeAuthModal();
+            }).catch(() => {
+                auth.createUserWithEmailAndPassword(email, password).then(() => {
+                    closeAuthModal();
+                }).catch(err => showCustomAlert("Auth Error", err.message, "error"));
+            });
+        }
+
         function continueAsGuest() {
             closeAuthModal();
             showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
         }
 
-        function openProfilePage() { 
-            if(!window.currentUser) {
-                showCustomAlert("Login Required", "Please login first to view your profile!", "error");
-                openAuthModal('login');
-                return;
-            }
-            window.location.hash = 'profile'; 
-        }
+        function openProfilePage() { window.location.hash = 'profile'; }
 
         function updateProfileDetails(user) {
             if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
-            document.getElementById('profileUserPhone').innerText = `+91 ${user.phoneNumber || '9876543210'}`;
+            document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
+            if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
             document.getElementById('profileUserBadge').innerText = 'Verified Member';
             
             const myCount = products.filter(p => p.sellerUid === user.uid).length;
@@ -1798,11 +1843,17 @@
 
         function handleLogout() {
             if(confirm('Are you sure you want to log out from OldX?')) {
-                localStorage.removeItem('oldx_logged_user');
-                window.currentUser = null;
-                showCustomAlert("Logged Out", "Logged out successfully!", "success");
-                window.location.hash = '';
-                setTimeout(() => window.location.reload(), 600);
+                if(window.currentUser) {
+                    db.collection('users').doc(window.currentUser.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                sessionStorage.removeItem('oldx_pin_unlocked');
+                auth.signOut().then(() => {
+                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
+                    window.location.hash = '';
+                });
             }
         }
 
@@ -1814,7 +1865,7 @@
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
-                openAuthModal('login');
+                openAuthModal();
                 return;
             }
             const idx = cartList.findIndex(id => id === docId);
@@ -1839,7 +1890,7 @@
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
-                openAuthModal('login');
+                openAuthModal();
                 return;
             }
             const container = document.getElementById('cartItemsContainer');
@@ -1878,6 +1929,7 @@
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
+        /* RENDER BROWSE CATEGORIES */
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             const isAllSelected = currentFilterCat === 'all';
@@ -1976,7 +2028,7 @@
             } else if(hash === '#profile') {
                 if(!window.currentUser) {
                     window.location.hash = '';
-                    openAuthModal('login');
+                    openAuthModal();
                     return;
                 }
                 document.getElementById('homeView').style.display = 'none';
@@ -2357,10 +2409,7 @@
             openMyAdsModal();
         }
 
-        function openAuthModal(mode = 'login') { 
-            switchAuthTab(mode);
-            document.getElementById('authModal').style.display = 'flex'; 
-        }
+        function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
@@ -2501,6 +2550,12 @@
             `;
             return card;
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHomeCategories();
+            handleHashChange();
+            updateCartBadge();
+        });
     </script>
 </body>
 </html>
