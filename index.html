@@ -387,8 +387,20 @@
                 </div>
                 <div>
                     <label class="block font-bold mb-1">Password</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    <div class="relative">
+                        <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                            <i id="togglePasswordIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="handleForgotPassword()" class="text-[11px] text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer">
+                        Forgot Password?
+                    </button>
+                </div>
+
                 <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
                     Login / Sign Up
                 </button>
@@ -1846,6 +1858,32 @@
                 } else {
                     showCustomAlert("Auth Error", signInError.message, "error");
                 }
+            });
+        }
+
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('authPassword');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function handleForgotPassword() {
+            const email = document.getElementById('authEmail').value.trim();
+            if (!email) {
+                showCustomAlert("Email Required", "Please enter your email address above first, then click Forgot Password.", "error");
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email).then(() => {
+                showCustomAlert("Password Reset Email Sent", "Check your email inbox to reset your password securely!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
             });
         }
 
