@@ -691,25 +691,13 @@
                         </div>
                     </div>
 
-                    <!-- WhatsApp Mobile No with OTP Verification -->
+                    <!-- WhatsApp Mobile No Field (OTP Completely Removed) -->
                     <div>
-                        <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
-                        <div class="flex gap-2">
-                            <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
-                            <button type="button" onclick="sendWhatsAppOtp()" id="sendOtpBtn" class="bg-teal-700 hover:bg-teal-800 text-white font-bold px-4 py-2.5 rounded-xl text-xs whitespace-nowrap shadow transition cursor-pointer">
-                                Send OTP
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="otpVerifySection" style="display: none;" class="space-y-2 bg-teal-50 dark:bg-gray-700/60 p-3 rounded-xl border border-teal-200">
-                        <label class="block font-bold text-xs">Enter 6-Digit OTP received on WhatsApp</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="enteredOtp" maxlength="6" placeholder="123456" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
-                            <button type="button" onclick="verifyWhatsAppOtp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">
-                                Verify
-                            </button>
-                        </div>
+                        <label class="block font-bold mb-1 text-primary dark:text-teal-300">
+                            <i class="fa-brands fa-whatsapp text-green-600 mr-1 text-base"></i> WhatsApp Mobile No *
+                        </label>
+                        <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                        <p class="text-[10px] text-gray-400 mt-1">Buyers will contact you directly on this WhatsApp number.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -998,10 +986,6 @@
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
-        // OTP verification variables
-        let generatedOtp = null;
-        let isPhoneVerified = false;
-
         // Map Variables
         let createAdMap = null;
         let createAdMarker = null;
@@ -1262,32 +1246,6 @@
                     const calcDiscount = Math.round(((mrp - finalVal) / mrp) * 100);
                     document.getElementById('adDiscount').value = calcDiscount;
                 }
-            }
-        }
-
-        function sendWhatsAppOtp() {
-            const phone = document.getElementById('adPhone').value.trim();
-            if(!phone || phone.length < 10) {
-                showCustomAlert("Error", "Please enter a valid 10-digit WhatsApp number first!", "error");
-                return;
-            }
-
-            generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-            showCustomAlert("OTP Sent", `Testing OTP: ${generatedOtp} (WhatsApp par mokli didho chhe)`, "success");
-            document.getElementById('otpVerifySection').style.display = 'block';
-        }
-
-        function verifyWhatsAppOtp() {
-            const userEnteredOtp = document.getElementById('enteredOtp').value.trim();
-            if(userEnteredOtp === generatedOtp) {
-                isPhoneVerified = true;
-                document.getElementById('otpVerifySection').style.display = 'none';
-                document.getElementById('adPhone').readOnly = true;
-                document.getElementById('sendOtpBtn').innerText = 'Verified ✓';
-                document.getElementById('sendOtpBtn').className = 'bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs cursor-default';
-                showCustomAlert("Success", "WhatsApp number verified successfully!", "success");
-            } else {
-                showCustomAlert("Error", "Wrong OTP! Please try again.", "error");
             }
         }
 
@@ -2466,11 +2424,6 @@
             if (!window.currentUser) {
                 showCustomAlert("Login Required", "Ad post karva mate please pehla login karo!", "error");
                 openAuthModal();
-                return;
-            }
-
-            if (!isPhoneVerified) {
-                showCustomAlert("Verification Required", "Krupya ad post karva mate tamaro WhatsApp number OTP thi verify karo!", "error");
                 return;
             }
 
