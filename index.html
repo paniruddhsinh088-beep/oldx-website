@@ -691,13 +691,9 @@
                         </div>
                     </div>
 
-                    <!-- WhatsApp Mobile No Field (OTP Completely Removed) -->
                     <div>
-                        <label class="block font-bold mb-1 text-primary dark:text-teal-300">
-                            <i class="fa-brands fa-whatsapp text-green-600 mr-1 text-base"></i> WhatsApp Mobile No *
-                        </label>
-                        <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
-                        <p class="text-[10px] text-gray-400 mt-1">Buyers will contact you directly on this WhatsApp number.</p>
+                        <label class="block font-bold mb-1">WhatsApp Mobile No *</label>
+                        <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -1180,7 +1176,7 @@
         };
 
         function getValidSavedCount() {
-            return cartList.length;
+            return cartList.filter(id => products.some(p => p.docId === id)).length;
         }
 
         auth.onAuthStateChanged(user => {
@@ -1964,11 +1960,12 @@
             }
             const container = document.getElementById('cartItemsContainer');
             container.innerHTML = '';
+            const validCartList = cartList.filter(id => products.some(p => p.docId === id));
             
-            if(cartList.length === 0) { 
+            if(validCartList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
             } else {
-                cartList.forEach(id => {
+                validCartList.forEach(id => {
                     const p = products.find(item => item.docId === id);
                     if(p) {
                         const div = document.createElement('div');
