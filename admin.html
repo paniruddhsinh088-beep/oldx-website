@@ -166,14 +166,20 @@
                 return;
             }
 
-            // Direct Email Verification for Admin Access
-            const adminEmail = "paniruddhsinh088@gmail.com";
+            try {
+                const adminDocRef = doc(db, "admins", user.uid);
+                const adminDoc = await getDoc(adminDocRef);
 
-            if (user.email === adminEmail) {
-                loadingEl.classList.add('hidden');
-                adminContentEl.classList.remove('hidden');
-                loadDashboardData();
-            } else {
+                if (adminDoc.exists()) {
+                    loadingEl.classList.add('hidden');
+                    adminContentEl.classList.remove('hidden');
+                    loadDashboardData();
+                } else {
+                    loadingEl.classList.add('hidden');
+                    accessDeniedEl.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error("Error verifying admin:", error);
                 loadingEl.classList.add('hidden');
                 accessDeniedEl.classList.remove('hidden');
             }
