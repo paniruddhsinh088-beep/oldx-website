@@ -363,7 +363,7 @@
         </div>
     </div>
 
-    <!-- MAIN AUTH MODAL -->
+    <!-- MAIN AUTH MODAL (WITH LOGIN & SIGN UP TABS + REMEMBER ME) -->
     <div id="authModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4">
             <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold cursor-pointer">
@@ -372,54 +372,70 @@
             
             <div class="text-center">
                 <h3 class="text-xl font-black text-primary dark:text-teal-400">Welcome to OldX</h3>
-                <p class="text-xs text-gray-500 mt-1">Login to post ads & chat with sellers</p>
+                <p class="text-xs text-gray-500 mt-1">Connect with buyers & sellers</p>
+            </div>
+
+            <!-- Tab Buttons (Login vs Sign Up) -->
+            <div class="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-xl text-xs font-bold">
+                <button id="tabLoginBtn" onclick="switchAuthTab('login')" class="flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-primary dark:text-white shadow-sm transition cursor-pointer">Login</button>
+                <button id="tabSignupBtn" onclick="switchAuthTab('signup')" class="flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer">Sign Up</button>
             </div>
 
             <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm hover:bg-gray-50 transition cursor-pointer">
                 <i class="fa-brands fa-google text-red-500 text-base"></i> Continue with Google
             </button>
 
-            <div class="flex items-center my-2">
-                <div class="flex-1 border-t"></div>
-                <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR Email Login</span>
-                <div class="flex-1 border-t"></div>
-            </div>
-
-            <form onsubmit="handleEmailAuth(event)" class="space-y-3 text-xs">
-                <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="authEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1">Password</label>
-                    <div class="relative">
-                        <input type="password" id="authPassword" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        <button type="button" onclick="togglePasswordVisibility()" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
-                            <i id="togglePasswordIcon" class="fa-solid fa-eye"></i>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="flex justify-end">
-                    <button type="button" onclick="handleForgotPassword()" class="text-[11px] text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer">
-                        Forgot Password?
-                    </button>
-                </div>
-
-                <button type="submit" id="emailAuthBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
-                    Login / Sign Up
-                </button>
-            </form>
-
-            <div class="flex items-center my-2">
+            <div class="flex items-center my-1">
                 <div class="flex-1 border-t"></div>
                 <span class="px-3 text-[10px] text-gray-400 font-bold uppercase">OR</span>
                 <div class="flex-1 border-t"></div>
             </div>
 
-            <button onclick="continueAsGuest()" class="w-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 hover:bg-gray-200 transition cursor-pointer">
-                <i class="fa-solid fa-user-secret"></i> Continue as Guest
-            </button>
+            <!-- LOGIN FORM -->
+            <form id="loginFormContainer" onsubmit="handleEmailLogin(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Password</label>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <!-- Remember Me & Forgot Password Row -->
+                <div class="flex justify-between items-center">
+                    <label class="flex items-center gap-1.5 text-gray-600 dark:text-gray-300 cursor-pointer text-[11px]">
+                        <input type="checkbox" id="rememberMeCheckbox" class="w-3.5 h-3.5 text-teal-600 rounded"> Remember me
+                    </label>
+                    <button type="button" onclick="handleForgotPassword()" class="text-[11px] text-teal-600 dark:text-teal-400 font-bold hover:underline cursor-pointer">
+                        Forgot Password?
+                    </button>
+                </div>
+
+                <button type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
+                    Login to Account
+                </button>
+            </form>
+
+            <!-- SIGN UP FORM (Navo User) -->
+            <form id="signupFormContainer" onsubmit="handleEmailSignup(event)" class="space-y-3 text-xs" style="display: none;">
+                <div>
+                    <label class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="signupEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Create New Password</label>
+                    <input type="password" id="signupPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Repeat New Password</label>
+                    <input type="password" id="signupConfirmPassword" required placeholder="••••••••" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
+                    Create Account (Sign Up)
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1861,25 +1877,64 @@
             auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
         }
 
-        function handleEmailAuth(e) {
+        function switchAuthTab(tab) {
+            const loginForm = document.getElementById('loginFormContainer');
+            const signupForm = document.getElementById('signupFormContainer');
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const signupBtn = document.getElementById('tabSignupBtn');
+
+            if(tab === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                loginBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-primary dark:text-white shadow-sm transition cursor-pointer";
+                signupBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                signupBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-teal-700 dark:text-white shadow-sm transition cursor-pointer";
+                loginBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
+            }
+        }
+
+        function handleEmailLogin(e) {
             e.preventDefault();
-            const email = document.getElementById('authEmail').value.trim();
-            const password = document.getElementById('authPassword').value.trim();
-            
-            auth.signInWithEmailAndPassword(email, password).then(() => {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMeCheckbox').checked;
+
+            const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+
+            auth.setPersistence(persistence).then(() => {
+                return auth.signInWithEmailAndPassword(email, password);
+            }).then(() => {
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
-            }).catch((signInError) => {
-                auth.createUserWithEmailAndPassword(email, password).then(() => {
-                    closeAuthModal();
-                    showCustomAlert("Success", "Account created & logged in successfully!", "success");
-                }).catch((createError) => {
-                    if (createError.code === 'auth/email-already-in-use' || createError.code === 'auth/wrong-password' || createError.code === 'auth/invalid-credential') {
-                        showCustomAlert("Login Error", "Incorrect password! Please enter the correct password.", "error");
-                    } else {
-                        showCustomAlert("Auth Error", createError.message, "error");
-                    }
-                });
+            }).catch((error) => {
+                showCustomAlert("Login Error", error.message, "error");
+            });
+        }
+
+        function handleEmailSignup(e) {
+            e.preventDefault();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+
+            if (password !== confirmPassword) {
+                showCustomAlert("Password Mismatch", "Both passwords do not match! Please check.", "error");
+                return;
+            }
+
+            if (password.length < 6) {
+                showCustomAlert("Weak Password", "Password should be at least 6 characters long.", "error");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password).then(() => {
+                closeAuthModal();
+                showCustomAlert("Success", "Account created successfully!", "success");
+            }).catch((error) => {
+                showCustomAlert("Sign Up Error", error.message, "error");
             });
         }
 
@@ -1896,9 +1951,9 @@
         }
 
         function handleForgotPassword() {
-            const email = document.getElementById('authEmail').value.trim();
+            const email = document.getElementById('loginEmail').value.trim() || document.getElementById('signupEmail').value.trim();
             if (!email) {
-                showCustomAlert("Email Required", "Please enter your email address above first, then click Forgot Password.", "error");
+                showCustomAlert("Email Required", "Please enter your email address in the form first, then click Forgot Password.", "error");
                 return;
             }
 
@@ -1907,11 +1962,6 @@
             }).catch((error) => {
                 showCustomAlert("Error", error.message, "error");
             });
-        }
-
-        function continueAsGuest() {
-            closeAuthModal();
-            showCustomAlert("Guest Mode", "Continuing in Guest Mode. Browse all ads freely!", "success");
         }
 
         function openProfilePage() { window.location.hash = 'profile'; }
