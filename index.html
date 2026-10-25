@@ -288,8 +288,16 @@
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
                 <div onclick="openSetPinModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset 4-Digit Security PIN</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset / Set 4-Digit Security PIN</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
+                <!-- Sudharo 4: Security PIN Enable/Disable Toggle -->
+                <div class="flex justify-between items-center py-2 border-b">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-teal-600"></i> Require PIN on App Launch</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="pinToggleCheckbox" onchange="togglePinRequirement(this.checked)" class="sr-only peer">
+                        <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
+                    </label>
                 </div>
                 <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
@@ -454,24 +462,32 @@
         </div>
     </div>
 
-    <!-- SET 4-DIGIT PIN MODAL -->
+    <!-- SET 4-DIGIT PIN MODAL (WITH SKIP OPTION & AUTO-SUBMIT) -->
     <div id="setPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
+            <button onclick="skipPinSetup()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold text-xs cursor-pointer">
+                Skip <i class="fa-solid fa-chevron-right text-[10px]"></i>
+            </button>
             <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
                 <i class="fa-solid fa-lock"></i>
             </div>
             <h3 class="text-lg font-black text-primary dark:text-teal-400">Set 4-Digit Security PIN</h3>
-            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick login next time</p>
+            <p class="text-xs text-gray-500 leading-relaxed">Create a 4-digit PIN for quick app unlock</p>
             
-            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <!-- Sudharo 2: Auto-submit on input -->
+            <input type="password" id="newPinInput" maxlength="4" placeholder="••••" oninput="handlePinAutoInput(this, 'set')" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-teal-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
             <button onclick="saveUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition cursor-pointer">
                 Save & Continue
             </button>
+            <!-- Sudharo 1: Skip option -->
+            <button onclick="skipPinSetup()" class="text-xs text-gray-400 font-semibold hover:underline block mx-auto cursor-pointer">
+                Skip for now
+            </button>
         </div>
     </div>
 
-    <!-- QUICK PIN VERIFY MODAL -->
+    <!-- QUICK PIN VERIFY MODAL (WITH AUTO-SUBMIT) -->
     <div id="verifyPinModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4">
             <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
@@ -480,7 +496,8 @@
             <h3 class="text-lg font-black text-primary dark:text-teal-400">Enter Security PIN</h3>
             <p class="text-xs text-gray-500">Enter your 4-digit PIN to access OldX</p>
             
-            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <!-- Sudharo 2: Auto-submit on input -->
+            <input type="password" id="verifyPinInput" maxlength="4" placeholder="••••" oninput="handlePinAutoInput(this, 'verify')" class="w-36 text-center text-2xl font-bold tracking-widest px-3 py-2.5 border border-amber-300 rounded-2xl mx-auto dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
             <button onclick="verifyUserPin()" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-3 rounded-xl text-xs shadow transition cursor-pointer">
                 Unlock Account
@@ -1834,12 +1851,51 @@
             }
         }
 
+        /* --- USER-FRIENDLY PIN SYSTEM SUDHARA --- */
+
         function checkUserPinStatus(user) {
+            const isPinDisabled = localStorage.getItem(`oldx_pin_disabled_${user.uid}`) === 'true';
             const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
+            
+            // Sync Profile Toggle Switch
+            const pinToggle = document.getElementById('pinToggleCheckbox');
+            if (pinToggle) {
+                pinToggle.checked = !isPinDisabled;
+            }
+
+            if (isPinDisabled) {
+                return; // User has turned OFF PIN requirement
+            }
+
             if(!userSavedPin) {
-                document.getElementById('setPinModal').style.display = 'flex';
+                const modal = document.getElementById('setPinModal');
+                modal.style.display = 'flex';
+                // Sudharo 3: Auto focus
+                setTimeout(() => document.getElementById('newPinInput').focus(), 100);
             } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
-                document.getElementById('verifyPinModal').style.display = 'flex';
+                const modal = document.getElementById('verifyPinModal');
+                modal.style.display = 'flex';
+                // Sudharo 3: Auto focus
+                setTimeout(() => document.getElementById('verifyPinInput').focus(), 100);
+            }
+        }
+
+        // Sudharo 1: Skip Pin Setup
+        function skipPinSetup() {
+            if(window.currentUser) {
+                sessionStorage.setItem('oldx_pin_unlocked', 'true');
+            }
+            document.getElementById('setPinModal').style.display = 'none';
+        }
+
+        // Sudharo 2: Auto-submit when 4 digits are entered
+        function handlePinAutoInput(inputElem, mode) {
+            if (inputElem.value.length === 4) {
+                if (mode === 'set') {
+                    saveUserPin();
+                } else if (mode === 'verify') {
+                    verifyUserPin();
+                }
             }
         }
 
@@ -1848,6 +1904,7 @@
             if(input && input.length === 4 && !isNaN(input)) {
                 if(window.currentUser) {
                     localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
                     sessionStorage.setItem('oldx_pin_unlocked', 'true');
                     document.getElementById('setPinModal').style.display = 'none';
                     showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
@@ -1868,6 +1925,7 @@
                 } else {
                     showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
                     document.getElementById('verifyPinInput').value = '';
+                    document.getElementById('verifyPinInput').focus();
                 }
             }
         }
@@ -1885,7 +1943,26 @@
         }
 
         function openSetPinModal() {
-            document.getElementById('setPinModal').style.display = 'flex';
+            const modal = document.getElementById('setPinModal');
+            modal.style.display = 'flex';
+            setTimeout(() => document.getElementById('newPinInput').focus(), 100);
+        }
+
+        // Sudharo 4: Profile mathi PIN Enable/Disable Karvo
+        function togglePinRequirement(isEnabled) {
+            if(!window.currentUser) return;
+
+            if(isEnabled) {
+                localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
+                showCustomAlert("PIN Enabled", "Security PIN protection activated!", "success");
+                const userSavedPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(!userSavedPin) {
+                    openSetPinModal();
+                }
+            } else {
+                localStorage.setItem(`oldx_pin_disabled_${window.currentUser.uid}`, 'true');
+                showCustomAlert("PIN Disabled", "PIN protection deactivated.", "info");
+            }
         }
 
         function loginWithGoogle() { 
