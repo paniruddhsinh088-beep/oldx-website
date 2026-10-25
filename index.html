@@ -1836,21 +1836,15 @@
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
             }).catch((signInError) => {
-                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential' || signInError.code === 'auth/wrong-password') {
                     auth.createUserWithEmailAndPassword(email, password).then(() => {
                         closeAuthModal();
                         showCustomAlert("Success", "Account created & logged in successfully!", "success");
                     }).catch(createError => {
                         showCustomAlert("Auth Error", createError.message, "error");
                     });
-                } else if (signInError.code === 'auth/wrong-password') {
-                    showCustomAlert("Login Error", "Wrong password! Please check your password.", "error");
                 } else {
-                    auth.signInWithEmailAndPassword(email, password).then(() => {
-                        closeAuthModal();
-                    }).catch(err => {
-                        showCustomAlert("Auth Error", err.message, "error");
-                    });
+                    showCustomAlert("Auth Error", signInError.message, "error");
                 }
             });
         }
