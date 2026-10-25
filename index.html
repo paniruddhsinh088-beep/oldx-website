@@ -1238,16 +1238,22 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
+        // FIXED & ROBUST: Saved Ads Count Functions
         function getValidSavedCount() {
-            return cartList.length;
+            let saved = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
+            return saved.length;
         }
 
         function updateCartBadge() { 
             const badge = document.getElementById('cartBadgeCount');
             if(badge) {
                 const count = getValidSavedCount();
-                badge.innerText = count;
-                badge.style.display = 'inline-block';
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
 
@@ -1319,7 +1325,7 @@
             updateCartBadge();
         });
 
-        // Fixed Inbox unread messages listener to accurately calculate and display total unread messages count on inbox badge
+        // FIXED & ROBUST: Inbox unread messages listener with accurate count
         function startInboxUnreadListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1327,19 +1333,18 @@
                 .where('participants', 'array-contains', userId)
                 .onSnapshot(snapshot => {
                     let totalUnread = 0;
-                    let pendingChecks = snapshot.docs.length;
-
-                    if (pendingChecks === 0) {
+                    if (snapshot.empty) {
                         updateInboxBadge(0);
                         return;
                     }
 
+                    let pendingChecks = snapshot.docs.length;
                     snapshot.forEach(docSnap => {
                         db.collection('chats').doc(docSnap.id).collection('messages')
                             .where('senderUid', '!=', userId)
                             .where('status', '==', 'sent')
                             .get().then(msgSnap => {
-                                if (msgSnap.size > 0) {
+                                if (!msgSnap.empty) {
                                     totalUnread += msgSnap.size;
                                     triggerPushNotification("New Message on OldX", "You have unread messages in your inbox!");
                                 }
@@ -1349,7 +1354,9 @@
                                 }
                             }).catch(() => {
                                 pendingChecks--;
-                                if (pendingChecks === 0) updateInboxBadge(totalUnread);
+                                if (pendingChecks === 0) {
+                                    updateInboxBadge(totalUnread);
+                                }
                             });
                     });
                 }, error => {
@@ -2202,13 +2209,15 @@
             }
         }
 
-        // Fixed Issue 1: Saved Products Count properly updates both localStorage and UI badge
+        // FIXED & ROBUST: Toggle Cart Product with immediate UI Sync
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
                 openAuthModal();
                 return;
             }
+            
+            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
             const idx = cartList.findIndex(id => id === docId);
             if(idx > -1) { 
                 cartList.splice(idx, 1); 
@@ -2236,6 +2245,8 @@
             }
             const container = document.getElementById('cartItemsContainer');
             container.innerHTML = '';
+            
+            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
             
             if(cartList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
@@ -2858,6 +2869,7 @@
         }
 
         function createProductCard(p, isCarousel = false) {
+            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
             const isSaved = cartList.includes(p.docId);
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
