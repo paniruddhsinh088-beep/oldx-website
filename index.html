@@ -90,8 +90,8 @@
                     <i class="fa-solid fa-comments text-teal-600"></i> Inbox
                 </button>
 
-                <!-- Admin Button Link -->
-                <a href="admin.html" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
+                <!-- Admin Button Link (Hidden by default, shown only for Admin) -->
+                <a id="headerAdminBtn" href="admin.html" style="display: none;" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
 
@@ -1190,11 +1190,27 @@
             const savedBtn = document.getElementById('headerSavedBtn');
             const myAdsBtn = document.getElementById('headerMyAdsBtn');
             const inboxBtn = document.getElementById('headerMessagesBtn');
+            const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
                 if(savedBtn) savedBtn.style.display = 'flex';
                 if(myAdsBtn) myAdsBtn.style.display = 'flex';
                 if(inboxBtn) inboxBtn.style.display = 'flex';
+
+                // Check if current user is Admin (Only show admin button for admin email or admin document)
+                if (user.email === 'paniruddhsinh088@gmail.com') {
+                    if(adminBtn) adminBtn.style.display = 'flex';
+                } else {
+                    db.collection('admins').doc(user.uid).get().then(docSnap => {
+                        if(docSnap.exists && adminBtn) {
+                            adminBtn.style.display = 'flex';
+                        } else if(adminBtn) {
+                            adminBtn.style.display = 'none';
+                        }
+                    }).catch(() => {
+                        if(adminBtn) adminBtn.style.display = 'none';
+                    });
+                }
 
                 db.collection('users').doc(user.uid).set({
                     isOnline: true,
@@ -1222,6 +1238,7 @@
                 if(savedBtn) savedBtn.style.display = 'none';
                 if(myAdsBtn) myAdsBtn.style.display = 'none';
                 if(inboxBtn) inboxBtn.style.display = 'none';
+                if(adminBtn) adminBtn.style.display = 'none'; // Hide admin button for normal users / guests
 
                 container.innerHTML = `
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
@@ -1849,7 +1866,6 @@
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value.trim();
             
-            // Auto sign-in or create user fallback (registers if not existing)
             auth.signInWithEmailAndPassword(email, password).then(() => {
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
@@ -1887,7 +1903,7 @@
             }
 
             auth.sendPasswordResetEmail(email).then(() => {
-                showCustomAlert("Password Reset Email Sent", "Check your email inbox to reset your password securely!", "success");
+                showCustomAlert("Password Reset Email Sent", "Check your email inbox (and Spam folder) to reset your password securely!", "success");
             }).catch((error) => {
                 showCustomAlert("Error", error.message, "error");
             });
