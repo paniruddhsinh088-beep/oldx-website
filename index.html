@@ -75,24 +75,24 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-2 md:space-x-3">
-                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5">
+                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-heart text-red-500 text-sm"></i>
                     <span class="hidden md:inline">Saved</span>
                     <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">0</span>
                 </button>
 
-                <button id="headerMyAdsBtn" style="display: none;" onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center">
+                <button id="headerMyAdsBtn" style="display: none;" onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center cursor-pointer">
                     <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
                 </button>
 
                 <!-- Professional Inbox Button -->
-                <button id="headerMessagesBtn" style="display: none;" onclick="openInboxModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
+                <button id="headerMessagesBtn" style="display: none;" onclick="openInboxModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-comments text-teal-600"></i> Inbox
                 </button>
 
                 <!-- Dynamic Profile / Auth Container -->
                 <div id="authContainer">
-                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition">
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 </div>
@@ -1834,10 +1834,24 @@
             
             auth.signInWithEmailAndPassword(email, password).then(() => {
                 closeAuthModal();
-            }).catch(() => {
-                auth.createUserWithEmailAndPassword(email, password).then(() => {
-                    closeAuthModal();
-                }).catch(err => showCustomAlert("Auth Error", err.message, "error"));
+                showCustomAlert("Success", "Login successful!", "success");
+            }).catch((signInError) => {
+                if (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential') {
+                    auth.createUserWithEmailAndPassword(email, password).then(() => {
+                        closeAuthModal();
+                        showCustomAlert("Success", "Account created & logged in successfully!", "success");
+                    }).catch(createError => {
+                        showCustomAlert("Auth Error", createError.message, "error");
+                    });
+                } else if (signInError.code === 'auth/wrong-password') {
+                    showCustomAlert("Login Error", "Wrong password! Please check your password.", "error");
+                } else {
+                    auth.signInWithEmailAndPassword(email, password).then(() => {
+                        closeAuthModal();
+                    }).catch(err => {
+                        showCustomAlert("Auth Error", err.message, "error");
+                    });
+                }
             });
         }
 
