@@ -1241,6 +1241,15 @@
             return cartList.length;
         }
 
+        function updateCartBadge() { 
+            const badge = document.getElementById('cartBadgeCount');
+            if(badge) {
+                const count = getValidSavedCount();
+                badge.innerText = count;
+                badge.style.display = 'inline-block';
+            }
+        }
+
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
@@ -2194,15 +2203,6 @@
             }
         }
 
-        function updateCartBadge() { 
-            const badge = document.getElementById('cartBadgeCount');
-            if(badge) {
-                const count = getValidSavedCount();
-                badge.innerText = count;
-                badge.style.display = 'inline-block';
-            }
-        }
-
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2254,7 +2254,6 @@
                         `;
                         container.appendChild(div);
                     } else {
-                        // Even if product details are loading or missing, show basic saved item card
                         const div = document.createElement('div');
                         div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
                         div.innerHTML = `
