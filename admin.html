@@ -3,48 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OldX Admin Dashboard</title>
+    <title>OldX Advanced Admin Dashboard</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen pb-12">
 
     <!-- Header -->
     <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
-        <h1 class="text-xl font-bold">🛡️ OldX Admin Dashboard</h1>
-        <a href="index.html" class="bg-white text-blue-600 px-4 py-2 rounded text-sm font-semibold hover:bg-gray-100">Back to Home</a>
+        <h1 class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-shield-halved"></i> OldX Admin Dashboard</h1>
+        <a href="index.html" class="bg-white text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-gray-100 transition shadow-sm">Back to Home</a>
     </header>
 
     <!-- Main Container -->
-    <main class="max-w-6xl mx-auto p-4">
+    <main class="max-w-6xl mx-auto p-4 space-y-6">
+        
         <!-- Loading State -->
-        <div id="loading" class="text-center py-10 text-gray-600 font-medium">Checking admin access and loading products...</div>
+        <div id="loading" class="text-center py-10 text-gray-600 font-medium">Checking admin access and loading data...</div>
 
         <!-- Access Denied Message -->
-        <div id="access-denied" class="hidden text-center py-20">
+        <div id="access-denied" class="hidden text-center py-20 bg-white rounded-2xl shadow-sm p-6">
             <h2 class="text-2xl font-bold text-red-600 mb-2">Access Denied ❌</h2>
             <p class="text-gray-600 mb-4">You do not have administrator privileges to view this page.</p>
-            <a href="index.html" class="bg-blue-600 text-white px-6 py-2 rounded font-semibold">Go to Home</a>
+            <a href="index.html" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-semibold shadow">Go to Home</a>
         </div>
 
-        <!-- Admin Content -->
-        <div id="admin-content" class="hidden">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">Manage All Product Listings</h2>
-            <div class="bg-white rounded-lg shadow overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-200 text-gray-700 text-sm">
-                            <th class="p-3">Product</th>
-                            <th class="p-3">Price</th>
-                            <th class="p-3">Seller UID</th>
-                            <th class="p-3 text-center">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="product-list" class="divide-y divide-gray-200 text-sm">
-                        <!-- Products will be loaded dynamically here -->
-                    </tbody>
-                </table>
+        <!-- Admin Content (Hidden until verified) -->
+        <div id="admin-content" class="hidden space-y-6">
+            
+            <!-- 1. STATS COUNTERS -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Total Products</p>
+                        <h3 id="statTotalProducts" class="text-2xl font-black text-gray-800 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Featured Ads</p>
+                        <h3 id="statFeaturedProducts" class="text-2xl font-black text-amber-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Total Users</p>
+                        <h3 id="statTotalUsers" class="text-2xl font-black text-emerald-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
             </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex gap-2 border-b pb-2">
+                <button onclick="switchTab('products')" id="tabProductsBtn" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow transition">Manage Products</button>
+                <button onclick="switchTab('users')" id="tabUsersBtn" class="bg-white text-gray-600 border px-4 py-2 rounded-xl font-bold text-xs hover:bg-gray-50 transition">Manage Users</button>
+            </div>
+
+            <!-- TAB 1: PRODUCTS MANAGEMENT -->
+            <div id="sectionProducts" class="space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <h2 class="text-lg font-bold text-gray-800">All Product Listings</h2>
+                    <!-- 2. SEARCH BAR -->
+                    <div class="w-full sm:w-72 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="productSearchInput" oninput="filterProductsTable()" placeholder="Search by title or location..." class="w-full pl-9 pr-4 py-2 bg-white border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b">
+                                <th class="p-3.5">Product</th>
+                                <th class="p-3.5">Price</th>
+                                <th class="p-3.5">Location</th>
+                                <th class="p-3.5 text-center">Featured Status</th>
+                                <th class="p-3.5 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-list" class="divide-y divide-gray-100 text-xs">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 2: USERS MANAGEMENT -->
+            <div id="sectionUsers" class="space-y-4" style="display: none;">
+                <h2 class="text-lg font-bold text-gray-800">Registered Users Activity</h2>
+                <div class="bg-white rounded-2xl shadow-sm border overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b">
+                                <th class="p-3.5">User UID</th>
+                                <th class="p-3.5">Status</th>
+                                <th class="p-3.5">Last Seen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-list" class="divide-y divide-gray-100 text-xs">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -52,7 +126,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
@@ -71,6 +145,9 @@
         const accessDeniedEl = document.getElementById('access-denied');
         const adminContentEl = document.getElementById('admin-content');
         const productListEl = document.getElementById('product-list');
+        const usersListEl = document.getElementById('users-list');
+
+        let allProducts = [];
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -86,7 +163,7 @@
                 if (adminDoc.exists()) {
                     loadingEl.classList.add('hidden');
                     adminContentEl.classList.remove('hidden');
-                    loadProducts();
+                    loadDashboardData();
                 } else {
                     loadingEl.classList.add('hidden');
                     accessDeniedEl.classList.remove('hidden');
@@ -98,49 +175,144 @@
             }
         });
 
-        async function loadProducts() {
+        async function loadDashboardData() {
             try {
-                const querySnapshot = await getDocs(collection(db, "products"));
-                productListEl.innerHTML = "";
+                // Fetch Products
+                const prodSnapshot = await getDocs(collection(db, "products"));
+                allProducts = [];
+                let featuredCount = 0;
 
-                if (querySnapshot.empty) {
-                    productListEl.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No products found.</td></tr>`;
-                    return;
+                prodSnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    allProducts.push({ id: docSnap.id, ...data });
+                    if (data.isFeatured) featuredCount++;
+                });
+
+                document.getElementById('statTotalProducts').innerText = allProducts.length;
+                document.getElementById('statFeaturedProducts').innerText = featuredCount;
+
+                renderProductsTable(allProducts);
+
+                // Fetch Users
+                const userSnapshot = await getDocs(collection(db, "users"));
+                document.getElementById('statTotalUsers').innerText = userSnapshot.size;
+                
+                usersListEl.innerHTML = "";
+                if (userSnapshot.empty) {
+                    usersListEl.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-400">No user records found.</td></tr>`;
+                } else {
+                    userSnapshot.forEach((uDoc) => {
+                        const uData = uDoc.data();
+                        const isOnline = uData.isOnline ? '<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Online</span>' : '<span class="bg-gray-100 text-gray-500 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Offline</span>';
+                        const lastSeenStr = uData.lastSeen ? uData.lastSeen.toDate().toLocaleString() : 'N/A';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="p-3.5 font-mono text-gray-600">${uDoc.id}</td>
+                            <td class="p-3.5">${isOnline}</td>
+                            <td class="p-3.5 text-gray-500">${lastSeenStr}</td>
+                        `;
+                        usersListEl.appendChild(tr);
+                    });
                 }
 
-                querySnapshot.forEach((productDoc) => {
-                    const product = productDoc.data();
-                    const productId = productDoc.id;
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td class="p-3 flex items-center gap-3">
-                            <img src="${product.imageUrl || product.images?.[0] || 'https://via.placeholder.com/50'}" class="w-10 h-10 object-cover rounded">
-                            <span class="font-medium text-gray-800">${product.title || 'Untitled'}</span>
-                        </td>
-                        <td class="p-3 text-gray-600">${product.finalPriceStr || ('₹' + (product.price || 0))}</td>
-                        <td class="p-3 text-gray-500 text-xs truncate max-w-[120px]">${product.sellerUid || 'N/A'}</td>
-                        <td class="p-3 text-center">
-                            <button onclick="deleteProduct('${productId}')" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-red-600">Delete</button>
-                        </td>
-                    `;
-                    productListEl.appendChild(tr);
-                });
             } catch (error) {
-                console.error("Error loading products:", error);
+                console.error("Error loading dashboard data:", error);
             }
         }
 
+        function renderProductsTable(productsToRender) {
+            productListEl.innerHTML = "";
+            if (productsToRender.length === 0) {
+                productListEl.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">No products found.</td></tr>`;
+                return;
+            }
+
+            productsToRender.forEach((product) => {
+                const img = product.images?.[0] || 'https://via.placeholder.com/50';
+                const isFeatured = product.isFeatured || false;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3.5 flex items-center gap-3">
+                        <img src="${img}" class="w-10 h-10 object-cover rounded-xl border shadow-sm">
+                        <div>
+                            <span class="font-bold text-gray-800 block">${product.title || 'Untitled'}</span>
+                            <span class="text-[10px] text-gray-400">Seller: ${product.sellerUid || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td class="p-3.5 font-black text-blue-600">${product.finalPriceStr || ('₹' + (product.basePrice || 0))}</td>
+                    <td class="p-3.5 text-gray-500">${product.location || 'N/A'}</td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="toggleFeature('${product.id}', ${isFeatured})" class="px-3 py-1 rounded-xl text-[10px] font-black transition ${isFeatured ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-600'}">
+                            <i class="fa-solid fa-bolt mr-1"></i> ${isFeatured ? 'Featured (On)' : 'Make Featured'}
+                        </button>
+                    </td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="deleteProduct('${product.id}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition">
+                            <i class="fa-solid fa-trash-can"></i> Delete
+                        </button>
+                    </td>
+                `;
+                productListEl.appendChild(tr);
+            });
+        }
+
+        // 2. Search & Filter function
+        window.filterProductsTable = function() {
+            const query = document.getElementById('productSearchInput').value.toLowerCase();
+            const filtered = allProducts.filter(p => 
+                (p.title && p.title.toLowerCase().includes(query)) || 
+                (p.location && p.location.toLowerCase().includes(query)) ||
+                (p.sellerUid && p.sellerUid.toLowerCase().includes(query))
+            );
+            renderProductsTable(filtered);
+        };
+
+        // 3. Toggle Featured Ad
+        window.toggleFeature = async function(productId, currentStatus) {
+            try {
+                await updateDoc(doc(db, "products", productId), {
+                    isFeatured: !currentStatus
+                });
+                loadDashboardData();
+            } catch (error) {
+                console.error("Error updating feature status:", error);
+                alert("Failed to update feature status.");
+            }
+        };
+
+        // Delete Product
         window.deleteProduct = async function(productId) {
             if (confirm("Are you sure you want to delete this product as Admin?")) {
                 try {
                     await deleteDoc(doc(db, "products", productId));
                     alert("Product deleted successfully!");
-                    loadProducts();
+                    loadDashboardData();
                 } catch (error) {
                     console.error("Error deleting product:", error);
-                    alert("Failed to delete product. Check Firestore rules.");
+                    alert("Failed to delete product.");
                 }
+            }
+        };
+
+        // Tab Switcher
+        window.switchTab = function(tab) {
+            const prodBtn = document.getElementById('tabProductsBtn');
+            const userBtn = document.getElementById('tabUsersBtn');
+            const prodSec = document.getElementById('sectionProducts');
+            const userSec = document.getElementById('sectionUsers');
+
+            if (tab === 'products') {
+                prodBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow transition";
+                userBtn.className = "bg-white text-gray-600 border px-4 py-2 rounded-xl font-bold text-xs hover:bg-gray-50 transition";
+                prodSec.style.display = 'block';
+                userSec.style.display = 'none';
+            } else {
+                userBtn.className = "bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow transition";
+                prodBtn.className = "bg-white text-gray-600 border px-4 py-2 rounded-xl font-bold text-xs hover:bg-gray-50 transition";
+                userSec.style.display = 'block';
+                prodSec.style.display = 'none';
             }
         };
     </script>
