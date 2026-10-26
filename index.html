@@ -80,7 +80,7 @@
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
 
-                <!-- Dynamic Auth Container (Only Login / Logout button, profile section is in bottom navbar) -->
+                <!-- Dynamic Auth Container (Only Login / Logout button) -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -208,7 +208,7 @@
         </div>
     </div>
 
-    <!-- ENHANCED DEDICATED PROFILE PAGE (DYNAMIC DATA INTEGRATED) -->
+    <!-- ENHANCED DEDICATED PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -230,22 +230,18 @@
                     <p id="profileUserEmail" class="text-xs text-gray-500 dark:text-gray-400 font-medium">guest@oldx.in</p>
                     
                     <div class="flex justify-center items-center gap-2 mt-2">
-                        <!-- Dynamic Verification Badge -->
                         <span id="profileUserBadge" class="bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase">Verified Member</span>
-                        <!-- Dynamic Rating Badge -->
                         <span id="profileUserRatingBadge" class="bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1">
                             <i class="fa-solid fa-star text-amber-500"></i> <span id="profileRatingText">New Seller</span>
                         </span>
                     </div>
 
-                    <!-- Manual Verification Button Container -->
                     <div id="verificationSection" class="mt-3 text-center" style="display: none;">
                         <button id="verifyAccountBtn" onclick="requestAccountVerification()" class="bg-amber-500 hover:bg-amber-600 text-primary font-black px-4 py-2 rounded-xl text-xs shadow transition cursor-pointer">
                             <i class="fa-solid fa-shield-check mr-1"></i> Verify My Account Now
                         </button>
                     </div>
 
-                    <!-- Dynamic Member Since Date -->
                     <p id="profileMemberSince" class="text-[11px] text-gray-400 mt-2"><i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX</p>
                 </div>
             </div>
@@ -282,7 +278,6 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-key text-amber-500"></i> Reset / Set 4-Digit Security PIN</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
-                <!-- Security PIN Enable/Disable Toggle -->
                 <div class="flex justify-between items-center py-2 border-b">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-shield-halved text-teal-600"></i> Require PIN on App Launch</span>
                     <label class="relative inline-flex items-center cursor-pointer">
@@ -641,14 +636,7 @@
             </div>
         </div>
 
-        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
-                <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
-                <div class="flex justify-end items-center gap-1 mt-1">
-                    <span class="text-[9px] text-gray-400">10:15 AM</span>
-                </div>
-            </div>
-        </div>
+        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
         <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs shrink-0">
             <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
@@ -941,7 +929,7 @@
 
     <!-- SAVED ADS MODAL -->
     <div id="cartModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-lg rounded-2xl p-5 relative max-h-[80vh] flex flex-col shadow-2xl animate-scale-up">
             <button onclick="closeCartModal()" class="absolute top-4 right-4 text-gray-500 hover:text-black font-bold cursor-pointer">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
@@ -1046,7 +1034,6 @@
         window.currentUser = null;
         let products = [];
         let currentProduct = null;
-        let cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
         let selectedMainCat = null;
         let selectedSubCat = null;
         let currentFilterCat = 'all';
@@ -1063,6 +1050,15 @@
         let createAdMap = null;
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
+
+        function getSavedAdsKey() {
+            return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
+        }
+
+        function getValidSavedCount() {
+            let saved = JSON.parse(localStorage.getItem(getSavedAdsKey()) || '[]');
+            return saved.length;
+        }
 
         function requestPushNotificationPermission() {
             if ("Notification" in window && Notification.permission !== "granted") {
@@ -1252,18 +1248,13 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
-        function getValidSavedCount() {
-            let saved = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
-            return saved.length;
-        }
-
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                startInboxUnreadListener(user.uid);
+                startGlobalUnreadMessagesListener(user.uid);
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
                     if(adminBtn) adminBtn.style.display = 'flex';
@@ -1291,7 +1282,6 @@
                     }, { merge: true });
                 });
 
-                // Top header account section removed as requested. Showing simple Logout/Account control in bottom nav or auth container.
                 container.innerHTML = `
                     <button onclick="handleLogout()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs shadow transition cursor-pointer flex items-center gap-1">
                         <i class="fa-solid fa-right-from-bracket"></i> Logout
@@ -1312,8 +1302,8 @@
             }
         });
 
-        // FIXED REQUIREMENT 3: Real-time unread digit on the chats symbol
-        function startInboxUnreadListener(userId) {
+        // ROBUST REAL-TIME UNREAD MESSAGES LISTENER FOR CHATS ICON
+        function startGlobalUnreadMessagesListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
             inboxListenerUnsubscribe = db.collection('chats')
@@ -1324,64 +1314,41 @@
                         return;
                     }
 
-                    let chatIds = [];
+                    let chatRooms = [];
                     snapshot.forEach(docSnap => {
-                        chatIds.push(docSnap.id);
+                        chatRooms.push({ id: docSnap.id, ...docSnap.data() });
                     });
 
-                    // Listen across all chat rooms for incoming unread messages in real time
-                    let unreadCount = 0;
-                    let checkedCount = 0;
+                    let totalUnread = 0;
+                    let processed = 0;
 
-                    if (chatIds.length === 0) {
-                        updateInboxBadge(0);
-                        return;
-                    }
-
-                    chatIds.forEach(chatRoomId => {
-                        db.collection('chats').doc(chatRoomId).collection('messages')
+                    chatRooms.forEach(room => {
+                        db.collection('chats').doc(room.id).collection('messages')
                             .where('senderUid', '!=', userId)
-                            .where('status', '==', 'sent')
-                            .onSnapshot(msgSnap => {
-                                // Recalculate total unread across all chats dynamically
-                                let currentChatUnread = msgSnap.size;
-                                // To avoid duplicate counting when multiple snapshots fire, let's query all chats once or sum up
-                                checkAllUnreadCounts(userId, chatIds);
-                            }, () => {
-                                checkedCount++;
+                            .get().then(msgSnap => {
+                                msgSnap.forEach(mDoc => {
+                                    const mData = mDoc.data();
+                                    if (mData.status !== 'read') {
+                                        totalUnread++;
+                                    }
+                                });
+                                processed++;
+                                if (processed === chatRooms.length) {
+                                    updateInboxBadge(totalUnread);
+                                    if (totalUnread > 0) {
+                                        triggerPushNotification("New Messages on OldX", `You have ${totalUnread} unread message(s)!`);
+                                    }
+                                }
+                            }).catch(() => {
+                                processed++;
+                                if (processed === chatRooms.length) {
+                                    updateInboxBadge(totalUnread);
+                                }
                             });
                     });
                 }, error => {
-                    console.log("Inbox unread listener error:", error);
+                    console.log("Global unread listener error:", error);
                 });
-        }
-
-        function checkAllUnreadCounts(userId, chatIds) {
-            let totalUnread = 0;
-            let pending = chatIds.length;
-
-            chatIds.forEach(chatRoomId => {
-                db.collection('chats').doc(chatRoomId).collection('messages')
-                    .where('senderUid', '!=', userId)
-                    .where('status', '==', 'sent')
-                    .get().then(msgSnap => {
-                        if (!msgSnap.empty) {
-                            totalUnread += msgSnap.size;
-                        }
-                        pending--;
-                        if (pending === 0) {
-                            updateInboxBadge(totalUnread);
-                            if (totalUnread > 0) {
-                                triggerPushNotification("New Messages on OldX", `You have ${totalUnread} unread message(s)!`);
-                            }
-                        }
-                    }).catch(() => {
-                        pending--;
-                        if (pending === 0) {
-                            updateInboxBadge(totalUnread);
-                        }
-                    });
-            });
         }
 
         function updateInboxBadge(count) {
@@ -1526,7 +1493,6 @@
             }
 
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
-            
             const otherUserId = (window.currentUser.uid === sellerId) ? buyerId : sellerId;
             
             document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
@@ -1595,7 +1561,6 @@
             });
         }
 
-        // Two-way typing status watcher (Both Buyer & Seller typing...)
         function watchTypingStatus(chatRoomId, otherUserId) {
             if(!chatRoomId || !otherUserId) return;
 
@@ -1624,7 +1589,6 @@
             
             db.collection('chats').doc(chatRoomId).collection('messages')
               .where('senderUid', '!=', window.currentUser.uid)
-              .where('status', '==', 'sent')
               .get().then(snapshot => {
                   snapshot.forEach(doc => {
                       doc.ref.update({ status: 'read' });
@@ -2236,7 +2200,7 @@
             }
         }
 
-        // Toggle Cart Product with immediate UI Sync
+        // Toggle Cart Product with immediate UI Sync & User-Specific Storage
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2244,8 +2208,10 @@
                 return;
             }
             
-            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
+            let cartKey = getSavedAdsKey();
+            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             const idx = cartList.findIndex(id => id === docId);
+            
             if(idx > -1) { 
                 cartList.splice(idx, 1); 
                 showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
@@ -2254,7 +2220,8 @@
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
-            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            
+            localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
         }
@@ -2263,7 +2230,7 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        // FIXED REQUIREMENT 1: Saved items modal rendering properly with robust fallback fetch
+        // ROBUST SAVED ADS MODAL RENDERER
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
@@ -2279,7 +2246,8 @@
             `;
             document.getElementById('cartModal').style.display = 'flex';
             
-            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
+            let cartKey = getSavedAdsKey();
+            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             
             if(cartList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
@@ -2316,8 +2284,10 @@
         }
 
         function removeFromCart(id) {
+            let cartKey = getSavedAdsKey();
+            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             cartList = cartList.filter(item => item !== id);
-            localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
+            localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
             openCartModal();
         }
@@ -2901,7 +2871,8 @@
         }
 
         function createProductCard(p, isCarousel = false) {
-            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
+            let cartKey = getSavedAdsKey();
+            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             const isSaved = cartList.includes(p.docId);
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
