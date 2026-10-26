@@ -75,7 +75,7 @@
 
             <!-- Action Buttons -->
             <div class="flex items-center space-x-2 md:space-x-3">
-                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/85 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5 cursor-pointer">
                     <i class="fa-solid fa-heart text-red-500 text-sm"></i>
                     <span class="hidden md:inline">Saved</span>
                     <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">0</span>
@@ -626,7 +626,14 @@
             </div>
         </div>
 
-        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
+        <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3">
+            <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[80%] text-xs shadow-sm border border-gray-100 dark:border-gray-700">
+                <p class="font-semibold text-gray-800 dark:text-gray-200">Hello! Is this item still available?</p>
+                <div class="flex justify-end items-center gap-1 mt-1">
+                    <span class="text-[9px] text-gray-400">10:15 AM</span>
+                </div>
+            </div>
+        </div>
 
         <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs shrink-0">
             <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
@@ -718,7 +725,7 @@
 
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
                     
-                    <!-- Gallery Upload Section as per user screenshot -->
+                    <!-- Gallery Upload Section -->
                     <div class="space-y-2 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl border border-gray-200/80 dark:border-gray-600">
                         <div class="flex items-center justify-between pb-2 border-b">
                             <label class="block font-bold text-sm text-gray-900 dark:text-white">Gallery</label>
@@ -899,7 +906,7 @@
                 </div>
             </div>
 
-            <!-- Product Information Section (Matches user screenshot) -->
+            <!-- Product Information Section -->
             <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
                 <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white border-b pb-2">Product Information</h3>
                 <div id="detailHighlightsGrid" class="space-y-2 text-xs"></div>
