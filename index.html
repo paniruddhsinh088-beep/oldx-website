@@ -1051,7 +1051,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP (FIXED UID CHECK)
+        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP
         function getSavedAdsStorageKey() {
             const user = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
             if (!user || !user.uid) return 'oldx_saved_ads_guest';
@@ -2256,7 +2256,7 @@
             }
         }
 
-        /* BULLETPROOF SAVED ADS FUNCTIONS WITH ROBUST UID CHECK */
+        /* 100% BULLETPROOF SAVED ADS FUNCTION WITH INSTANT UI SYNC */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
@@ -2295,21 +2295,24 @@
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             
+            // Force LocalStorage Update immediately
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).then(() => {
-                updateProfileDetails(activeUser);
-                renderProducts();
-                
-                if(currentProduct && currentProduct.docId === docId) {
-                    renderProductDetailView(currentProduct);
-                }
-                
-                const modalEl = document.getElementById('cartModal');
-                if (modalEl && modalEl.style.display === 'flex') {
-                    openCartModal();
-                }
-            }).catch(err => {
+            // Instant UI re-render on mobile/laptop
+            updateProfileDetails(activeUser);
+            renderProducts();
+            
+            if(currentProduct && currentProduct.docId === docId) {
+                renderProductDetailView(currentProduct);
+            }
+            
+            const modalEl = document.getElementById('cartModal');
+            if (modalEl && modalEl.style.display === 'flex') {
+                openCartModal();
+            }
+
+            // Background Firestore Sync
+            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).catch(err => {
                 console.log("Firestore sync warning:", err);
             });
         }
