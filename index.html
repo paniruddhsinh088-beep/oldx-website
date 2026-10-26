@@ -2216,7 +2216,7 @@
             }
         }
 
-        /* ABSOLUTE FOOLPROOF SAVED ADS FUNCTION WITH DIRECT DATA OBJECT & FALLBACK */
+        /* FULLY FIXED SAVED ADS FUNCTIONS (WITH OBJECT STORAGE & FALLBACK) */
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2227,14 +2227,12 @@
             let cartKey = getSavedAdsKey();
             let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             
-            // Find if item already exists as string or object
-            const idx = cartList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
-            
-            // Look up product from global products array OR currentProduct OR Firestore cache
             let productObj = products.find(p => p.docId === docId);
             if (!productObj && currentProduct && currentProduct.docId === docId) {
                 productObj = currentProduct;
             }
+
+            const idx = cartList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
 
             if(idx > -1) { 
                 cartList.splice(idx, 1); 
@@ -2248,23 +2246,7 @@
                         image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
                     });
                 } else {
-                    // Fallback fetch from Firestore if not in memory array yet
-                    db.collection('products').doc(docId).get().then(docSnap => {
-                        if (docSnap.exists) {
-                            const d = docSnap.data();
-                            cartList.push({
-                                docId: docId,
-                                title: d.title || 'Product',
-                                finalPriceStr: d.finalPriceStr || '₹0',
-                                image: (d.images && d.images.length > 0) ? d.images[0] : ''
-                            });
-                            localStorage.setItem(cartKey, JSON.stringify(cartList));
-                            if(window.currentUser) updateProfileDetails(window.currentUser);
-                            renderProducts();
-                        }
-                    }).catch(() => {});
-                    
-                    cartList.push({ docId: docId, title: "Saved Listing", finalPriceStr: "₹0", image: "" });
+                    cartList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
                 }
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
