@@ -304,7 +304,7 @@
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
 
-                <!-- PLAY STORE COMPLIANT DELETE ACCOUNT BUTTON -->
+                <!-- PROFESSIONAL ACCOUNT DELETION BUTTON -->
                 <button onclick="confirmDeleteAccount()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-2 cursor-pointer border border-red-200">
                     <i class="fa-solid fa-user-slash"></i> Account Deletion (Delete My Account)
                 </button>
@@ -425,6 +425,28 @@
                 </div>
                 <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition cursor-pointer">
                     Save Profile Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROFESSIONAL CUSTOM CONFIRMATION MODAL -->
+    <div id="professionalConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="confirmModalTitle" class="text-lg font-black text-gray-900 dark:text-white">Delete Account</h3>
+                <p id="confirmModalDesc" class="text-xs text-gray-500 mt-1 leading-relaxed">Are you sure you want to permanently delete your account?</p>
+            </div>
+            
+            <div class="flex gap-2 pt-2">
+                <button id="confirmCancelBtn" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 font-bold py-2.5 rounded-xl text-xs transition cursor-pointer">
+                    Cancel
+                </button>
+                <button id="confirmOkBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition cursor-pointer">
+                    Yes, Delete
                 </button>
             </div>
         </div>
@@ -1146,46 +1168,74 @@
             document.getElementById('contactModal').style.display = 'none';
         }
 
-        // Play Store Compliant Account Deletion Logic with Firestore Cleanup
+        // Professional Custom Confirmation Modal Function
+        function showCustomConfirm(title, message, onConfirm) {
+            document.getElementById('confirmModalTitle').innerText = title;
+            document.getElementById('confirmModalDesc').innerText = message;
+            
+            const modal = document.getElementById('professionalConfirmModal');
+            modal.style.display = 'flex';
+
+            const okBtn = document.getElementById('confirmOkBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+
+            const newOkBtn = okBtn.cloneNode(true);
+            const newCancelBtn = cancelBtn.cloneNode(true);
+            okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+            cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+            newOkBtn.onclick = function() {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm();
+            };
+
+            newCancelBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
+        }
+
+        // Play Store Compliant Account Deletion Logic with Professional Custom Modal
         async function confirmDeleteAccount() {
-            const confirmation = confirm("Are you sure you want to permanently delete your OldX account and all associated data? This action cannot be undone.");
-            if (!confirmation) return;
+            showCustomConfirm(
+                "Delete Account?",
+                "Are you sure you want to permanently delete your OldX account and all associated data? This action cannot be undone.",
+                async function() {
+                    try {
+                        const user = auth.currentUser;
+                        if (!user) {
+                            showCustomAlert("Error", "No user is logged in!", "error");
+                            return;
+                        }
 
-            try {
-                const user = auth.currentUser;
-                if (!user) {
-                    showCustomAlert("Error", "No user is logged in!", "error");
-                    return;
+                        const uid = user.uid;
+
+                        const adsSnapshot = await db.collection("products").where("sellerUid", "==", uid).get();
+                        const batch = db.batch();
+                        
+                        adsSnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+
+                        const userRef = db.collection("users").doc(uid);
+                        batch.delete(userRef);
+
+                        await batch.commit();
+                        await user.delete();
+
+                        showCustomAlert("Success", "Your account and all associated data have been successfully deleted.", "success");
+                        window.location.hash = '';
+                        window.location.reload();
+
+                    } catch (error) {
+                        console.error("Error deleting account:", error);
+                        if (error.code === 'auth/requires-recent-login') {
+                            showCustomAlert("Security Required", "For security purposes, please re-login and try again (Recent login required).", "error");
+                        } else {
+                            showCustomAlert("Error", "Error deleting account: " + error.message, "error");
+                        }
+                    }
                 }
-
-                const uid = user.uid;
-
-                const adsSnapshot = await db.collection("products").where("sellerUid", "==", uid).get();
-                const batch = db.batch();
-                
-                adsSnapshot.forEach((doc) => {
-                    batch.delete(doc.ref);
-                });
-
-                const userRef = db.collection("users").doc(uid);
-                batch.delete(userRef);
-
-                await batch.commit();
-
-                await user.delete();
-
-                showCustomAlert("Success", "Your account and all associated data have been successfully deleted.", "success");
-                window.location.hash = '';
-                window.location.reload();
-
-            } catch (error) {
-                console.error("Error deleting account:", error);
-                if (error.code === 'auth/requires-recent-login') {
-                    showCustomAlert("Security Required", "For security purposes, please re-login and try again (Recent login required).", "error");
-                } else {
-                    showCustomAlert("Error", "Error deleting account: " + error.message, "error");
-                }
-            }
+            );
         }
 
         function getSavedAdsStorageKey() {
