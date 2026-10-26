@@ -1053,8 +1053,8 @@
 
         // ROBUST DUAL STORAGE HELPER (LocalStorage + Firestore)
         function getSavedAdsStorageKey() {
-            const user = firebase.auth().currentUser || window.currentUser;
-            if (!user) return 'oldx_saved_ads_guest';
+            const user = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            if (!user || !user.uid) return 'oldx_saved_ads_guest';
             return 'oldx_saved_ads_' + user.uid;
         }
 
@@ -2231,11 +2231,13 @@
             }
         }
 
-        /* BULLETPROOF SAVED ADS FUNCTIONS (DUAL STORAGE) */
+        /* BULLETPROOF SAVED ADS FUNCTIONS (DUAL STORAGE & CONSISTENT FORMAT) */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
-            if(!window.currentUser) {
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            
+            if(!activeUser || !activeUser.uid) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
                 openAuthModal();
                 return;
@@ -2249,22 +2251,21 @@
             const storageKey = getSavedAdsStorageKey();
             let savedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-            const idx = savedList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
+            const idx = savedList.findIndex(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === docId;
+            });
 
             if(idx > -1) { 
                 savedList.splice(idx, 1); 
                 showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
             } else { 
-                if (productObj) {
-                    savedList.push({
-                        docId: productObj.docId,
-                        title: productObj.title || 'Product',
-                        finalPriceStr: productObj.finalPriceStr || '₹0',
-                        image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
-                    });
-                } else {
-                    savedList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
-                }
+                savedList.push({
+                    docId: docId,
+                    title: productObj ? productObj.title : "Saved Ad",
+                    finalPriceStr: productObj ? productObj.finalPriceStr : "₹0",
+                    image: (productObj && productObj.images && productObj.images.length > 0) ? productObj.images[0] : ""
+                });
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
@@ -2273,10 +2274,11 @@
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
             // Sync with Firestore in background
-            const userRef = db.collection('users').doc(window.currentUser.uid);
-            userRef.set({ savedAds: savedList }, { merge: true }).catch(err => console.log("Firestore sync error:", err));
+            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).catch(err => {
+                console.log("Firestore sync warning:", err);
+            });
             
-            if(window.currentUser) updateProfileDetails(window.currentUser);
+            updateProfileDetails(activeUser);
             renderProducts();
             
             if(currentProduct && currentProduct.docId === docId) {
@@ -2294,11 +2296,13 @@
         }
 
         function openCartModal() {
-            if(!window.currentUser) {
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            if(!activeUser || !activeUser.uid) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
                 openAuthModal();
                 return;
             }
+            
             const container = document.getElementById('cartItemsContainer');
             document.getElementById('cartModal').style.display = 'flex';
             container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">Loading saved items...</p>`;
@@ -2314,22 +2318,12 @@
             container.innerHTML = '';
             
             rawList.forEach(item => {
-                let id = typeof item === 'string' ? item : item.docId;
-                let title = typeof item === 'object' && item.title ? item.title : '';
-                let price = typeof item === 'object' && item.finalPriceStr ? item.finalPriceStr : '';
-                let img = typeof item === 'object' && item.image ? item.image : '';
+                let id = (typeof item === 'string') ? item : item.docId;
+                let foundProduct = products.find(p => p.docId === id);
 
-                if (!title || title === "Saved Ad" || title === "Saved Listing") {
-                    const found = products.find(p => p.docId === id);
-                    if (found) {
-                        title = found.title;
-                        price = found.finalPriceStr;
-                        img = found.images?.[0] || '';
-                    } else {
-                        title = title || "Saved Ad";
-                        price = price || "₹0";
-                    }
-                }
+                let title = foundProduct ? foundProduct.title : (item.title || "Saved Ad");
+                let price = foundProduct ? foundProduct.finalPriceStr : (item.finalPriceStr || "₹0");
+                let img = (foundProduct && foundProduct.images && foundProduct.images.length > 0) ? foundProduct.images[0] : (item.image || '');
 
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
@@ -2345,17 +2339,21 @@
         }
 
         function removeFromCart(id) {
-            if(!window.currentUser) return;
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            if(!activeUser || !activeUser.uid) return;
+            
             const storageKey = getSavedAdsStorageKey();
             let cartList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            cartList = cartList.filter(item => (typeof item === 'string' ? item !== id : item.docId !== id));
+            cartList = cartList.filter(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId !== id;
+            });
             
             localStorage.setItem(storageKey, JSON.stringify(cartList));
             
-            const userRef = db.collection('users').doc(window.currentUser.uid);
-            userRef.set({ savedAds: cartList }, { merge: true }).catch(err => console.log("Firestore remove error:", err));
+            db.collection('users').doc(activeUser.uid).set({ savedAds: cartList }, { merge: true }).catch(err => console.log("Firestore remove error:", err));
 
-            if(window.currentUser) updateProfileDetails(window.currentUser);
+            updateProfileDetails(activeUser);
             renderProducts();
             openCartModal();
         }
@@ -2583,7 +2581,10 @@
             
             const storageKey = getSavedAdsStorageKey();
             const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
+            const isSaved = rawList.some(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === p.docId;
+            });
             
             const detailHeartIcon = document.getElementById('detailCartIcon');
             if (detailHeartIcon) {
@@ -2950,7 +2951,10 @@
         function createProductCard(p, isCarousel = false) {
             const storageKey = getSavedAdsStorageKey();
             const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
+            const isSaved = rawList.some(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === p.docId;
+            });
             
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
