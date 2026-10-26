@@ -1051,7 +1051,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // UNIVERSAL ROBUST STORAGE HELPER
+        // UNIVERSAL ROBUST STORAGE HELPER WITH UID CHECK
         function getSavedAdsKey() {
             return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
         }
@@ -2216,7 +2216,7 @@
             }
         }
 
-        /* ABSOLUTE BULLETPROOF SAVED ADS MANAGER */
+        /* ABSOLUTE FOOLPROOF SAVED ADS FUNCTION WITH DIRECT DATA OBJECT & FALLBACK */
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2226,9 +2226,15 @@
             
             let cartKey = getSavedAdsKey();
             let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
+            
+            // Find if item already exists as string or object
             const idx = cartList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
             
-            const productObj = products.find(p => p.docId === docId);
+            // Look up product from global products array OR currentProduct OR Firestore cache
+            let productObj = products.find(p => p.docId === docId);
+            if (!productObj && currentProduct && currentProduct.docId === docId) {
+                productObj = currentProduct;
+            }
 
             if(idx > -1) { 
                 cartList.splice(idx, 1); 
@@ -2242,7 +2248,23 @@
                         image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
                     });
                 } else {
-                    cartList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
+                    // Fallback fetch from Firestore if not in memory array yet
+                    db.collection('products').doc(docId).get().then(docSnap => {
+                        if (docSnap.exists) {
+                            const d = docSnap.data();
+                            cartList.push({
+                                docId: docId,
+                                title: d.title || 'Product',
+                                finalPriceStr: d.finalPriceStr || '₹0',
+                                image: (d.images && d.images.length > 0) ? d.images[0] : ''
+                            });
+                            localStorage.setItem(cartKey, JSON.stringify(cartList));
+                            if(window.currentUser) updateProfileDetails(window.currentUser);
+                            renderProducts();
+                        }
+                    }).catch(() => {});
+                    
+                    cartList.push({ docId: docId, title: "Saved Listing", finalPriceStr: "₹0", image: "" });
                 }
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
@@ -2252,7 +2274,6 @@
             if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
             
-            // If cart modal is currently open, instantly refresh it
             const modalEl = document.getElementById('cartModal');
             if (modalEl && modalEl.style.display === 'flex') {
                 openCartModal();
@@ -2288,16 +2309,15 @@
                 let price = typeof item === 'object' && item.finalPriceStr ? item.finalPriceStr : '';
                 let img = typeof item === 'object' && item.image ? item.image : '';
 
-                // Fallback lookup from global products array if cache is missing details
-                if (!title || !price) {
+                if (!title || title === "Saved Ad" || title === "Saved Listing") {
                     const found = products.find(p => p.docId === id);
                     if (found) {
                         title = found.title;
                         price = found.finalPriceStr;
                         img = found.images?.[0] || '';
                     } else {
-                        title = "Saved Listing";
-                        price = "₹0";
+                        title = title || "Saved Ad";
+                        price = price || "₹0";
                     }
                 }
 
