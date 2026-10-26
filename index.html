@@ -62,7 +62,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-20">
 
-    <!-- Header / Navbar -->
+    <!-- Header / Navbar (Account section removed from top as requested) -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-2">
             <!-- Brand Logo -->
@@ -80,7 +80,7 @@
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
 
-                <!-- Dynamic Profile / Auth Container -->
+                <!-- Dynamic Auth Container (Only Login / Logout button, profile section is in bottom navbar) -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -309,7 +309,7 @@
             <span class="text-[10px] font-bold mt-0.5">Home</span>
         </button>
 
-        <!-- Chats -->
+        <!-- Chats with Real-time Unread Badge -->
         <button onclick="openInboxModal()" class="relative flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-regular fa-comment text-lg"></i>
             <span class="text-[10px] font-bold mt-0.5">Chats</span>
@@ -1291,19 +1291,18 @@
                     }, { merge: true });
                 });
 
-                const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+                // Top header account section removed as requested. Showing simple Logout/Account control in bottom nav or auth container.
                 container.innerHTML = `
-                    <div class="flex items-center gap-2 cursor-pointer bg-teal-50 dark:bg-gray-700/80 p-1 pr-3 rounded-full border border-teal-200/80 shadow-sm" onclick="openProfilePage()">
-                        <img src="${photo}" class="w-7 h-7 rounded-full border border-teal-500 object-cover">
-                        <span class="text-xs font-bold text-teal-800 dark:text-teal-200 max-w-[80px] truncate">${user.displayName || 'User'}</span>
-                    </div>
+                    <button onclick="handleLogout()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs shadow transition cursor-pointer flex items-center gap-1">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </button>
                 `;
-                updateProfileDetails(user);
                 checkUserPinStatus(user);
                 requestPushNotificationPermission();
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
+                updateInboxBadge(0);
 
                 container.innerHTML = `
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
@@ -1313,42 +1312,76 @@
             }
         });
 
+        // FIXED REQUIREMENT 3: Real-time unread digit on the chats symbol
         function startInboxUnreadListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
             inboxListenerUnsubscribe = db.collection('chats')
                 .where('participants', 'array-contains', userId)
                 .onSnapshot(snapshot => {
-                    let totalUnread = 0;
                     if (snapshot.empty) {
                         updateInboxBadge(0);
                         return;
                     }
 
-                    let pendingChecks = snapshot.docs.length;
+                    let chatIds = [];
                     snapshot.forEach(docSnap => {
-                        db.collection('chats').doc(docSnap.id).collection('messages')
+                        chatIds.push(docSnap.id);
+                    });
+
+                    // Listen across all chat rooms for incoming unread messages in real time
+                    let unreadCount = 0;
+                    let checkedCount = 0;
+
+                    if (chatIds.length === 0) {
+                        updateInboxBadge(0);
+                        return;
+                    }
+
+                    chatIds.forEach(chatRoomId => {
+                        db.collection('chats').doc(chatRoomId).collection('messages')
                             .where('senderUid', '!=', userId)
                             .where('status', '==', 'sent')
-                            .get().then(msgSnap => {
-                                if (!msgSnap.empty) {
-                                    totalUnread += msgSnap.size;
-                                    triggerPushNotification("New Message on OldX", "You have unread messages in your inbox!");
-                                }
-                                pendingChecks--;
-                                if (pendingChecks === 0) {
-                                    updateInboxBadge(totalUnread);
-                                }
-                            }).catch(() => {
-                                pendingChecks--;
-                                if (pendingChecks === 0) {
-                                    updateInboxBadge(totalUnread);
-                                }
+                            .onSnapshot(msgSnap => {
+                                // Recalculate total unread across all chats dynamically
+                                let currentChatUnread = msgSnap.size;
+                                // To avoid duplicate counting when multiple snapshots fire, let's query all chats once or sum up
+                                checkAllUnreadCounts(userId, chatIds);
+                            }, () => {
+                                checkedCount++;
                             });
                     });
                 }, error => {
-                    console.log("Inbox listener error:", error);
+                    console.log("Inbox unread listener error:", error);
                 });
+        }
+
+        function checkAllUnreadCounts(userId, chatIds) {
+            let totalUnread = 0;
+            let pending = chatIds.length;
+
+            chatIds.forEach(chatRoomId => {
+                db.collection('chats').doc(chatRoomId).collection('messages')
+                    .where('senderUid', '!=', userId)
+                    .where('status', '==', 'sent')
+                    .get().then(msgSnap => {
+                        if (!msgSnap.empty) {
+                            totalUnread += msgSnap.size;
+                        }
+                        pending--;
+                        if (pending === 0) {
+                            updateInboxBadge(totalUnread);
+                            if (totalUnread > 0) {
+                                triggerPushNotification("New Messages on OldX", `You have ${totalUnread} unread message(s)!`);
+                            }
+                        }
+                    }).catch(() => {
+                        pending--;
+                        if (pending === 0) {
+                            updateInboxBadge(totalUnread);
+                        }
+                    });
+            });
         }
 
         function updateInboxBadge(count) {
@@ -1562,7 +1595,7 @@
             });
         }
 
-        // FIXED REQUIREMENT 1: Two-way typing status watcher (Both Buyer & Seller typing... visible)
+        // Two-way typing status watcher (Both Buyer & Seller typing...)
         function watchTypingStatus(chatRoomId, otherUserId) {
             if(!chatRoomId || !otherUserId) return;
 
@@ -2203,7 +2236,7 @@
             }
         }
 
-        // FIXED & ROBUST: Toggle Cart Product with immediate UI Sync
+        // Toggle Cart Product with immediate UI Sync
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2230,7 +2263,7 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        // FIXED REQUIREMENT 2: Saved items rendering properly in Saved Ads Modal
+        // FIXED REQUIREMENT 1: Saved items modal rendering properly with robust fallback fetch
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
@@ -2238,47 +2271,48 @@
                 return;
             }
             const container = document.getElementById('cartItemsContainer');
-            container.innerHTML = '';
+            container.innerHTML = `
+                <div class="text-center py-6">
+                    <i class="fa-solid fa-spinner fa-spin text-xl text-teal-600 mb-1"></i>
+                    <p class="text-xs text-gray-400">Loading saved items...</p>
+                </div>
+            `;
+            document.getElementById('cartModal').style.display = 'flex';
             
             cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
             
             if(cartList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
-            } else {
-                cartList.forEach(id => {
-                    const p = products.find(item => item.docId === id);
-                    if(p) {
-                        const div = document.createElement('div');
-                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
-                        div.innerHTML = `
-                            <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${p.docId}')">
-                                <img src="${p.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                                <div><h4 class="font-bold text-xs truncate max-w-[180px]">${p.title}</h4><p class="text-teal-600 font-extrabold text-xs">${p.finalPriceStr}</p></div>
-                            </div>
-                            <button onclick="removeFromCart('${p.docId}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
-                        `;
-                        container.appendChild(div);
-                    } else {
-                        // Fallback fetch from Firestore if local products array hasn't loaded it yet
-                        db.collection('products').doc(id).get().then(docSnap => {
-                            if (docSnap.exists) {
-                                const pData = docSnap.data();
-                                const div = document.createElement('div');
-                                div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
-                                div.innerHTML = `
-                                    <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
-                                        <img src="${pData.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                                        <div><h4 class="font-bold text-xs truncate max-w-[180px]">${pData.title}</h4><p class="text-teal-600 font-extrabold text-xs">${pData.finalPriceStr}</p></div>
-                                    </div>
-                                    <button onclick="removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
-                                `;
-                                container.appendChild(div);
-                            }
-                        }).catch(() => {});
-                    }
-                });
+                return;
             }
-            document.getElementById('cartModal').style.display = 'flex';
+
+            container.innerHTML = '';
+            cartList.forEach(id => {
+                const p = products.find(item => item.docId === id);
+                if(p) {
+                    appendCartItemElement(container, p.docId, p.title, p.finalPriceStr, p.images?.[0] || '');
+                } else {
+                    db.collection('products').doc(id).get().then(docSnap => {
+                        if (docSnap.exists) {
+                            const pData = docSnap.data();
+                            appendCartItemElement(container, id, pData.title, pData.finalPriceStr, pData.images?.[0] || '');
+                        }
+                    }).catch(() => {});
+                }
+            });
+        }
+
+        function appendCartItemElement(container, id, title, priceStr, imgUrl) {
+            const div = document.createElement('div');
+            div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+            div.innerHTML = `
+                <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
+                    <img src="${imgUrl}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                    <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${priceStr}</p></div>
+                </div>
+                <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+            `;
+            container.appendChild(div);
         }
 
         function removeFromCart(id) {
