@@ -1863,7 +1863,6 @@
             L.marker([p.coords?.lat || 22.3, p.coords?.lng || 70.8]).addTo(miniMap);
         }
 
-        // Render Product Detail Screen matching user request (Product Information, Gallery, Location, Edit/Remove Buttons)
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
@@ -1876,7 +1875,6 @@
                 p.images.forEach(img => slider.innerHTML += `<div class="shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full object-contain"></div>`);
             }
 
-            // Product Information Section formatting as requested
             const grid = document.getElementById('detailHighlightsGrid');
             grid.innerHTML = '';
             if(p.extraDetails) {
@@ -1887,7 +1885,6 @@
                 }
             }
 
-            // Dynamic Owner Buttons: Edit / Remove OR Chat / WhatsApp
             const actionContainer = document.getElementById('detailBottomActionContainer');
             const isOwner = window.currentUser && window.currentUser.uid === p.sellerUid;
 
@@ -1936,7 +1933,6 @@
             document.getElementById('wizardStage2').style.display = 'block';
         }
 
-        // Car Sell Section custom form fields as requested in images
         function selectWizardSub(sub) {
             selectedSubCat = sub;
             document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
