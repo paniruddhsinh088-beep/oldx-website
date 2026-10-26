@@ -1032,7 +1032,6 @@
         trackVisitorTraffic();
 
         window.currentUser = null;
-        window.userSavedAdsCache = [];
         let products = [];
         let currentProduct = null;
         let selectedMainCat = null;
@@ -1052,8 +1051,17 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
+        // ROBUST DUAL STORAGE HELPER (LocalStorage + Firestore)
+        function getSavedAdsStorageKey() {
+            const user = firebase.auth().currentUser || window.currentUser;
+            if (!user) return 'oldx_saved_ads_guest';
+            return 'oldx_saved_ads_' + user.uid;
+        }
+
         function getValidSavedCount() {
-            return window.userSavedAdsCache ? window.userSavedAdsCache.length : 0;
+            const key = getSavedAdsStorageKey();
+            const list = JSON.parse(localStorage.getItem(key) || '[]');
+            return list.length;
         }
 
         function requestPushNotificationPermission() {
@@ -1250,16 +1258,14 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
+                // Sync saved ads from Firestore to LocalStorage cache on login
                 db.collection('users').doc(user.uid).get().then(docSnap => {
+                    const userKey = 'oldx_saved_ads_' + user.uid;
                     if (docSnap.exists && docSnap.data().savedAds) {
-                        window.userSavedAdsCache = docSnap.data().savedAds.map(item => typeof item === 'string' ? item : item.docId);
-                    } else {
-                        db.collection('users').doc(user.uid).set({ savedAds: [] }, { merge: true });
-                        window.userSavedAdsCache = [];
+                        localStorage.setItem(userKey, JSON.stringify(docSnap.data().savedAds));
                     }
                     renderProducts();
                 }).catch(() => {
-                    window.userSavedAdsCache = [];
                     renderProducts();
                 });
 
@@ -1299,7 +1305,6 @@
                 checkUserPinStatus(user);
                 requestPushNotificationPermission();
             } else {
-                window.userSavedAdsCache = [];
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
                 updateInboxBadge(0);
@@ -2226,8 +2231,8 @@
             }
         }
 
-        /* SAVED ADS FUNCTIONS (FIRESTORE SYNCED) */
-        async function toggleCartProduct(docId, event) {
+        /* BULLETPROOF SAVED ADS FUNCTIONS (DUAL STORAGE) */
+        function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
             if(!window.currentUser) {
@@ -2241,51 +2246,46 @@
                 productObj = currentProduct;
             }
 
-            const userRef = db.collection('users').doc(window.currentUser.uid);
+            const storageKey = getSavedAdsStorageKey();
+            let savedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+            const idx = savedList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
+
+            if(idx > -1) { 
+                savedList.splice(idx, 1); 
+                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
+            } else { 
+                if (productObj) {
+                    savedList.push({
+                        docId: productObj.docId,
+                        title: productObj.title || 'Product',
+                        finalPriceStr: productObj.finalPriceStr || '₹0',
+                        image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
+                    });
+                } else {
+                    savedList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
+                }
+                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
+                triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
+            }
             
-            try {
-                const docSnap = await userRef.get();
-                let savedList = [];
-                if (docSnap.exists && docSnap.data().savedAds) {
-                    savedList = docSnap.data().savedAds;
-                }
+            // Save to LocalStorage immediately
+            localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-                const idx = savedList.findIndex(item => (typeof item === 'string' ? item === docId : item.docId === docId));
-
-                if(idx > -1) { 
-                    savedList.splice(idx, 1); 
-                    showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
-                } else { 
-                    if (productObj) {
-                        savedList.push({
-                            docId: productObj.docId,
-                            title: productObj.title || 'Product',
-                            finalPriceStr: productObj.finalPriceStr || '₹0',
-                            image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
-                        });
-                    } else {
-                        savedList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
-                    }
-                    showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
-                    triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
-                }
-                
-                await userRef.set({ savedAds: savedList }, { merge: true });
-                window.userSavedAdsCache = savedList.map(item => typeof item === 'string' ? item : item.docId);
-                
-                if(window.currentUser) updateProfileDetails(window.currentUser);
-                renderProducts();
-                
-                if(currentProduct && currentProduct.docId === docId) {
-                    renderProductDetailView(currentProduct);
-                }
-                
-                const modalEl = document.getElementById('cartModal');
-                if (modalEl && modalEl.style.display === 'flex') {
-                    openCartModal();
-                }
-            } catch (err) {
-                console.error("Error saving ad:", err);
+            // Sync with Firestore in background
+            const userRef = db.collection('users').doc(window.currentUser.uid);
+            userRef.set({ savedAds: savedList }, { merge: true }).catch(err => console.log("Firestore sync error:", err));
+            
+            if(window.currentUser) updateProfileDetails(window.currentUser);
+            renderProducts();
+            
+            if(currentProduct && currentProduct.docId === docId) {
+                renderProductDetailView(currentProduct);
+            }
+            
+            const modalEl = document.getElementById('cartModal');
+            if (modalEl && modalEl.style.display === 'flex') {
+                openCartModal();
             }
         }
 
@@ -2293,7 +2293,7 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        async function openCartModal() {
+        function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
                 openAuthModal();
@@ -2303,71 +2303,61 @@
             document.getElementById('cartModal').style.display = 'flex';
             container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">Loading saved items...</p>`;
             
-            try {
-                const userDoc = await db.collection('users').doc(window.currentUser.uid).get();
-                let rawList = [];
-                if (userDoc.exists && userDoc.data().savedAds) {
-                    rawList = userDoc.data().savedAds;
-                }
-                
-                if(rawList.length === 0) { 
-                    container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
-                    return;
-                }
-
-                container.innerHTML = '';
-                
-                rawList.forEach(item => {
-                    let id = typeof item === 'string' ? item : item.docId;
-                    let title = typeof item === 'object' && item.title ? item.title : '';
-                    let price = typeof item === 'object' && item.finalPriceStr ? item.finalPriceStr : '';
-                    let img = typeof item === 'object' && item.image ? item.image : '';
-
-                    if (!title || title === "Saved Ad" || title === "Saved Listing") {
-                        const found = products.find(p => p.docId === id);
-                        if (found) {
-                            title = found.title;
-                            price = found.finalPriceStr;
-                            img = found.images?.[0] || '';
-                        } else {
-                            title = title || "Saved Ad";
-                            price = price || "₹0";
-                        }
-                    }
-
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
-                    div.innerHTML = `
-                        <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
-                            <img src="${img || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                            <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${price}</p></div>
-                        </div>
-                        <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
-                    `;
-                    container.appendChild(div);
-                });
-            } catch (err) {
-                container.innerHTML = `<p class="text-center text-xs text-red-400 py-8">Error loading saved items.</p>`;
+            const storageKey = getSavedAdsStorageKey();
+            let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            if(rawList.length === 0) { 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
+                return;
             }
+
+            container.innerHTML = '';
+            
+            rawList.forEach(item => {
+                let id = typeof item === 'string' ? item : item.docId;
+                let title = typeof item === 'object' && item.title ? item.title : '';
+                let price = typeof item === 'object' && item.finalPriceStr ? item.finalPriceStr : '';
+                let img = typeof item === 'object' && item.image ? item.image : '';
+
+                if (!title || title === "Saved Ad" || title === "Saved Listing") {
+                    const found = products.find(p => p.docId === id);
+                    if (found) {
+                        title = found.title;
+                        price = found.finalPriceStr;
+                        img = found.images?.[0] || '';
+                    } else {
+                        title = title || "Saved Ad";
+                        price = price || "₹0";
+                    }
+                }
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
+                        <img src="${img || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                        <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${price}</p></div>
+                    </div>
+                    <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(div);
+            });
         }
 
-        async function removeFromCart(id) {
+        function removeFromCart(id) {
             if(!window.currentUser) return;
+            const storageKey = getSavedAdsStorageKey();
+            let cartList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            cartList = cartList.filter(item => (typeof item === 'string' ? item !== id : item.docId !== id));
+            
+            localStorage.setItem(storageKey, JSON.stringify(cartList));
+            
             const userRef = db.collection('users').doc(window.currentUser.uid);
-            try {
-                const docSnap = await userRef.get();
-                if (docSnap.exists && docSnap.data().savedAds) {
-                    let cartList = docSnap.data().savedAds;
-                    cartList = cartList.filter(item => (typeof item === 'string' ? item !== id : item.docId !== id));
-                    await userRef.set({ savedAds: cartList }, { merge: true });
-                    window.userSavedAdsCache = cartList.map(item => typeof item === 'string' ? item : item.docId);
-                    if(window.currentUser) updateProfileDetails(window.currentUser);
-                    renderProducts();
-                    openCartModal();
-                }
-            } catch (err) {
-                console.error("Error removing item:", err);
-            }
+            userRef.set({ savedAds: cartList }, { merge: true }).catch(err => console.log("Firestore remove error:", err));
+
+            if(window.currentUser) updateProfileDetails(window.currentUser);
+            renderProducts();
+            openCartModal();
         }
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
@@ -2591,7 +2581,10 @@
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
             
-            const isSaved = window.userSavedAdsCache && window.userSavedAdsCache.includes(p.docId);
+            const storageKey = getSavedAdsStorageKey();
+            const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
+            
             const detailHeartIcon = document.getElementById('detailCartIcon');
             if (detailHeartIcon) {
                 detailHeartIcon.className = `fa-solid fa-heart text-lg ${isSaved ? 'text-red-500' : 'text-gray-400'}`;
@@ -2955,7 +2948,10 @@
         }
 
         function createProductCard(p, isCarousel = false) {
-            const isSaved = window.userSavedAdsCache && window.userSavedAdsCache.includes(p.docId);
+            const storageKey = getSavedAdsStorageKey();
+            const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
+            
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
             
