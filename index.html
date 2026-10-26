@@ -1051,9 +1051,10 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // UNIVERSAL ROBUST STORAGE HELPER WITH UID CHECK
+        // UNIVERSAL ROBUST STORAGE HELPER WITH USER-SAFE EMAIL/UID FALLBACK
         function getSavedAdsKey() {
-            return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
+            if (!window.currentUser) return 'oldx_saved_ads_guest';
+            return 'oldx_saved_ads_' + (window.currentUser.email || window.currentUser.uid);
         }
 
         function getValidSavedCount() {
@@ -1290,6 +1291,7 @@
                 `;
                 checkUserPinStatus(user);
                 requestPushNotificationPermission();
+                renderProducts(); // Refresh products to show active saved hearts
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
@@ -1300,6 +1302,7 @@
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 `;
+                renderProducts();
             }
         });
 
@@ -2216,11 +2219,7 @@
             }
         }
 
-        /* FULLY FIXED SAVED ADS FUNCTIONS (WITH OBJECT STORAGE & FALLBACK) */
-        function getSavedAdsKey() {
-            return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
-        }
-
+        /* FULLY FIXED SAVED ADS FUNCTIONS (WITH ROBUST OBJECT STORAGE & MATCHING) */
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2259,6 +2258,10 @@
             localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
+            
+            if(currentProduct && currentProduct.docId === docId) {
+                renderProductDetailView(currentProduct);
+            }
             
             const modalEl = document.getElementById('cartModal');
             if (modalEl && modalEl.style.display === 'flex') {
@@ -2551,6 +2554,14 @@
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
             
+            let cartKey = getSavedAdsKey();
+            let rawList = JSON.parse(localStorage.getItem(cartKey) || '[]');
+            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
+            const detailHeartIcon = document.getElementById('detailCartIcon');
+            if (detailHeartIcon) {
+                detailHeartIcon.className = `fa-solid fa-heart text-lg ${isSaved ? 'text-red-500' : 'text-gray-400'}`;
+            }
+
             const mrpElem = document.getElementById('detailMrpPrice');
             const discElem = document.getElementById('detailDiscountBadge');
             
@@ -2945,8 +2956,8 @@
                             ${discBadge}
                         </div>
 
-                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10 cursor-pointer">
-                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500 font-black text-base' : 'text-gray-400 text-sm'}"></i>
                         </button>
                     </div>
 
