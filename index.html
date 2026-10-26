@@ -60,7 +60,7 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen">
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-20">
 
     <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
@@ -73,24 +73,8 @@
                 <h1 class="text-2xl font-black text-primary dark:text-teal-400 tracking-tight">OldX</h1>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex items-center space-x-2 md:space-x-3">
-                <button id="headerSavedBtn" style="display: none;" onclick="openCartModal()" class="relative bg-teal-50/80 hover:bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-300 px-3 py-2 rounded-xl font-bold text-xs md:text-sm border border-teal-200/60 dark:border-gray-600 shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-heart text-red-500 text-sm"></i>
-                    <span class="hidden md:inline">Saved</span>
-                    <span id="cartBadgeCount" class="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full">0</span>
-                </button>
-
-                <button id="headerMyAdsBtn" style="display: none;" onclick="openMyAdsModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center cursor-pointer">
-                    <i class="fa-solid fa-boxes-packing mr-1 text-teal-600"></i> My Ads
-                </button>
-
-                <!-- Professional Inbox Button with Unread Badge -->
-                <button id="headerMessagesBtn" style="display: none;" onclick="openInboxModal()" class="relative bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-comments text-teal-600"></i> Inbox
-                    <span id="inboxBadgeCount" style="display: none;" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow">0</span>
-                </button>
-
+            <!-- Action Buttons in Header (Only Admin & Auth if needed, or clean minimalist) -->
+            <div class="flex items-center space-x-2">
                 <!-- Admin Button Link (Hidden by default, shown only for Admin) -->
                 <a id="headerAdminBtn" href="admin.html" style="display: none;" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
@@ -102,10 +86,6 @@
                         <i class="fa-solid fa-user-check mr-1"></i> Login
                     </button>
                 </div>
-
-                <button onclick="startSellWizard()" class="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-primary font-black px-4 py-2 rounded-xl text-xs md:text-sm shadow-md transition transform active:scale-95 flex items-center gap-1.5 border border-amber-300 cursor-pointer">
-                    <i class="fa-solid fa-plus text-sm"></i> SELL
-                </button>
             </div>
         </div>
     </header>
@@ -320,6 +300,42 @@
             </div>
         </div>
     </div>
+
+    <!-- BOTTOM NAVIGATION BAR (Home, Chats, Sell, My Ads, Account) -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1.5 shadow-lg flex justify-around items-center">
+        <!-- Home -->
+        <button onclick="window.location.hash=''" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px] font-bold mt-0.5">Home</span>
+        </button>
+
+        <!-- Chats -->
+        <button onclick="openInboxModal()" class="relative flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
+            <i class="fa-regular fa-comment text-lg"></i>
+            <span class="text-[10px] font-bold mt-0.5">Chats</span>
+            <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow">0</span>
+        </button>
+
+        <!-- Sell Button (Central Glowing Circular Button) -->
+        <div class="relative -top-3">
+            <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-lg flex flex-col items-center justify-center border-4 border-white dark:border-gray-800 transform active:scale-95 transition cursor-pointer">
+                <i class="fa-solid fa-plus text-xl font-black"></i>
+            </button>
+            <span class="block text-center text-[10px] font-black text-gray-700 dark:text-gray-200 mt-0.5">Sell</span>
+        </div>
+
+        <!-- My Ads -->
+        <button onclick="openMyAdsModal()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
+            <i class="fa-solid fa-rectangle-list text-lg"></i>
+            <span class="text-[10px] font-bold mt-0.5">My Ads</span>
+        </button>
+
+        <!-- Account -->
+        <button onclick="openProfilePage()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="text-[10px] font-bold mt-0.5">Account</span>
+        </button>
+    </nav>
 
     <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
     <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
@@ -950,8 +966,8 @@
     </div>
 
     <!-- AI Smart Chatbot Widget -->
-    <div id="aiChatbotContainer" class="fixed bottom-4 left-4 z-30">
-        <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-xl transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
+    <div id="aiChatbotContainer" class="fixed bottom-20 left-4 z-30">
+        <button onclick="toggleAiChatbot()" class="bg-primary hover:bg-teal-900 text-amber-400 w-12 h-12 rounded-full shadow-2xl flex items-center justify-center text-lg transition transform hover:scale-105 border-2 border-amber-400 cursor-pointer">
             <i class="fa-solid fa-robot"></i>
         </button>
 
@@ -1135,7 +1151,7 @@
                 let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
 
                 if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
-                    aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
+                    aiReply = "To post a new ad, click on the center **'SELL'** button at the bottom of the page!";
                 } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
                     aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
                 } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
@@ -1244,34 +1260,13 @@
             return saved.length;
         }
 
-        function updateCartBadge() { 
-            const badge = document.getElementById('cartBadgeCount');
-            if(badge) {
-                const count = getValidSavedCount();
-                if (count > 0) {
-                    badge.innerText = count;
-                    badge.style.display = 'inline-block';
-                } else {
-                    badge.style.display = 'none';
-                }
-            }
-        }
-
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
-            const savedBtn = document.getElementById('headerSavedBtn');
-            const myAdsBtn = document.getElementById('headerMyAdsBtn');
-            const inboxBtn = document.getElementById('headerMessagesBtn');
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                if(savedBtn) savedBtn.style.display = 'flex';
-                if(myAdsBtn) myAdsBtn.style.display = 'flex';
-                if(inboxBtn) {
-                    inboxBtn.style.display = 'flex';
-                    startInboxUnreadListener(user.uid);
-                }
+                startInboxUnreadListener(user.uid);
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
                     if(adminBtn) adminBtn.style.display = 'flex';
@@ -1310,9 +1305,6 @@
                 checkUserPinStatus(user);
                 requestPushNotificationPermission();
             } else {
-                if(savedBtn) savedBtn.style.display = 'none';
-                if(myAdsBtn) myAdsBtn.style.display = 'none';
-                if(inboxBtn) inboxBtn.style.display = 'none';
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1322,7 +1314,6 @@
                     </button>
                 `;
             }
-            updateCartBadge();
         });
 
         // FIXED & ROBUST: Inbox unread messages listener with accurate count
@@ -2134,7 +2125,14 @@
             });
         }
 
-        function openProfilePage() { window.location.hash = 'profile'; }
+        function openProfilePage() { 
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to view your account profile!", "error");
+                openAuthModal();
+                return;
+            }
+            window.location.hash = 'profile'; 
+        }
 
         function updateProfileDetails(user) {
             if(!user) return;
@@ -2228,7 +2226,6 @@
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
-            updateCartBadge();
             if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
         }
@@ -2284,7 +2281,6 @@
         function removeFromCart(id) {
             cartList = cartList.filter(item => item !== id);
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
-            updateCartBadge();
             if(window.currentUser) updateProfileDetails(window.currentUser);
             openCartModal();
         }
@@ -2330,7 +2326,6 @@
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
-            updateCartBadge();
             if(window.currentUser) updateProfileDetails(window.currentUser);
             handleHashChange();
         });
@@ -2910,7 +2905,7 @@
                     </div>
 
                     <div class="p-4 space-y-2">
-                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400.">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
                             <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
                             <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
                         </div>
@@ -2936,7 +2931,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderHomeCategories();
             handleHashChange();
-            updateCartBadge();
         });
     </script>
 </body>
