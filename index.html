@@ -1051,6 +1051,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
+        // UNIVERSAL ROBUST STORAGE HELPER
         function getSavedAdsKey() {
             return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
         }
@@ -2215,7 +2216,7 @@
             }
         }
 
-        /* DIRECT OBJECT CACHING FOR SAVED ADS */
+        /* ABSOLUTE BULLETPROOF SAVED ADS MANAGER */
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2236,9 +2237,9 @@
                 if (productObj) {
                     cartList.push({
                         docId: productObj.docId,
-                        title: productObj.title,
-                        finalPriceStr: productObj.finalPriceStr,
-                        image: productObj.images?.[0] || ''
+                        title: productObj.title || 'Product',
+                        finalPriceStr: productObj.finalPriceStr || '₹0',
+                        image: (productObj.images && productObj.images.length > 0) ? productObj.images[0] : ''
                     });
                 } else {
                     cartList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
@@ -2250,13 +2251,18 @@
             localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
+            
+            // If cart modal is currently open, instantly refresh it
+            const modalEl = document.getElementById('cartModal');
+            if (modalEl && modalEl.style.display === 'flex') {
+                openCartModal();
+            }
         }
 
         function toggleCartCurrentProduct() {
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        /* BULLETPROOF SAVED ADS MODAL RENDERER */
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
@@ -2264,64 +2270,48 @@
                 return;
             }
             const container = document.getElementById('cartItemsContainer');
-            container.innerHTML = `
-                <div class="text-center py-6">
-                    <i class="fa-solid fa-spinner fa-spin text-xl text-teal-600 mb-1"></i>
-                    <p class="text-xs text-gray-400">Loading saved items...</p>
-                </div>
-            `;
             document.getElementById('cartModal').style.display = 'flex';
             
             let cartKey = getSavedAdsKey();
             let rawList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             
             if(rawList.length === 0) { 
-                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
                 return;
             }
 
             container.innerHTML = '';
             
             rawList.forEach(item => {
-                if (typeof item === 'string') {
-                    // Legacy string ID support fallback
-                    const p = products.find(p => p.docId === item);
-                    if (p) {
-                        appendCartItemElement(container, p.docId, p.title, p.finalPriceStr, p.images?.[0] || '');
+                let id = typeof item === 'string' ? item : item.docId;
+                let title = typeof item === 'object' && item.title ? item.title : '';
+                let price = typeof item === 'object' && item.finalPriceStr ? item.finalPriceStr : '';
+                let img = typeof item === 'object' && item.image ? item.image : '';
+
+                // Fallback lookup from global products array if cache is missing details
+                if (!title || !price) {
+                    const found = products.find(p => p.docId === id);
+                    if (found) {
+                        title = found.title;
+                        price = found.finalPriceStr;
+                        img = found.images?.[0] || '';
                     } else {
-                        db.collection('products').doc(item).get().then(docSnap => {
-                            if (docSnap.exists) {
-                                const d = docSnap.data();
-                                appendCartItemElement(container, item, d.title, d.finalPriceStr, d.images?.[0] || '');
-                            }
-                        }).catch(() => {});
+                        title = "Saved Listing";
+                        price = "₹0";
                     }
-                } else if (item && item.docId) {
-                    // Direct cached object render
-                    appendCartItemElement(container, item.docId, item.title, item.finalPriceStr, item.image);
                 }
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
+                        <img src="${img || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                        <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${price}</p></div>
+                    </div>
+                    <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(div);
             });
-
-            setTimeout(() => {
-                if (container.children.length === 0) {
-                    container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`;
-                }
-            }, 500);
-        }
-
-        function appendCartItemElement(container, id, title, priceStr, imgUrl) {
-            if (container.querySelector(`[data-saved-id="${id}"]`)) return;
-            const div = document.createElement('div');
-            div.setAttribute('data-saved-id', id);
-            div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
-            div.innerHTML = `
-                <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
-                    <img src="${imgUrl || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                    <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title || 'Ad'}</h4><p class="text-teal-600 font-extrabold text-xs">${priceStr || '₹0'}</p></div>
-                </div>
-                <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
-            `;
-            container.appendChild(div);
         }
 
         function removeFromCart(id) {
@@ -2330,6 +2320,7 @@
             cartList = cartList.filter(item => (typeof item === 'string' ? item !== id : item.docId !== id));
             localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
+            renderProducts();
             openCartModal();
         }
 
