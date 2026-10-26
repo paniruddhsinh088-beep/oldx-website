@@ -62,7 +62,7 @@
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-20">
 
-    <!-- Header / Navbar (Account section removed from top as requested) -->
+    <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
         <div class="max-w-7xl mx-auto px-4 py-2.5 flex justify-between items-center gap-2">
             <!-- Brand Logo -->
@@ -80,7 +80,7 @@
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
 
-                <!-- Dynamic Auth Container (Only Login / Logout button) -->
+                <!-- Dynamic Auth Container -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -185,7 +185,7 @@
         </main>
     </div>
 
-    <!-- PROFESSIONAL INBOX MODAL -->
+    <!-- PROFESSIONAL INBOX MODAL WITH ROOM UNREAD BADGE -->
     <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
             <button onclick="closeInboxModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
@@ -311,7 +311,7 @@
             <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow">0</span>
         </button>
 
-        <!-- Sell Button (Central Glowing Circular Button) -->
+        <!-- Sell Button -->
         <div class="relative -top-3">
             <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-lg flex flex-col items-center justify-center border-4 border-white dark:border-gray-800 transform active:scale-95 transition cursor-pointer">
                 <i class="fa-solid fa-plus text-xl font-black"></i>
@@ -332,7 +332,7 @@
         </button>
     </nav>
 
-    <!-- EDIT PROFILE MODAL WITH GALLERY UPLOAD -->
+    <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <button onclick="closeEditProfileModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black cursor-pointer"><i class="fa-solid fa-xmark text-lg"></i></button>
@@ -1302,7 +1302,6 @@
             }
         });
 
-        // ROBUST REAL-TIME UNREAD MESSAGES LISTENER FOR CHATS ICON
         function startGlobalUnreadMessagesListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1381,6 +1380,7 @@
             }
         }
 
+        /* INBOX MODAL WITH ROOM UNREAD BADGE */
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -1422,16 +1422,28 @@
 
                   myChats.forEach(chat => {
                       db.collection('chats').doc(chat.chatRoomId).collection('messages')
-                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
+                        .orderBy('createdAt', 'desc').get().then(msgSnapshot => {
                             let lastMsgText = "Tap to view conversation";
                             let lastTime = "";
+                            let unreadRoomCount = 0;
                             
                             if (!msgSnapshot.empty) {
                                 const lastMsgData = msgSnapshot.docs[0].data();
                                 const isMe = lastMsgData.senderUid === window.currentUser.uid;
                                 lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
                                 lastTime = lastMsgData.time || "";
+
+                                msgSnapshot.forEach(mDoc => {
+                                    const mData = mDoc.data();
+                                    if (mData.senderUid !== window.currentUser.uid && mData.status !== 'read') {
+                                        unreadRoomCount++;
+                                    }
+                                });
                             }
+
+                            const unreadBadgeHTML = unreadRoomCount > 0 
+                                ? `<span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow shrink-0">${unreadRoomCount}</span>` 
+                                : '';
 
                             const div = document.createElement('div');
                             div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
@@ -1462,8 +1474,11 @@
                                         <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
                                     </div>
                                 </div>
-                                <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
-                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                <div class="flex items-center gap-2 shrink-0">
+                                    ${unreadBadgeHTML}
+                                    <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
+                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                    </div>
                                 </div>
                             `;
                             container.appendChild(div);
@@ -2230,7 +2245,7 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        // ROBUST SAVED ADS MODAL RENDERER
+        /* FULLY FIXED SAVED ADS MODAL RENDERER */
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
@@ -2255,6 +2270,7 @@
             }
 
             container.innerHTML = '';
+            
             cartList.forEach(id => {
                 const p = products.find(item => item.docId === id);
                 if(p) {
@@ -2268,10 +2284,18 @@
                     }).catch(() => {});
                 }
             });
+
+            setTimeout(() => {
+                if (container.children.length === 0) {
+                    container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`;
+                }
+            }, 800);
         }
 
         function appendCartItemElement(container, id, title, priceStr, imgUrl) {
+            if (container.querySelector(`[data-saved-id="${id}"]`)) return;
             const div = document.createElement('div');
+            div.setAttribute('data-saved-id', id);
             div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
             div.innerHTML = `
                 <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
