@@ -2217,6 +2217,10 @@
         }
 
         /* FULLY FIXED SAVED ADS FUNCTIONS (WITH OBJECT STORAGE & FALLBACK) */
+        function getSavedAdsKey() {
+            return window.currentUser ? `oldx_saved_ads_${window.currentUser.uid}` : 'oldx_saved_ads_guest';
+        }
+
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
