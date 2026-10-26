@@ -1043,6 +1043,7 @@
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
         let inboxListenerUnsubscribe = null;
+        let userSavedAdsUnsubscribe = null; // Realtime Firestore listener for saved ads
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
@@ -1062,6 +1063,30 @@
             const key = getSavedAdsStorageKey();
             const list = JSON.parse(localStorage.getItem(key) || '[]');
             return list.length;
+        }
+
+        // Realtime listener to sync saved ads across mobile & laptop instantly
+        function startRealtimeSavedAdsSync(userId) {
+            if (userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
+            
+            userSavedAdsUnsubscribe = db.collection('users').doc(userId).onSnapshot(docSnap => {
+                if (docSnap.exists && docSnap.data().savedAds) {
+                    const cloudAds = docSnap.data().savedAds;
+                    const storageKey = getSavedAdsStorageKey();
+                    localStorage.setItem(storageKey, JSON.stringify(cloudAds));
+                    
+                    // Update UI instantly across device
+                    if(window.currentUser) {
+                        updateProfileDetails(window.currentUser);
+                    }
+                    renderProducts();
+                    if(currentProduct) {
+                        renderProductDetailView(currentProduct);
+                    }
+                }
+            }, err => {
+                console.log("Saved ads realtime sync error:", err);
+            });
         }
 
         function requestPushNotificationPermission() {
@@ -1274,7 +1299,7 @@
                     localStorage.removeItem(guestKey);
                 }
 
-                // Fetch saved ads from Firestore and merge with LocalStorage
+                // Fetch saved ads from Firestore and start real-time sync
                 db.collection('users').doc(user.uid).get().then(docSnap => {
                     if (docSnap.exists && docSnap.data().savedAds) {
                         let firestoreAds = docSnap.data().savedAds;
@@ -1294,6 +1319,7 @@
                     renderProducts();
                 });
 
+                startRealtimeSavedAdsSync(user.uid);
                 startGlobalUnreadMessagesListener(user.uid);
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
@@ -1332,6 +1358,7 @@
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
+                if(userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
                 updateInboxBadge(0);
 
                 container.innerHTML = `
@@ -2256,7 +2283,7 @@
             }
         }
 
-        /* 100% BULLETPROOF SAVED ADS FUNCTION WITH INSTANT UI SYNC */
+        /* 100% BULLETPROOF SAVED ADS FUNCTION WITH REAL-TIME CLOUD SYNC */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
@@ -2295,10 +2322,10 @@
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             
-            // Force LocalStorage Update immediately
+            // 1. Local Storage Update Immediately
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-            // Instant UI re-render on mobile/laptop
+            // 2. Instant UI re-render on current device
             updateProfileDetails(activeUser);
             renderProducts();
             
@@ -2311,9 +2338,13 @@
                 openCartModal();
             }
 
-            // Background Firestore Sync
-            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).catch(err => {
-                console.log("Firestore sync warning:", err);
+            // 3. FORCE FIRESTORE CLOUD SYNC (Jethi bija device/laptop par pan turant live dekhay)
+            db.collection('users').doc(activeUser.uid).set({ 
+                savedAds: savedList 
+            }, { merge: true }).then(() => {
+                console.log("Cloud sync successful!");
+            }).catch(err => {
+                console.log("Firestore sync error:", err);
             });
         }
 
