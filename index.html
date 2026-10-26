@@ -604,6 +604,7 @@
 
     <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
+        <!-- Sticky Chat Header with high z-index and flex alignment for mobile keyboard compatibility -->
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-3 overflow-hidden">
                 <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black cursor-pointer shrink-0">
@@ -724,23 +725,15 @@
                 <p class="text-xs text-gray-500 mb-6">Add multiple photos, set location & boost/feature your ad</p>
 
                 <form onsubmit="handleFinalAdSubmit(event)" class="space-y-5 text-sm bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
-                    
-                    <!-- Gallery Upload Section -->
-                    <div class="space-y-2 bg-gray-50 dark:bg-gray-700/50 p-4 rounded-2xl border border-gray-200/80 dark:border-gray-600">
-                        <div class="flex items-center justify-between pb-2 border-b">
-                            <label class="block font-bold text-sm text-gray-900 dark:text-white">Gallery</label>
-                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold px-2 py-0.5 rounded-full">AI Powered ✨</span>
+                    <div class="space-y-2 bg-teal-50/50 dark:bg-gray-700/50 p-4 rounded-2xl border border-teal-200/80 dark:border-gray-600">
+                        <div class="flex items-center justify-between">
+                            <label class="block font-bold text-xs text-primary dark:text-teal-300">
+                                <i class="fa-solid fa-wand-magic-sparkles mr-1 text-amber-500"></i> Upload Multiple Photos (AI Auto-Enhanced)
+                            </label>
+                            <span class="text-[10px] bg-teal-100 text-teal-800 dark:bg-gray-700 dark:text-teal-200 font-bold px-2 py-0.5 rounded-full">AI Powered</span>
                         </div>
                         
-                        <div onclick="document.getElementById('adImages').click()" class="border-2 border-dashed border-gray-300 rounded-xl p-4 flex items-center justify-between cursor-pointer hover:border-primary hover:bg-gray-100 dark:hover:bg-gray-600 transition">
-                            <div class="flex items-center gap-3">
-                                <i class="fa-solid fa-camera text-xl text-teal-600"></i>
-                                <span class="text-xs font-bold text-primary dark:text-teal-400">Add More Images</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>
-                        </div>
-
-                        <input type="file" id="adImages" required multiple accept="image/*" onchange="handleAiImagePreview(event)" class="hidden">
+                        <input type="file" id="adImages" required multiple accept="image/*" onchange="handleAiImagePreview(event)" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
                         
                         <div id="aiImagePreviewContainer" class="grid grid-cols-4 gap-2 pt-2" style="display: none;"></div>
                     </div>
@@ -906,22 +899,28 @@
                 </div>
             </div>
 
-            <!-- Product Information Section -->
             <div id="detailHighlightsContainer" class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
-                <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white border-b pb-2">Product Information</h3>
-                <div id="detailHighlightsGrid" class="space-y-2 text-xs"></div>
+                <h3 class="font-bold text-sm mb-3 text-gray-900 dark:text-white">Key Highlights</h3>
+                <div id="detailHighlightsGrid" class="grid grid-cols-2 gap-2"></div>
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
-                <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white border-b pb-2">Description</h3>
-                <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed pt-1"></p>
+                <h3 class="font-bold text-sm mb-2 text-gray-900 dark:text-white">Description</h3>
+                <p id="detailDescription" class="text-xs text-gray-600 dark:text-gray-300 whitespace-pre-line leading-relaxed"></p>
             </div>
         </div>
 
-        <!-- Sticky Bottom Actions (Edit / Remove / Chat / WhatsApp) -->
         <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
-            <div class="max-w-3xl mx-auto flex items-center gap-2" id="detailBottomActionContainer">
-                <!-- Dynamically rendered based on owner -->
+            <div class="max-w-3xl mx-auto flex items-center gap-2">
+                <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50 cursor-pointer">
+                    <i class="fa-regular fa-comments text-base"></i> In-App Chat
+                </button>
+                <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow cursor-pointer">
+                    <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
+                </button>
+                <a id="detailWhatsappBtn" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 shadow">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                </a>
             </div>
         </div>
     </div>
@@ -1011,12 +1010,16 @@
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
+        // Website traffic tracking function
         async function trackVisitorTraffic() {
             try {
                 const statsRef = db.collection('stats').doc('traffic');
                 const docSnap = await statsRef.get();
+                
                 if (docSnap.exists) {
-                    statsRef.update({ totalViews: firebase.firestore.FieldValue.increment(1) });
+                    statsRef.update({
+                        totalViews: firebase.firestore.FieldValue.increment(1)
+                    });
                 } else {
                     statsRef.set({ totalViews: 1 });
                 }
@@ -1042,6 +1045,7 @@
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
+        // Map Variables
         let createAdMap = null;
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
@@ -1074,7 +1078,7 @@
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
-            showCustomAlert("Listening...", "Please speak your search query (e.g. 'Car' or 'Aura')...");
+            showCustomAlert("Listening...", "Please speak your search query (e.g. 'Laptop' or 'Car')...");
 
             recognition.onresult = function(event) {
                 const speechResult = event.results[0][0].transcript;
@@ -1083,7 +1087,7 @@
                 closeCustomAlert();
             };
 
-            recognition.onerror = function() {
+            recognition.onerror = function(event) {
                 showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
             };
 
@@ -1092,11 +1096,17 @@
 
         function toggleAiChatbot() {
             const windowEl = document.getElementById('aiChatWindow');
-            windowEl.style.display = (windowEl.style.display === 'none' || windowEl.style.display === '') ? 'flex' : 'none';
+            if (windowEl.style.display === 'none' || windowEl.style.display === '') {
+                windowEl.style.display = 'flex';
+            } else {
+                windowEl.style.display = 'none';
+            }
         }
 
         function handleAiKeyPress(e) {
-            if (e.key === 'Enter') sendAiMessage();
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
         }
 
         function sendQuickAiQuery(text) {
@@ -1116,17 +1126,24 @@
             userCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm";
             userCard.innerHTML = `<p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span>`;
             container.appendChild(userCard);
+            
             input.value = '';
             container.scrollTop = container.scrollHeight;
 
             setTimeout(() => {
-                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
                 const lowerMsg = msg.toLowerCase();
+                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
+
                 if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
-                    aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right!";
+                    aiReply = "To post a new ad, click on the yellow **'SELL'** button at the top right of the page!";
                 } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
-                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage.";
+                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
+                } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
+                    aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
+                } else {
+                    aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
                 }
+
                 const aiCard = document.createElement('div');
                 aiCard.className = "bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200";
                 aiCard.innerHTML = `<p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span>`;
@@ -1138,6 +1155,7 @@
         function showCustomAlert(title, message, type = 'success') {
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertDesc').innerText = message;
+            
             const iconBox = document.getElementById('customAlertIconBox');
             const icon = document.getElementById('customAlertIcon');
 
@@ -1151,6 +1169,7 @@
                 iconBox.className = "w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
                 icon.className = "fa-solid fa-bell";
             }
+
             document.getElementById('customAlertModal').style.display = 'flex';
         }
 
@@ -1175,6 +1194,7 @@
                             const ctx = canvas.getContext('2d');
                             canvas.width = img.width;
                             canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
                             ctx.filter = 'brightness(1.1) contrast(1.05)';
                             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                             const enhancedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
@@ -1198,20 +1218,27 @@
 
         const olxCategories = [
             { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
-            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'Lands & Plots'] },
+            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
             { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
-            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['Computers & Laptops', 'TVs', 'ACs'] },
-            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes'] }
+            { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
+            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
+            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
+            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
+            { id: 'fashion', name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=150&auto=format&fit=crop&q=80', subs: ['Men', 'Women', 'Kids'] },
+            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
+            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
+            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
         ];
 
         const districtData = {
-            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar", "Ranpur"],
+            "Gujarat": ["Ahmedabad", "Surat", "Vadodara", "Rajkot", "Bhavnagar", "Jamnagar", "Junagadh", "Gandhinagar", "Anand", "Mehsana", "Kutch", "Botad", "Amreli", "Morbi", "Surendranagar"],
             "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik"],
             "Rajasthan": ["Jaipur", "Jodhpur", "Udaipur", "Kota"],
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
+        // FIXED & ROBUST: Saved Ads Count Functions
         function getValidSavedCount() {
             let saved = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
             return saved.length;
@@ -1221,8 +1248,12 @@
             const badge = document.getElementById('cartBadgeCount');
             if(badge) {
                 const count = getValidSavedCount();
-                badge.innerText = count;
-                badge.style.display = count > 0 ? 'inline-block' : 'none';
+                if (count > 0) {
+                    badge.innerText = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
             }
         }
 
@@ -1246,14 +1277,27 @@
                     if(adminBtn) adminBtn.style.display = 'flex';
                 } else {
                     db.collection('admins').doc(user.uid).get().then(docSnap => {
-                        if(docSnap.exists && adminBtn) adminBtn.style.display = 'flex';
-                    }).catch(() => {});
+                        if(docSnap.exists && adminBtn) {
+                            adminBtn.style.display = 'flex';
+                        } else if(adminBtn) {
+                            adminBtn.style.display = 'none';
+                        }
+                    }).catch(() => {
+                        if(adminBtn) adminBtn.style.display = 'none';
+                    });
                 }
 
                 db.collection('users').doc(user.uid).set({
                     isOnline: true,
                     lastSeen: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
+
+                window.addEventListener('beforeunload', () => {
+                    db.collection('users').doc(user.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
 
                 const photo = user.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
                 container.innerHTML = `
@@ -1281,6 +1325,7 @@
             updateCartBadge();
         });
 
+        // FIXED & ROBUST: Inbox unread messages listener with accurate count
         function startInboxUnreadListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
 
@@ -1292,28 +1337,42 @@
                         updateInboxBadge(0);
                         return;
                     }
+
                     let pendingChecks = snapshot.docs.length;
                     snapshot.forEach(docSnap => {
                         db.collection('chats').doc(docSnap.id).collection('messages')
                             .where('senderUid', '!=', userId)
                             .where('status', '==', 'sent')
                             .get().then(msgSnap => {
-                                if (!msgSnap.empty) totalUnread += msgSnap.size;
+                                if (!msgSnap.empty) {
+                                    totalUnread += msgSnap.size;
+                                    triggerPushNotification("New Message on OldX", "You have unread messages in your inbox!");
+                                }
                                 pendingChecks--;
-                                if (pendingChecks === 0) updateInboxBadge(totalUnread);
+                                if (pendingChecks === 0) {
+                                    updateInboxBadge(totalUnread);
+                                }
                             }).catch(() => {
                                 pendingChecks--;
-                                if (pendingChecks === 0) updateInboxBadge(totalUnread);
+                                if (pendingChecks === 0) {
+                                    updateInboxBadge(totalUnread);
+                                }
                             });
                     });
-                }, () => {});
+                }, error => {
+                    console.log("Inbox listener error:", error);
+                });
         }
 
         function updateInboxBadge(count) {
             const badge = document.getElementById('inboxBadgeCount');
             if (!badge) return;
-            badge.innerText = count;
-            badge.style.display = count > 0 ? 'inline-block' : 'none';
+            if (count > 0) {
+                badge.innerText = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         function calculatePrices(source) {
@@ -1343,54 +1402,92 @@
             }
 
             const container = document.getElementById('inboxConversationsList');
-            container.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i><p class="text-xs text-gray-400">Loading...</p></div>`;
+            container.innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
+                    <p class="text-xs text-gray-400 font-medium">Loading conversations...</p>
+                </div>
+            `;
             document.getElementById('inboxModal').style.display = 'flex';
 
-            db.collection('chats').where('participants', 'array-contains', window.currentUser.uid).get().then(snapshot => {
-                container.innerHTML = '';
-                if(snapshot.empty) {
-                    container.innerHTML = `<div class="text-center py-14"><p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p></div>`;
-                    return;
-                }
+            db.collection('chats')
+              .where('participants', 'array-contains', window.currentUser.uid)
+              .get().then(snapshot => {
+                  container.innerHTML = '';
+                  let myChats = [];
 
-                snapshot.forEach(doc => {
-                    const chat = { chatRoomId: doc.id, ...doc.data() };
-                    db.collection('chats').doc(chat.chatRoomId).collection('messages').orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
-                        let lastMsgText = "Tap to view conversation";
-                        let lastTime = "";
-                        if (!msgSnapshot.empty) {
-                            const lastMsgData = msgSnapshot.docs[0].data();
-                            lastMsgText = (lastMsgData.senderUid === window.currentUser.uid ? "You: " : "") + (lastMsgData.text || "Attachment");
-                            lastTime = lastMsgData.time || "";
-                        }
+                  snapshot.forEach(doc => {
+                      myChats.push({ chatRoomId: doc.id, ...doc.data() });
+                  });
 
-                        const div = document.createElement('div');
-                        div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 transition";
-                        div.onclick = () => {
-                            closeInboxModal();
-                            activeChatRoomId = chat.chatRoomId;
-                            const otherUserId = chat.participants.find(id => id !== window.currentUser.uid);
-                            document.getElementById('chatSellerName').innerText = "Conversation";
-                            document.getElementById('fullChatPage').style.display = 'flex';
-                            loadChatMessages(chat.chatRoomId);
-                            trackUserStatus(otherUserId);
-                        };
-                        div.innerHTML = `
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-11 h-11 bg-teal-50 text-teal-700 rounded-full flex items-center justify-center font-bold text-sm shrink-0"><i class="fa-solid fa-user-shield"></i></div>
-                                <div class="overflow-hidden">
-                                    <div class="flex items-center gap-2"><h4 class="font-bold text-xs text-gray-900 dark:text-white">Chat</h4><span class="text-[9px] text-gray-400">${lastTime}</span></div>
-                                    <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5">${lastMsgText}</p>
+                  if(myChats.length === 0) {
+                      container.innerHTML = `
+                          <div class="text-center py-14 space-y-2">
+                              <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
+                                  <i class="fa-solid fa-inbox"></i>
+                              </div>
+                              <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
+                              <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
+                          </div>
+                      `;
+                      return;
+                  }
+
+                  myChats.forEach(chat => {
+                      db.collection('chats').doc(chat.chatRoomId).collection('messages')
+                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
+                            let lastMsgText = "Tap to view conversation";
+                            let lastTime = "";
+                            
+                            if (!msgSnapshot.empty) {
+                                const lastMsgData = msgSnapshot.docs[0].data();
+                                const isMe = lastMsgData.senderUid === window.currentUser.uid;
+                                lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
+                                lastTime = lastMsgData.time || "";
+                            }
+
+                            const div = document.createElement('div');
+                            div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
+                            div.onclick = () => {
+                                closeInboxModal();
+                                activeChatRoomId = chat.chatRoomId;
+                                
+                                const otherUid = chat.participants.find(id => id !== window.currentUser.uid);
+                                const otherUserId = otherUid || chat.productId;
+
+                                document.getElementById('chatSellerName').innerText = "Conversation";
+                                document.getElementById('fullChatPage').style.display = 'flex';
+                                loadChatMessages(chat.chatRoomId);
+                                trackUserStatus(otherUserId);
+                                watchTypingStatus(chat.chatRoomId, otherUserId);
+                            };
+
+                            div.innerHTML = `
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                            <span class="text-[9px] text-gray-400">${lastTime}</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        container.appendChild(div);
-                    });
-                });
-            });
+                                <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition shrink-0">
+                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                  });
+              });
         }
 
-        function closeInboxModal() { document.getElementById('inboxModal').style.display = 'none'; }
+        function closeInboxModal() {
+            document.getElementById('inboxModal').style.display = 'none';
+        }
 
         function openLiveChatModal() {
             if (!window.currentUser) {
@@ -1402,19 +1499,30 @@
 
             const buyerId = window.currentUser.uid;
             const sellerId = currentProduct.sellerUid;
+            
             if (buyerId === sellerId) {
                 showCustomAlert("Notice", "You cannot chat on your own ad.", "error");
                 return;
             }
 
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
-            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
-            document.getElementById('chatCallBtn').href = `tel:${currentProduct.phone || '919876543210'}`;
+            
+            const otherUserId = (window.currentUser.uid === sellerId) ? buyerId : sellerId;
+            
+            document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
+            const sellerPhone = currentProduct.phone || '919876543210';
+            document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
+
             document.getElementById('fullChatPage').style.display = 'flex';
             
-            db.collection('chats').doc(activeChatRoomId).set({ participants: [buyerId, sellerId], productId: currentProduct.docId }, { merge: true });
+            db.collection('chats').doc(activeChatRoomId).set({
+                participants: [buyerId, sellerId],
+                productId: currentProduct.docId
+            }, { merge: true });
+
             loadChatMessages(activeChatRoomId);
-            trackUserStatus(sellerId);
+            trackUserStatus(otherUserId);
+            watchTypingStatus(activeChatRoomId, otherUserId);
         }
 
         function closeFullChatPage() {
@@ -1430,46 +1538,176 @@
                 if(doc.exists) {
                     const data = doc.data();
                     const statusEl = document.getElementById('chatUserStatus');
+                    const dotEl = document.getElementById('chatOnlineDot');
                     if(data.isOnline) {
                         statusEl.innerText = "Online";
-                        statusEl.className = "text-[11px] text-green-600 font-semibold";
+                        statusEl.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
+                        if(dotEl) dotEl.style.display = 'block';
                     } else if(data.lastSeen) {
-                        statusEl.innerText = `Offline`;
+                        const date = data.lastSeen.toDate();
+                        statusEl.innerText = `Last seen at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                         statusEl.className = "text-[11px] text-gray-400 font-semibold";
+                        if(dotEl) dotEl.style.display = 'none';
                     }
                 }
             });
         }
 
+        const chatInputEl = document.getElementById('fullChatInput');
+        if (chatInputEl) {
+            ['input', 'keyup', 'keydown'].forEach(eventType => {
+                chatInputEl.addEventListener(eventType, () => {
+                    if(!activeChatRoomId || !window.currentUser) return;
+                    
+                    db.collection('chats').doc(activeChatRoomId).set({
+                        [`typing_${window.currentUser.uid}`]: true
+                    }, { merge: true });
+
+                    clearTimeout(window.typingTimer);
+                    window.typingTimer = setTimeout(() => {
+                        if(activeChatRoomId && window.currentUser) {
+                            db.collection('chats').doc(activeChatRoomId).set({
+                                [`typing_${window.currentUser.uid}`]: false
+                            }, { merge: true });
+                        }
+                    }, 1500);
+                });
+            });
+        }
+
+        // Two-way typing status watcher
+        function watchTypingStatus(chatRoomId, otherUserId) {
+            if(!chatRoomId || !otherUserId) return;
+
+            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+                const statusEl = document.getElementById('chatUserStatus');
+                if (!statusEl) return;
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && data[`typing_${otherUserId}`] === true) {
+                        statusEl.innerText = "typing...";
+                        statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
+                    } else {
+                        trackUserStatus(otherUserId);
+                    }
+                } else {
+                    trackUserStatus(otherUserId);
+                }
+            }, error => {
+                console.log("Typing Listener Error: ", error);
+            });
+        }
+
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
+            
+            db.collection('chats').doc(chatRoomId).collection('messages')
+              .where('senderUid', '!=', window.currentUser.uid)
+              .where('status', '==', 'sent')
+              .get().then(snapshot => {
+                  snapshot.forEach(doc => {
+                      doc.ref.update({ status: 'read' });
+                  });
+              });
+
             if (activeChatUnsubscribe) activeChatUnsubscribe();
 
-            activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
-                container.innerHTML = '';
-                if(snapshot.empty) {
-                    container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet. Say hello!</p>`;
-                    return;
-                }
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const isMe = msg.senderUid === window.currentUser.uid;
-                    const msgCard = document.createElement('div');
-                    msgCard.className = `p-3 rounded-2xl max-w-[80%] text-xs shadow-sm ${isMe ? 'bg-primary text-white ml-auto' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 mr-auto border'}`;
-                    msgCard.innerHTML = `<p class="font-medium">${msg.text || ''}</p><span class="text-[9px] ${isMe ? 'text-teal-200' : 'text-gray-400'} block text-right mt-1">${msg.time || ''}</span>`;
-                    container.appendChild(msgCard);
-                });
-                container.scrollTop = container.scrollHeight;
-            });
+            activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
+              .orderBy('createdAt', 'asc')
+              .onSnapshot(snapshot => {
+                  container.innerHTML = '';
+                  if(snapshot.empty) {
+                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet. Say hello!</p>`;
+                      return;
+                  }
+                  snapshot.forEach(doc => {
+                      const msg = doc.data();
+                      const isMe = msg.senderUid === window.currentUser.uid;
+                      
+                      let attachmentHTML = '';
+                      if (msg.attachment) {
+                          if (msg.attachment.type.startsWith('image/')) {
+                              attachmentHTML = `<img src="${msg.attachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                          } else {
+                              attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${msg.attachment.name}</span></div>`;
+                          }
+                      }
+
+                      const tickIcon = isMe 
+                          ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
+                          : '';
+
+                      const msgCard = document.createElement('div');
+                      msgCard.className = `p-3 rounded-2xl max-w-[80%] text-xs shadow-sm ${isMe ? 'bg-primary text-white ml-auto' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 mr-auto border'}`;
+                      msgCard.innerHTML = `
+                          ${attachmentHTML}
+                          ${msg.text ? `<p class="font-medium">${msg.text}</p>` : ''}
+                          <div class="flex justify-end items-center gap-1 mt-1">
+                              <span class="text-[9px] ${isMe ? 'text-teal-200' : 'text-gray-400'}">${msg.time || ''}</span>
+                              ${tickIcon}
+                          </div>
+                      `;
+                      container.appendChild(msgCard);
+                  });
+                  container.scrollTop = container.scrollHeight;
+              });
+        }
+
+        function handleChatFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                currentChatAttachment = {
+                    name: file.name,
+                    type: file.type,
+                    data: evt.target.result
+                };
+                document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
+                document.getElementById('chatAttachmentPreview').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearChatAttachment() {
+            currentChatAttachment = null;
+            document.getElementById('chatFileInput').value = '';
+            document.getElementById('chatAttachmentPreview').style.display = 'none';
         }
 
         function checkScamAndSendChatMessage() {
             const input = document.getElementById('fullChatInput');
             const msg = input.value.trim();
-            if (!msg || !activeChatRoomId || !window.currentUser) return;
+
+            if (!msg && !currentChatAttachment) return;
+            if (!activeChatRoomId || !window.currentUser) return;
+
+            const lowerMsg = msg.toLowerCase();
+            const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
+            const isSuspicious = scamKeywords.some(keyword => lowerMsg.includes(keyword));
+
+            const warningBanner = document.getElementById('chatSafetyWarning');
+            const warningText = document.getElementById('chatSafetyWarningText');
+
+            if (isSuspicious) {
+                warningBanner.style.display = 'flex';
+                warningText.innerText = "⚠️ Caution: This message contains a suspicious link or scam attempt. Do not make online payments to strangers!";
+                showCustomAlert("Security Warning", "Message blocked due to suspected scam/fraud link.", "error");
+                return;
+            } else {
+                warningBanner.style.display = 'none';
+            }
+
+            if (activeChatRoomId && window.currentUser) {
+                db.collection('chats').doc(activeChatRoomId).set({
+                    [`typing_${window.currentUser.uid}`]: false
+                }, { merge: true });
+            }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            let sellerId = currentProduct ? currentProduct.sellerUid : activeChatRoomId.split('_')[1];
+            let sellerId = currentProduct ? currentProduct.sellerUid : (activeChatRoomId.split('_')[1] || '');
 
             db.collection('chats').doc(activeChatRoomId).set({
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1479,6 +1717,7 @@
 
             db.collection('chats').doc(activeChatRoomId).collection('messages').add({
                 text: msg,
+                attachment: currentChatAttachment || null,
                 senderUid: window.currentUser.uid,
                 senderName: window.currentUser.displayName || 'User',
                 status: 'sent',
@@ -1486,6 +1725,10 @@
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
                 input.value = '';
+                clearChatAttachment();
+                triggerPushNotification("New Message on OldX", `${window.currentUser.displayName || 'User'}: ${msg || 'Sent an attachment'}`);
+            }).catch(err => {
+                console.error("Error sending message: ", err);
             });
         }
 
@@ -1494,21 +1737,31 @@
             document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
             document.getElementById('editProfileModal').style.display = 'flex';
         }
-        function closeEditProfileModal() { document.getElementById('editProfileModal').style.display = 'none'; }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
 
         async function saveProfileChangesWithFile() {
             const newName = document.getElementById('editProfileNameInput').value.trim();
             const photoFileInput = document.getElementById('editProfilePhotoFile');
             const btn = document.getElementById('saveProfileBtn');
+
             if(!window.currentUser) return;
             btn.innerText = 'Saving...'; btn.disabled = true;
 
             try {
                 let photoURL = window.currentUser.photoURL;
+
                 if (photoFileInput.files && photoFileInput.files[0]) {
                     photoURL = await compressImage(photoFileInput.files[0]);
                 }
-                await window.currentUser.updateProfile({ displayName: newName, photoURL: photoURL });
+
+                await window.currentUser.updateProfile({
+                    displayName: newName,
+                    photoURL: photoURL
+                });
+
                 closeEditProfileModal();
                 updateProfileDetails(window.currentUser);
                 showCustomAlert("Success", "Profile updated successfully!", "success");
@@ -1520,13 +1773,18 @@
         }
 
         function shareProfile() {
-            navigator.clipboard.writeText(window.location.href);
-            showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
+            const profileUrl = window.location.href;
+            if(navigator.share) {
+                navigator.share({ title: 'My OldX Profile', url: profileUrl });
+            } else {
+                navigator.clipboard.writeText(profileUrl);
+                showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
+            }
         }
 
         function openMyAdsModal() {
             if(!window.currentUser) { 
-                showCustomAlert("Login Required", "Please login first!", "error");
+                showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
                 openAuthModal(); 
                 return; 
             }
@@ -1541,17 +1799,27 @@
                     const div = document.createElement('div');
                     div.className = "p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2";
                     const isSold = p.isSold || false;
+
                     div.innerHTML = `
                         <div class="flex justify-between items-start gap-2">
                             <div>
-                                <h4 class="font-bold text-sm text-gray-900 dark:text-white">${p.title}</h4>
-                                <p class="text-xs font-black text-teal-600">${p.finalPriceStr}</p>
+                                <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                                    ${p.title}
+                                    ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
+                                </h4>
+                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 pt-1 border-t">
-                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600' : 'bg-amber-500'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1 cursor-pointer">${isSold ? 'In Stock' : 'Out of Stock'}</button>
-                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">Edit</button>
-                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">Delete</button>
+                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1 cursor-pointer">
+                                <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                     `;
                     container.appendChild(div);
@@ -1561,13 +1829,18 @@
         }
 
         function toggleAdStockStatus(docId, currentStatus) {
-            db.collection('products').doc(docId).update({ isSold: !currentStatus }).then(() => openMyAdsModal());
+            db.collection('products').doc(docId).update({
+                isSold: !currentStatus
+            }).then(() => {
+                openMyAdsModal();
+            });
         }
 
         function confirmDeleteAd(docId) {
             pendingDeleteDocId = docId;
             document.getElementById('myAdsModal').style.display = 'none';
             document.getElementById('deleteConfirmModal').style.display = 'flex';
+            
             document.getElementById('confirmDeleteBtn').onclick = function() {
                 if (pendingDeleteDocId) {
                     db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
@@ -1593,6 +1866,7 @@
         function renderEditAdView(docId) {
             const p = products.find(item => item.docId === docId);
             if(!p) return;
+
             document.getElementById('editDocId').value = p.docId;
             document.getElementById('editTitle').value = p.title;
             document.getElementById('editPrice').value = p.basePrice || 0;
@@ -1600,6 +1874,14 @@
             document.getElementById('editPhone').value = p.phone || '';
             document.getElementById('editLocation').value = p.location || '';
             document.getElementById('editDesc').value = p.desc || '';
+
+            const imgPreview = document.getElementById('editImagesPreview');
+            imgPreview.innerHTML = '';
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
+                });
+            }
         }
 
         function closeEditAdPage() {
@@ -1609,146 +1891,345 @@
 
         async function handleEditAdSubmit(e) {
             e.preventDefault();
-            const docId = document.getElementById('editDocId').value;
-            const title = document.getElementById('editTitle').value;
-            const basePrice = parseFloat(document.getElementById('editPrice').value);
-            const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
-            const phone = document.getElementById('editPhone').value;
-            const location = document.getElementById('editLocation').value;
-            const desc = document.getElementById('editDesc').value;
-            const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+            const btn = document.getElementById('editSubmitBtn');
+            btn.innerText = 'Updating...'; btn.disabled = true;
 
-            await db.collection('products').doc(docId).update({ title, basePrice, discountPercent, finalPriceStr, phone, location, desc });
-            closeEditAdPage();
-            showCustomAlert("Success!", "Ad Updated Successfully!", "success");
+            try {
+                const docId = document.getElementById('editDocId').value;
+                const title = document.getElementById('editTitle').value;
+                const basePrice = parseFloat(document.getElementById('editPrice').value);
+                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
+                const phone = document.getElementById('editPhone').value;
+                const location = document.getElementById('editLocation').value;
+                const desc = document.getElementById('editDesc').value;
+                const newImgInput = document.getElementById('editNewImages');
+
+                const p = products.find(item => item.docId === docId);
+                let updatedImages = p ? p.images : [];
+
+                if (newImgInput.files && newImgInput.files.length > 0) {
+                    updatedImages = [];
+                    for (let i = 0; i < newImgInput.files.length; i++) {
+                        const compressed = await compressImage(newImgInput.files[i]);
+                        updatedImages.push(compressed);
+                    }
+                }
+
+                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+                await db.collection('products').doc(docId).update({
+                    title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
+                    images: updatedImages
+                });
+
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                closeEditAdPage();
+                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
+            } catch (err) {
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
+            }
         }
 
         function checkUserPinStatus(user) {
             const isPinDisabled = localStorage.getItem(`oldx_pin_disabled_${user.uid}`) === 'true';
             const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
-            if (isPinDisabled) return;
+            
+            const pinToggle = document.getElementById('pinToggleCheckbox');
+            if (pinToggle) {
+                pinToggle.checked = !isPinDisabled;
+            }
+
+            if (isPinDisabled) {
+                return;
+            }
 
             if(!userSavedPin) {
-                document.getElementById('setPinModal').style.display = 'flex';
+                const modal = document.getElementById('setPinModal');
+                modal.style.display = 'flex';
+                setTimeout(() => document.getElementById('newPinInput').focus(), 100);
             } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
-                document.getElementById('verifyPinModal').style.display = 'flex';
+                const modal = document.getElementById('verifyPinModal');
+                modal.style.display = 'flex';
+                setTimeout(() => document.getElementById('verifyPinInput').focus(), 100);
             }
         }
 
         function skipPinSetup() {
-            sessionStorage.setItem('oldx_pin_unlocked', 'true');
+            if(window.currentUser) {
+                sessionStorage.setItem('oldx_pin_unlocked', 'true');
+            }
             document.getElementById('setPinModal').style.display = 'none';
         }
 
         function handlePinAutoInput(inputElem, mode) {
             if (inputElem.value.length === 4) {
-                if (mode === 'set') saveUserPin();
-                else if (mode === 'verify') verifyUserPin();
+                if (mode === 'set') {
+                    saveUserPin();
+                } else if (mode === 'verify') {
+                    verifyUserPin();
+                }
             }
         }
 
         function saveUserPin() {
             const input = document.getElementById('newPinInput').value;
-            if(input && input.length === 4) {
-                localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
-                sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                document.getElementById('setPinModal').style.display = 'none';
-                showCustomAlert("Success", "PIN created successfully!", "success");
+            if(input && input.length === 4 && !isNaN(input)) {
+                if(window.currentUser) {
+                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('setPinModal').style.display = 'none';
+                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
+                }
+            } else {
+                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
             }
         }
 
         function verifyUserPin() {
             const input = document.getElementById('verifyPinInput').value;
-            if(input === localStorage.getItem(`oldx_pin_${window.currentUser.uid}`)) {
-                sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                document.getElementById('verifyPinModal').style.display = 'none';
-            } else {
-                showCustomAlert("Incorrect PIN", "Try again.", "error");
-                document.getElementById('verifyPinInput').value = '';
+            if(window.currentUser) {
+                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(input === correctPin) {
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('verifyPinModal').style.display = 'none';
+                    document.getElementById('verifyPinInput').value = '';
+                } else {
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
+                    document.getElementById('verifyPinInput').value = '';
+                    document.getElementById('verifyPinInput').focus();
+                }
             }
         }
 
         function handleForgotPin() {
-            document.getElementById('verifyPinModal').style.display = 'none';
-            localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
-            auth.signOut().then(() => openAuthModal());
+            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
+                document.getElementById('verifyPinModal').style.display = 'none';
+                if(window.currentUser) {
+                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
+                }
+                auth.signOut().then(() => {
+                    openAuthModal();
+                });
+            }
         }
 
-        function openSetPinModal() { document.getElementById('setPinModal').style.display = 'flex'; }
-        
+        function openSetPinModal() {
+            const modal = document.getElementById('setPinModal');
+            modal.style.display = 'flex';
+            setTimeout(() => document.getElementById('newPinInput').focus(), 100);
+        }
+
         function togglePinRequirement(isEnabled) {
-            if(isEnabled) localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
-            else localStorage.setItem(`oldx_pin_disabled_${window.currentUser.uid}`, 'true');
+            if(!window.currentUser) return;
+
+            if(isEnabled) {
+                localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
+                showCustomAlert("PIN Enabled", "Security PIN protection activated!", "success");
+                const userSavedPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(!userSavedPin) {
+                    openSetPinModal();
+                }
+            } else {
+                localStorage.setItem(`oldx_pin_disabled_${window.currentUser.uid}`, 'true');
+                showCustomAlert("PIN Disabled", "PIN protection deactivated.", "info");
+            }
         }
 
-        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
+        function loginWithGoogle() { 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); 
+        }
 
         function switchAuthTab(tab) {
             const loginForm = document.getElementById('loginFormContainer');
             const signupForm = document.getElementById('signupFormContainer');
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const signupBtn = document.getElementById('tabSignupBtn');
+
             if(tab === 'login') {
                 loginForm.style.display = 'block';
                 signupForm.style.display = 'none';
+                loginBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-primary dark:text-white shadow-sm transition cursor-pointer";
+                signupBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
             } else {
                 loginForm.style.display = 'none';
                 signupForm.style.display = 'block';
+                signupBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-teal-700 dark:text-white shadow-sm transition cursor-pointer";
+                loginBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
             }
         }
 
         function handleEmailLogin(e) {
             e.preventDefault();
-            auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value)
-                .then(() => closeAuthModal())
-                .catch(err => showCustomAlert("Error", err.message, "error"));
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMeCheckbox').checked;
+
+            const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+
+            auth.setPersistence(persistence).then(() => {
+                return auth.signInWithEmailAndPassword(email, password);
+            }).then(() => {
+                closeAuthModal();
+                showCustomAlert("Success", "Login successful!", "success");
+            }).catch((error) => {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    showCustomAlert("Login Error", "This email is not registered! Please go to the 'Sign Up' tab to create a new account first.", "error");
+                } else if (error.code === 'auth/wrong-password') {
+                    showCustomAlert("Login Error", "Incorrect password! Please check your password.", "error");
+                } else {
+                    showCustomAlert("Login Error", error.message, "error");
+                }
+            });
         }
 
         function handleEmailSignup(e) {
             e.preventDefault();
-            auth.createUserWithEmailAndPassword(document.getElementById('signupEmail').value, document.getElementById('signupPassword').value)
-                .then(() => closeAuthModal())
-                .catch(err => showCustomAlert("Error", err.message, "error"));
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+
+            if (password !== confirmPassword) {
+                showCustomAlert("Password Mismatch", "Both passwords do not match! Please check.", "error");
+                return;
+            }
+
+            if (password.length < 6) {
+                showCustomAlert("Weak Password", "Password should be at least 6 characters long.", "error");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password).then(() => {
+                closeAuthModal();
+                showCustomAlert("Success", "Account created successfully!", "success");
+            }).catch((error) => {
+                showCustomAlert("Sign Up Error", error.message, "error");
+            });
         }
 
         function togglePasswordVisibility(fieldId, iconId) {
-            const input = document.getElementById(fieldId);
-            input.type = input.type === 'password' ? 'text' : 'password';
+            const passwordInput = document.getElementById(fieldId);
+            const toggleIcon = document.getElementById(iconId);
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fa-solid fa-eye';
+            }
         }
 
         function handleForgotPassword() {
-            auth.sendPasswordResetEmail(document.getElementById('loginEmail').value)
-                .then(() => showCustomAlert("Success", "Password reset email sent!", "success"));
+            const email = document.getElementById('loginEmail').value.trim() || document.getElementById('signupEmail').value.trim();
+            if (!email) {
+                showCustomAlert("Email Required", "Please enter your email address in the form first, then click Forgot Password.", "error");
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email).then(() => {
+                showCustomAlert("Password Reset Email Sent", "Check your email inbox (and Spam folder) to reset your password securely!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
+            });
         }
 
         function openProfilePage() { window.location.hash = 'profile'; }
 
         function updateProfileDetails(user) {
             if(!user) return;
-            document.getElementById('profileUserName').innerText = user.displayName || 'User';
-            document.getElementById('profileUserEmail').innerText = user.email || '';
+            document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
+            document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
             if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
-            document.getElementById('statMyAdsCount').innerText = products.filter(p => p.sellerUid === user.uid).length;
+            
+            const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+            const isEmailVerified = user.emailVerified || isGoogleUser;
+            
+            const badgeEl = document.getElementById('profileUserBadge');
+            const verifySection = document.getElementById('verificationSection');
+
+            if (isEmailVerified) {
+                badgeEl.innerText = 'Verified Member';
+                badgeEl.className = "bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'none';
+            } else {
+                badgeEl.innerText = 'Unverified Email';
+                badgeEl.className = "bg-amber-100 text-amber-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'block';
+            }
+
+            if (user.metadata && user.metadata.creationTime) {
+                const joinDate = new Date(user.metadata.creationTime);
+                const year = joinDate.getFullYear();
+                document.getElementById('profileMemberSince').innerHTML = `<i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since ${year}`;
+            } else {
+                document.getElementById('profileMemberSince').innerHTML = `<i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since 2026`;
+            }
+
+            const myAds = products.filter(p => p.sellerUid === user.uid);
+            const ratingBadge = document.getElementById('profileUserRatingBadge');
+            const ratingText = document.getElementById('profileRatingText');
+
+            if (myAds.length >= 1) {
+                ratingBadge.className = "bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1";
+                ratingText.innerText = "4.9 Rating";
+            } else {
+                ratingBadge.className = "bg-blue-100 text-blue-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1";
+                ratingText.innerText = "New Seller";
+            }
+            
+            const myCount = myAds.length;
+            document.getElementById('statMyAdsCount').innerText = myCount;
             document.getElementById('statSavedAdsCount').innerText = getValidSavedCount();
         }
 
         function requestAccountVerification() {
-            window.currentUser.sendEmailVerification().then(() => showCustomAlert("Sent", "Verification email sent!", "success"));
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+            user.sendEmailVerification().then(() => {
+                showCustomAlert("Verification Sent", "Verification email sent successfully. Please check your inbox!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
+            });
         }
 
         function handleLogout() {
-            auth.signOut().then(() => window.location.hash = '');
+            if(confirm('Are you sure you want to log out from OldX?')) {
+                if(window.currentUser) {
+                    db.collection('users').doc(window.currentUser.uid).set({
+                        isOnline: false,
+                        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                sessionStorage.removeItem('oldx_pin_unlocked');
+                auth.signOut().then(() => {
+                    showCustomAlert("Logged Out", "Logged out successfully!", "success");
+                    window.location.hash = '';
+                });
+            }
         }
 
+        // FIXED & ROBUST: Toggle Cart Product with immediate UI Sync
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
                 openAuthModal();
                 return;
             }
+            
             cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
-            const idx = cartList.indexOf(docId);
-            if(idx > -1) cartList.splice(idx, 1);
-            else cartList.push(docId);
+            const idx = cartList.findIndex(id => id === docId);
+            if(idx > -1) { 
+                cartList.splice(idx, 1); 
+                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
+            } else { 
+                cartList.push(docId); 
+                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
+                triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
+            }
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
             updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
             renderProducts();
         }
 
@@ -1757,15 +2238,46 @@
         }
 
         function openCartModal() {
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to view saved ads!", "error");
+                openAuthModal();
+                return;
+            }
             const container = document.getElementById('cartItemsContainer');
             container.innerHTML = '';
+            
             cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
-            cartList.forEach(id => {
-                const p = products.find(item => item.docId === id);
-                if(p) {
-                    container.innerHTML += `<div class="flex justify-between items-center border p-2 rounded"><span class="text-xs font-bold">${p.title}</span><button onclick="removeFromCart('${p.docId}')" class="text-red-500">Remove</button></div>`;
-                }
-            });
+            
+            if(cartList.length === 0) { 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
+            } else {
+                cartList.forEach(id => {
+                    const p = products.find(item => item.docId === id);
+                    if(p) {
+                        const div = document.createElement('div');
+                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                        div.innerHTML = `
+                            <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${p.docId}')">
+                                <img src="${p.images?.[0] || ''}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                                <div><h4 class="font-bold text-xs truncate max-w-[180px]">${p.title}</h4><p class="text-teal-600 font-extrabold text-xs">${p.finalPriceStr}</p></div>
+                            </div>
+                            <button onclick="removeFromCart('${p.docId}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                        `;
+                        container.appendChild(div);
+                    } else {
+                        const div = document.createElement('div');
+                        div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                        div.innerHTML = `
+                            <div class="flex items-center gap-2 overflow-hidden">
+                                <div class="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center"><i class="fa-solid fa-heart text-red-500"></i></div>
+                                <div><h4 class="font-bold text-xs truncate max-w-[180px]">Saved Ad ID: ${id.substring(0,8)}...</h4></div>
+                            </div>
+                            <button onclick="removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
+                        `;
+                        container.appendChild(div);
+                    }
+                });
+            }
             document.getElementById('cartModal').style.display = 'flex';
         }
 
@@ -1773,22 +2285,45 @@
             cartList = cartList.filter(item => item !== id);
             localStorage.setItem('oldx_saved_ads', JSON.stringify(cartList));
             updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
             openCartModal();
         }
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
+        /* RENDER BROWSE CATEGORIES */
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
-            grid.innerHTML = `<div onclick="filterCat('all')" class="cat-card-hover bg-white dark:bg-gray-800 p-3 rounded-2xl border text-center cursor-pointer"><p class="font-bold text-xs">All</p></div>`;
+            const isAllSelected = currentFilterCat === 'all';
+
+            grid.innerHTML = `
+                <div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
+                </div>
+            `;
+
             olxCategories.forEach(cat => {
-                grid.innerHTML += `<div onclick="filterCat('${cat.id}')" class="cat-card-hover bg-white dark:bg-gray-800 p-3 rounded-2xl border text-center cursor-pointer"><p class="font-bold text-xs">${cat.name}</p></div>`;
+                const isSelected = currentFilterCat === cat.id;
+                const el = document.createElement('div');
+                el.className = `cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
+                el.onclick = () => filterCat(cat.id);
+                el.innerHTML = `
+                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
+                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                    </div>
+                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                `;
+                grid.appendChild(el);
             });
         }
 
-        function filterCat(catId) {
-            currentFilterCat = catId;
-            renderProducts();
+        function filterCat(catId) { 
+            currentFilterCat = catId; 
+            renderHomeCategories();
+            renderProducts(); 
         }
 
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
@@ -1796,40 +2331,87 @@
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
             updateCartBadge();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
             handleHashChange();
         });
 
-        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+        function openProductDetailPage(docId) { 
+            const p = products.find(item => item.docId === docId);
+            if (p && p.category) {
+                userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
+                localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+            }
+            window.location.hash = `product-${docId}`; 
+        }
 
         function handleHashChange() {
             const hash = window.location.hash;
+
             if(hash.startsWith('#edit-')) {
+                const docId = hash.replace('#edit-', '');
                 document.getElementById('homeView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('fullEditPage').style.display = 'block';
-                renderEditAdView(hash.replace('#edit-', ''));
+                renderEditAdView(docId);
+                window.scrollTo(0,0);
                 return;
             } else if(hash.startsWith('#product-')) {
-                const p = products.find(item => item.docId === hash.replace('#product-', ''));
+                const docId = hash.replace('#product-', '');
+                const p = products.find(item => item.docId === docId);
                 if(p) {
                     currentProduct = p;
                     document.getElementById('homeView').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'block';
-                    renderProductDetailView(p);
-                    initDetailMap(p);
+                    document.getElementById('sellWizardPage').style.display = 'none';
+                    document.getElementById('profilePage').style.display = 'none';
+                    document.getElementById('fullEditPage').style.display = 'none';
+                    document.getElementById('productDetailView').style.display = 'none';
+                    document.getElementById('productSkeletonSlide').style.display = 'flex';
+
+                    setTimeout(() => {
+                        renderProductDetailView(p);
+                        document.getElementById('productSkeletonSlide').style.display = 'none';
+                        document.getElementById('productDetailView').style.display = 'block';
+                        window.scrollTo(0,0);
+                        initDetailMap(p);
+                    }, 400);
                     return;
                 }
             } else if(hash === '#sell') {
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    showCustomAlert("Login Required", "Please login first to post an ad!", "error");
+                    openAuthModal();
+                    return;
+                }
                 document.getElementById('homeView').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'block';
+                window.scrollTo(0,0);
                 setTimeout(() => initSellMapPicker(), 300);
                 return;
             } else if(hash === '#profile') {
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    openAuthModal();
+                    return;
+                }
                 document.getElementById('homeView').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'block';
+                updateProfileDetails(window.currentUser);
+                window.scrollTo(0,0);
                 return;
             }
+            
             document.getElementById('sellWizardPage').style.display = 'none';
             document.getElementById('profilePage').style.display = 'none';
+            document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
             document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
@@ -1844,42 +2426,118 @@
             const mapContainer = document.getElementById('adMapPicker');
             if (!mapContainer) return;
             mapContainer.innerHTML = '';
+
             createAdMap = L.map('adMapPicker').setView([selectedCoords.lat, selectedCoords.lng], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(createAdMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(createAdMap);
             createAdMarker = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true }).addTo(createAdMap);
-            createAdMarker.on('dragend', () => { selectedCoords = createAdMarker.getLatLng(); });
-            createAdMap.on('click', (e) => { selectedCoords = e.latlng; createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]); });
+
+            createAdMarker.on('dragend', function() {
+                const position = createAdMarker.getLatLng();
+                selectedCoords.lat = position.lat;
+                selectedCoords.lng = position.lng;
+            });
+
+            createAdMap.on('click', function(e) {
+                selectedCoords.lat = e.latlng.lat;
+                selectedCoords.lng = e.latlng.lng;
+                createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+            });
+
+            setTimeout(() => { createAdMap.invalidateSize(); }, 200);
         }
 
         function getCurrentLocationForAd() {
-            navigator.geolocation.getCurrentPosition(pos => {
-                selectedCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                if (createAdMap) {
-                    createAdMap.setView([selectedCoords.lat, selectedCoords.lng], 15);
-                    createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
-                }
-            });
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    selectedCoords.lat = position.coords.latitude;
+                    selectedCoords.lng = position.coords.longitude;
+                    if (createAdMap && createAdMarker) {
+                        createAdMap.setView([selectedCoords.lat, selectedCoords.lng], 15);
+                        createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+                    }
+                    showCustomAlert("GPS Success", "Location successfully retrieved via GPS!", "success");
+                }, () => {
+                    showCustomAlert("GPS Error", "Unable to retrieve your location. Please click on the map.", "error");
+                });
+            } else {
+                showCustomAlert("Not Supported", "Geolocation is not supported by your browser.", "error");
+            }
         }
 
         function initDetailMap(p) {
             const mapDiv = document.getElementById('detailMiniMap');
             if (!mapDiv) return;
             mapDiv.innerHTML = '';
-            const miniMap = L.map('detailMiniMap', { zoomControl: false, dragging: false }).setView([p.coords?.lat || 22.3, p.coords?.lng || 70.8], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(miniMap);
-            L.marker([p.coords?.lat || 22.3, p.coords?.lng || 70.8]).addTo(miniMap);
+
+            const pLat = p.coords ? p.coords.lat : 22.3039;
+            const pLng = p.coords ? p.coords.lng : 70.8022;
+
+            const miniMap = L.map('detailMiniMap', { zoomControl: false, dragging: false }).setView([pLat, pLng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+            L.marker([pLat, pLng]).addTo(miniMap);
+
+            document.getElementById('detailNavigateBtn').href = `https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLng}`;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const uLat = position.coords.latitude;
+                    const uLng = position.coords.longitude;
+                    const distanceKm = calculateDistance(uLat, uLng, pLat, pLng);
+                    document.getElementById('detailDistanceBadge').innerText = `${distanceKm} km away`;
+                }, () => {
+                    document.getElementById('detailDistanceBadge').innerText = `Location unavailable`;
+                });
+            } else {
+                document.getElementById('detailDistanceBadge').innerText = `GPS not supported`;
+            }
+
+            setTimeout(() => { miniMap.invalidateSize(); }, 200);
         }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c).toFixed(1);
+        }
+
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
 
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
+            
+            const mrpElem = document.getElementById('detailMrpPrice');
+            const discElem = document.getElementById('detailDiscountBadge');
+            
+            if (p.mrpPrice && p.mrpPrice > p.basePrice) {
+                mrpElem.innerText = `₹${p.mrpPrice.toLocaleString('en-IN')}`;
+                mrpElem.style.display = 'inline';
+                if (p.discountPercent > 0) {
+                    discElem.innerText = `${p.discountPercent}% OFF`;
+                    discElem.style.display = 'inline-block';
+                } else {
+                    discElem.style.display = 'none';
+                }
+            } else {
+                mrpElem.style.display = 'none';
+                discElem.style.display = 'none';
+            }
+
             document.getElementById('detailLocation').innerText = p.location;
             document.getElementById('detailDescription').innerText = p.desc;
 
             const slider = document.getElementById('detailImageSlider');
             slider.innerHTML = '';
-            if(p.images) {
-                p.images.forEach(img => slider.innerHTML += `<div class="shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full object-contain"></div>`);
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
+                });
+                document.getElementById('detailImgBadge').innerText = `1/${p.images.length}`;
             }
 
             const grid = document.getElementById('detailHighlightsGrid');
@@ -1887,40 +2545,57 @@
             if(p.extraDetails) {
                 for(let k in p.extraDetails) {
                     if(p.extraDetails[k]) {
-                        grid.innerHTML += `<div class="flex justify-between py-1 border-b"><span class="text-gray-500 capitalize">${k}</span><span class="font-bold text-gray-800 dark:text-white">${p.extraDetails[k]}</span></div>`;
+                        grid.innerHTML += `
+                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
+                                <div><p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p><p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p></div>
+                            </div>
+                        `;
                     }
                 }
             }
 
-            const actionContainer = document.getElementById('detailBottomActionContainer');
-            const isOwner = window.currentUser && window.currentUser.uid === p.sellerUid;
+            const phone = p.phone || '919876543210';
+            const waMsg = encodeURIComponent(`Hi, I am interested in your item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
+        }
 
-            if (isOwner) {
-                actionContainer.innerHTML = `
-                    <button onclick="openEditAdModal('${p.docId}')" class="flex-1 bg-white border border-primary text-primary font-black py-2.5 rounded-xl text-xs shadow">Edit</button>
-                    <button onclick="confirmDeleteAd('${p.docId}')" class="flex-1 bg-red-600 text-white font-black py-2.5 rounded-xl text-xs shadow">Remove</button>
-                `;
-            } else {
-                actionContainer.innerHTML = `
-                    <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">Chat</button>
-                    <a href="https://wa.me/${p.phone}" target="_blank" class="bg-green-600 text-white font-black px-5 py-2.5 rounded-xl text-xs">WhatsApp</a>
-                `;
+        function updateImageCounter() {
+            const slider = document.getElementById('detailImageSlider');
+            if(!currentProduct || !currentProduct.images) return;
+            const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+            document.getElementById('detailImgBadge').innerText = `${index}/${currentProduct.images.length}`;
+        }
+
+        function shareProductLink() {
+            if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
+            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Link Copied", "Product link copied to clipboard!", "success"); }
+        }
+
+        function openOfferModal() {
+            const offer = prompt('Enter your offer price (₹):');
+            if(offer) {
+                showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
+                triggerPushNotification("New Offer Received!", `A buyer offered ₹${offer} on your ad!`);
             }
         }
 
-        function updateImageCounter() {}
-        function shareProductLink() { navigator.clipboard.writeText(window.location.href); showCustomAlert("Copied", "Link copied!", "success"); }
-
         function startSellWizard() {
             if (!window.currentUser) {
+                showCustomAlert("🔒 Login Required", "Only registered members can post ads on OldX. Login or sign up to publish your ad for FREE!", "error");
                 openAuthModal();
                 return;
             }
+
             window.location.hash = 'sell';
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
             olxCategories.forEach(cat => {
-                list.innerHTML += `<div onclick='selectWizardMain(${JSON.stringify(cat)})' class="p-3 border rounded-2xl cursor-pointer text-center font-bold text-xs">${cat.name}</div>`;
+                const card = document.createElement('div');
+                card.className = "p-3 border rounded-2xl bg-white dark:bg-gray-800 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2 shadow-sm transition transform hover:-translate-y-1";
+                card.onclick = () => selectWizardMain(cat);
+                card.innerHTML = `<img src="${cat.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm"><span class="font-bold text-xs text-gray-800 dark:text-gray-100">${cat.name}</span>`;
+                list.appendChild(card);
             });
             document.getElementById('wizardStage1').style.display = 'block';
             document.getElementById('wizardStage2').style.display = 'none';
@@ -1934,7 +2609,11 @@
             const subList = document.getElementById('wizardSubCatList');
             subList.innerHTML = '';
             cat.subs.forEach(sub => {
-                subList.innerHTML += `<div onclick="selectWizardSub('${sub}')" class="p-3 border rounded-2xl cursor-pointer font-semibold text-xs flex justify-between"><span>${sub}</span></div>`;
+                const item = document.createElement('div');
+                item.className = "p-4 border rounded-2xl bg-white dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center shadow-sm";
+                item.onclick = () => selectWizardSub(sub);
+                item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
+                subList.appendChild(item);
             });
             document.getElementById('wizardStage1').style.display = 'none';
             document.getElementById('wizardStage2').style.display = 'block';
@@ -1948,32 +2627,26 @@
 
             if(selectedMainCat.id === 'cars') {
                 dynContainer.innerHTML = `
-                    <div class="space-y-4">
-                        <h4 class="font-bold text-sm border-b pb-2">Product Information</h4>
-                        <div class="grid grid-cols-2 gap-3 text-xs">
-                            <div>
-                                <label class="block font-semibold mb-1">Brand *</label>
-                                <select id="dynBrand" required class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
-                                    <option value="">Select Brand</option><option value="Hyundai">Hyundai</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block font-semibold mb-1">Model *</label>
-                                <input type="text" id="dynModel" required placeholder="e.g. Aura" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
-                            </div>
-                            <div>
-                                <label class="block font-semibold mb-1">Variant *</label>
-                                <input type="text" id="dynVariant" required placeholder="e.g. 1.2 S CNG" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
-                            </div>
-                            <div>
-                                <label class="block font-semibold mb-1">Year *</label>
-                                <input type="number" id="dynYear" required placeholder="e.g. 2015" class="w-full px-3 py-2 border rounded-lg dark:bg-gray-700">
-                            </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Model / Variant *</label>
+                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
                         </div>
                     </div>
                 `;
             } else {
-                dynContainer.innerHTML = `<div><label class="block font-bold mb-1">Details *</label><input type="text" id="dynType" required class="w-full px-3 py-2 border rounded-xl"></div>`;
+                dynContainer.innerHTML = `
+                    <div>
+                        <label class="block font-bold mb-1">Type / Details *</label>
+                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                `;
             }
 
             document.getElementById('wizardStage2').style.display = 'none';
@@ -1983,12 +2656,14 @@
         function autoGenerateText() {
             const brand = document.getElementById('dynBrand')?.value || '';
             const model = document.getElementById('dynModel')?.value || '';
-            const variant = document.getElementById('dynVariant')?.value || '';
-            const year = document.getElementById('dynYear')?.value || '';
+            const type = document.getElementById('dynType')?.value || selectedSubCat;
 
-            if(selectedMainCat.id === 'cars' && brand && model) {
-                document.getElementById('adTitle').value = `${brand} ${model} ${year}`;
-                document.getElementById('adDesc').value = `Explore the perfect blend of efficiency and performance with this ${brand} ${model}.\n- Model: ${model}\n- Variant: ${variant}\n- Year: ${year}`;
+            if(selectedMainCat.id === 'cars') {
+                document.getElementById('adTitle').value = `${brand} ${model}`;
+                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}. Excellent condition.`;
+            } else {
+                document.getElementById('adTitle').value = `${type} - Good Condition`;
+                document.getElementById('adDesc').value = `Selling ${type} in excellent condition. Contact for details.`;
             }
         }
 
@@ -1997,6 +2672,7 @@
             document.getElementById('wizardStage3').style.display = 'none';
             document.getElementById('wizardStage4').style.display = 'block';
             updateWizardDistricts();
+            setTimeout(() => { if (createAdMap) createAdMap.invalidateSize(); }, 200);
         }
 
         function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
@@ -2021,9 +2697,13 @@
                     const img = new Image();
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        canvas.width = 800; canvas.height = 600;
+                        let width = img.width; let height = img.height;
+                        const maxDim = 800;
+                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                        canvas.width = width; canvas.height = height;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, 800, 600);
+                        ctx.drawImage(img, 0, 0, width, height);
                         resolve(canvas.toDataURL('image/jpeg', 0.7));
                     };
                     img.src = e.target.result;
@@ -2034,81 +2714,223 @@
 
         async function handleFinalAdSubmit(e) {
             e.preventDefault();
-            const title = document.getElementById('adTitle').value;
-            const desc = document.getElementById('adDesc').value;
-            const basePrice = parseFloat(document.getElementById('adPrice').value);
-            const phone = document.getElementById('adPhone').value;
-            const state = document.getElementById('adState').value;
-            const district = document.getElementById('adDistrict').value;
-            const village = document.getElementById('adVillage').value;
-            const imgInput = document.getElementById('adImages');
 
-            let extraDetails = {};
-            if(selectedMainCat.id === 'cars') {
-                extraDetails = {
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Please login first to post an ad!", "error");
+                openAuthModal();
+                return;
+            }
+
+            const btn = document.getElementById('adSubmitBtn');
+            btn.innerText = 'Publishing...'; btn.disabled = true;
+
+            try {
+                const title = document.getElementById('adTitle').value;
+                const desc = document.getElementById('adDesc').value;
+                const basePrice = parseFloat(document.getElementById('adPrice').value);
+                const mrpPrice = parseFloat(document.getElementById('adMrpPrice').value) || basePrice;
+                const discountPercent = parseFloat(document.getElementById('adDiscount').value) || 0;
+                const phone = document.getElementById('adPhone').value;
+                const state = document.getElementById('adState').value;
+                const district = document.getElementById('adDistrict').value;
+                const village = document.getElementById('adVillage').value;
+                const imgInput = document.getElementById('adImages');
+                const isFeatured = document.getElementById('adIsFeatured').checked;
+
+                let extraDetails = {
                     brand: document.getElementById('dynBrand')?.value || '',
                     model: document.getElementById('dynModel')?.value || '',
-                    variant: document.getElementById('dynVariant')?.value || '',
-                    year: document.getElementById('dynYear')?.value || ''
+                    type: document.getElementById('dynType')?.value || ''
                 };
-            }
 
-            const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
-            let images = [];
-            if (imgInput.files && imgInput.files.length > 0) {
-                for (let i = 0; i < imgInput.files.length; i++) {
-                    images.push(await compressImage(imgInput.files[i]));
+                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+
+                let images = [];
+                if (imgInput.files && imgInput.files.length > 0) {
+                    for (let i = 0; i < imgInput.files.length; i++) {
+                        const compressed = await compressImage(imgInput.files[i]);
+                        images.push(compressed);
+                    }
                 }
-            }
 
-            db.collection('products').add({
-                sellerUid: window.currentUser.uid,
-                sellerName: window.currentUser.displayName || 'Seller',
-                category: selectedMainCat.id,
-                subCategory: selectedSubCat,
-                title, desc, basePrice, finalPriceStr, phone,
-                extraDetails,
-                coords: selectedCoords,
-                location: `${village}, ${district}, ${state}`,
-                state, images, isSold: false,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
-                document.getElementById('successAdModal').style.display = 'flex';
-            });
+                const adData = {
+                    sellerUid: window.currentUser.uid,
+                    sellerName: window.currentUser.displayName || 'Seller',
+                    category: selectedMainCat.id,
+                    subCategory: selectedSubCat,
+                    title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
+                    extraDetails,
+                    coords: selectedCoords,
+                    location: `${village}, ${district}, ${state}`, 
+                    state, 
+                    images,
+                    isFeatured: isFeatured,
+                    isSold: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                db.collection('products').add(adData).then(() => {
+                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                    document.getElementById('successAdModal').style.display = 'flex';
+                });
+            } catch (err) {
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
+            }
         }
 
-        function closeSuccessModalAndGoHome() { document.getElementById('successAdModal').style.display = 'none'; window.location.hash = ''; }
-        function closeSuccessModalAndOpenMyAds() { document.getElementById('successAdModal').style.display = 'none'; window.location.hash = ''; openMyAdsModal(); }
+        function closeSuccessModalAndGoHome() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+        }
+
+        function closeSuccessModalAndOpenMyAds() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+            openMyAdsModal();
+        }
 
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        /* RENDER PRODUCTS */
         function renderProducts() {
             const grid = document.getElementById('productGrid');
+            const recSection = document.getElementById('aiRecommendedSection');
+            const recGrid = document.getElementById('recommendedProductGrid');
+            const featuredSection = document.getElementById('featuredSection');
+            const featuredGrid = document.getElementById('featuredProductGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
             const stateVal = document.getElementById('stateFilter').value;
+            
             if(!grid) return;
             grid.innerHTML = '';
+            if(recGrid) recGrid.innerHTML = '';
+            if(featuredGrid) featuredGrid.innerHTML = '';
+
+            if (currentFilterCat === 'all' && !searchVal && featuredSection && featuredGrid) {
+                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (featuredItems.length > 0) {
+                    featuredSection.style.display = 'block';
+                    featuredItems.forEach(p => {
+                        featuredGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    featuredSection.style.display = 'none';
+                }
+            } else if (featuredSection) {
+                featuredSection.style.display = 'none';
+            }
+
+            let topCat = null;
+            let maxViews = 0;
+            for (let cat in userCategoryViews) {
+                if (userCategoryViews[cat] > maxViews) {
+                    maxViews = userCategoryViews[cat];
+                    topCat = cat;
+                }
+            }
+
+            if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
+                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (recommendedItems.length > 0) {
+                    recSection.style.display = 'block';
+                    recommendedItems.forEach(p => {
+                        recGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    recSection.style.display = 'none';
+                }
+            } else if (recSection) {
+                recSection.style.display = 'none';
+            }
 
             const filtered = products.filter(p => {
                 const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
-                const matchSearch = p.title.toLowerCase().includes(searchVal);
+                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
                 const matchState = (!stateVal || p.state === stateVal);
                 return matchCat && matchSearch && matchState;
             });
 
-            filtered.forEach(p => {
-                const card = document.createElement('div');
-                card.className = "bg-white dark:bg-gray-800 rounded-3xl border shadow-sm p-3 cursor-pointer";
-                card.onclick = () => openProductDetailPage(p.docId);
-                card.innerHTML = `
-                    <div class="h-40 bg-gray-200 rounded-xl overflow-hidden mb-2"><img src="${p.images?.[0] || ''}" class="w-full h-full object-cover"></div>
-                    <h4 class="font-bold text-xs truncate">${p.title}</h4>
-                    <p class="font-black text-teal-600">${p.finalPriceStr}</p>
+            if(filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No items found</p>
+                    </div>
                 `;
-                grid.appendChild(card);
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.appendChild(createProductCard(p, false));
             });
+        }
+
+        function createProductCard(p, isCarousel = false) {
+            cartList = JSON.parse(localStorage.getItem('oldx_saved_ads') || '[]');
+            const isSaved = cartList.includes(p.docId);
+            const card = document.createElement('div');
+            const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
+            
+            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
+            card.onclick = () => openProductDetailPage(p.docId);
+            
+            const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
+                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                : '';
+
+            const discBadge = (p.discountPercent && p.discountPercent > 0)
+                ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
+                : '';
+
+            const featuredBadge = p.isFeatured
+                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
+                : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">★ VERIFIED</span>`;
+
+            const soldBadge = p.isSold 
+                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                : '';
+
+            card.innerHTML = `
+                ${soldBadge}
+                <div>
+                    <div class="h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                        ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
+                        
+                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                            ${featuredBadge}
+                            ${discBadge}
+                        </div>
+
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center text-gray-400 hover:text-red-500 transition z-10 cursor-pointer">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500' : ''}"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-4 space-y-2">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400.">
+                            <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
+                        </div>
+
+                        <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                            ${p.title}
+                        </h4>
+
+                        <div class="flex items-baseline gap-1 pt-1">
+                            <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
+                            ${mrpMarkup}
+                        </div>
+                    </div>
+                </div>
+
+                <button class="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-paper-plane"></i> Send Message
+                </button>
+            `;
+            return card;
         }
 
         window.addEventListener('DOMContentLoaded', () => {
