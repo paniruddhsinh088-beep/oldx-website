@@ -184,11 +184,12 @@
             </section>
         </main>
 
-        <!-- FOOTER WITH PRIVACY POLICY LINK -->
+        <!-- FOOTER WITH PRIVACY POLICY & CONTACT US LINKS -->
         <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3">
             <div class="flex justify-center items-center gap-6 font-bold">
                 <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Privacy Policy</a>
                 <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Terms & Conditions</a>
+                <a href="#" onclick="openContactModal(event)" class="hover:text-teal-600 transition">Contact Us</a>
             </div>
             <p>&copy; 2026 OldX Marketplace. All rights reserved. Built for Bharat.</p>
         </footer>
@@ -217,7 +218,7 @@
         </div>
     </div>
 
-    <!-- ENHANCED DEDICATED PROFILE PAGE WITH DELETE ACCOUNT BUTTON -->
+    <!-- ENHANCED DEDICATED PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -294,6 +295,10 @@
                         <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-teal-600"></div>
                     </label>
                 </div>
+                <div onclick="openContactModal()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-envelope text-teal-600"></i> Contact Support (oldxbazar@gmail.com)</span>
+                    <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
+                </div>
                 <div onclick="shareProfile()" class="flex justify-between items-center py-2 border-b cursor-pointer hover:text-teal-600">
                     <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
@@ -369,6 +374,36 @@
             </div>
             <div class="mt-6 text-right pt-3 border-t">
                 <button onclick="closePrivacyModal()" class="bg-primary hover:bg-teal-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTACT US SUPPORT MODAL -->
+    <div id="contactModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-black text-primary dark:text-teal-400 flex items-center gap-2">
+                    <i class="fa-solid fa-headset text-teal-600"></i> Contact OldX Support
+                </h3>
+                <button onclick="closeContactModal()" class="text-gray-400 hover:text-black dark:hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer">&times;</button>
+            </div>
+            
+            <div class="text-xs text-gray-600 dark:text-gray-300 space-y-3">
+                <p>Tamare koi pan prakar no prashn, feedback athva support joito hoy, to tame amane niche aapela official email address par direct mail mokli sako chho:</p>
+                
+                <div class="bg-teal-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-teal-200 dark:border-gray-600 text-center space-y-2">
+                    <i class="fa-solid fa-envelope text-2xl text-teal-600"></i>
+                    <p class="font-bold text-sm text-gray-900 dark:text-white select-all">oldxbazar@gmail.com</p>
+                    <a href="mailto:oldxbazar@gmail.com" class="inline-block bg-primary hover:bg-teal-900 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Send Email Now
+                    </a>
+                </div>
+
+                <p class="text-[11px] text-gray-400 text-center">Ame general 24 ghanta ni andar reply aapiye chhiye.</p>
+            </div>
+
+            <div class="mt-4 text-right pt-2 border-t">
+                <button onclick="closeContactModal()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300 px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer">Close</button>
             </div>
         </div>
     </div>
@@ -1100,6 +1135,15 @@
         }
         function closePrivacyModal() {
             document.getElementById('privacyModal').style.display = 'none';
+        }
+
+        // Contact Us Modal Functions
+        function openContactModal(e) {
+            if(e) e.preventDefault();
+            document.getElementById('contactModal').style.display = 'flex';
+        }
+        function closeContactModal() {
+            document.getElementById('contactModal').style.display = 'none';
         }
 
         // Play Store Compliant Account Deletion Logic with Firestore Cleanup
