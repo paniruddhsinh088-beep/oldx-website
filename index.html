@@ -95,7 +95,7 @@
         <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">🇮🇳 Bharat's Trusted C2C Marketplace</span>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">&#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366; Bharat's Trusted C2C Marketplace</span>
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
@@ -581,7 +581,7 @@
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold mb-1">Final Price (₹) *</label>
+                        <label class="block font-bold mb-1">Final Price (&#8377;) *</label>
                         <input type="number" id="editPrice" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
                     <div>
@@ -742,7 +742,7 @@
 
                     <div class="grid grid-cols-3 gap-2">
                         <div>
-                            <label class="block font-bold mb-1 text-xs">MRP Price (₹) *</label>
+                            <label class="block font-bold mb-1 text-xs">MRP Price (&#8377;) *</label>
                             <input type="number" id="adMrpPrice" required placeholder="e.g. 1000" oninput="calculatePrices('mrp')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
                         </div>
                         <div>
@@ -750,7 +750,7 @@
                             <input type="number" id="adDiscount" placeholder="e.g. 20" oninput="calculatePrices('discount')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
                         </div>
                         <div>
-                            <label class="block font-bold mb-1 text-xs">Final Price (₹) *</label>
+                            <label class="block font-bold mb-1 text-xs">Final Price (&#8377;) *</label>
                             <input type="number" id="adPrice" required placeholder="e.g. 800" oninput="calculatePrices('final')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
                         </div>
                     </div>
@@ -800,7 +800,7 @@
                         <div class="flex items-center justify-between">
                             <label class="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
                                 <input type="checkbox" id="adIsFeatured" class="w-4 h-4 text-amber-600 rounded">
-                                <i class="fa-solid fa-bolt text-amber-500"></i> Boost & Feature Ad on Top (+₹99)
+                                <i class="fa-solid fa-bolt text-amber-500"></i> Boost & Feature Ad on Top (+&#8377;99)
                             </label>
                             <span class="bg-amber-200 text-amber-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">10x Views</span>
                         </div>
@@ -965,7 +965,7 @@
                     </div>
                     <div>
                         <h4 class="font-black text-xs">OldX AI Assistant</h4>
-                        <p class="text-[10px] text-teal-200">Online | Multilingual Support 🇮🇳</p>
+                        <p class="text-[10px] text-teal-200">Online | Multilingual Support &#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366;</p>
                     </div>
                 </div>
                 <button onclick="toggleAiChatbot()" class="text-white hover:text-gray-300 cursor-pointer">
@@ -975,7 +975,7 @@
 
             <div id="aiChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs bg-gray-50 dark:bg-gray-900">
                 <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200">
-                    <p class="font-semibold">Hello! 👋 I am your OldX AI Assistant. Ask me anything about cars, mobiles, or posting ads!</p>
+                    <p class="font-semibold">Hello! &#128075; I am your OldX AI Assistant. Ask me anything about cars, mobiles, or posting ads!</p>
                     <span class="text-[9px] text-gray-400 mt-1 block">Just now</span>
                 </div>
             </div>
@@ -1051,7 +1051,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // ROBUST DUAL STORAGE HELPER (LocalStorage + Firestore)
+        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP
         function getSavedAdsStorageKey() {
             const user = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
             if (!user || !user.uid) return 'oldx_saved_ads_guest';
@@ -1155,7 +1155,7 @@
                 } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
                     aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
                 } else {
-                    aiReply = "Hello! 👋 How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
+                    aiReply = "Hello! &#128075; How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
                 }
 
                 const aiCard = document.createElement('div');
@@ -1217,7 +1217,7 @@
                             thumbDiv.className = "relative rounded-xl overflow-hidden border border-teal-500 shadow-sm h-16 bg-black";
                             thumbDiv.innerHTML = `
                                 <img src="${enhancedDataUrl}" class="w-full h-full object-cover">
-                                <span class="absolute bottom-0 inset-x-0 bg-teal-700/80 text-white text-[8px] font-black text-center py-0.5">AI Enhanced ✨</span>
+                                <span class="absolute bottom-0 inset-x-0 bg-teal-700/80 text-white text-[8px] font-black text-center py-0.5">AI Enhanced &#10024;</span>
                             `;
                             container.appendChild(thumbDiv);
                         };
@@ -1258,11 +1258,36 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                // Sync saved ads from Firestore to LocalStorage cache on login
+                const guestKey = 'oldx_saved_ads_guest';
+                const userKey = 'oldx_saved_ads_' + user.uid;
+                let guestAds = JSON.parse(localStorage.getItem(guestKey) || '[]');
+                let userAds = JSON.parse(localStorage.getItem(userKey) || '[]');
+                
+                if (guestAds.length > 0) {
+                    guestAds.forEach(gItem => {
+                        const gId = (typeof gItem === 'string') ? gItem : gItem.docId;
+                        if (!userAds.some(uItem => ((typeof uItem === 'string') ? uItem : uItem.docId) === gId)) {
+                            userAds.push(gItem);
+                        }
+                    });
+                    localStorage.setItem(userKey, JSON.stringify(userAds));
+                    localStorage.removeItem(guestKey);
+                }
+
+                // Fetch saved ads from Firestore and merge with LocalStorage (fixes mobile/laptop cross-device sync)
                 db.collection('users').doc(user.uid).get().then(docSnap => {
-                    const userKey = 'oldx_saved_ads_' + user.uid;
                     if (docSnap.exists && docSnap.data().savedAds) {
-                        localStorage.setItem(userKey, JSON.stringify(docSnap.data().savedAds));
+                        let firestoreAds = docSnap.data().savedAds;
+                        firestoreAds.forEach(fItem => {
+                            const fId = (typeof fItem === 'string') ? fItem : fItem.docId;
+                            if (!userAds.some(uItem => ((typeof uItem === 'string') ? uItem : uItem.docId) === fId)) {
+                                userAds.push(fItem);
+                            }
+                        });
+                        localStorage.setItem(userKey, JSON.stringify(userAds));
+                        db.collection('users').doc(user.uid).set({ savedAds: userAds }, { merge: true });
+                    } else {
+                        db.collection('users').doc(user.uid).set({ savedAds: userAds }, { merge: true });
                     }
                     renderProducts();
                 }).catch(() => {
@@ -1930,7 +1955,7 @@
                     }
                 }
 
-                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+                const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
 
                 await db.collection('products').doc(docId).update({
                     title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
@@ -2231,7 +2256,7 @@
             }
         }
 
-        /* BULLETPROOF SAVED ADS FUNCTIONS (DUAL STORAGE & CONSISTENT FORMAT) */
+        /* BULLETPROOF SAVED ADS FUNCTIONS WITH FIRESTORE SYNC */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
@@ -2263,7 +2288,7 @@
                 savedList.push({
                     docId: docId,
                     title: productObj ? productObj.title : "Saved Ad",
-                    finalPriceStr: productObj ? productObj.finalPriceStr : "₹0",
+                    finalPriceStr: productObj ? productObj.finalPriceStr : "&#8377;0",
                     image: (productObj && productObj.images && productObj.images.length > 0) ? productObj.images[0] : ""
                 });
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
@@ -2273,7 +2298,7 @@
             // Save to LocalStorage immediately
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-            // Sync with Firestore in background
+            // Sync with Firestore so it works across Mobile & Laptop seamlessly
             db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).catch(err => {
                 console.log("Firestore sync warning:", err);
             });
@@ -2322,7 +2347,7 @@
                 let foundProduct = products.find(p => p.docId === id);
 
                 let title = foundProduct ? foundProduct.title : (item.title || "Saved Ad");
-                let price = foundProduct ? foundProduct.finalPriceStr : (item.finalPriceStr || "₹0");
+                let price = foundProduct ? foundProduct.finalPriceStr : (item.finalPriceStr || "&#8377;0");
                 let img = (foundProduct && foundProduct.images && foundProduct.images.length > 0) ? foundProduct.images[0] : (item.image || '');
 
                 const div = document.createElement('div');
@@ -2595,7 +2620,7 @@
             const discElem = document.getElementById('detailDiscountBadge');
             
             if (p.mrpPrice && p.mrpPrice > p.basePrice) {
-                mrpElem.innerText = `₹${p.mrpPrice.toLocaleString('en-IN')}`;
+                mrpElem.innerText = `&#8377;${p.mrpPrice.toLocaleString('en-IN')}`;
                 mrpElem.style.display = 'inline';
                 if (p.discountPercent > 0) {
                     discElem.innerText = `${p.discountPercent}% OFF`;
@@ -2653,10 +2678,10 @@
         }
 
         function openOfferModal() {
-            const offer = prompt('Enter your offer price (₹):');
+            const offer = prompt('Enter your offer price (&#8377;):');
             if(offer) {
-                showCustomAlert("Offer Sent", `Offer of ₹${offer} sent to seller successfully!`, "success");
-                triggerPushNotification("New Offer Received!", `A buyer offered ₹${offer} on your ad!`);
+                showCustomAlert("Offer Sent", `Offer of &#8377;${offer} sent to seller successfully!`, "success");
+                triggerPushNotification("New Offer Received!", `A buyer offered &#8377;${offer} on your ad!`);
             }
         }
 
@@ -2823,7 +2848,7 @@
                     type: document.getElementById('dynType')?.value || ''
                 };
 
-                const finalPriceStr = '₹' + Math.round(basePrice).toLocaleString('en-IN');
+                const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
 
                 let images = [];
                 if (imgInput.files && imgInput.files.length > 0) {
@@ -2963,7 +2988,7 @@
             card.onclick = () => openProductDetailPage(p.docId);
             
             const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">₹${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">&#8377;${p.mrpPrice.toLocaleString('en-IN')}</span>` 
                 : '';
 
             const discBadge = (p.discountPercent && p.discountPercent > 0)
@@ -2972,7 +2997,7 @@
 
             const featuredBadge = p.isFeatured
                 ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
-                : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">★ VERIFIED</span>`;
+                : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">&#9733; VERIFIED</span>`;
 
             const soldBadge = p.isSold 
                 ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
