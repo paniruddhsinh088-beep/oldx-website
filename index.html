@@ -183,6 +183,15 @@
                 <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
             </section>
         </main>
+
+        <!-- FOOTER WITH PRIVACY POLICY LINK -->
+        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3">
+            <div class="flex justify-center items-center gap-6 font-bold">
+                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Privacy Policy</a>
+                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Terms & Conditions</a>
+            </div>
+            <p>&copy; 2026 OldX Marketplace. All rights reserved. Built for Bharat.</p>
+        </footer>
     </div>
 
     <!-- PROFESSIONAL INBOX MODAL WITH ROOM UNREAD BADGE -->
@@ -208,7 +217,7 @@
         </div>
     </div>
 
-    <!-- ENHANCED DEDICATED PROFILE PAGE -->
+    <!-- ENHANCED DEDICATED PROFILE PAGE WITH DELETE ACCOUNT BUTTON -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -289,7 +298,13 @@
                     <span class="flex items-center gap-2"><i class="fa-solid fa-share-nodes text-blue-500"></i> Share My Profile</span>
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
-                <button onclick="handleLogout()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-4 cursor-pointer">
+
+                <!-- PLAY STORE COMPLIANT DELETE ACCOUNT BUTTON -->
+                <button onclick="confirmDeleteAccount()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-2 cursor-pointer border border-red-200">
+                    <i class="fa-solid fa-user-slash"></i> Account Deletion (Delete My Account)
+                </button>
+
+                <button onclick="handleLogout()" class="w-full bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-gray-200 transition mt-2 cursor-pointer">
                     <i class="fa-solid fa-right-from-bracket"></i> Log Out Account
                 </button>
             </div>
@@ -331,6 +346,32 @@
             <span class="text-[10px] font-bold mt-0.5">Account</span>
         </button>
     </nav>
+
+    <!-- PLAY STORE COMPLIANT PRIVACY POLICY MODAL -->
+    <div id="privacyModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center mb-4 border-b pb-3">
+                <h3 class="text-xl font-black text-primary dark:text-teal-400">Privacy Policy - OldX</h3>
+                <button onclick="closePrivacyModal()" class="text-gray-400 hover:text-black dark:hover:text-white text-xl font-bold w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center cursor-pointer">&times;</button>
+            </div>
+            <div class="text-xs text-gray-600 dark:text-gray-300 space-y-3 leading-relaxed">
+                <p><strong>Effective date:</strong> 2026</p>
+                <p>OldX ("we", "our", or "us") respects your privacy. This Privacy Policy explains how we collect, use, and protect your information when you use our Pan-India C2C Marketplace application.</p>
+                
+                <h4 class="font-bold text-gray-900 dark:text-white mt-3 text-sm">1. Information We Collect</h4>
+                <p>We collect information you provide directly, such as when you create an account, post an ad, or chat with other users (e.g., Name, Email, Phone number, and Location coordinates).</p>
+                
+                <h4 class="font-bold text-gray-900 dark:text-white mt-3 text-sm">2. How We Use Your Information</h4>
+                <p>Your information is used to facilitate marketplace transactions, provide real-time chat sync, secure user authentication, and prevent fraudulent activities.</p>
+                
+                <h4 class="font-bold text-gray-900 dark:text-white mt-3 text-sm">3. Data Security & Account Deletion</h4>
+                <p>We implement strict Firebase security rules to protect your personal data. You can completely delete your account and associated personal data at any time directly from your Profile settings via the <strong>"Account Deletion"</strong> button.</p>
+            </div>
+            <div class="mt-6 text-right pt-3 border-t">
+                <button onclick="closePrivacyModal()" class="bg-primary hover:bg-teal-900 text-white px-6 py-2.5 rounded-xl text-xs font-bold shadow transition cursor-pointer">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- EDIT PROFILE MODAL -->
     <div id="editProfileModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
@@ -1043,7 +1084,7 @@
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
         let inboxListenerUnsubscribe = null;
-        let userSavedAdsUnsubscribe = null; // Realtime Firestore listener for saved ads
+        let userSavedAdsUnsubscribe = null;
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
 
@@ -1052,7 +1093,59 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP
+        // Privacy Policy Modal Functions
+        function openPrivacyModal(e) {
+            if(e) e.preventDefault();
+            document.getElementById('privacyModal').style.display = 'flex';
+        }
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').style.display = 'none';
+        }
+
+        // Play Store Compliant Account Deletion Logic with Firestore Cleanup
+        async function confirmDeleteAccount() {
+            const confirmation = confirm("Su tame khrokhar tamaru OldX account ane badho data permanent delete karva mango chho? Aa action fari pachhi undo nahi thay.");
+            if (!confirmation) return;
+
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    showCustomAlert("Error", "Koi user login nathi!", "error");
+                    return;
+                }
+
+                const uid = user.uid;
+
+                // 1. Firestore mathi user ni ads ane profile data delete karo
+                const adsSnapshot = await db.collection("products").where("sellerUid", "==", uid).get();
+                const batch = db.batch();
+                
+                adsSnapshot.forEach((doc) => {
+                    batch.delete(doc.ref);
+                });
+
+                const userRef = db.collection("users").doc(uid);
+                batch.delete(userRef);
+
+                await batch.commit();
+
+                // 2. Firebase Auth mathi user account permanent delete karo
+                await user.delete();
+
+                showCustomAlert("Success", "Tamaru account ane badho data safaltapurvak delete thai gayo chhe.", "success");
+                window.location.hash = '';
+                window.location.reload();
+
+            } catch (error) {
+                console.error("Account delete karta vakhte error aavi:", error);
+                if (error.code === 'auth/requires-recent-login') {
+                    showCustomAlert("Security Required", "Security mate, fari login karine try karo (Recent login required).", "error");
+                } else {
+                    showCustomAlert("Error", "Account delete thavama error aavi: " + error.message, "error");
+                }
+            }
+        }
+
         function getSavedAdsStorageKey() {
             const user = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
             if (!user || !user.uid) return 'oldx_saved_ads_guest';
@@ -1065,7 +1158,6 @@
             return list.length;
         }
 
-        // Realtime listener to sync saved ads across mobile & laptop instantly
         function startRealtimeSavedAdsSync(userId) {
             if (userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
             
@@ -1075,7 +1167,6 @@
                     const storageKey = getSavedAdsStorageKey();
                     localStorage.setItem(storageKey, JSON.stringify(cloudAds));
                     
-                    // Update UI instantly across device
                     if(window.currentUser) {
                         updateProfileDetails(window.currentUser);
                     }
@@ -1299,7 +1390,6 @@
                     localStorage.removeItem(guestKey);
                 }
 
-                // Fetch saved ads from Firestore and start real-time sync
                 db.collection('users').doc(user.uid).get().then(docSnap => {
                     if (docSnap.exists && docSnap.data().savedAds) {
                         let firestoreAds = docSnap.data().savedAds;
@@ -1448,7 +1538,6 @@
             }
         }
 
-        /* INBOX MODAL WITH ROOM UNREAD BADGE */
         function openInboxModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view your messages!", "error");
@@ -2283,7 +2372,6 @@
             }
         }
 
-        /* 100% BULLETPROOF SAVED ADS FUNCTION WITH REAL-TIME CLOUD SYNC */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
@@ -2322,10 +2410,8 @@
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             
-            // 1. Local Storage Update Immediately
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-            // 2. Instant UI re-render on current device
             updateProfileDetails(activeUser);
             renderProducts();
             
@@ -2338,7 +2424,6 @@
                 openCartModal();
             }
 
-            // 3. FORCE FIRESTORE CLOUD SYNC (Jethi bija device/laptop par pan turant live dekhay)
             db.collection('users').doc(activeUser.uid).set({ 
                 savedAds: savedList 
             }, { merge: true }).then(() => {
@@ -2417,7 +2502,6 @@
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
 
-        /* RENDER BROWSE CATEGORIES */
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             const isAllSelected = currentFilterCat === 'all';
@@ -2931,7 +3015,6 @@
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        /* RENDER PRODUCTS */
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const recSection = document.getElementById('aiRecommendedSection');
