@@ -1051,7 +1051,7 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP
+        // 100% BULLETPROOF FIRESTORE + LOCALSTORAGE SYNC FOR MOBILE & LAPTOP (FIXED UID CHECK)
         function getSavedAdsStorageKey() {
             const user = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
             if (!user || !user.uid) return 'oldx_saved_ads_guest';
@@ -1274,7 +1274,7 @@
                     localStorage.removeItem(guestKey);
                 }
 
-                // Fetch saved ads from Firestore and merge with LocalStorage (fixes mobile/laptop cross-device sync)
+                // Fetch saved ads from Firestore and merge with LocalStorage
                 db.collection('users').doc(user.uid).get().then(docSnap => {
                     if (docSnap.exists && docSnap.data().savedAds) {
                         let firestoreAds = docSnap.data().savedAds;
@@ -2256,7 +2256,7 @@
             }
         }
 
-        /* BULLETPROOF SAVED ADS FUNCTIONS WITH FIRESTORE SYNC */
+        /* BULLETPROOF SAVED ADS FUNCTIONS WITH ROBUST UID CHECK */
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
             
@@ -2295,25 +2295,23 @@
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
             
-            // Save to LocalStorage immediately
             localStorage.setItem(storageKey, JSON.stringify(savedList));
 
-            // Sync with Firestore so it works across Mobile & Laptop seamlessly
-            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).catch(err => {
+            db.collection('users').doc(activeUser.uid).set({ savedAds: savedList }, { merge: true }).then(() => {
+                updateProfileDetails(activeUser);
+                renderProducts();
+                
+                if(currentProduct && currentProduct.docId === docId) {
+                    renderProductDetailView(currentProduct);
+                }
+                
+                const modalEl = document.getElementById('cartModal');
+                if (modalEl && modalEl.style.display === 'flex') {
+                    openCartModal();
+                }
+            }).catch(err => {
                 console.log("Firestore sync warning:", err);
             });
-            
-            updateProfileDetails(activeUser);
-            renderProducts();
-            
-            if(currentProduct && currentProduct.docId === docId) {
-                renderProductDetailView(currentProduct);
-            }
-            
-            const modalEl = document.getElementById('cartModal');
-            if (modalEl && modalEl.style.display === 'flex') {
-                openCartModal();
-            }
         }
 
         function toggleCartCurrentProduct() {
@@ -2376,11 +2374,11 @@
             
             localStorage.setItem(storageKey, JSON.stringify(cartList));
             
-            db.collection('users').doc(activeUser.uid).set({ savedAds: cartList }, { merge: true }).catch(err => console.log("Firestore remove error:", err));
-
-            updateProfileDetails(activeUser);
-            renderProducts();
-            openCartModal();
+            db.collection('users').doc(activeUser.uid).set({ savedAds: cartList }, { merge: true }).then(() => {
+                updateProfileDetails(activeUser);
+                renderProducts();
+                openCartModal();
+            }).catch(err => console.log("Firestore remove error:", err));
         }
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
