@@ -75,7 +75,7 @@
 
             <!-- Action Buttons in Header -->
             <div class="flex items-center space-x-2">
-                <!-- Admin Button Link (Hidden by default, shown only for Admin) -->
+                <!-- Admin Button Link -->
                 <a id="headerAdminBtn" href="admin.html" style="display: none;" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
                     <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
@@ -2215,7 +2215,7 @@
             }
         }
 
-        // Toggle Cart Product with immediate UI Sync & User-Specific Storage
+        // ENHANCED TOGGLE CART PRODUCT WITH DIRECT OBJECT CACHING
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
@@ -2225,13 +2225,24 @@
             
             let cartKey = getSavedAdsKey();
             let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
-            const idx = cartList.findIndex(id => id === docId);
+            const idx = cartList.findIndex(item => (typeof item === 'string' ? item === item : item.docId) === docId);
             
+            const productObj = products.find(p => p.docId === docId);
+
             if(idx > -1) { 
                 cartList.splice(idx, 1); 
                 showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
             } else { 
-                cartList.push(docId); 
+                if (productObj) {
+                    cartList.push({
+                        docId: productObj.docId,
+                        title: productObj.title,
+                        finalPriceStr: productObj.finalPriceStr,
+                        image: productObj.images?.[0] || ''
+                    });
+                } else {
+                    cartList.push({ docId: docId, title: "Saved Ad", finalPriceStr: "₹0", image: "" });
+                }
                 showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
                 triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
             }
@@ -2245,7 +2256,7 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
-        /* FULLY FIXED SAVED ADS MODAL RENDERER */
+        /* BULLETPROOF SAVED ADS MODAL RENDERER */
         function openCartModal() {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to view saved ads!", "error");
@@ -2262,26 +2273,32 @@
             document.getElementById('cartModal').style.display = 'flex';
             
             let cartKey = getSavedAdsKey();
-            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
+            let rawList = JSON.parse(localStorage.getItem(cartKey) || '[]');
             
-            if(cartList.length === 0) { 
+            if(rawList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`; 
                 return;
             }
 
             container.innerHTML = '';
             
-            cartList.forEach(id => {
-                const p = products.find(item => item.docId === id);
-                if(p) {
-                    appendCartItemElement(container, p.docId, p.title, p.finalPriceStr, p.images?.[0] || '');
-                } else {
-                    db.collection('products').doc(id).get().then(docSnap => {
-                        if (docSnap.exists) {
-                            const pData = docSnap.data();
-                            appendCartItemElement(container, id, pData.title, pData.finalPriceStr, pData.images?.[0] || '');
-                        }
-                    }).catch(() => {});
+            rawList.forEach(item => {
+                if (typeof item === 'string') {
+                    // Legacy string ID support
+                    const p = products.find(p => p.docId === item);
+                    if (p) {
+                        appendCartItemElement(container, p.docId, p.title, p.finalPriceStr, p.images?.[0] || '');
+                    } else {
+                        db.collection('products').doc(item).get().then(docSnap => {
+                            if (docSnap.exists) {
+                                const d = docSnap.data();
+                                appendCartItemElement(container, item, d.title, d.finalPriceStr, d.images?.[0] || '');
+                            }
+                        }).catch(() => {});
+                    }
+                } else if (item && item.docId) {
+                    // New cached object support
+                    appendCartItemElement(container, item.docId, item.title, item.finalPriceStr, item.image);
                 }
             });
 
@@ -2289,7 +2306,7 @@
                 if (container.children.length === 0) {
                     container.innerHTML = `<p class="text-center text-xs text-gray-400 py-6">No saved ads found.</p>`;
                 }
-            }, 800);
+            }, 600);
         }
 
         function appendCartItemElement(container, id, title, priceStr, imgUrl) {
@@ -2299,8 +2316,8 @@
             div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
             div.innerHTML = `
                 <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
-                    <img src="${imgUrl}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                    <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${priceStr}</p></div>
+                    <img src="${imgUrl || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                    <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title || 'Ad'}</h4><p class="text-teal-600 font-extrabold text-xs">${priceStr || '₹0'}</p></div>
                 </div>
                 <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer"><i class="fa-solid fa-trash-can"></i></button>
             `;
@@ -2310,7 +2327,7 @@
         function removeFromCart(id) {
             let cartKey = getSavedAdsKey();
             let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
-            cartList = cartList.filter(item => item !== id);
+            cartList = cartList.filter(item => (typeof item === 'string' ? item !== id : item.docId !== id));
             localStorage.setItem(cartKey, JSON.stringify(cartList));
             if(window.currentUser) updateProfileDetails(window.currentUser);
             openCartModal();
@@ -2896,8 +2913,8 @@
 
         function createProductCard(p, isCarousel = false) {
             let cartKey = getSavedAdsKey();
-            let cartList = JSON.parse(localStorage.getItem(cartKey) || '[]');
-            const isSaved = cartList.includes(p.docId);
+            let rawList = JSON.parse(localStorage.getItem(cartKey) || '[]');
+            const isSaved = rawList.some(item => (typeof item === 'string' ? item === p.docId : item.docId === p.docId));
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
             
