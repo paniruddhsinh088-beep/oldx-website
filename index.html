@@ -378,7 +378,7 @@
         </div>
     </div>
 
-    <!-- CONTACT US SUPPORT MODAL -->
+    <!-- CONTACT US SUPPORT MODAL (UPDATED IN ENGLISH) -->
     <div id="contactModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
@@ -389,7 +389,7 @@
             </div>
             
             <div class="text-xs text-gray-600 dark:text-gray-300 space-y-3">
-                <p>Tamare koi pan prakar no prashn, feedback athva support joito hoy, to tame amane niche aapela official email address par direct mail mokli sako chho:</p>
+                <p>If you have any questions, feedback, or need support, please feel free to reach out to us directly via our official email address below:</p>
                 
                 <div class="bg-teal-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-teal-200 dark:border-gray-600 text-center space-y-2">
                     <i class="fa-solid fa-envelope text-2xl text-teal-600"></i>
@@ -399,7 +399,7 @@
                     </a>
                 </div>
 
-                <p class="text-[11px] text-gray-400 text-center">Ame general 24 ghanta ni andar reply aapiye chhiye.</p>
+                <p class="text-[11px] text-gray-400 text-center">We generally reply within 24 hours.</p>
             </div>
 
             <div class="mt-4 text-right pt-2 border-t">
@@ -1148,19 +1148,18 @@
 
         // Play Store Compliant Account Deletion Logic with Firestore Cleanup
         async function confirmDeleteAccount() {
-            const confirmation = confirm("Su tame khrokhar tamaru OldX account ane badho data permanent delete karva mango chho? Aa action fari pachhi undo nahi thay.");
+            const confirmation = confirm("Are you sure you want to permanently delete your OldX account and all associated data? This action cannot be undone.");
             if (!confirmation) return;
 
             try {
                 const user = auth.currentUser;
                 if (!user) {
-                    showCustomAlert("Error", "Koi user login nathi!", "error");
+                    showCustomAlert("Error", "No user is logged in!", "error");
                     return;
                 }
 
                 const uid = user.uid;
 
-                // 1. Firestore mathi user ni ads ane profile data delete karo
                 const adsSnapshot = await db.collection("products").where("sellerUid", "==", uid).get();
                 const batch = db.batch();
                 
@@ -1173,19 +1172,18 @@
 
                 await batch.commit();
 
-                // 2. Firebase Auth mathi user account permanent delete karo
                 await user.delete();
 
-                showCustomAlert("Success", "Tamaru account ane badho data safaltapurvak delete thai gayo chhe.", "success");
+                showCustomAlert("Success", "Your account and all associated data have been successfully deleted.", "success");
                 window.location.hash = '';
                 window.location.reload();
 
             } catch (error) {
-                console.error("Account delete karta vakhte error aavi:", error);
+                console.error("Error deleting account:", error);
                 if (error.code === 'auth/requires-recent-login') {
-                    showCustomAlert("Security Required", "Security mate, fari login karine try karo (Recent login required).", "error");
+                    showCustomAlert("Security Required", "For security purposes, please re-login and try again (Recent login required).", "error");
                 } else {
-                    showCustomAlert("Error", "Account delete thavama error aavi: " + error.message, "error");
+                    showCustomAlert("Error", "Error deleting account: " + error.message, "error");
                 }
             }
         }
