@@ -1051,10 +1051,11 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // UNIVERSAL ROBUST STORAGE HELPER WITH USER-SAFE EMAIL/UID FALLBACK
+        // ROBUST STORAGE HELPER WITH UID & AUTO GUEST MIGRATION
         function getSavedAdsKey() {
-            if (!window.currentUser) return 'oldx_saved_ads_guest';
-            return 'oldx_saved_ads_' + (window.currentUser.email || window.currentUser.uid);
+            const user = firebase.auth().currentUser || window.currentUser;
+            if (!user) return 'oldx_saved_ads_guest';
+            return 'oldx_saved_ads_' + user.uid;
         }
 
         function getValidSavedCount() {
@@ -1256,6 +1257,23 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
+                // Migrate guest saved items to user-specific key upon login
+                const guestKey = 'oldx_saved_ads_guest';
+                const userKey = 'oldx_saved_ads_' + user.uid;
+                const guestItems = JSON.parse(localStorage.getItem(guestKey) || '[]');
+                if (guestItems.length > 0) {
+                    const userItems = JSON.parse(localStorage.getItem(userKey) || '[]');
+                    const combined = [...userItems];
+                    guestItems.forEach(gItem => {
+                        const gId = typeof gItem === 'string' ? gItem : gItem.docId;
+                        if (!combined.some(uItem => (typeof uItem === 'string' ? uItem === gId : uItem.docId === gId))) {
+                            combined.push(gItem);
+                        }
+                    });
+                    localStorage.setItem(userKey, JSON.stringify(combined));
+                    localStorage.removeItem(guestKey);
+                }
+
                 startGlobalUnreadMessagesListener(user.uid);
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
@@ -1291,7 +1309,7 @@
                 `;
                 checkUserPinStatus(user);
                 requestPushNotificationPermission();
-                renderProducts(); // Refresh products to show active saved hearts
+                renderProducts();
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
@@ -2219,7 +2237,7 @@
             }
         }
 
-        /* FULLY FIXED SAVED ADS FUNCTIONS (WITH ROBUST OBJECT STORAGE & MATCHING) */
+        /* SAVED ADS FUNCTIONS (WITH UID & AUTOMATIC MIGRATION) */
         function toggleCartProduct(docId) {
             if(!window.currentUser) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
