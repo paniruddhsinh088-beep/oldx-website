@@ -129,20 +129,50 @@
         <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">&#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366; Local C2C Marketplace</span>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">&#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366; Pan-India C2C Marketplace</span>
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
-                <!-- Search Bar with Voice & Distance Filters -->
+                <!-- Search Bar with Voice & Pan-India State & Distance Filters -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
                         <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
                         <select id="stateFilter" onchange="renderProducts()" class="w-full bg-transparent font-bold text-xs md:text-sm text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer">
-                            <option value="Gujarat" selected>Gujarat (Default)</option>
-                            <option value="">All India / Pan-India</option>
+                            <option value="" selected>🌐 All India / Pan-India</option>
+                            <option value="Gujarat">Gujarat (Default)</option>
+                            <option value="Andhra Pradesh">Andhra Pradesh</option>
+                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+                            <option value="Assam">Assam</option>
+                            <option value="Bihar">Bihar</option>
+                            <option value="Chhattisgarh">Chhattisgarh</option>
+                            <option value="Goa">Goa</option>
+                            <option value="Haryana">Haryana</option>
+                            <option value="Himachal Pradesh">Himachal Pradesh</option>
+                            <option value="Jharkhand">Jharkhand</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Kerala">Kerala</option>
+                            <option value="Madhya Pradesh">Madhya Pradesh</option>
                             <option value="Maharashtra">Maharashtra</option>
+                            <option value="Manipur">Manipur</option>
+                            <option value="Meghalaya">Meghalaya</option>
+                            <option value="Mizoram">Mizoram</option>
+                            <option value="Nagaland">Nagaland</option>
+                            <option value="Odisha">Odisha</option>
+                            <option value="Punjab">Punjab</option>
                             <option value="Rajasthan">Rajasthan</option>
+                            <option value="Sikkim">Sikkim</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                            <option value="Tripura">Tripura</option>
+                            <option value="Uttar Pradesh">Uttar Pradesh</option>
+                            <option value="Uttarakhand">Uttarakhand</option>
+                            <option value="West Bengal">West Bengal</option>
+                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
+                            <option value="Chandigarh">Chandigarh</option>
                             <option value="Delhi">Delhi</option>
+                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
+                            <option value="Ladakh">Ladakh</option>
+                            <option value="Puducherry">Puducherry</option>
                         </select>
                     </div>
 
@@ -150,12 +180,14 @@
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base"></i>
                         <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes, Properties..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
                         
-                        <!-- Distance Filter -->
-                        <select id="distanceFilter" onchange="renderProducts()" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-2 py-1.5 rounded-xl border border-teal-200 dark:border-gray-600 focus:outline-none cursor-pointer shrink-0">
+                        <!-- Expanded 100 km Distance Filter Options -->
+                        <select id="distanceFilter" onchange="renderProducts()" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-2.5 py-1.5 rounded-xl border border-teal-200 dark:border-gray-600 focus:outline-none cursor-pointer shrink-0">
                             <option value="all">Any Distance</option>
                             <option value="5">Within 5 km</option>
                             <option value="15">Within 15 km</option>
                             <option value="30">Within 30 km</option>
+                            <option value="50">Within 50 km</option>
+                            <option value="100">Within 100 km</option>
                         </select>
 
                         <!-- Voice Search Button -->
@@ -170,7 +202,7 @@
         <!-- MAIN LAYOUT SECTIONS -->
         <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
             
-            <!-- 2. BROWSE CATEGORIES -->
+            <!-- 2. BROWSE CATEGORIES (Fixed & Enhanced) -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -464,6 +496,7 @@
                 <div>
                     <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
                     <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
+                    <p class="text-[10px] text-gray-400 mt-1">* Image will be compressed automatically to avoid size errors</p>
                 </div>
                 <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition cursor-pointer">
                     Save Profile Changes
@@ -774,7 +807,7 @@
         </div>
     </div>
 
-    <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW -->
+    <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW (Fixed Header when Keyboard Opens) -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-3 overflow-hidden">
@@ -1242,6 +1275,7 @@
                 el.addEventListener('click', () => triggerHaptic());
             });
             checkLaunchBanner();
+            renderHomeCategories();
         });
 
         window.addEventListener('offline', () => {
@@ -1691,7 +1725,7 @@
                 startRealtimeSavedAdsSync(user.uid);
                 startGlobalUnreadMessagesListener(user.uid);
 
-                // --- PRECISE ONLINE / OFFLINE STATUS LOGIC ---
+                // --- ACCURATE ONLINE / OFFLINE STATUS LOGIC ---
                 const setUserOnlineStatus = (status) => {
                     if (auth.currentUser) {
                         db.collection('users').doc(auth.currentUser.uid).set({
@@ -1701,10 +1735,8 @@
                     }
                 };
 
-                // Set online immediately when page loads/opens
                 setUserOnlineStatus(true);
 
-                // Track visibility changes (Tab switch / Minimize / Close)
                 document.addEventListener('visibilitychange', () => {
                     if (document.visibilityState === 'visible') {
                         setUserOnlineStatus(true);
@@ -2221,7 +2253,7 @@
                 showCustomAlert("Success", "Profile updated successfully!", "success");
                 btn.innerText = 'Save Profile Changes'; btn.disabled = false;
             } catch (error) {
-                showCustomAlert("Error", error.message, "error");
+                showCustomAlert("Error", "Image size is too large or network error. Please select a smaller photo.", "error");
                 btn.innerText = 'Save Profile Changes'; btn.disabled = false;
             }
         }
@@ -2815,6 +2847,7 @@
 
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
+            if (!grid) return;
             const isAllSelected = currentFilterCat === 'all';
 
             grid.innerHTML = `
@@ -2935,6 +2968,7 @@
             document.getElementById('productDetailView').style.display = 'none';
             document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
+            renderHomeCategories();
         }
 
         window.addEventListener('hashchange', handleHashChange);
