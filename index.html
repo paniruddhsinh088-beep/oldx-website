@@ -1298,6 +1298,29 @@
             showAppNotification("✅ Back online!", "success");
         });
 
+        window.openAdminPanel = function() {
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Tamare pehla admin login karvu padse!", "error");
+                openAuthModal();
+                return;
+            }
+
+            // Admin email check karo
+            if (window.currentUser.email === 'paniruddhsinh088@gmail.com') {
+                window.location.href = 'admin.html';
+            } else {
+                db.collection('admins').doc(window.currentUser.uid).get().then(docSnap => {
+                    if (docSnap.exists) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        showCustomAlert("Access Denied ❌", "Tamari pase admin privileges nathi!", "error");
+                    }
+                }).catch(() => {
+                    showCustomAlert("Access Denied ❌", "Tamari pase admin privileges nathi!", "error");
+                });
+            }
+        };
+
         function showAppNotification(message, type) {
             const toast = document.createElement('div');
             toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-2xl text-xs font-bold text-white shadow-xl transition-all duration-300 ${
