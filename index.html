@@ -115,8 +115,7 @@
             <!-- Action Buttons in Header -->
             <div class="flex items-center space-x-2">
                 <!-- Admin Button Link -->
-                <a id="headerAdminBtn" href="admin.html" style="display: none;" class="bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs md:text-sm transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-shield-halved text-blue-600"></i> Admin
+                <a id="headerAdminBtn" href="admin.html" styleclass="fa-solid fa-shield-halved text-blue-600"></i> Admin
                 </a>
 
                 <!-- Dynamic Auth Container -->
@@ -1511,11 +1510,16 @@
             }
         }
 
-        function triggerPushNotification(title, body) {
-            if ("Notification" in window && Notification.permission === "granted") {
-                new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" });
-            }
+       function triggerPushNotification(title, body) {
+    try {
+        if ("Notification" in window && Notification.permission === "granted") {
+            console.log("Notification:", title, body);
         }
+    } catch (e) {
+        console.log("Notification skipped:", e);
+    }
+}
+
 
         function startVoiceSearch() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
