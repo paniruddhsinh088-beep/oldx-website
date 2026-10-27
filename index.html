@@ -132,7 +132,7 @@
         <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center overflow-hidden">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">&#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366; Pan-India C2C Marketplace</span>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">INDIA C2C MARKETPLACE</span>
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
@@ -1193,6 +1193,17 @@
         <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center text-xl font-bold hover:bg-white/40 transition cursor-pointer z-10">
             <i class="fa-solid fa-xmark"></i>
         </button>
+        
+        <!-- Lightbox Previous Button -->
+        <button onclick="plusLightboxSlide(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center text-xl font-bold hover:bg-white/40 transition cursor-pointer z-10">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        
+        <!-- Lightbox Next Button -->
+        <button onclick="plusLightboxSlide(1)" class="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/20 text-white flex items-center justify-center text-xl font-bold hover:bg-white/40 transition cursor-pointer z-10">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+
         <div class="relative max-w-4xl w-full h-[80vh] flex items-center justify-center overflow-hidden">
             <img id="lightboxImage" src="" class="max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in" onclick="toggleLightboxZoom()">
         </div>
@@ -1237,7 +1248,7 @@
                     </div>
                     <div>
                         <h4 class="font-black text-xs">OldX AI Assistant</h4>
-                        <p class="text-[10px] text-teal-200">Online | Multilingual Support &#2381;&#2360;&#2381;&#2350;&#2352;&#2366;&#2335;&#2354;&#2367;&#2351;&#2366;</p>
+                        <p class="text-[10px] text-teal-200">Online | Multilingual Support</p>
                     </div>
                 </div>
                 <button onclick="toggleAiChatbot()" class="text-white hover:text-gray-300 cursor-pointer">
@@ -1338,13 +1349,11 @@
                     userCurrentLocation.lat = position.coords.latitude;
                     userCurrentLocation.lng = position.coords.longitude;
                     
-                    // Simple estimation for demo or reverse geocoding default
                     fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userCurrentLocation.lat}&lon=${userCurrentLocation.lng}`)
                     .then(res => res.json())
                     .then(data => {
                         if(data && data.address) {
                             const detectedState = data.address.state || 'Gujarat';
-                            // Match with available states if possible
                             const matched = allStatesList.find(s => detectedState.includes(s.id));
                             if(matched && matched.id) {
                                 currentSelectedState = matched.id;
@@ -3494,11 +3503,11 @@
             }
 
             const phone = p.phone || '919876543210';
-            const waMsg = encodeURIComponent(`Hi, I am interested in your item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+            const waMsg = encodeURIComponent(`Hi, I am interested in this item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
             document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
         }
 
-        // 2. IMAGE LIGHTBOX & ZOOM FUNCTIONS
+        // 2. IMAGE LIGHTBOX & ZOOM FUNCTIONS WITH SLIDER NAVIGATION
         let lightboxCurrentIndex = 0;
         let isZoomed = false;
 
@@ -3522,6 +3531,17 @@
             imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in';
             imgEl.src = currentProduct.images[lightboxCurrentIndex];
             counterEl.innerText = `${lightboxCurrentIndex + 1} / ${currentProduct.images.length}`;
+        }
+
+        function plusLightboxSlide(n) {
+            if(!currentProduct || !currentProduct.images) return;
+            lightboxCurrentIndex += n;
+            if (lightboxCurrentIndex >= currentProduct.images.length) {
+                lightboxCurrentIndex = 0;
+            } else if (lightboxCurrentIndex < 0) {
+                lightboxCurrentIndex = currentProduct.images.length - 1;
+            }
+            showLightboxImage();
         }
 
         function toggleLightboxZoom() {
@@ -3842,7 +3862,7 @@
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        // 4. INSTANT SEARCH AUTOCOMPLETE FUNCTION
+        // 4. INSTANT SEARCH AUTOCOMPLETE FUNCTION WITH FULL TITLE DISPLAY FIX
         function handleSearchInput() {
             renderProducts();
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -3863,17 +3883,17 @@
             dropdown.innerHTML = '';
             matches.forEach(m => {
                 const itemDiv = document.createElement('div');
-                itemDiv.className = "flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200";
+                itemDiv.className = "flex items-center gap-3 p-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200";
                 itemDiv.onclick = () => {
                     document.getElementById('searchInput').value = m.title;
                     dropdown.style.display = 'none';
                     renderProducts();
                 };
                 itemDiv.innerHTML = `
-                    <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-8 h-8 rounded-lg object-cover bg-gray-200">
-                    <div class="truncate flex-1">
-                        <p class="truncate">${m.title}</p>
-                        <p class="text-[10px] text-teal-600">${m.finalPriceStr}</p>
+                    <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-10 h-10 rounded-xl object-cover bg-gray-200 shrink-0">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="font-bold text-gray-900 dark:text-white text-xs truncate whitespace-normal leading-snug">${m.title}</p>
+                        <p class="text-[11px] text-teal-600 dark:text-teal-400 font-extrabold mt-0.5">${m.finalPriceStr}</p>
                     </div>
                 `;
                 dropdown.appendChild(itemDiv);
