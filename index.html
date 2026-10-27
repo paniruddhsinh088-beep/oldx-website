@@ -523,7 +523,7 @@
                 <div>
                     <label class="block font-bold mb-1">Select Profile Photo from Gallery</label>
                     <input type="file" id="editProfilePhotoFile" accept="image/*" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 text-xs">
-                    <p class="text-[10px] text-gray-400 mt-1">* Image will be compressed automatically to avoid size errors</p>
+                    <p class="text-[10px] text-gray-400 mt-1">* Image will be compressed safely to avoid size errors</p>
                 </div>
                 <button onclick="saveProfileChangesWithFile()" id="saveProfileBtn" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition cursor-pointer">
                     Save Profile Changes
@@ -2272,23 +2272,29 @@
             btn.disabled = true;
 
             try {
-                let photoURL = window.currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                let photoURL = "";
+                const userDocRef = db.collection('users').doc(window.currentUser.uid);
+                const userSnap = await userDocRef.get();
+                if (userSnap.exists && userSnap.data().photoURL) {
+                    photoURL = userSnap.data().photoURL;
+                } else {
+                    photoURL = window.currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                }
 
                 if (photoFileInput.files && photoFileInput.files[0]) {
                     const file = photoFileInput.files[0];
                     photoURL = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onerror = () => resolve(window.currentUser.photoURL || "");
+                        reader.onerror = () => resolve(photoURL);
                         reader.onload = (e) => {
                             const img = new Image();
-                            img.onerror = () => resolve(window.currentUser.photoURL || "");
+                            img.onerror = () => resolve(photoURL);
                             img.onload = () => {
                                 const canvas = document.createElement('canvas');
                                 let width = img.width;
                                 let height = img.height;
                                 
-                                // Strict safe size compression (100px and 0.6 quality) to prevent Firebase Auth size limit errors
-                                const maxDim = 100;
+                                const maxDim = 80; // Safe low resolution to keep database document size minimal
                                 if (width > height && width > maxDim) { 
                                     height *= maxDim / width; 
                                     width = maxDim; 
@@ -2302,7 +2308,7 @@
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
                                 
-                                resolve(canvas.toDataURL('image/jpeg', 0.6));
+                                resolve(canvas.toDataURL('image/jpeg', 0.5));
                             };
                             img.src = e.target.result;
                         };
@@ -2310,14 +2316,13 @@
                     });
                 }
 
-                // Firebase Auth profile update
+                // 1. Update ONLY displayName in Firebase Auth to prevent photoURL size limit error
                 await window.currentUser.updateProfile({
-                    displayName: newName,
-                    photoURL: photoURL
+                    displayName: newName
                 });
 
-                // Firestore database update
-                await db.collection('users').doc(window.currentUser.uid).set({
+                // 2. Save photoURL and name in Firestore Database securely
+                await userDocRef.set({
                     displayName: newName,
                     photoURL: photoURL,
                     email: window.currentUser.email || ""
@@ -2711,8 +2716,20 @@
             if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
             document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
-            if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
             
+            // Fetch photoURL from Firestore database securely
+            db.collection('users').doc(user.uid).get().then(docSnap => {
+                if (docSnap.exists && docSnap.data().photoURL) {
+                    document.getElementById('profileUserPhoto').src = docSnap.data().photoURL;
+                } else if (user.photoURL) {
+                    document.getElementById('profileUserPhoto').src = user.photoURL;
+                } else {
+                    document.getElementById('profileUserPhoto').src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                }
+            }).catch(() => {
+                if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
+            });
+
             const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
             const isEmailVerified = user.emailVerified || isGoogleUser;
             
