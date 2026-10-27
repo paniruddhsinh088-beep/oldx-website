@@ -197,7 +197,7 @@
                     </div>
                     <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300">Sponsored</span>
                 </div>
-                <div id="featuredProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
+                <div id="featuredProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
             </section>
 
             <!-- 4. RECOMMENDED FOR YOU (AI PICK) SECTION -->
@@ -210,10 +210,10 @@
                         <p class="text-xs text-gray-400 font-medium">AI Picks based on your recent activity & preferences</p>
                     </div>
                 </div>
-                <div id="recommendedProductGrid" class="flex gap-5 overflow-x-auto no-scrollbar md:grid md:grid-cols-4 md:gap-6 pb-2"></div>
+                <div id="recommendedProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
             </section>
 
-            <!-- 5. FRESH RECOMMENDATIONS / ALL PRODUCTS -->
+            <!-- 5. FRESH RECOMMENDATIONS / ALL PRODUCTS (Updated to Modern 3-Column / FlipKart Grid Style) -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -224,7 +224,7 @@
                     </div>
                 </div>
                 
-                <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6"></div>
+                <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6"></div>
             </section>
         </main>
 
@@ -1401,7 +1401,6 @@
         let inboxListenerUnsubscribe = null;
         let userSavedAdsUnsubscribe = null;
 
-        // Default filters state: Gujarat set as default
         let currentSelectedState = 'Gujarat';
         let currentSelectedDistance = 'all';
 
@@ -1706,7 +1705,6 @@
             recognition.start();
         }
 
-        // Voice Input for In-App Chat
         function startChatVoiceInput() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -1715,7 +1713,7 @@
             }
 
             const recognition = new SpeechRecognition();
-            recognition.lang = 'en-IN'; // Supports English & Indian languages
+            recognition.lang = 'en-IN';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
@@ -2462,7 +2460,7 @@
                                 let width = img.width;
                                 let height = img.height;
                                 
-                                const maxDim = 80; // Safe low resolution to keep database document size minimal
+                                const maxDim = 80;
                                 if (width > height && width > maxDim) { 
                                     height *= maxDim / width; 
                                     width = maxDim; 
@@ -2484,12 +2482,10 @@
                     });
                 }
 
-                // 1. Update ONLY displayName in Firebase Auth to prevent photoURL size limit error
                 await window.currentUser.updateProfile({
                     displayName: newName
                 });
 
-                // 2. Save photoURL and name in Firestore Database securely
                 await userDocRef.set({
                     displayName: newName,
                     photoURL: photoURL,
@@ -2885,7 +2881,6 @@
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
             document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
             
-            // Fetch photoURL from Firestore database securely
             db.collection('users').doc(user.uid).get().then(docSnap => {
                 if (docSnap.exists && docSnap.data().photoURL) {
                     document.getElementById('profileUserPhoto').src = docSnap.data().photoURL;
@@ -3786,13 +3781,14 @@
             });
             
             const card = document.createElement('div');
-            const carouselClass = isCarousel ? "shrink-0 w-64 md:w-auto" : "";
+            const carouselClass = isCarousel ? "shrink-0 w-44 sm:w-56 md:w-auto" : "";
             
-            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-3xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
+            // Modern e-commerce card with compact padding and clean borders like Flipkart/Amazon
+            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
             card.onclick = () => openProductDetailPage(p.docId);
             
             const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                ? `<span class="text-xs text-gray-400 line-through font-semibold ml-1">&#8377;${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                ? `<span class="text-[11px] text-gray-400 line-through font-semibold ml-1">&#8377;${p.mrpPrice.toLocaleString('en-IN')}</span>` 
                 : '';
 
             const discBadge = (p.discountPercent && p.discountPercent > 0)
@@ -3800,50 +3796,50 @@
                 : '';
 
             const featuredBadge = p.isFeatured
-                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
+                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
                 : (p.isShopVerified 
-                    ? `<span class="bg-blue-600 text-white text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-store"></i> SHOP</span>`
-                    : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2.5 py-1 rounded-lg shadow-sm tracking-wide">&#9733; VERIFIED</span>`);
+                    ? `<span class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-store"></i> SHOP</span>`
+                    : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide">&#9733; VERIFIED</span>`);
 
             const soldBadge = p.isSold 
-                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-xs px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-[10px] px-2 py-1 rounded uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
                 : '';
 
             card.innerHTML = `
                 ${soldBadge}
                 <div>
-                    <div class="h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                    <div class="h-36 sm:h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
                         ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
                         
-                        <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+                        <div class="absolute top-2 left-2 flex items-center gap-1 z-10">
                             ${featuredBadge}
                             ${discBadge}
                         </div>
 
-                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2.5 right-2.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-8 h-8 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110">
-                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500 font-black text-base' : 'text-gray-400 text-sm'}"></i>
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500 font-black text-sm' : 'text-gray-400 text-xs'}"></i>
                         </button>
                     </div>
 
-                    <div class="p-4 space-y-2">
+                    <div class="p-3 space-y-1.5">
                         <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                            <span class="truncate max-w-[130px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
-                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.5 rounded-full capitalize">${p.category}</span>
+                            <span class="truncate max-w-[110px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.2 rounded-full capitalize text-[9px]">${p.category}</span>
                         </div>
 
-                        <h4 class="font-extrabold text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                        <h4 class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
                             ${p.title}
                         </h4>
 
-                        <div class="flex items-baseline gap-1 pt-1">
-                            <span class="text-xl font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
+                        <div class="flex items-baseline gap-1 pt-0.5">
+                            <span class="text-base sm:text-lg font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
                             ${mrpMarkup}
                         </div>
                     </div>
                 </div>
 
-                <button class="w-full py-2.5 bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-paper-plane"></i> Send Message
+                <button class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-paper-plane text-[10px]"></i> Chat / Buy
                 </button>
             `;
             return card;
