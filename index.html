@@ -1532,16 +1532,15 @@
             }
         }
 
-       function triggerPushNotification(title, body) {
-    try {
-        if ("Notification" in window && Notification.permission === "granted") {
-            console.log("Notification:", title, body);
+        function triggerPushNotification(title, body) {
+            try {
+                if ("Notification" in window && Notification.permission === "granted") {
+                    console.log("Notification:", title, body);
+                }
+            } catch (e) {
+                console.log("Notification skipped:", e);
+            }
         }
-    } catch (e) {
-        console.log("Notification skipped:", e);
-    }
-}
-
 
         function startVoiceSearch() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -2265,14 +2264,50 @@
             const photoFileInput = document.getElementById('editProfilePhotoFile');
             const btn = document.getElementById('saveProfileBtn');
 
-            if(!window.currentUser) return;
-            btn.innerText = 'Saving...'; btn.disabled = true;
+            if(!window.currentUser) {
+                showCustomAlert("Error", "User not logged in!", "error");
+                return;
+            }
+
+            btn.innerText = 'Saving...'; 
+            btn.disabled = true;
 
             try {
-                let photoURL = window.currentUser.photoURL;
+                let photoURL = window.currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
                 if (photoFileInput.files && photoFileInput.files[0]) {
-                    photoURL = await compressImage(photoFileInput.files[0]);
+                    const file = photoFileInput.files[0];
+                    photoURL = await new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onerror = () => resolve(window.currentUser.photoURL || "");
+                        reader.onload = (e) => {
+                            const img = new Image();
+                            img.onerror = () => resolve(window.currentUser.photoURL || "");
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                const maxDim = 120;
+                                if (width > height && width > maxDim) { 
+                                    height *= maxDim / width; 
+                                    width = maxDim; 
+                                } else if (height > maxDim) { 
+                                    width *= maxDim / height; 
+                                    height = maxDim; 
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                
+                                resolve(canvas.toDataURL('image/jpeg', 0.6));
+                            };
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    });
                 }
 
                 await window.currentUser.updateProfile({
@@ -2280,13 +2315,22 @@
                     photoURL: photoURL
                 });
 
+                await db.collection('users').doc(window.currentUser.uid).set({
+                    displayName: newName,
+                    photoURL: photoURL,
+                    email: window.currentUser.email
+                }, { merge: true });
+
                 closeEditProfileModal();
                 updateProfileDetails(window.currentUser);
+                renderProducts();
                 showCustomAlert("Success", "Profile updated successfully!", "success");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
             } catch (error) {
-                showCustomAlert("Error", "Image size is too large or network error. Please select a smaller photo.", "error");
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+                console.error("Profile save error:", error);
+                showCustomAlert("Error", "Update nathi thai sakyu. Fari try karo.", "error");
+            } finally {
+                btn.innerText = 'Save Profile Changes'; 
+                btn.disabled = false;
             }
         }
 
@@ -3197,62 +3241,57 @@
             document.getElementById('offerModal').style.display = 'none';
         }
 
-      
-           function submitUserOffer() {
-    const offerPrice = document.getElementById('offerPriceInput').value.trim();
-    const customMsg = document.getElementById('offerMessageInput').value.trim();
+        function submitUserOffer() {
+            const offerPrice = document.getElementById('offerPriceInput').value.trim();
+            const customMsg = document.getElementById('offerMessageInput').value.trim();
 
-    if (!offerPrice) {
-        showCustomAlert("Error", "Please enter a valid offer price!", "error");
-        return;
-    }
+            if (!offerPrice) {
+                showCustomAlert("Error", "Please enter a valid offer price!", "error");
+                return;
+            }
 
-    if (!window.currentUser || !currentProduct) {
-        showCustomAlert("Error", "Login or product details missing!", "error");
-        return;
-    }
+            if (!window.currentUser || !currentProduct) {
+                showCustomAlert("Error", "Login or product details missing!", "error");
+                return;
+            }
 
-    const buyerId = window.currentUser.uid;
-    const sellerId = currentProduct.sellerUid;
+            const buyerId = window.currentUser.uid;
+            const sellerId = currentProduct.sellerUid;
 
-    if (!sellerId) {
-        showCustomAlert("Error", "Seller information is missing for this product.", "error");
-        return;
-    }
+            if (!sellerId) {
+                showCustomAlert("Error", "Seller information is missing for this product.", "error");
+                return;
+            }
 
-    const chatRoomId = `${currentProduct.docId}_${buyerId}`;
-    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const chatRoomId = `${currentProduct.docId}_${buyerId}`;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-    // Product no photo fetch karva mate 
-    const productImage = (currentProduct.images && currentProduct.images.length > 0) ? currentProduct.images[0] : '';
+            const productImage = (currentProduct.images && currentProduct.images.length > 0) ? currentProduct.images[0] : '';
+            const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
 
-    const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
-
-    db.collection('chats').doc(chatRoomId).set({
-        participants: [buyerId, sellerId],
-        productId: currentProduct.docId,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true }).then(() => {
-        return db.collection('chats').doc(chatRoomId).collection('messages').add({
-            text: fullOfferText,
-            // Ahiya attachment object ma product ni image direct muki didhi chhe
-            attachment: productImage ? { type: 'image/jpeg', name: currentProduct.title, data: productImage } : null,
-            senderUid: buyerId,
-            senderName: window.currentUser.displayName || 'Buyer',
-            status: 'sent',
-            time: timeStr,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    }).then(() => {
-        closeOfferModal();
-        showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
-        triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
-    }).catch(err => {
-        console.error("Error sending offer detail:", err);
-        showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
-    });
-}
-
+            db.collection('chats').doc(chatRoomId).set({
+                participants: [buyerId, sellerId],
+                productId: currentProduct.docId,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                return db.collection('chats').doc(chatRoomId).collection('messages').add({
+                    text: fullOfferText,
+                    attachment: productImage ? { type: 'image/jpeg', name: currentProduct.title, data: productImage } : null,
+                    senderUid: buyerId,
+                    senderName: window.currentUser.displayName || 'Buyer',
+                    status: 'sent',
+                    time: timeStr,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(() => {
+                closeOfferModal();
+                showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
+                triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
+            }).catch(err => {
+                console.error("Error sending offer detail:", err);
+                showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
+            });
+        }
 
         function startSellWizard() {
             if (!window.currentUser) {
