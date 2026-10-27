@@ -115,9 +115,9 @@
             <!-- Action Buttons in Header -->
             <div class="flex items-center space-x-2">
                <button id="headerAdminBtn" onclick="openAdminPanel()" style="display: none;" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-amber-500 to-red-600 rounded-full shadow-md hover:from-amber-600 hover:to-red-700 transition-all transform hover:scale-105">
-    <i class="fa-solid fa-shield-halved text-yellow-200"></i> Admin Panel
-</button>
- <!-- Dynamic Auth Container -->
+                    <i class="fa-solid fa-shield-halved text-yellow-200"></i> Admin Panel
+                </button>
+                <!-- Dynamic Auth Container -->
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
                         <i class="fa-solid fa-user-check mr-1"></i> Login
@@ -136,62 +136,29 @@
                 <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
-                <!-- Search Bar with Voice & Pan-India State & Distance Filters -->
+                <!-- Search Bar with Modern Custom Pickers & Voice Search -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
-                    <div class="flex items-center gap-2 px-3 py-2 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700">
-                        <i class="fa-solid fa-location-dot text-red-500 text-base"></i>
-                        <select id="stateFilter" onchange="renderProducts()" class="w-full bg-transparent font-bold text-xs md:text-sm text-gray-700 dark:text-gray-200 focus:outline-none cursor-pointer">
-                            <option value="" selected>🌐 All India / Pan-India</option>
-                            <option value="Gujarat">Gujarat (Default)</option>
-                            <option value="Andhra Pradesh">Andhra Pradesh</option>
-                            <option value="Arunachal Pradesh">Arunachal Pradesh</option>
-                            <option value="Assam">Assam</option>
-                            <option value="Bihar">Bihar</option>
-                            <option value="Chhattisgarh">Chhattisgarh</option>
-                            <option value="Goa">Goa</option>
-                            <option value="Haryana">Haryana</option>
-                            <option value="Himachal Pradesh">Himachal Pradesh</option>
-                            <option value="Jharkhand">Jharkhand</option>
-                            <option value="Karnataka">Karnataka</option>
-                            <option value="Kerala">Kerala</option>
-                            <option value="Madhya Pradesh">Madhya Pradesh</option>
-                            <option value="Maharashtra">Maharashtra</option>
-                            <option value="Manipur">Manipur</option>
-                            <option value="Meghalaya">Meghalaya</option>
-                            <option value="Mizoram">Mizoram</option>
-                            <option value="Nagaland">Nagaland</option>
-                            <option value="Odisha">Odisha</option>
-                            <option value="Punjab">Punjab</option>
-                            <option value="Rajasthan">Rajasthan</option>
-                            <option value="Sikkim">Sikkim</option>
-                            <option value="Tamil Nadu">Tamil Nadu</option>
-                            <option value="Telangana">Telangana</option>
-                            <option value="Tripura">Tripura</option>
-                            <option value="Uttar Pradesh">Uttar Pradesh</option>
-                            <option value="Uttarakhand">Uttarakhand</option>
-                            <option value="West Bengal">West Bengal</option>
-                            <option value="Andaman and Nicobar Islands">Andaman and Nicobar Islands</option>
-                            <option value="Chandigarh">Chandigarh</option>
-                            <option value="Delhi">Delhi</option>
-                            <option value="Jammu and Kashmir">Jammu and Kashmir</option>
-                            <option value="Ladakh">Ladakh</option>
-                            <option value="Puducherry">Puducherry</option>
-                        </select>
+                    
+                    <!-- Modern State Selector Trigger -->
+                    <div onclick="openCustomStatePicker()" class="flex items-center justify-between px-3.5 py-2.5 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition">
+                        <div class="flex items-center gap-2 truncate">
+                            <i class="fa-solid fa-location-dot text-red-500 text-base shrink-0"></i>
+                            <span id="selectedStateText" class="font-bold text-xs md:text-sm text-gray-800 dark:text-gray-200 truncate">Gujarat</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-xs text-gray-400 shrink-0 ml-1"></i>
                     </div>
 
+                    <!-- Search Input & Modern Distance Picker Trigger -->
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3">
-                        <i class="fa-solid fa-magnifying-glass text-teal-600 text-base"></i>
-                        <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes, Properties..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
+                        <i class="fa-solid fa-magnifying-glass text-teal-600 text-base shrink-0"></i>
+                        <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
                         
-                        <!-- Expanded 100 km Distance Filter Options -->
-                        <select id="distanceFilter" onchange="renderProducts()" class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-2.5 py-1.5 rounded-xl border border-teal-200 dark:border-gray-600 focus:outline-none cursor-pointer shrink-0">
-                            <option value="all">Any Distance</option>
-                            <option value="5">Within 5 km</option>
-                            <option value="15">Within 15 km</option>
-                            <option value="30">Within 30 km</option>
-                            <option value="50">Within 50 km</option>
-                            <option value="100">Within 100 km</option>
-                        </select>
+                        <!-- Modern Distance Filter Trigger -->
+                        <div onclick="openCustomDistancePicker()" class="flex items-center gap-1.5 bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-3 py-2 rounded-xl border border-teal-200 dark:border-gray-600 cursor-pointer hover:bg-teal-100 transition shrink-0">
+                            <i class="fa-solid fa-route text-teal-600"></i>
+                            <span id="selectedDistanceText">Any Distance</span>
+                            <i class="fa-solid fa-chevron-down text-[9px]"></i>
+                        </div>
 
                         <!-- Voice Search Button -->
                         <button onclick="startVoiceSearch()" title="Voice Search" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9 cursor-pointer">
@@ -272,6 +239,44 @@
         </footer>
     </div>
 
+    <!-- MODERN STATE PICKER BOTTOM SHEET MODAL -->
+    <div id="customStateModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl animate-slide-up border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-location-dot"></i>
+                    </div>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white">Select State / Region</h3>
+                </div>
+                <button onclick="closeCustomStateModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div id="stateListContainer" class="flex-1 overflow-y-auto space-y-1.5 py-3 pr-1"></div>
+        </div>
+    </div>
+
+    <!-- MODERN DISTANCE PICKER BOTTOM SHEET MODAL -->
+    <div id="customDistanceModal" style="display: none;" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white dark:bg-gray-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 max-h-[85vh] flex flex-col shadow-2xl animate-slide-up border border-gray-100 dark:border-gray-700">
+            <div class="flex justify-between items-center pb-3 border-b border-gray-100 dark:border-gray-700">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white">Select Search Distance</h3>
+                </div>
+                <button onclick="closeCustomDistanceModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+            
+            <div id="distanceListContainer" class="flex-1 overflow-y-auto space-y-1.5 py-3 pr-1"></div>
+        </div>
+    </div>
+
     <!-- INBOX MODAL -->
     <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
@@ -311,7 +316,7 @@
 
             <div class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-bold mb-1">Your Offered Price (₹) *</label>
+                    <label class="block font-bold mb-1">Your Offered Price (&#8377;) *</label>
                     <input type="number" id="offerPriceInput" placeholder="Enter your best offer price" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none font-bold text-sm">
                 </div>
                 <div>
@@ -877,6 +882,11 @@
                 <i class="fa-solid fa-paperclip"></i>
             </button>
 
+            <!-- Chat Mic Button for Voice Typing -->
+            <button onclick="startChatVoiceInput()" title="Voice Input" class="bg-teal-50 dark:bg-gray-700 hover:bg-teal-100 text-teal-700 dark:text-teal-300 p-2.5 rounded-full text-base flex items-center justify-center transition cursor-pointer shrink-0 w-10 h-10">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+
             <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
             <button onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow cursor-pointer shrink-0">
@@ -1288,6 +1298,7 @@
             });
             checkLaunchBanner();
             renderHomeCategories();
+            initCustomPickers();
         });
 
         window.addEventListener('offline', () => {
@@ -1389,6 +1400,132 @@
         let activeStatusUnsubscribe = null;
         let inboxListenerUnsubscribe = null;
         let userSavedAdsUnsubscribe = null;
+
+        // Default filters state: Gujarat set as default
+        let currentSelectedState = 'Gujarat';
+        let currentSelectedDistance = 'all';
+
+        const allStatesList = [
+            { id: '', name: '🌐 All India / Pan-India' },
+            { id: 'Gujarat', name: 'Gujarat (Default)' },
+            { id: 'Andhra Pradesh', name: 'Andhra Pradesh' },
+            { id: 'Arunachal Pradesh', name: 'Arunachal Pradesh' },
+            { id: 'Assam', name: 'Assam' },
+            { id: 'Bihar', name: 'Bihar' },
+            { id: 'Chhattisgarh', name: 'Chhattisgarh' },
+            { id: 'Goa', name: 'Goa' },
+            { id: 'Haryana', name: 'Haryana' },
+            { id: 'Himachal Pradesh', name: 'Himachal Pradesh' },
+            { id: 'Jharkhand', name: 'Jharkhand' },
+            { id: 'Karnataka', name: 'Karnataka' },
+            { id: 'Kerala', name: 'Kerala' },
+            { id: 'Madhya Pradesh', name: 'Madhya Pradesh' },
+            { id: 'Maharashtra', name: 'Maharashtra' },
+            { id: 'Manipur', name: 'Manipur' },
+            { id: 'Meghalaya', name: 'Meghalaya' },
+            { id: 'Mizoram', name: 'Mizoram' },
+            { id: 'Nagaland', name: 'Nagaland' },
+            { id: 'Odisha', name: 'Odisha' },
+            { id: 'Punjab', name: 'Punjab' },
+            { id: 'Rajasthan', name: 'Rajasthan' },
+            { id: 'Sikkim', name: 'Sikkim' },
+            { id: 'Tamil Nadu', name: 'Tamil Nadu' },
+            { id: 'Telangana', name: 'Telangana' },
+            { id: 'Tripura', name: 'Tripura' },
+            { id: 'Uttar Pradesh', name: 'Uttar Pradesh' },
+            { id: 'Uttarakhand', name: 'Uttarakhand' },
+            { id: 'West Bengal', name: 'West Bengal' },
+            { id: 'Andaman and Nicobar Islands', name: 'Andaman and Nicobar Islands' },
+            { id: 'Chandigarh', name: 'Chandigarh' },
+            { id: 'Delhi', name: 'Delhi' },
+            { id: 'Jammu and Kashmir', name: 'Jammu and Kashmir' },
+            { id: 'Ladakh', name: 'Ladakh' },
+            { id: 'Puducherry', name: 'Puducherry' }
+        ];
+
+        const distanceOptionsList = [
+            { id: 'all', name: 'Any Distance' },
+            { id: '5', name: 'Within 5 km' },
+            { id: '15', name: 'Within 15 km' },
+            { id: '30', name: 'Within 30 km' },
+            { id: '50', name: 'Within 50 km' },
+            { id: '100', name: 'Within 100 km' }
+        ];
+
+        function initCustomPickers() {
+            renderStateList();
+            renderDistanceList();
+        }
+
+        function openCustomStatePicker() {
+            document.getElementById('customStateModal').style.display = 'flex';
+        }
+        function closeCustomStateModal() {
+            document.getElementById('customStateModal').style.display = 'none';
+        }
+
+        function openCustomDistancePicker() {
+            document.getElementById('customDistanceModal').style.display = 'flex';
+        }
+        function closeCustomDistanceModal() {
+            document.getElementById('customDistanceModal').style.display = 'none';
+        }
+
+        function renderStateList() {
+            const container = document.getElementById('stateListContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            allStatesList.forEach(st => {
+                const isSelected = currentSelectedState === st.id;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3.5 rounded-2xl cursor-pointer transition font-bold text-xs md:text-sm ${
+                    isSelected ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200'
+                }`;
+                div.onclick = () => {
+                    currentSelectedState = st.id;
+                    document.getElementById('selectedStateText').innerText = st.name.replace(' (Default)', '');
+                    closeCustomStateModal();
+                    renderStateList();
+                    renderProducts();
+                };
+                div.innerHTML = `
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-earth-americas text-teal-600"></i> ${st.name}</span>
+                    <div class="w-5 h-5 rounded-full border-2 ${isSelected ? 'border-teal-600 bg-teal-600 flex items-center justify-center text-white text-[10px]' : 'border-gray-300 dark:border-gray-600'}">
+                        ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderDistanceList() {
+            const container = document.getElementById('distanceListContainer');
+            if(!container) return;
+            container.innerHTML = '';
+
+            distanceOptionsList.forEach(dist => {
+                const isSelected = currentSelectedDistance === dist.id;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3.5 rounded-2xl cursor-pointer transition font-bold text-xs md:text-sm ${
+                    isSelected ? 'bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800' : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-200'
+                }`;
+                div.onclick = () => {
+                    currentSelectedDistance = dist.id;
+                    document.getElementById('selectedDistanceText').innerText = dist.name;
+                    closeCustomDistanceModal();
+                    renderDistanceList();
+                    renderProducts();
+                };
+                div.innerHTML = `
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-route text-teal-600"></i> ${dist.name}</span>
+                    <div class="w-5 h-5 rounded-full border-2 ${isSelected ? 'border-teal-600 bg-teal-600 flex items-center justify-center text-white text-[10px]' : 'border-gray-300 dark:border-gray-600'}">
+                        ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
         let userCurrentLocation = { lat: 22.3039, lng: 70.8022 };
@@ -1559,6 +1696,37 @@
                 const speechResult = event.results[0][0].transcript;
                 document.getElementById('searchInput').value = speechResult;
                 renderProducts();
+                closeCustomAlert();
+            };
+
+            recognition.onerror = function(event) {
+                showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
+            };
+
+            recognition.start();
+        }
+
+        // Voice Input for In-App Chat
+        function startChatVoiceInput() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                showCustomAlert("Not Supported", "Voice input is not supported in your browser.", "error");
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-IN'; // Supports English & Indian languages
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            showCustomAlert("Listening...", "Speak your chat message now...");
+
+            recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
+                const chatInput = document.getElementById('fullChatInput');
+                if(chatInput) {
+                    chatInput.value = chatInput.value ? (chatInput.value + " " + speechResult) : speechResult;
+                }
                 closeCustomAlert();
             };
 
@@ -3535,8 +3703,8 @@
             const featuredSection = document.getElementById('featuredSection');
             const featuredGrid = document.getElementById('featuredProductGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
-            const stateVal = document.getElementById('stateFilter').value;
-            const distLimit = document.getElementById('distanceFilter').value;
+            const stateVal = currentSelectedState;
+            const distLimit = currentSelectedDistance;
             
             if(!grid) return;
             grid.innerHTML = '';
