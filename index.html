@@ -3175,55 +3175,62 @@
             document.getElementById('offerModal').style.display = 'none';
         }
 
-        function submitUserOffer() {
-            const offerPrice = document.getElementById('offerPriceInput').value.trim();
-            const customMsg = document.getElementById('offerMessageInput').value.trim();
+      
+           function submitUserOffer() {
+    const offerPrice = document.getElementById('offerPriceInput').value.trim();
+    const customMsg = document.getElementById('offerMessageInput').value.trim();
 
-            if (!offerPrice) {
-                showCustomAlert("Error", "Please enter a valid offer price!", "error");
-                return;
-            }
+    if (!offerPrice) {
+        showCustomAlert("Error", "Please enter a valid offer price!", "error");
+        return;
+    }
 
-            if (!window.currentUser || !currentProduct) {
-                showCustomAlert("Error", "Login or product details missing!", "error");
-                return;
-            }
+    if (!window.currentUser || !currentProduct) {
+        showCustomAlert("Error", "Login or product details missing!", "error");
+        return;
+    }
 
-            const buyerId = window.currentUser.uid;
-            const sellerId = currentProduct.sellerUid;
+    const buyerId = window.currentUser.uid;
+    const sellerId = currentProduct.sellerUid;
 
-            if (!sellerId) {
-                showCustomAlert("Error", "Seller information is missing for this product.", "error");
-                return;
-            }
+    if (!sellerId) {
+        showCustomAlert("Error", "Seller information is missing for this product.", "error");
+        return;
+    }
 
-            const chatRoomId = `${currentProduct.docId}_${buyerId}`;
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const chatRoomId = `${currentProduct.docId}_${buyerId}`;
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
+    // Product no photo fetch karva mate 
+    const productImage = (currentProduct.images && currentProduct.images.length > 0) ? currentProduct.images[0] : '';
 
-            db.collection('chats').doc(chatRoomId).set({
-                participants: [buyerId, sellerId],
-                productId: currentProduct.docId,
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true }).then(() => {
-                return db.collection('chats').doc(chatRoomId).collection('messages').add({
-                    text: fullOfferText,
-                    senderUid: buyerId,
-                    senderName: window.currentUser.displayName || 'Buyer',
-                    status: 'sent',
-                    time: timeStr,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            }).then(() => {
-                closeOfferModal();
-                showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
-                triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
-            }).catch(err => {
-                console.error("Error sending offer detail:", err);
-                showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
-            });
-        }
+    const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
+
+    db.collection('chats').doc(chatRoomId).set({
+        participants: [buyerId, sellerId],
+        productId: currentProduct.docId,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }).then(() => {
+        return db.collection('chats').doc(chatRoomId).collection('messages').add({
+            text: fullOfferText,
+            // Ahiya attachment object ma product ni image direct muki didhi chhe
+            attachment: productImage ? { type: 'image/jpeg', name: currentProduct.title, data: productImage } : null,
+            senderUid: buyerId,
+            senderName: window.currentUser.displayName || 'Buyer',
+            status: 'sent',
+            time: timeStr,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }).then(() => {
+        closeOfferModal();
+        showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
+        triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
+    }).catch(err => {
+        console.error("Error sending offer detail:", err);
+        showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
+    });
+}
+
 
         function startSellWizard() {
             if (!window.currentUser) {
