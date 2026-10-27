@@ -3180,10 +3180,19 @@
                 return;
             }
 
-            if (!window.currentUser || !currentProduct) return;
+            if (!window.currentUser || !currentProduct) {
+                showCustomAlert("Error", "Login or product details missing!", "error");
+                return;
+            }
 
             const buyerId = window.currentUser.uid;
             const sellerId = currentProduct.sellerUid;
+
+            if (!sellerId) {
+                showCustomAlert("Error", "Seller information is missing for this product.", "error");
+                return;
+            }
+
             const chatRoomId = `${currentProduct.docId}_${buyerId}`;
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -3207,8 +3216,8 @@
                 showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
                 triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
             }).catch(err => {
-                console.error("Error sending offer:", err);
-                showCustomAlert("Error", "Could not send offer. Please try again.", "error");
+                console.error("Error sending offer detail:", err);
+                showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
             });
         }
 
