@@ -137,7 +137,7 @@
                 <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
 
                 <!-- Search Bar with Modern Custom Pickers & Voice Search -->
-                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800">
+                <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800 relative">
                     
                     <!-- Modern State Selector Trigger -->
                     <div onclick="openCustomStatePicker()" class="flex items-center justify-between px-3.5 py-2.5 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition">
@@ -149,10 +149,13 @@
                     </div>
 
                     <!-- Search Input & Modern Distance Picker Trigger -->
-                    <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3">
+                    <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3 relative">
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base shrink-0"></i>
-                        <input type="text" id="searchInput" oninput="renderProducts()" placeholder="Find Cars, Mobiles, Bikes..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
+                        <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="Find Cars, Mobiles, Bikes..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
                         
+                        <!-- Instant Search Autocomplete Dropdown -->
+                        <div id="searchAutocompleteDropdown" style="display: none;" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 max-h-60 overflow-y-auto text-left p-2 space-y-1"></div>
+
                         <!-- Modern Distance Filter Trigger -->
                         <div onclick="openCustomDistancePicker()" class="flex items-center gap-1.5 bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-3 py-2 rounded-xl border border-teal-200 dark:border-gray-600 cursor-pointer hover:bg-teal-100 transition shrink-0">
                             <i class="fa-solid fa-route text-teal-600"></i>
@@ -213,7 +216,20 @@
                 <div id="recommendedProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
             </section>
 
-            <!-- 5. FRESH RECOMMENDATIONS / ALL PRODUCTS (Updated to Modern 3-Column / FlipKart Grid Style) -->
+            <!-- 5. RECENTLY VIEWED SECTION -->
+            <section id="recentlyViewedSection" style="display: none;" class="space-y-4 bg-white dark:bg-gray-800/60 p-4 md:p-6 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-teal-600"></i> Recently Viewed Products
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium">Items you checked out recently</p>
+                    </div>
+                </div>
+                <div id="recentlyViewedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
+            </section>
+
+            <!-- 6. FRESH RECOMMENDATIONS / ALL PRODUCTS (3-Column / FlipKart Grid Style) -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -1085,9 +1101,11 @@
             </div>
         </div>
 
-        <div class="relative bg-black w-full h-[380px]">
+        <div class="relative bg-black w-full h-[380px] cursor-pointer" onclick="openLightboxFromDetail()">
             <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
-            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm">1/1</div>
+            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
+                <span>1/1</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>
+            </div>
         </div>
 
         <div class="bg-primary text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow-inner">
@@ -1168,6 +1186,17 @@
                 </a>
             </div>
         </div>
+    </div>
+
+    <!-- IMAGE LIGHTBOX / ZOOM MODAL -->
+    <div id="imageLightboxModal" style="display: none;" class="fixed inset-0 bg-black/95 z-[200] flex flex-col items-center justify-center p-4 animate-scale-up">
+        <button onclick="closeLightbox()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 text-white flex items-center justify-center text-xl font-bold hover:bg-white/40 transition cursor-pointer z-10">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <div class="relative max-w-4xl w-full h-[80vh] flex items-center justify-center overflow-hidden">
+            <img id="lightboxImage" src="" class="max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in" onclick="toggleLightboxZoom()">
+        </div>
+        <div id="lightboxCounter" class="text-white text-xs font-bold mt-3 bg-white/20 px-4 py-1.5 rounded-full">1 / 1</div>
     </div>
 
     <!-- SAVED ADS MODAL -->
@@ -1299,7 +1328,37 @@
             checkLaunchBanner();
             renderHomeCategories();
             initCustomPickers();
+            autoDetectUserLocation();
         });
+
+        // 1. AUTO-LOCATION DETECTION ON APP LAUNCH
+        function autoDetectUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    userCurrentLocation.lat = position.coords.latitude;
+                    userCurrentLocation.lng = position.coords.longitude;
+                    
+                    // Simple estimation for demo or reverse geocoding default
+                    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userCurrentLocation.lat}&lon=${userCurrentLocation.lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data && data.address) {
+                            const detectedState = data.address.state || 'Gujarat';
+                            // Match with available states if possible
+                            const matched = allStatesList.find(s => detectedState.includes(s.id));
+                            if(matched && matched.id) {
+                                currentSelectedState = matched.id;
+                                document.getElementById('selectedStateText').innerText = matched.name.replace(' (Default)', '');
+                                renderStateList();
+                                renderProducts();
+                            }
+                        }
+                    }).catch(e => console.log("Geocoding fetch error:", e));
+                }, () => {
+                    console.log("GPS Location permission denied or unavailable.");
+                });
+            }
+        }
 
         window.addEventListener('offline', () => {
             showAppNotification("⚠️ You are offline. Showing cached items.", "error");
@@ -3142,15 +3201,60 @@
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
+            renderRecentlyViewed();
             if(window.currentUser) updateProfileDetails(window.currentUser);
             handleHashChange();
         });
 
+        // 3. RECENTLY VIEWED PRODUCTS MANAGEMENT
+        function addToRecentlyViewed(p) {
+            let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+            history = history.filter(item => item.docId !== p.docId);
+            history.unshift({
+                docId: p.docId,
+                title: p.title,
+                finalPriceStr: p.finalPriceStr,
+                location: p.location,
+                category: p.category,
+                images: p.images,
+                isFeatured: p.isFeatured,
+                isShopVerified: p.isShopVerified,
+                isSold: p.isSold,
+                mrpPrice: p.mrpPrice,
+                basePrice: p.basePrice,
+                discountPercent: p.discountPercent
+            });
+            if (history.length > 8) history.pop();
+            localStorage.setItem('oldx_recently_viewed', JSON.stringify(history));
+            renderRecentlyViewed();
+        }
+
+        function renderRecentlyViewed() {
+            const section = document.getElementById('recentlyViewedSection');
+            const grid = document.getElementById('recentlyViewedGrid');
+            if(!section || !grid) return;
+
+            let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+            if (history.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = '';
+            history.forEach(p => {
+                grid.appendChild(createProductCard(p, true));
+            });
+        }
+
         function openProductDetailPage(docId) { 
             const p = products.find(item => item.docId === docId);
-            if (p && p.category) {
-                userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
-                localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+            if (p) {
+                if (p.category) {
+                    userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
+                    localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+                }
+                addToRecentlyViewed(p);
             }
             window.location.hash = `product-${docId}`; 
         }
@@ -3170,7 +3274,11 @@
                 return;
             } else if(hash.startsWith('#product-')) {
                 const docId = hash.replace('#product-', '');
-                const p = products.find(item => item.docId === docId);
+                let p = products.find(item => item.docId === docId);
+                if (!p) {
+                    let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+                    p = history.find(item => item.docId === docId);
+                }
                 if(p) {
                     currentProduct = p;
                     document.getElementById('homeView').style.display = 'none';
@@ -3227,6 +3335,7 @@
             document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
             renderHomeCategories();
+            renderRecentlyViewed();
         }
 
         window.addEventListener('hashchange', handleHashChange);
@@ -3364,9 +3473,9 @@
             slider.innerHTML = '';
             if(p.images && p.images.length > 0) {
                 p.images.forEach(img => {
-                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
+                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center cursor-zoom-in"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
                 });
-                document.getElementById('detailImgBadge').innerText = `1/${p.images.length}`;
+                document.getElementById('detailImgBadge').innerHTML = `<span>1/${p.images.length}</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>`;
             }
 
             const grid = document.getElementById('detailHighlightsGrid');
@@ -3389,11 +3498,53 @@
             document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
         }
 
+        // 2. IMAGE LIGHTBOX & ZOOM FUNCTIONS
+        let lightboxCurrentIndex = 0;
+        let isZoomed = false;
+
+        function openLightboxFromDetail() {
+            if (!currentProduct || !currentProduct.images || currentProduct.images.length === 0) return;
+            const slider = document.getElementById('detailImageSlider');
+            lightboxCurrentIndex = Math.round(slider.scrollLeft / slider.clientWidth);
+            if (lightboxCurrentIndex >= currentProduct.images.length) lightboxCurrentIndex = 0;
+            
+            showLightboxImage();
+            document.getElementById('imageLightboxModal').style.display = 'flex';
+        }
+
+        function showLightboxImage() {
+            const imgEl = document.getElementById('lightboxImage');
+            const counterEl = document.getElementById('lightboxCounter');
+            if(!currentProduct || !currentProduct.images) return;
+            
+            isZoomed = false;
+            imgEl.style.transform = 'scale(1)';
+            imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in';
+            imgEl.src = currentProduct.images[lightboxCurrentIndex];
+            counterEl.innerText = `${lightboxCurrentIndex + 1} / ${currentProduct.images.length}`;
+        }
+
+        function toggleLightboxZoom() {
+            const imgEl = document.getElementById('lightboxImage');
+            isZoomed = !isZoomed;
+            if (isZoomed) {
+                imgEl.style.transform = 'scale(2)';
+                imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-200 cursor-zoom-out';
+            } else {
+                imgEl.style.transform = 'scale(1)';
+                imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in';
+            }
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightboxModal').style.display = 'none';
+        }
+
         function updateImageCounter() {
             const slider = document.getElementById('detailImageSlider');
             if(!currentProduct || !currentProduct.images) return;
             const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
-            document.getElementById('detailImgBadge').innerText = `${index}/${currentProduct.images.length}`;
+            document.getElementById('detailImgBadge').innerHTML = `<span>${index}/${currentProduct.images.length}</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>`;
         }
 
         function shareProductLink() {
@@ -3691,6 +3842,53 @@
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        // 4. INSTANT SEARCH AUTOCOMPLETE FUNCTION
+        function handleSearchInput() {
+            renderProducts();
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const dropdown = document.getElementById('searchAutocompleteDropdown');
+            if(!dropdown) return;
+
+            if(!query) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const matches = products.filter(p => p.title.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)).slice(0, 5);
+            if(matches.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            matches.forEach(m => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200";
+                itemDiv.onclick = () => {
+                    document.getElementById('searchInput').value = m.title;
+                    dropdown.style.display = 'none';
+                    renderProducts();
+                };
+                itemDiv.innerHTML = `
+                    <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-8 h-8 rounded-lg object-cover bg-gray-200">
+                    <div class="truncate flex-1">
+                        <p class="truncate">${m.title}</p>
+                        <p class="text-[10px] text-teal-600">${m.finalPriceStr}</p>
+                    </div>
+                `;
+                dropdown.appendChild(itemDiv);
+            });
+            dropdown.style.display = 'block';
+        }
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('searchAutocompleteDropdown');
+            const searchInput = document.getElementById('searchInput');
+            if (dropdown && searchInput && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
         function renderProducts() {
             const grid = document.getElementById('productGrid');
             const recSection = document.getElementById('aiRecommendedSection');
@@ -3783,7 +3981,6 @@
             const card = document.createElement('div');
             const carouselClass = isCarousel ? "shrink-0 w-44 sm:w-56 md:w-auto" : "";
             
-            // Modern e-commerce card with compact padding and clean borders like Flipkart/Amazon
             card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
             card.onclick = () => openProductDetailPage(p.docId);
             
