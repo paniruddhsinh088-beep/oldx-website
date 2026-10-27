@@ -71,6 +71,11 @@
             background-color: #0b141a;
             background-image: radial-gradient(#1f2c34 0.75px, transparent 0.75px);
         }
+
+        @keyframes loadingBar {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
     </style>
 
     <!-- Firebase SDKs -->
@@ -202,7 +207,7 @@
         <!-- MAIN LAYOUT SECTIONS -->
         <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
             
-            <!-- 2. BROWSE CATEGORIES (Fixed & Enhanced) -->
+            <!-- 2. BROWSE CATEGORIES -->
             <section class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
@@ -258,7 +263,7 @@
             </section>
         </main>
 
-        <!-- FOOTER WITH PRIVACY POLICY & CONTACT US LINKS -->
+        <!-- FOOTER -->
         <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3 mb-16">
             <div class="flex justify-center items-center gap-6 font-bold">
                 <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Privacy Policy</a>
@@ -269,7 +274,7 @@
         </footer>
     </div>
 
-    <!-- PROFESSIONAL INBOX MODAL WITH ROOM UNREAD BADGE -->
+    <!-- INBOX MODAL -->
     <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
             <button onclick="closeInboxModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
@@ -292,7 +297,7 @@
         </div>
     </div>
 
-    <!-- ENHANCED DEDICATED PROFILE PAGE -->
+    <!-- PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-20">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -378,7 +383,6 @@
                     <i class="fa-solid fa-chevron-right text-gray-400 text-xs"></i>
                 </div>
 
-                <!-- PROFESSIONAL ACCOUNT DELETION BUTTON -->
                 <button onclick="confirmDeleteAccount()" class="w-full bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-300 py-3 rounded-xl font-black flex items-center justify-center gap-2 hover:bg-red-100 transition mt-2 cursor-pointer border border-red-200">
                     <i class="fa-solid fa-user-slash"></i> Account Deletion (Delete My Account)
                 </button>
@@ -392,20 +396,17 @@
 
     <!-- NATIVE BOTTOM APP BAR (Mobile Only) -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 px-3 py-2 shadow-2xl flex justify-around items-center md:hidden">
-        <!-- Home -->
         <button onclick="window.location.hash=''" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-solid fa-house text-lg"></i>
             <span class="text-[10px] font-bold mt-0.5">Home</span>
         </button>
 
-        <!-- Chats with Real-time Unread Badge -->
         <button onclick="openInboxModal()" class="relative flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-regular fa-comment text-lg"></i>
             <span class="text-[10px] font-bold mt-0.5">Chats</span>
             <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow">0</span>
         </button>
 
-        <!-- Floating Sell Button -->
         <div class="relative -top-5">
             <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-xl flex flex-col items-center justify-center border-4 border-white dark:border-gray-900 transform active:scale-95 transition cursor-pointer">
                 <i class="fa-solid fa-plus text-xl font-black"></i>
@@ -413,13 +414,11 @@
             <span class="block text-center text-[10px] font-black text-gray-700 dark:text-gray-200 mt-0.5">Sell</span>
         </div>
 
-        <!-- My Ads -->
         <button onclick="openMyAdsModal()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-solid fa-rectangle-list text-lg"></i>
             <span class="text-[10px] font-bold mt-0.5">My Ads</span>
         </button>
 
-        <!-- Account -->
         <button onclick="openProfilePage()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-regular fa-user text-lg"></i>
             <span class="text-[10px] font-bold mt-0.5">Account</span>
@@ -505,7 +504,7 @@
         </div>
     </div>
 
-    <!-- ATTRACTIVE CUSTOM LOGOUT MODAL -->
+    <!-- LOGOUT MODAL -->
     <div id="customLogoutModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[130] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
@@ -527,7 +526,7 @@
         </div>
     </div>
 
-    <!-- PROFESSIONAL CUSTOM CONFIRMATION MODAL -->
+    <!-- CUSTOM CONFIRMATION MODAL -->
     <div id="professionalConfirmModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[120] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <div class="w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
@@ -549,7 +548,7 @@
         </div>
     </div>
 
-    <!-- UNIVERSAL ATTRACTIVE CUSTOM ALERT MODAL -->
+    <!-- CUSTOM ALERT MODAL -->
     <div id="customAlertModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 w-full max-w-xs rounded-3xl p-6 relative shadow-2xl text-center space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
             <div id="customAlertIconBox" class="w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner">
@@ -744,7 +743,7 @@
         </div>
     </div>
 
-    <!-- FULL DEDICATED EDIT AD PAGE -->
+    <!-- FULL EDIT AD PAGE -->
     <div id="fullEditPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="closeEditAdPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -807,7 +806,7 @@
         </div>
     </div>
 
-    <!-- FULL PAGE DEDICATED LIVE IN-APP CHAT VIEW (Fixed Header when Keyboard Opens) -->
+    <!-- LIVE IN-APP CHAT VIEW -->
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-3 overflow-hidden">
@@ -858,7 +857,7 @@
         </div>
     </div>
 
-    <!-- FULL PAGE DEDICATED SELL FLOW PAGE -->
+    <!-- SELL FLOW PAGE -->
     <div id="sellWizardPage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-12">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="closeSellWizardPage()" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
@@ -955,7 +954,6 @@
                         <input type="tel" id="adPhone" required placeholder="e.g. 9876543210" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
 
-                    <!-- Local Dealer Checkbox -->
                     <div class="bg-blue-50 dark:bg-gray-700/60 p-3 rounded-xl border border-blue-200 space-y-1">
                         <label class="flex items-center gap-2 font-bold text-xs text-blue-900 dark:text-blue-200 cursor-pointer">
                             <input type="checkbox" id="adIsShopVerified" class="w-4 h-4 text-blue-600 rounded">
@@ -985,7 +983,6 @@
                         <input type="text" id="adVillage" required placeholder="e.g. Rampura Road" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                     </div>
 
-                    <!-- Map Pin Picker -->
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <label class="block font-bold text-xs text-primary dark:text-teal-300">
@@ -999,7 +996,6 @@
                         <p class="text-[10px] text-gray-400">Click anywhere on the map or use GPS to set the exact seller location.</p>
                     </div>
 
-                    <!-- Featured / Boost Ad Option -->
                     <div class="bg-amber-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-amber-200 space-y-2">
                         <div class="flex items-center justify-between">
                             <label class="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
@@ -1035,7 +1031,7 @@
         </div>
     </div>
 
-    <!-- DEDICATED PRODUCT DETAILS PAGE -->
+    <!-- PRODUCT DETAILS PAGE -->
     <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24 animate-slide-up">
         <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
             <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
@@ -1095,7 +1091,6 @@
                     </a>
                 </div>
 
-                <!-- ENGLISH LOCAL TRUST BANNER -->
                 <div class="mt-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-2xl p-3.5 text-xs space-y-1">
                     <div class="flex items-center gap-2 font-black text-emerald-800 dark:text-emerald-300">
                         <i class="fa-solid fa-handshake text-base text-emerald-600"></i> Local Safety & Direct Deal Guidelines
@@ -1205,9 +1200,8 @@
         </div>
     </div>
 
-    <!-- FULL PAGE MODERN APP SPLASH SCREEN -->
+    <!-- APP SPLASH SCREEN -->
     <div id="appLaunchBannerModal" class="fixed inset-0 bg-[#002f34] z-[9999] flex flex-col justify-between p-8 transition-opacity duration-700">
-        <!-- Top Branding -->
         <div class="flex items-center justify-center pt-12">
             <div class="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full border border-white/15 shadow-lg">
                 <i class="fa-solid fa-store text-amber-400 text-sm"></i>
@@ -1215,7 +1209,6 @@
             </div>
         </div>
 
-        <!-- Center Content -->
         <div class="text-center space-y-6 my-auto">
             <div class="inline-flex p-4 rounded-3xl bg-amber-400/10 border border-amber-400/30 shadow-inner mb-2 animate-bounce">
                 <i class="fa-solid fa-bolt text-amber-400 text-3xl"></i>
@@ -1230,7 +1223,6 @@
             </p>
         </div>
 
-        <!-- Bottom Loading & Footer -->
         <div class="pb-8 space-y-4 max-w-xs mx-auto w-full text-center">
             <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden shadow-inner">
                 <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 animate-[loadingBar_4s_linear_forwards]"></div>
@@ -1238,13 +1230,6 @@
             <p class="text-[11px] text-teal-200 font-bold tracking-widest uppercase opacity-80">Loading Marketplace...</p>
         </div>
     </div>
-
-    <style>
-    @keyframes loadingBar {
-        from { width: 0%; }
-        to { width: 100%; }
-    }
-    </style>
 
     <!-- Main Logic Script -->
     <script>
@@ -1263,7 +1248,6 @@
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
-        // Native Haptic Feedback & Offline Network Listener
         function triggerHaptic() {
             if ("vibrate" in navigator) {
                 navigator.vibrate(12);
@@ -1324,7 +1308,6 @@
             }
         }
 
-        // Website traffic tracking function
         async function trackVisitorTraffic() {
             try {
                 const statsRef = db.collection('stats').doc('traffic');
@@ -1367,12 +1350,10 @@
             });
         }
 
-        // Map Variables
         let createAdMap = null;
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        // Privacy Policy Modal Functions
         function openPrivacyModal(e) {
             if(e) e.preventDefault();
             document.getElementById('privacyModal').style.display = 'flex';
@@ -1381,7 +1362,6 @@
             document.getElementById('privacyModal').style.display = 'none';
         }
 
-        // Contact Us Modal Functions
         function openContactModal(e) {
             if(e) e.preventDefault();
             document.getElementById('contactModal').style.display = 'flex';
@@ -1390,7 +1370,6 @@
             document.getElementById('contactModal').style.display = 'none';
         }
 
-        // Professional Custom Confirmation Modal Function
         function showCustomConfirm(title, message, onConfirm) {
             document.getElementById('confirmModalTitle').innerText = title;
             document.getElementById('confirmModalDesc').innerText = message;
@@ -1416,7 +1395,6 @@
             };
         }
 
-        // Account Deletion Logic with Professional Custom Modal
         async function confirmDeleteAccount() {
             showCustomConfirm(
                 "Delete Account?",
@@ -1725,7 +1703,6 @@
                 startRealtimeSavedAdsSync(user.uid);
                 startGlobalUnreadMessagesListener(user.uid);
 
-                // --- ACCURATE ONLINE / OFFLINE STATUS LOGIC ---
                 const setUserOnlineStatus = (status) => {
                     if (auth.currentUser) {
                         db.collection('users').doc(auth.currentUser.uid).set({
@@ -1748,7 +1725,6 @@
                 window.addEventListener('beforeunload', () => {
                     setUserOnlineStatus(false);
                 });
-                // ---------------------------------------------
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
                     if(adminBtn) adminBtn.style.display = 'flex';
