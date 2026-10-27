@@ -3870,7 +3870,7 @@
                 itemDiv.onclick = () => {
                     document.getElementById('searchInput').value = m.title;
                     dropdown.style.display = 'none';
-                    renderProducts();
+                    openProductDetailPage(m.docId);
                 };
                 itemDiv.innerHTML = `
                     <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-10 h-10 rounded-xl object-cover bg-gray-200 shrink-0">
