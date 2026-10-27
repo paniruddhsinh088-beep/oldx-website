@@ -3254,6 +3254,69 @@
             renderHomeCategories();
             handleHashChange();
         });
-    </script>
+       function checkLaunchBanner() {
+        const hasSeenBanner = sessionStorage.getItem('oldx_launch_banner_seen');
+        const bannerModal = document.getElementById('appLaunchBannerModal');
+        
+        if (!hasSeenBanner && bannerModal) {
+            bannerModal.style.display = 'flex';
+            setTimeout(() => {
+                closeLaunchBanner();
+            }, 4000);
+        } else if (bannerModal) {
+            bannerModal.style.display = 'none';
+        }
+    }
+
+    function closeLaunchBanner() {
+        const bannerModal = document.getElementById('appLaunchBannerModal');
+        if (bannerModal) {
+            bannerModal.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+                bannerModal.style.display = 'none';
+                sessionStorage.setItem('oldx_launch_banner_seen', 'true');
+            }, 400);
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        checkLaunchBanner();
+    });
+ </script>
+<!-- APP LAUNCH PROMOTIONAL BANNER MODAL -->
+<div id="appLaunchBannerModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-opacity duration-500">
+    <div class="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-scale-up bg-gradient-to-br from-primary via-[#004047] to-teal-950 border border-teal-500/40 text-center p-6 space-y-4">
+        
+        <div class="space-y-3 pt-1">
+            <span class="bg-amber-400 text-primary text-[10px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-block shadow-lg">
+                <i class="fa-solid fa-store mr-1"></i> OldX Marketplace
+            </span>
+            <h2 class="text-2xl font-black text-white tracking-tight leading-snug">Buy & Sell Anything Across India</h2>
+            <p class="text-xs text-teal-100 opacity-90 leading-relaxed">Direct deal with local buyers & sellers with zero commission. Fast, secure & reliable.</p>
+            
+            <div class="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-black/30 p-2 relative">
+                <img src="https://images.unsplash.com/photo-1556742049-0a67d5e86544?w=500&auto=format&fit=crop&q=80" class="w-full h-44 object-cover rounded-xl filter brightness-95">
+                <div class="absolute bottom-4 inset-x-4 bg-black/60 backdrop-blur-md py-1.5 px-3 rounded-xl text-white text-[11px] font-bold shadow">
+                    ✨ 100% Trusted C2C Platform
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-1 flex flex-col items-center space-y-2">
+            <div class="w-32 h-1 bg-white/20 rounded-full overflow-hidden">
+                <div class="h-full bg-amber-400 animate-[loadingBar_4s_linear_forwards]"></div>
+            </div>
+            <p class="text-[10px] text-teal-200 font-semibold tracking-wider">Entering OldX Marketplace...</p>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes loadingBar {
+    from { width: 0%; }
+    to { width: 100%; }
+}
+</style>
+
 </body>
 </html>
