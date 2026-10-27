@@ -297,6 +297,36 @@
         </div>
     </div>
 
+    <!-- MAKE OFFER MODAL -->
+    <div id="offerModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-sm rounded-3xl p-6 relative shadow-2xl space-y-4 animate-scale-up border border-gray-100 dark:border-gray-700">
+            <button onclick="closeOfferModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="text-center">
+                <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-xl font-bold mb-2">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+                <h3 class="text-lg font-black text-primary dark:text-teal-400">Make an Offer to Seller</h3>
+                <p class="text-xs text-gray-500 mt-1">Negotiate directly with the seller for this item</p>
+            </div>
+
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-bold mb-1">Your Offered Price (₹) *</label>
+                    <input type="number" id="offerPriceInput" placeholder="Enter your best offer price" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none font-bold text-sm">
+                </div>
+                <div>
+                    <label class="block font-bold mb-1">Message to Seller (Optional)</label>
+                    <textarea id="offerMessageInput" rows="2" placeholder="e.g., Can you pick this up today?" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none"></textarea>
+                </div>
+                <button onclick="submitUserOffer()" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3 rounded-xl text-xs shadow-md transition cursor-pointer">
+                    Send Offer to Seller
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- PROFILE PAGE -->
     <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-20">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
@@ -3120,11 +3150,66 @@
         }
 
         function openOfferModal() {
-            const offer = prompt('Enter your offer price (&#8377;):');
-            if(offer) {
-                showCustomAlert("Offer Sent", `Offer of &#8377;${offer} sent to seller successfully!`, "success");
-                triggerPushNotification("New Offer Received!", `A buyer offered &#8377;${offer} on your ad!`);
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to make an offer!", "error");
+                openAuthModal();
+                return;
             }
+            if (!currentProduct) return;
+
+            if (window.currentUser.uid === currentProduct.sellerUid) {
+                showCustomAlert("Notice", "You cannot make an offer on your own ad.", "error");
+                return;
+            }
+
+            document.getElementById('offerPriceInput').value = currentProduct.basePrice || '';
+            document.getElementById('offerMessageInput').value = `Hi, I am interested in this item. Can you accept ₹${currentProduct.basePrice || ''}?`;
+            document.getElementById('offerModal').style.display = 'flex';
+        }
+
+        function closeOfferModal() {
+            document.getElementById('offerModal').style.display = 'none';
+        }
+
+        function submitUserOffer() {
+            const offerPrice = document.getElementById('offerPriceInput').value.trim();
+            const customMsg = document.getElementById('offerMessageInput').value.trim();
+
+            if (!offerPrice) {
+                showCustomAlert("Error", "Please enter a valid offer price!", "error");
+                return;
+            }
+
+            if (!window.currentUser || !currentProduct) return;
+
+            const buyerId = window.currentUser.uid;
+            const sellerId = currentProduct.sellerUid;
+            const chatRoomId = `${currentProduct.docId}_${buyerId}`;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
+
+            db.collection('chats').doc(chatRoomId).set({
+                participants: [buyerId, sellerId],
+                productId: currentProduct.docId,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                return db.collection('chats').doc(chatRoomId).collection('messages').add({
+                    text: fullOfferText,
+                    senderUid: buyerId,
+                    senderName: window.currentUser.displayName || 'Buyer',
+                    status: 'sent',
+                    time: timeStr,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(() => {
+                closeOfferModal();
+                showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
+                triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
+            }).catch(err => {
+                console.error("Error sending offer:", err);
+                showCustomAlert("Error", "Could not send offer. Please try again.", "error");
+            });
         }
 
         function startSellWizard() {
