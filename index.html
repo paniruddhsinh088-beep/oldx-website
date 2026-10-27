@@ -3283,31 +3283,38 @@
         checkLaunchBanner();
     });
  </script>
-<!-- APP LAUNCH PROMOTIONAL BANNER MODAL -->
-<div id="appLaunchBannerModal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 transition-opacity duration-500">
-    <div class="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl animate-scale-up bg-gradient-to-br from-primary via-[#004047] to-teal-950 border border-teal-500/40 text-center p-6 space-y-4">
-        
-        <div class="space-y-3 pt-1">
-            <span class="bg-amber-400 text-primary text-[10px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-block shadow-lg">
-                <i class="fa-solid fa-store mr-1"></i> OldX Marketplace
-            </span>
-            <h2 class="text-2xl font-black text-white tracking-tight leading-snug">Buy & Sell Anything Across India</h2>
-            <p class="text-xs text-teal-100 opacity-90 leading-relaxed">Direct deal with local buyers & sellers with zero commission. Fast, secure & reliable.</p>
-            
-            <div class="rounded-2xl overflow-hidden shadow-xl border border-white/20 bg-black/30 p-2 relative">
-                <img src="https://images.unsplash.com/photo-1556742049-0a67d5e86544?w=500&auto=format&fit=crop&q=80" class="w-full h-44 object-cover rounded-xl filter brightness-95">
-                <div class="absolute bottom-4 inset-x-4 bg-black/60 backdrop-blur-md py-1.5 px-3 rounded-xl text-white text-[11px] font-bold shadow">
-                    ✨ 100% Trusted C2C Platform
-                </div>
-            </div>
+<!-- FULL PAGE MODERN APP SPLASH SCREEN -->
+<div id="appLaunchBannerModal" class="fixed inset-0 bg-[#002f34] z-[9999] flex flex-col justify-between p-8 transition-opacity duration-700">
+    
+    <!-- Top Branding -->
+    <div class="flex items-center justify-center pt-12">
+        <div class="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full border border-white/15 shadow-lg">
+            <i class="fa-solid fa-store text-amber-400 text-sm"></i>
+            <span class="text-white font-black tracking-wider text-sm uppercase">OldX Marketplace</span>
         </div>
+    </div>
 
-        <div class="pt-1 flex flex-col items-center space-y-2">
-            <div class="w-32 h-1 bg-white/20 rounded-full overflow-hidden">
-                <div class="h-full bg-amber-400 animate-[loadingBar_4s_linear_forwards]"></div>
-            </div>
-            <p class="text-[10px] text-teal-200 font-semibold tracking-wider">Entering OldX Marketplace...</p>
+    <!-- Center Content (No Images, Only Rich Typography & Text) -->
+    <div class="text-center space-y-6 my-auto">
+        <div class="inline-flex p-4 rounded-3xl bg-amber-400/10 border border-amber-400/30 shadow-inner mb-2 animate-bounce">
+            <i class="fa-solid fa-bolt text-amber-400 text-3xl"></i>
         </div>
+        
+        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+            India's Trusted <br><span class="text-amber-400">C2C Marketplace</span>
+        </h1>
+        
+        <p class="text-sm text-teal-100 opacity-90 max-w-xs mx-auto leading-relaxed font-medium">
+            Buy and sell electronics, vehicles, properties, and more directly with zero commission.
+        </p>
+    </div>
+
+    <!-- Bottom Loading & Footer -->
+    <div class="pb-8 space-y-4 max-w-xs mx-auto w-full text-center">
+        <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden shadow-inner">
+            <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 animate-[loadingBar_4s_linear_forwards]"></div>
+        </div>
+        <p class="text-[11px] text-teal-200 font-bold tracking-widest uppercase opacity-80">Loading Marketplace...</p>
     </div>
 </div>
 
@@ -3317,6 +3324,3 @@
     to { width: 100%; }
 }
 </style>
-
-</body>
-</html>
