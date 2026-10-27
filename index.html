@@ -1305,7 +1305,6 @@
                 return;
             }
 
-            // Admin email check karo
             if (window.currentUser.email === 'paniruddhsinh088@gmail.com') {
                 window.location.href = 'admin.html';
             } else {
@@ -2288,7 +2287,8 @@
                                 let width = img.width;
                                 let height = img.height;
                                 
-                                const maxDim = 120;
+                                // Size 70px ane quality 0.4 rakhi chhe jethi size 1-2 KB thai jay ane Firebase Auth ni 2KB limit ma barabar fit thaye
+                                const maxDim = 70;
                                 if (width > height && width > maxDim) { 
                                     height *= maxDim / width; 
                                     width = maxDim; 
@@ -2302,7 +2302,7 @@
                                 const ctx = canvas.getContext('2d');
                                 ctx.drawImage(img, 0, 0, width, height);
                                 
-                                resolve(canvas.toDataURL('image/jpeg', 0.6));
+                                resolve(canvas.toDataURL('image/jpeg', 0.4));
                             };
                             img.src = e.target.result;
                         };
@@ -2310,15 +2310,17 @@
                     });
                 }
 
+                // Firebase Auth profile update
                 await window.currentUser.updateProfile({
                     displayName: newName,
                     photoURL: photoURL
                 });
 
+                // Firestore database ma pan update karo
                 await db.collection('users').doc(window.currentUser.uid).set({
                     displayName: newName,
                     photoURL: photoURL,
-                    email: window.currentUser.email
+                    email: window.currentUser.email || ""
                 }, { merge: true });
 
                 closeEditProfileModal();
