@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#002f34">
     <title>OldX - Pan-India C2C Marketplace</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -37,6 +38,28 @@
             50% { opacity: 0.3; }
         }
         .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
+
+        /* Shimmer Skeleton Loaders for Native Feel */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .skeleton-box {
+            background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        /* Slide-up Bottom Sheet Modal */
+        .bottom-sheet {
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+            animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
     </style>
 
     <!-- Firebase SDKs -->
@@ -60,7 +83,7 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-20">
+<body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-24">
 
     <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
@@ -185,7 +208,7 @@
         </main>
 
         <!-- FOOTER WITH PRIVACY POLICY & CONTACT US LINKS -->
-        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3">
+        <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3 mb-16">
             <div class="flex justify-center items-center gap-6 font-bold">
                 <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Privacy Policy</a>
                 <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Terms & Conditions</a>
@@ -219,7 +242,7 @@
     </div>
 
     <!-- ENHANCED DEDICATED PROFILE PAGE -->
-    <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-16">
+    <div id="profilePage" style="display: none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 animate-slide-up pb-20">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b p-4 flex justify-between items-center shadow-sm">
             <button onclick="window.location.hash=''" class="flex items-center gap-2 text-xs font-bold text-gray-600 dark:text-gray-300 cursor-pointer">
                 <i class="fa-solid fa-arrow-left text-base"></i> Back to Home
@@ -316,8 +339,8 @@
         </div>
     </div>
 
-    <!-- BOTTOM NAVIGATION BAR -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-1.5 shadow-lg flex justify-around items-center">
+    <!-- NATIVE BOTTOM APP BAR (Mobile Only) -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 px-3 py-2 shadow-2xl flex justify-around items-center md:hidden">
         <!-- Home -->
         <button onclick="window.location.hash=''" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
             <i class="fa-solid fa-house text-lg"></i>
@@ -331,9 +354,9 @@
             <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow">0</span>
         </button>
 
-        <!-- Sell Button -->
-        <div class="relative -top-3">
-            <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-lg flex flex-col items-center justify-center border-4 border-white dark:border-gray-800 transform active:scale-95 transition cursor-pointer">
+        <!-- Floating Sell Button -->
+        <div class="relative -top-5">
+            <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-xl flex flex-col items-center justify-center border-4 border-white dark:border-gray-900 transform active:scale-95 transition cursor-pointer">
                 <i class="fa-solid fa-plus text-xl font-black"></i>
             </button>
             <span class="block text-center text-[10px] font-black text-gray-700 dark:text-gray-200 mt-0.5">Sell</span>
@@ -378,7 +401,7 @@
         </div>
     </div>
 
-    <!-- CONTACT US SUPPORT MODAL (UPDATED IN ENGLISH) -->
+    <!-- CONTACT US SUPPORT MODAL -->
     <div id="contactModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700 space-y-4">
             <div class="flex justify-between items-center border-b pb-3">
@@ -1093,6 +1116,47 @@
         </div>
     </div>
 
+    <!-- FULL PAGE MODERN APP SPLASH SCREEN -->
+    <div id="appLaunchBannerModal" class="fixed inset-0 bg-[#002f34] z-[9999] flex flex-col justify-between p-8 transition-opacity duration-700">
+        <!-- Top Branding -->
+        <div class="flex items-center justify-center pt-12">
+            <div class="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full border border-white/15 shadow-lg">
+                <i class="fa-solid fa-store text-amber-400 text-sm"></i>
+                <span class="text-white font-black tracking-wider text-sm uppercase">OldX Marketplace</span>
+            </div>
+        </div>
+
+        <!-- Center Content -->
+        <div class="text-center space-y-6 my-auto">
+            <div class="inline-flex p-4 rounded-3xl bg-amber-400/10 border border-amber-400/30 shadow-inner mb-2 animate-bounce">
+                <i class="fa-solid fa-bolt text-amber-400 text-3xl"></i>
+            </div>
+            
+            <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+                India's Trusted <br><span class="text-amber-400">C2C Marketplace</span>
+            </h1>
+            
+            <p class="text-sm text-teal-100 opacity-90 max-w-xs mx-auto leading-relaxed font-medium">
+                Buy and sell electronics, vehicles, properties, and more directly with zero commission.
+            </p>
+        </div>
+
+        <!-- Bottom Loading & Footer -->
+        <div class="pb-8 space-y-4 max-w-xs mx-auto w-full text-center">
+            <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden shadow-inner">
+                <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 animate-[loadingBar_4s_linear_forwards]"></div>
+            </div>
+            <p class="text-[11px] text-teal-200 font-bold tracking-widest uppercase opacity-80">Loading Marketplace...</p>
+        </div>
+    </div>
+
+    <style>
+    @keyframes loadingBar {
+        from { width: 0%; }
+        to { width: 100%; }
+    }
+    </style>
+
     <!-- Main Logic Script -->
     <script>
         const firebaseConfig = {
@@ -1109,6 +1173,66 @@
         const db = firebase.firestore();
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+        // Native Haptic Feedback & Offline Network Listener
+        function triggerHaptic() {
+            if ("vibrate" in navigator) {
+                navigator.vibrate(12);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('button, a, .clickable').forEach(el => {
+                el.addEventListener('click', () => triggerHaptic());
+            });
+            checkLaunchBanner();
+        });
+
+        window.addEventListener('offline', () => {
+            showAppNotification("⚠️ You are offline. Showing cached items.", "error");
+        });
+
+        window.addEventListener('online', () => {
+            showAppNotification("✅ Back online!", "success");
+        });
+
+        function showAppNotification(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-2xl text-xs font-bold text-white shadow-xl transition-all duration-300 ${
+                type === 'error' ? 'bg-red-600' : 'bg-teal-700'
+            }`;
+            toast.innerText = message;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function checkLaunchBanner() {
+            const hasSeenBanner = sessionStorage.getItem('oldx_launch_banner_seen');
+            const bannerModal = document.getElementById('appLaunchBannerModal');
+            
+            if (!hasSeenBanner && bannerModal) {
+                bannerModal.style.display = 'flex';
+                setTimeout(() => {
+                    closeLaunchBanner();
+                }, 4000);
+            } else if (bannerModal) {
+                bannerModal.style.display = 'none';
+            }
+        }
+
+        function closeLaunchBanner() {
+            const bannerModal = document.getElementById('appLaunchBannerModal');
+            if (bannerModal) {
+                bannerModal.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => {
+                    bannerModal.style.display = 'none';
+                    sessionStorage.setItem('oldx_launch_banner_seen', 'true');
+                }, 400);
+            }
+        }
 
         // Website traffic tracking function
         async function trackVisitorTraffic() {
@@ -3249,78 +3373,6 @@
             `;
             return card;
         }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            renderHomeCategories();
-            handleHashChange();
-        });
-       function checkLaunchBanner() {
-        const hasSeenBanner = sessionStorage.getItem('oldx_launch_banner_seen');
-        const bannerModal = document.getElementById('appLaunchBannerModal');
-        
-        if (!hasSeenBanner && bannerModal) {
-            bannerModal.style.display = 'flex';
-            setTimeout(() => {
-                closeLaunchBanner();
-            }, 4000);
-        } else if (bannerModal) {
-            bannerModal.style.display = 'none';
-        }
-    }
-
-    function closeLaunchBanner() {
-        const bannerModal = document.getElementById('appLaunchBannerModal');
-        if (bannerModal) {
-            bannerModal.classList.add('opacity-0', 'scale-95');
-            setTimeout(() => {
-                bannerModal.style.display = 'none';
-                sessionStorage.setItem('oldx_launch_banner_seen', 'true');
-            }, 400);
-        }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-        checkLaunchBanner();
-    });
- </script>
-<!-- FULL PAGE MODERN APP SPLASH SCREEN -->
-<div id="appLaunchBannerModal" class="fixed inset-0 bg-[#002f34] z-[9999] flex flex-col justify-between p-8 transition-opacity duration-700">
-    
-    <!-- Top Branding -->
-    <div class="flex items-center justify-center pt-12">
-        <div class="flex items-center gap-2.5 bg-white/10 backdrop-blur-md px-5 py-2 rounded-full border border-white/15 shadow-lg">
-            <i class="fa-solid fa-store text-amber-400 text-sm"></i>
-            <span class="text-white font-black tracking-wider text-sm uppercase">OldX Marketplace</span>
-        </div>
-    </div>
-
-    <!-- Center Content (No Images, Only Rich Typography & Text) -->
-    <div class="text-center space-y-6 my-auto">
-        <div class="inline-flex p-4 rounded-3xl bg-amber-400/10 border border-amber-400/30 shadow-inner mb-2 animate-bounce">
-            <i class="fa-solid fa-bolt text-amber-400 text-3xl"></i>
-        </div>
-        
-        <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
-            India's Trusted <br><span class="text-amber-400">C2C Marketplace</span>
-        </h1>
-        
-        <p class="text-sm text-teal-100 opacity-90 max-w-xs mx-auto leading-relaxed font-medium">
-            Buy and sell electronics, vehicles, properties, and more directly with zero commission.
-        </p>
-    </div>
-
-    <!-- Bottom Loading & Footer -->
-    <div class="pb-8 space-y-4 max-w-xs mx-auto w-full text-center">
-        <div class="w-full h-1.5 bg-white/15 rounded-full overflow-hidden shadow-inner">
-            <div class="h-full bg-gradient-to-r from-amber-400 to-amber-500 animate-[loadingBar_4s_linear_forwards]"></div>
-        </div>
-        <p class="text-[11px] text-teal-200 font-bold tracking-widest uppercase opacity-80">Loading Marketplace...</p>
-    </div>
-</div>
-
-<style>
-@keyframes loadingBar {
-    from { width: 0%; }
-    to { width: 100%; }
-}
-</style>
+    </script>
+</body>
+</html>
