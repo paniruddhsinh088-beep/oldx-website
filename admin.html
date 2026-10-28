@@ -32,8 +32,8 @@
         <!-- Admin Content -->
         <div id="admin-content" class="hidden space-y-6">
             
-            <!-- STATS COUNTERS (4 CARDS) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <!-- STATS COUNTERS (5 CARDS) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
                 <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
                     <div>
                         <p class="text-xs text-gray-400 font-bold uppercase">Total Products</p>
@@ -41,6 +41,16 @@
                     </div>
                     <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
                         <i class="fa-solid fa-boxes-packing"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-xs text-gray-400 font-bold uppercase">Active Posts</p>
+                        <h3 id="statActivePosts" class="text-2xl font-black text-teal-600 mt-1">0</h3>
+                    </div>
+                    <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                        <i class="fa-solid fa-layer-group"></i>
                     </div>
                 </div>
 
@@ -85,10 +95,10 @@
             <div id="sectionProducts" class="space-y-4">
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
                     <h2 class="text-lg font-bold text-gray-800">All Product Listings</h2>
-                    <!-- Search Bar -->
+                    <!-- Product Search Bar -->
                     <div class="w-full sm:w-72 relative">
                         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
-                        <input type="text" id="productSearchInput" oninput="filterProductsTable()" placeholder="Search by title or location..." class="w-full pl-9 pr-4 py-2 bg-white border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                        <input type="text" id="productSearchInput" oninput="filterProductsTable()" placeholder="Search by title, location or seller..." class="w-full pl-9 pr-4 py-2 bg-white border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20">
                     </div>
                 </div>
 
@@ -99,6 +109,7 @@
                                 <th class="p-3.5">Product</th>
                                 <th class="p-3.5">Price</th>
                                 <th class="p-3.5">Location</th>
+                                <th class="p-3.5">IP Address</th>
                                 <th class="p-3.5 text-center">Featured Status</th>
                                 <th class="p-3.5 text-center">Action</th>
                             </tr>
@@ -112,13 +123,22 @@
 
             <!-- TAB 2: USERS MANAGEMENT -->
             <div id="sectionUsers" class="space-y-4" style="display: none;">
-                <h2 class="text-lg font-bold text-gray-800">Registered Users Activity</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <h2 class="text-lg font-bold text-gray-800">Registered Users Activity</h2>
+                    <!-- User Search Bar -->
+                    <div class="w-full sm:w-72 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                        <input type="text" id="userSearchInput" oninput="filterUsersTable()" placeholder="Search by UID, Name, Email or IP..." class="w-full pl-9 pr-4 py-2 bg-white border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/20">
+                    </div>
+                </div>
+
                 <div class="bg-white rounded-2xl shadow-sm border overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b">
-                                <th class="p-3.5">User UID</th>
+                                <th class="p-3.5">User Details</th>
                                 <th class="p-3.5">Status</th>
+                                <th class="p-3.5">IP Address</th>
                                 <th class="p-3.5">Last Seen</th>
                             </tr>
                         </thead>
@@ -158,6 +178,7 @@
         const usersListEl = document.getElementById('users-list');
 
         let allProducts = [];
+        let allUsers = [];
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -191,40 +212,30 @@
                 const prodSnapshot = await getDocs(collection(db, "products"));
                 allProducts = [];
                 let featuredCount = 0;
+                let activeCount = 0;
 
                 prodSnapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     allProducts.push({ id: docSnap.id, ...data });
                     if (data.isFeatured) featuredCount++;
+                    if (!data.isSold) activeCount++;
                 });
 
                 document.getElementById('statTotalProducts').innerText = allProducts.length;
+                document.getElementById('statActivePosts').innerText = activeCount;
                 document.getElementById('statFeaturedProducts').innerText = featuredCount;
 
                 renderProductsTable(allProducts);
 
                 // Fetch Users
                 const userSnapshot = await getDocs(collection(db, "users"));
-                document.getElementById('statTotalUsers').innerText = userSnapshot.size;
-                
-                usersListEl.innerHTML = "";
-                if (userSnapshot.empty) {
-                    usersListEl.innerHTML = `<tr><td colspan="3" class="p-4 text-center text-gray-400">No user records found.</td></tr>`;
-                } else {
-                    userSnapshot.forEach((uDoc) => {
-                        const uData = uDoc.data();
-                        const isOnline = uData.isOnline ? '<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Online</span>' : '<span class="bg-gray-100 text-gray-500 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Offline</span>';
-                        const lastSeenStr = uData.lastSeen ? uData.lastSeen.toDate().toLocaleString() : 'N/A';
+                allUsers = [];
+                userSnapshot.forEach((uDoc) => {
+                    allUsers.push({ id: uDoc.id, ...uDoc.data() });
+                });
 
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="p-3.5 font-mono text-gray-600">${uDoc.id}</td>
-                            <td class="p-3.5">${isOnline}</td>
-                            <td class="p-3.5 text-gray-500">${lastSeenStr}</td>
-                        `;
-                        usersListEl.appendChild(tr);
-                    });
-                }
+                document.getElementById('statTotalUsers').innerText = allUsers.length;
+                renderUsersTable(allUsers);
 
                 // Fetch Traffic Stats
                 const trafficDoc = await getDoc(doc(db, "stats", "traffic"));
@@ -240,13 +251,14 @@
         function renderProductsTable(productsToRender) {
             productListEl.innerHTML = "";
             if (productsToRender.length === 0) {
-                productListEl.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-gray-400">No products found.</td></tr>`;
+                productListEl.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-gray-400">No products found.</td></tr>`;
                 return;
             }
 
             productsToRender.forEach((product) => {
                 const img = product.images?.[0] || 'https://via.placeholder.com/50';
                 const isFeatured = product.isFeatured || false;
+                const ipAddress = product.userIp || product.ipAddress || 'N/A';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
@@ -259,6 +271,7 @@
                     </td>
                     <td class="p-3.5 font-black text-blue-600">${product.finalPriceStr || ('₹' + (product.basePrice || 0))}</td>
                     <td class="p-3.5 text-gray-500">${product.location || 'N/A'}</td>
+                    <td class="p-3.5 font-mono text-gray-600 text-[11px]">${ipAddress}</td>
                     <td class="p-3.5 text-center">
                         <button onclick="toggleFeature('${product.id}', ${isFeatured})" class="px-3 py-1 rounded-xl text-[10px] font-black transition ${isFeatured ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-gray-100 text-gray-600'}">
                             <i class="fa-solid fa-bolt mr-1"></i> ${isFeatured ? 'Featured (On)' : 'Make Featured'}
@@ -274,14 +287,56 @@
             });
         }
 
+        function renderUsersTable(usersToRender) {
+            usersListEl.innerHTML = "";
+            if (usersToRender.length === 0) {
+                usersListEl.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-400">No user records found.</td></tr>`;
+                return;
+            }
+
+            usersToRender.forEach((uData) => {
+                const isOnline = uData.isOnline ? '<span class="bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Online</span>' : '<span class="bg-gray-100 text-gray-500 font-bold px-2.5 py-0.5 rounded-full text-[10px]">Offline</span>';
+                const lastSeenStr = uData.lastSeen ? uData.lastSeen.toDate().toLocaleString() : 'N/A';
+                const userIp = uData.lastIp || uData.ipAddress || 'N/A';
+                const userName = uData.displayName || 'Anonymous User';
+                const userEmail = uData.email || 'N/A';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="p-3.5">
+                        <span class="font-bold text-gray-800 block">${userName}</span>
+                        <span class="text-[10px] text-gray-400 font-mono">UID: ${uData.id}</span>
+                        <span class="text-[10px] text-gray-400 block">${userEmail}</span>
+                    </td>
+                    <td class="p-3.5">${isOnline}</td>
+                    <td class="p-3.5 font-mono text-gray-600 text-[11px]">${userIp}</td>
+                    <td class="p-3.5 text-gray-500">${lastSeenStr}</td>
+                `;
+                usersListEl.appendChild(tr);
+            });
+        }
+
         window.filterProductsTable = function() {
             const query = document.getElementById('productSearchInput').value.toLowerCase();
             const filtered = allProducts.filter(p => 
                 (p.title && p.title.toLowerCase().includes(query)) || 
                 (p.location && p.location.toLowerCase().includes(query)) ||
-                (p.sellerUid && p.sellerUid.toLowerCase().includes(query))
+                (p.sellerUid && p.sellerUid.toLowerCase().includes(query)) ||
+                (p.userIp && p.userIp.toLowerCase().includes(query))
             );
             renderProductsTable(filtered);
+        };
+
+        window.filterUsersTable = function() {
+            const query = document.getElementById('userSearchInput').value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                (u.id && u.id.toLowerCase().includes(query)) || 
+                (u.displayName && u.displayName.toLowerCase().includes(query)) ||
+                (u.email && u.email.toLowerCase().includes(query)) ||
+                (u.lastIp && u.lastIp.toLowerCase().includes(query)) ||
+                (u.ipAddress && u.ipAddress.toLowerCase().includes(query))
+            );
+            renderUsersTable(filtered);
         };
 
         window.toggleFeature = async function(productId, currentStatus) {
