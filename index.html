@@ -231,6 +231,11 @@
                 </div>
                 
                 <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6"></div>
+                
+                <!-- INFINITE SCROLL SENTINEL CONTAINER -->
+                <div id="scrollSentinel" class="h-12 w-full flex items-center justify-center pt-4">
+                    <i id="scrollLoadingSpinner" style="display: none;" class="fa-solid fa-spinner fa-spin text-teal-600 text-xl"></i>
+                </div>
             </section>
         </main>
 
@@ -1319,6 +1324,12 @@
             }
         }
 
+        // Global variables for Infinite Scroll & Pagination
+        let productLimit = 12;
+        let isFetchingProducts = false;
+        let hasMoreProducts = true;
+        let productsUnsubscribe = null;
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('button, a, .clickable').forEach(el => {
                 el.addEventListener('click', () => triggerHaptic());
@@ -1328,7 +1339,33 @@
             initCustomPickers();
             autoDetectUserLocation();
             initNativePermissionsAndBackButton();
+            initInfiniteScrollObserver();
         });
+
+        // INFINITE SCROLL OBSERVER
+        function initInfiniteScrollObserver() {
+            const sentinel = document.getElementById('scrollSentinel');
+            if (!sentinel) return;
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && hasMoreProducts && !isFetchingProducts) {
+                        loadMoreProducts();
+                    }
+                });
+            }, { rootMargin: '300px' });
+
+            observer.observe(sentinel);
+        }
+
+        function loadMoreProducts() {
+            if (isFetchingProducts || !hasMoreProducts) return;
+            const spinner = document.getElementById('scrollLoadingSpinner');
+            if (spinner) spinner.style.display = 'inline-block';
+            
+            productLimit += 12;
+            listenToProductsFromFirebase();
+        }
 
         // 3. HARDWARE BACK BUTTON & NATIVE PERMISSIONS HANDLING
         function initNativePermissionsAndBackButton() {
@@ -1975,7 +2012,6 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                // FIXED: Automatically save / update email in users collection on every successful auth state change
                 db.collection('users').doc(user.uid).set({
                     email: user.email || '',
                     displayName: user.displayName || '',
@@ -3263,14 +3299,41 @@
             renderProducts(); 
         }
 
-        db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-            products = [];
-            snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
-            renderProducts();
-            renderRecentlyViewed();
-            if(window.currentUser) updateProfileDetails(window.currentUser);
-            handleHashChange();
-        });
+        // Realtime Products Listener with Pagination Limit
+        function listenToProductsFromFirebase() {
+            isFetchingProducts = true;
+            if (productsUnsubscribe) productsUnsubscribe();
+
+            productsUnsubscribe = db.collection('products')
+              .orderBy('createdAt', 'desc')
+              .limit(productLimit)
+              .onSnapshot(snapshot => {
+                  isFetchingProducts = false;
+                  const spinner = document.getElementById('scrollLoadingSpinner');
+                  if (spinner) spinner.style.display = 'none';
+
+                  if (snapshot.docs.length < productLimit) {
+                      hasMoreProducts = false;
+                  } else {
+                      hasMoreProducts = true;
+                  }
+
+                  products = [];
+                  snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
+                  renderProducts();
+                  renderRecentlyViewed();
+                  if(window.currentUser) updateProfileDetails(window.currentUser);
+                  handleHashChange();
+              }, error => {
+                  isFetchingProducts = false;
+                  const spinner = document.getElementById('scrollLoadingSpinner');
+                  if (spinner) spinner.style.display = 'none';
+                  console.log("Error listening products: ", error);
+              });
+        }
+
+        // Initial fetch call
+        listenToProductsFromFirebase();
 
         function addToRecentlyViewed(p) {
             let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
