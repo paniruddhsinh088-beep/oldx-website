@@ -33,12 +33,6 @@
         }
         .animate-scale-up { animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-        @keyframes pulseSkeleton {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 0.3; }
-        }
-        .animate-skeleton { animation: pulseSkeleton 1.2s infinite ease-in-out; }
-
         @keyframes shimmer {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
@@ -1766,7 +1760,12 @@
         function getValidSavedCount() {
             const key = getSavedAdsStorageKey();
             const list = JSON.parse(localStorage.getItem(key) || '[]');
-            return list.length;
+            // Filter out items whose product no longer exists in the global `products` list
+            const validList = list.filter(item => {
+                const id = (typeof item === 'string') ? item : item.docId;
+                return products.some(p => p.docId === id);
+            });
+            return validList.length;
         }
 
         function startRealtimeSavedAdsSync(userId) {
@@ -3214,6 +3213,13 @@
             const storageKey = getSavedAdsStorageKey();
             let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
             
+            // 🔥 FIXED: Automatically clean up items that no longer exist in the products list
+            rawList = rawList.filter(item => {
+                const id = (typeof item === 'string') ? item : item.docId;
+                return products.some(p => p.docId === id);
+            });
+            localStorage.setItem(storageKey, JSON.stringify(rawList));
+            
             if(rawList.length === 0) { 
                 container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
                 return;
@@ -3225,9 +3231,11 @@
                 let id = (typeof item === 'string') ? item : item.docId;
                 let foundProduct = products.find(p => p.docId === id);
 
-                let title = foundProduct ? foundProduct.title : (item.title || "Saved Ad");
-                let price = foundProduct ? foundProduct.finalPriceStr : (item.finalPriceStr || "&#8377;0");
-                let img = (foundProduct && foundProduct.images && foundProduct.images.length > 0) ? foundProduct.images[0] : (item.image || '');
+                if (!foundProduct) return; // Skip if deleted from database
+
+                let title = foundProduct.title;
+                let price = foundProduct.finalPriceStr;
+                let img = (foundProduct.images && foundProduct.images.length > 0) ? foundProduct.images[0] : '';
 
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
@@ -3320,6 +3328,22 @@
 
                   products = [];
                   snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
+                  
+                  // 🔥 Also clean up local saved ads storage when products update from Firebase
+                  const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+                  if (activeUser) {
+                      const storageKey = getSavedAdsStorageKey();
+                      let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                      let cleanedList = rawList.filter(item => {
+                          const id = (typeof item === 'string') ? item : item.docId;
+                          return products.some(p => p.docId === id);
+                      });
+                      if (cleanedList.length !== rawList.length) {
+                          localStorage.setItem(storageKey, JSON.stringify(cleanedList));
+                          db.collection('users').doc(activeUser.uid).set({ savedAds: cleanedList }, { merge: true }).catch(() => {});
+                      }
+                  }
+
                   renderProducts();
                   renderRecentlyViewed();
                   if(window.currentUser) updateProfileDetails(window.currentUser);
