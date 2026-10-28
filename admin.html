@@ -4,14 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#002f34">
-    <title>OldX Admin Dashboard</title>
+    <title>OldX Admin Control Center</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- Chart.js for Admin Analytics -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -39,7 +36,7 @@
         }
     </script>
 </head>
-<body class="bg-gray-100 dark:bg-darkBg text-gray-800 dark:text-gray-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-darkBg text-gray-800 dark:text-gray-100 min-h-screen pb-20">
 
     <!-- Admin Header -->
     <header class="bg-primary text-white sticky top-0 z-50 shadow-md">
@@ -113,10 +110,10 @@
 
         <!-- Management Tabs -->
         <div class="flex border-b border-gray-200 dark:border-gray-700 gap-4 text-sm font-bold">
-            <button onclick="switchAdminTab('ads')" id="tabBtnAds" class="pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2">
+            <button onclick="switchAdminTab('ads')" id="tabBtnAds" class="pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-list-check"></i> Manage All Ads
             </button>
-            <button onclick="switchAdminTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2">
+            <button onclick="switchAdminTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-users-gear"></i> Manage Users
             </button>
         </div>
@@ -154,6 +151,7 @@
                             <tr class="border-b dark:border-gray-700 text-gray-400 uppercase text-[10px]">
                                 <th class="py-2.5 px-3">User</th>
                                 <th class="py-2.5 px-3">Email</th>
+                                <th class="py-2.5 px-3">IP Address</th>
                                 <th class="py-2.5 px-3">Status</th>
                                 <th class="py-2.5 px-3">Actions</th>
                             </tr>
@@ -217,8 +215,11 @@
 
         function listenToStats() {
             db.collection('stats').doc('traffic').onSnapshot(doc => {
-                if (doc.exists) {
-                    document.getElementById('statTotalViews').innerText = doc.data().totalViews || 0;
+                if (doc.exists && doc.data().totalViews) {
+                    document.getElementById('statTotalViews').innerText = doc.data().totalViews;
+                } else {
+                    db.collection('stats').doc('traffic').set({ totalViews: 1 }, { merge: true });
+                    document.getElementById('statTotalViews').innerText = '1';
                 }
             });
         }
@@ -245,7 +246,15 @@
             db.collection('users').onSnapshot(snapshot => {
                 allUsers = [];
                 snapshot.forEach(doc => {
-                    allUsers.push({ uid: doc.id, ...doc.data() });
+                    const uData = doc.data();
+                    allUsers.push({ 
+                        uid: doc.id, 
+                        displayName: uData.displayName || uData.name || 'User',
+                        email: uData.email || uData.userEmail || 'N/A',
+                        photoURL: uData.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
+                        isOnline: uData.isOnline || false,
+                        lastIp: uData.lastIp || uData.ip || 'N/A'
+                    });
                 });
                 document.getElementById('statTotalUsers').innerText = allUsers.length;
                 renderAdminUsersTable();
@@ -259,7 +268,7 @@
             container.innerHTML = '';
 
             const filtered = allProducts.filter(p => {
-                const matchSearch = p.title.toLowerCase().includes(searchVal) || (p.location && p.location.toLowerCase().includes(searchVal)) || (p.sellerName && p.sellerName.toLowerCase().includes(searchVal));
+                const matchSearch = (p.title && p.title.toLowerCase().includes(searchVal)) || (p.location && p.location.toLowerCase().includes(searchVal)) || (p.sellerName && p.sellerName.toLowerCase().includes(searchVal));
                 const matchCat = (catVal === 'all' || (p.category && p.category.toLowerCase() === catVal));
                 return matchSearch && matchCat;
             });
@@ -287,10 +296,10 @@
                     <div class="flex items-center justify-between border-t dark:border-gray-700 pt-2 text-[11px]">
                         <span class="font-bold text-gray-500 capitalize">${p.category || 'General'}</span>
                         <div class="flex gap-1.5">
-                            <button onclick="toggleFeatureAd('${p.docId}', ${p.isFeatured || false})" class="px-2.5 py-1 rounded-lg font-bold text-white text-[10px] ${p.isFeatured ? 'bg-amber-500 hover:bg-amber-600' : 'bg-gray-600 hover:bg-gray-700'}">
+                            <button onclick="toggleFeatureAd('${p.docId}', ${p.isFeatured || false})" class="px-2.5 py-1 rounded-lg font-bold text-white text-[10px] ${p.isFeatured ? 'bg-amber-500 hover:bg-amber-600' : 'bg-gray-600 hover:bg-gray-700'} cursor-pointer">
                                 <i class="fa-solid fa-bolt mr-1"></i>${p.isFeatured ? 'Featured' : 'Boost'}
                             </button>
-                            <button onclick="deleteAdminAd('${p.docId}')" class="px-2.5 py-1 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 text-[10px]">
+                            <button onclick="deleteAdminAd('${p.docId}')" class="px-2.5 py-1 rounded-lg font-bold text-white bg-red-600 hover:bg-red-700 text-[10px] cursor-pointer">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
@@ -321,7 +330,7 @@
             tbody.innerHTML = '';
 
             if (allUsers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
                 return;
             }
 
@@ -331,17 +340,18 @@
                 
                 tr.innerHTML = `
                     <td class="py-3 px-3 flex items-center gap-2">
-                        <img src="${u.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" class="w-7 h-7 rounded-full object-cover">
-                        <span class="font-bold text-gray-900 dark:text-white">${u.displayName || 'User'}</span>
+                        <img src="${u.photoURL}" class="w-7 h-7 rounded-full object-cover">
+                        <span class="font-bold text-gray-900 dark:text-white truncate max-w-[120px]">${u.displayName}</span>
                     </td>
-                    <td class="py-3 px-3 text-gray-500 dark:text-gray-300">${u.email || 'N/A'}</td>
+                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300 truncate max-w-[140px]">${u.email}</td>
+                    <td class="py-3 px-3 text-gray-500 font-mono text-[11px]">${u.lastIp}</td>
                     <td class="py-3 px-3">
                         <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
                             ${u.isOnline ? 'Online' : 'Offline'}
                         </span>
                     </td>
                     <td class="py-3 px-3">
-                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs">
+                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer">
                             <i class="fa-solid fa-user-slash"></i> Remove
                         </button>
                     </td>
@@ -367,13 +377,13 @@
             if (tab === 'ads') {
                 secAds.style.display = 'block';
                 secUsers.style.display = 'none';
-                btnAds.className = "pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2 font-bold";
-                btnUsers.className = "pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold";
+                btnAds.className = "pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2 font-bold cursor-pointer";
+                btnUsers.className = "pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold cursor-pointer";
             } else {
                 secAds.style.display = 'none';
                 secUsers.style.display = 'block';
-                btnUsers.className = "pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2 font-bold";
-                btnAds.className = "pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold";
+                btnUsers.className = "pb-3 border-b-2 border-primary text-primary dark:text-amber-400 flex items-center gap-2 font-bold cursor-pointer";
+                btnAds.className = "pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 font-bold cursor-pointer";
             }
         }
 
