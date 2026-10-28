@@ -1359,14 +1359,16 @@
 
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
-                    (position) => { console.log("GPS granted."); },
-                    (error) => { console.log("GPS denied:", error.message); },
+                    (position) => { console.log("Geolocation permission granted successfully."); },
+                    (error) => { console.log("Geolocation permission denied or not available:", error.message); },
                     { timeout: 10000, maximumAge: 60000 }
                 );
             }
 
             if ("Notification" in window && Notification.permission !== "granted") {
-                Notification.requestPermission().then(permission => {});
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") { console.log("Push Notification permission granted."); }
+                });
             }
         }
 
@@ -1389,8 +1391,10 @@
                                 renderProducts();
                             }
                         }
-                    }).catch(e => console.log(e));
-                }, () => {});
+                    }).catch(e => console.log("Geocoding fetch error:", e));
+                }, () => {
+                    console.log("GPS Location permission denied or unavailable.");
+                });
             }
         }
 
@@ -1466,12 +1470,17 @@
             try {
                 const statsRef = db.collection('stats').doc('traffic');
                 const docSnap = await statsRef.get();
+                
                 if (docSnap.exists) {
-                    statsRef.update({ totalViews: firebase.firestore.FieldValue.increment(1) });
+                    statsRef.update({
+                        totalViews: firebase.firestore.FieldValue.increment(1)
+                    });
                 } else {
                     statsRef.set({ totalViews: 1 });
                 }
-            } catch (err) {}
+            } catch (err) {
+                console.log("Traffic tracking error:", err);
+            }
         }
         trackVisitorTraffic();
 
@@ -1544,15 +1553,25 @@
             renderDistanceList();
         }
 
-        function openCustomStatePicker() { document.getElementById('customStateModal').style.display = 'flex'; }
-        function closeCustomStateModal() { document.getElementById('customStateModal').style.display = 'none'; }
-        function openCustomDistancePicker() { document.getElementById('customDistanceModal').style.display = 'flex'; }
-        function closeCustomDistanceModal() { document.getElementById('customDistanceModal').style.display = 'none'; }
+        function openCustomStatePicker() {
+            document.getElementById('customStateModal').style.display = 'flex';
+        }
+        function closeCustomStateModal() {
+            document.getElementById('customStateModal').style.display = 'none';
+        }
+
+        function openCustomDistancePicker() {
+            document.getElementById('customDistanceModal').style.display = 'flex';
+        }
+        function closeCustomDistanceModal() {
+            document.getElementById('customDistanceModal').style.display = 'none';
+        }
 
         function renderStateList() {
             const container = document.getElementById('stateListContainer');
             if(!container) return;
             container.innerHTML = '';
+
             allStatesList.forEach(st => {
                 const isSelected = currentSelectedState === st.id;
                 const div = document.createElement('div');
@@ -1580,6 +1599,7 @@
             const container = document.getElementById('distanceListContainer');
             if(!container) return;
             container.innerHTML = '';
+
             distanceOptionsList.forEach(dist => {
                 const isSelected = currentSelectedDistance === dist.id;
                 const div = document.createElement('div');
@@ -1617,14 +1637,26 @@
         let createAdMarker = null;
         let selectedCoords = { lat: 22.3039, lng: 70.8022 }; 
 
-        function openPrivacyModal(e) { if(e) e.preventDefault(); document.getElementById('privacyModal').style.display = 'flex'; }
-        function closePrivacyModal() { document.getElementById('privacyModal').style.display = 'none'; }
-        function openContactModal(e) { if(e) e.preventDefault(); document.getElementById('contactModal').style.display = 'flex'; }
-        function closeContactModal() { document.getElementById('contactModal').style.display = 'none'; }
+        function openPrivacyModal(e) {
+            if(e) e.preventDefault();
+            document.getElementById('privacyModal').style.display = 'flex';
+        }
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').style.display = 'none';
+        }
+
+        function openContactModal(e) {
+            if(e) e.preventDefault();
+            document.getElementById('contactModal').style.display = 'flex';
+        }
+        function closeContactModal() {
+            document.getElementById('contactModal').style.display = 'none';
+        }
 
         function showCustomConfirm(title, message, onConfirm) {
             document.getElementById('confirmModalTitle').innerText = title;
             document.getElementById('confirmModalDesc').innerText = message;
+            
             const modal = document.getElementById('professionalConfirmModal');
             modal.style.display = 'flex';
 
@@ -1640,7 +1672,10 @@
                 modal.style.display = 'none';
                 if (onConfirm) onConfirm();
             };
-            newCancelBtn.onclick = function() { modal.style.display = 'none'; };
+
+            newCancelBtn.onclick = function() {
+                modal.style.display = 'none';
+            };
         }
 
         async function confirmDeleteAccount() {
@@ -1650,19 +1685,36 @@
                 async function() {
                     try {
                         const user = auth.currentUser;
-                        if (!user) { showCustomAlert("Error", "No user is logged in!", "error"); return; }
+                        if (!user) {
+                            showCustomAlert("Error", "No user is logged in!", "error");
+                            return;
+                        }
+
                         const uid = user.uid;
                         const adsSnapshot = await db.collection("products").where("sellerUid", "==", uid).get();
                         const batch = db.batch();
-                        adsSnapshot.forEach((doc) => { batch.delete(doc.ref); });
-                        batch.delete(db.collection("users").doc(uid));
+                        
+                        adsSnapshot.forEach((doc) => {
+                            batch.delete(doc.ref);
+                        });
+
+                        const userRef = db.collection("users").doc(uid);
+                        batch.delete(userRef);
+
                         await batch.commit();
                         await user.delete();
-                        showCustomAlert("Success", "Account deleted successfully.", "success");
+
+                        showCustomAlert("Success", "Your account and all associated data have been successfully deleted.", "success");
                         window.location.hash = '';
                         window.location.reload();
+
                     } catch (error) {
-                        showCustomAlert("Error", "Error deleting account: " + error.message, "error");
+                        console.error("Error deleting account:", error);
+                        if (error.code === 'auth/requires-recent-login') {
+                            showCustomAlert("Security Required", "For security purposes, please re-login and try again (Recent login required).", "error");
+                        } else {
+                            showCustomAlert("Error", "Error deleting account: " + error.message, "error");
+                        }
                     }
                 }
             );
@@ -1682,86 +1734,151 @@
 
         function startRealtimeSavedAdsSync(userId) {
             if (userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
+            
             userSavedAdsUnsubscribe = db.collection('users').doc(userId).onSnapshot(docSnap => {
                 if (docSnap.exists && docSnap.data().savedAds) {
                     const cloudAds = docSnap.data().savedAds;
                     const storageKey = getSavedAdsStorageKey();
                     localStorage.setItem(storageKey, JSON.stringify(cloudAds));
-                    if(window.currentUser) updateProfileDetails(window.currentUser);
+                    
+                    if(window.currentUser) {
+                        updateProfileDetails(window.currentUser);
+                    }
                     renderProducts();
-                    if(currentProduct) renderProductDetailView(currentProduct);
+                    if(currentProduct) {
+                        renderProductDetailView(currentProduct);
+                    }
                 }
-            }, err => {});
+            }, err => {
+                console.log("Saved ads realtime sync error:", err);
+            });
         }
 
         function triggerPushNotification(title, body) {
             try {
                 if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification(title, { body: body, icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png" });
+                    new Notification(title, {
+                        body: body,
+                        icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    });
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.log("Notification skipped:", e);
+            }
         }
 
         function startVoiceSearch() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) { showCustomAlert("Not Supported", "Voice search not supported.", "error"); return; }
+            if (!SpeechRecognition) {
+                showCustomAlert("Not Supported", "Voice search is not supported in your browser.", "error");
+                return;
+            }
+
             const recognition = new SpeechRecognition();
             recognition.lang = 'en-IN';
-            showCustomAlert("Listening...", "Speak now...");
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            showCustomAlert("Listening...", "Please speak your search query (e.g. 'Laptop' or 'Car')...");
+
             recognition.onresult = function(event) {
-                document.getElementById('searchInput').value = event.results[0][0].transcript;
+                const speechResult = event.results[0][0].transcript;
+                document.getElementById('searchInput').value = speechResult;
                 renderProducts();
                 closeCustomAlert();
             };
-            recognition.onerror = function() { closeCustomAlert(); };
+
+            recognition.onerror = function(event) {
+                showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
+            };
+
             recognition.start();
         }
 
         function startChatVoiceInput() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) { showCustomAlert("Not Supported", "Voice not supported.", "error"); return; }
+            if (!SpeechRecognition) {
+                showCustomAlert("Not Supported", "Voice input is not supported in your browser.", "error");
+                return;
+            }
+
             const recognition = new SpeechRecognition();
             recognition.lang = 'en-IN';
-            showCustomAlert("Listening...", "Speak chat message...");
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            showCustomAlert("Listening...", "Speak your chat message now...");
+
             recognition.onresult = function(event) {
+                const speechResult = event.results[0][0].transcript;
                 const chatInput = document.getElementById('fullChatInput');
-                if(chatInput) chatInput.value = chatInput.value ? (chatInput.value + " " + event.results[0][0].transcript) : event.results[0][0].transcript;
+                if(chatInput) {
+                    chatInput.value = chatInput.value ? (chatInput.value + " " + speechResult) : speechResult;
+                }
                 closeCustomAlert();
             };
-            recognition.onerror = function() { closeCustomAlert(); };
+
+            recognition.onerror = function(event) {
+                showCustomAlert("Voice Error", "Could not capture voice. Please try again.", "error");
+            };
+
             recognition.start();
         }
 
         function toggleAiChatbot() {
             const windowEl = document.getElementById('aiChatWindow');
-            windowEl.style.display = (windowEl.style.display === 'none' || windowEl.style.display === '') ? 'flex' : 'none';
+            if (windowEl.style.display === 'none' || windowEl.style.display === '') {
+                windowEl.style.display = 'flex';
+            } else {
+                windowEl.style.display = 'none';
+            }
         }
 
-        function handleAiKeyPress(e) { if (e.key === 'Enter') sendAiMessage(); }
-        function sendQuickAiQuery(text) { document.getElementById('aiChatInput').value = text; sendAiMessage(); }
+        function handleAiKeyPress(e) {
+            if (e.key === 'Enter') {
+                sendAiMessage();
+            }
+        }
+
+        function sendQuickAiQuery(text) {
+            document.getElementById('aiChatInput').value = text;
+            sendAiMessage();
+        }
 
         function sendAiMessage() {
             const input = document.getElementById('aiChatInput');
             const msg = input.value.trim();
             if (!msg) return;
+
             const container = document.getElementById('aiChatMessages');
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-            container.innerHTML += `<div class="bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm"><p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span></div>`;
+            const userCard = document.createElement('div');
+            userCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm";
+            userCard.innerHTML = `<p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span>`;
+            container.appendChild(userCard);
+            
             input.value = '';
             container.scrollTop = container.scrollHeight;
 
             setTimeout(() => {
-                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
                 const lowerMsg = msg.toLowerCase();
+                let aiReply = "Hello! I can help you find items or post ads. Type 'car', 'mobile' or 'sell'.";
+
                 if (lowerMsg.includes('ad') || lowerMsg.includes('post') || lowerMsg.includes('sell')) {
                     aiReply = "To post a new ad, click on the center **'SELL'** button at the bottom of the page!";
-                } else if (lowerMsg.includes('car')) {
-                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage.";
-                } else if (lowerMsg.includes('safe')) {
-                    aiReply = "For safety, always meet sellers locally and pay via cash or UPI upon delivery.";
+                } else if (lowerMsg.includes('car') || lowerMsg.includes('vehicle')) {
+                    aiReply = "To browse second-hand cars, click on the 'Cars' category on the homepage or use the search bar.";
+                } else if (lowerMsg.includes('safe') || lowerMsg.includes('scam')) {
+                    aiReply = "For safety, always meet sellers locally, inspect items thoroughly, and pay via cash or UPI upon delivery.";
+                } else {
+                    aiReply = "Hello! &#128075; How can I help you today? You can ask about cars, mobiles, or how to post an ad.";
                 }
-                container.innerHTML += `<div class="bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border text-gray-800 dark:text-gray-200"><p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span></div>`;
+
+                const aiCard = document.createElement('div');
+                aiCard.className = "bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200";
+                aiCard.innerHTML = `<p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span>`;
+                container.appendChild(aiCard);
                 container.scrollTop = container.scrollHeight;
             }, 600);
         }
@@ -1769,49 +1886,80 @@
         function showCustomAlert(title, message, type = 'success') {
             document.getElementById('customAlertTitle').innerText = title;
             document.getElementById('customAlertDesc').innerText = message;
+            
             const iconBox = document.getElementById('customAlertIconBox');
             const icon = document.getElementById('customAlertIcon');
+
             if(type === 'success') {
                 iconBox.className = "w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
                 icon.className = "fa-solid fa-circle-check";
-            } else {
+            } else if(type === 'error') {
                 iconBox.className = "w-14 h-14 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
                 icon.className = "fa-solid fa-triangle-exclamation";
+            } else {
+                iconBox.className = "w-14 h-14 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-inner";
+                icon.className = "fa-solid fa-bell";
             }
+
             document.getElementById('customAlertModal').style.display = 'flex';
         }
 
-        function closeCustomAlert() { document.getElementById('customAlertModal').style.display = 'none'; }
+        function closeCustomAlert() {
+            document.getElementById('customAlertModal').style.display = 'none';
+        }
 
         function handleAiImagePreview(event) {
             const files = event.target.files;
             const container = document.getElementById('aiImagePreviewContainer');
             container.innerHTML = '';
+            
             if (files && files.length > 0) {
                 container.style.display = 'grid';
                 for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
                     const reader = new FileReader();
                     reader.onload = function(e) {
-                        container.innerHTML += `<div class="relative rounded-xl overflow-hidden border border-teal-500 shadow-sm h-16 bg-black"><img src="${e.target.result}" class="w-full h-full object-cover"><span class="absolute bottom-0 inset-x-0 bg-teal-700/80 text-white text-[8px] font-black text-center py-0.5">Enhanced ✨</span></div>`;
+                        const img = new Image();
+                        img.onload = function() {
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0);
+                            ctx.filter = 'brightness(1.1) contrast(1.05)';
+                            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                            const enhancedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                            
+                            const thumbDiv = document.createElement('div');
+                            thumbDiv.className = "relative rounded-xl overflow-hidden border border-teal-500 shadow-sm h-16 bg-black";
+                            thumbDiv.innerHTML = `
+                                <img src="${enhancedDataUrl}" class="w-full h-full object-cover">
+                                <span class="absolute bottom-0 inset-x-0 bg-teal-700/80 text-white text-[8px] font-black text-center py-0.5">AI Enhanced &#10024;</span>
+                            `;
+                            container.appendChild(thumbDiv);
+                        };
+                        img.src = e.target.result;
                     };
-                    reader.readAsDataURL(files[i]);
+                    reader.readAsDataURL(file);
                 }
-            } else { container.style.display = 'none'; }
+            } else {
+                container.style.display = 'none';
+            }
         }
 
         const olxCategories = [
             { id: 'cars', name: 'Cars', img: 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=150&auto=format&fit=crop&q=80', subs: ['Cars / 4 Wheelers'] },
-            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots'] },
+            { id: 'properties', name: 'Properties', img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=150&auto=format&fit=crop&q=80', subs: ['For Sale: Houses & Apartments', 'For Rent: Houses & Apartments', 'Lands & Plots', 'For Rent: Shops & Offices', 'PG & Guest Houses'] },
             { id: 'mobiles', name: 'Mobiles', img: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&auto=format&fit=crop&q=80', subs: ['Mobile Phones', 'Accessories', 'Tablets'] },
             { id: 'bikes', name: 'Bikes', img: 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=150&auto=format&fit=crop&q=80', subs: ['Motorcycles', 'Scooters', 'Spare Parts', 'Bicycles'] },
-            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Computers & Laptops', 'Cameras', 'Fridges', 'ACs', 'Washing Machines'] },
-            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial Vehicles', 'Spare Parts'] },
-            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor'] },
+            { id: 'electronics', name: 'Electronics', img: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=150&auto=format&fit=crop&q=80', subs: ['TVs, Video - Audio', 'Kitchen & Other Appliances', 'Computers & Laptops', 'Cameras & Lenses', 'Games & Entertainment', 'Fridges', 'Computer Accessories', 'Hard Disks, Printers & Monitors', 'ACs', 'Washing Machines'] },
+            { id: 'commercial', name: 'Vehicles', img: 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?w=150&auto=format&fit=crop&q=80', subs: ['Commercial & Other Vehicles', 'Spare Parts'] },
+            { id: 'furniture', name: 'Furniture', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=150&auto=format&fit=crop&q=80', subs: ['Sofa & Dining', 'Beds & Wardrobes', 'Home Decor & Garden', 'Kids Furniture', 'Other Household Items'] },
             { id: 'fashion', name: 'Fashion', img: 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=150&auto=format&fit=crop&q=80', subs: ['Men', 'Women', 'Kids'] },
-            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Sports Equipment', 'Musical Instruments'] },
-            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food', 'Other Pets'] },
-            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry', 'Sales & Marketing', 'Driver', 'Teacher'] },
-            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Repair Services', 'Packers & Movers', 'Other Services'] }
+            { id: 'books', name: 'Hobbies', img: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=150&auto=format&fit=crop&q=80', subs: ['Books', 'Gym & Fitness', 'Musical Instruments', 'Sports Equipment', 'Other Hobbies'] },
+            { id: 'pets', name: 'Pets', img: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=150&auto=format&fit=crop&q=80', subs: ['Dogs', 'Pet Food & Accessories', 'Other Pets'] },
+            { id: 'jobs', name: 'Jobs', img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=150&auto=format&fit=crop&q=80', subs: ['Data Entry & Back Office', 'Sales & Marketing', 'BPO & Telecaller', 'Driver', 'Office Assistant', 'Teacher'] },
+            { id: 'services', name: 'Services', img: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=150&auto=format&fit=crop&q=80', subs: ['Education & Classes', 'Tours & Travel', 'Electronics Repair & Services', 'Health & Beauty', 'Home Renovation & Repair', 'Cleaning & Pest Control', 'Legal & Documentation Services', 'Packers & Movers', 'Other Services'] }
         ];
 
         const districtData = {
@@ -1821,30 +1969,26 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
-        // ENHANCED AUTH STATE CHANGED WITH PROPER USER EMAIL & IP SAVING TO FIRESTORE
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
             const container = document.getElementById('authContainer');
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                // Fetch User IP and Save User profile safely to Firestore
+                // FIXED: Automatically save / update email in users collection on every successful auth state change
+                db.collection('users').doc(user.uid).set({
+                    email: user.email || '',
+                    displayName: user.displayName || '',
+                    photoURL: user.photoURL || ''
+                }, { merge: true }).catch(err => console.log("User email sync error:", err));
+
                 fetch('https://api.ipify.org?format=json')
                     .then(res => res.json())
                     .then(data => {
                         db.collection('users').doc(user.uid).set({
-                            email: user.email || '',
-                            displayName: user.displayName || 'Registered User',
-                            lastIp: data.ip || 'N/A',
-                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                            lastIp: data.ip || 'N/A'
                         }, { merge: true });
-                    }).catch(() => {
-                        db.collection('users').doc(user.uid).set({
-                            email: user.email || '',
-                            displayName: user.displayName || 'Registered User',
-                            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
+                    }).catch(err => console.log("User IP fetch error:", err));
 
                 const guestKey = 'oldx_saved_ads_guest';
                 const userKey = 'oldx_saved_ads_' + user.uid;
@@ -1877,7 +2021,9 @@
                         db.collection('users').doc(user.uid).set({ savedAds: userAds }, { merge: true });
                     }
                     renderProducts();
-                }).catch(() => { renderProducts(); });
+                }).catch(() => {
+                    renderProducts();
+                });
 
                 startRealtimeSavedAdsSync(user.uid);
                 startGlobalUnreadMessagesListener(user.uid);
@@ -1892,15 +2038,31 @@
                 };
 
                 setUserOnlineStatus(true);
-                document.addEventListener('visibilitychange', () => { setUserOnlineStatus(document.visibilityState === 'visible'); });
+
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible') {
+                        setUserOnlineStatus(true);
+                    } else {
+                        setUserOnlineStatus(false);
+                    }
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    setUserOnlineStatus(false);
+                });
 
                 if (user.email === 'paniruddhsinh088@gmail.com') {
                     if(adminBtn) adminBtn.style.display = 'flex';
                 } else {
                     db.collection('admins').doc(user.uid).get().then(docSnap => {
-                        if(docSnap.exists && adminBtn) adminBtn.style.display = 'flex';
-                        else if(adminBtn) adminBtn.style.display = 'none';
-                    }).catch(() => { if(adminBtn) adminBtn.style.display = 'none'; });
+                        if(docSnap.exists && adminBtn) {
+                            adminBtn.style.display = 'flex';
+                        } else if(adminBtn) {
+                            adminBtn.style.display = 'none';
+                        }
+                    }).catch(() => {
+                        if(adminBtn) adminBtn.style.display = 'none';
+                    });
                 }
 
                 container.innerHTML = `
@@ -1926,119 +2088,208 @@
 
         function startGlobalUnreadMessagesListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
-            inboxListenerUnsubscribe = db.collection('chats').where('participants', 'array-contains', userId).onSnapshot(snapshot => {
-                if (snapshot.empty) { updateInboxBadge(0); return; }
-                let totalUnread = 0, processed = 0, chatRooms = [];
-                snapshot.forEach(docSnap => chatRooms.push({ id: docSnap.id, ...docSnap.data() }));
 
-                chatRooms.forEach(room => {
-                    db.collection('chats').doc(room.id).collection('messages').where('senderUid', '!=', userId).get().then(msgSnap => {
-                        msgSnap.forEach(mDoc => { if (mDoc.data().status !== 'read') totalUnread++; });
-                        processed++;
-                        if (processed === chatRooms.length) {
-                            updateInboxBadge(totalUnread);
-                            if (totalUnread > 0) triggerPushNotification("New Messages", `You have ${totalUnread} unread message(s)!`);
-                        }
-                    }).catch(() => {
-                        processed++;
-                        if (processed === chatRooms.length) updateInboxBadge(totalUnread);
+            inboxListenerUnsubscribe = db.collection('chats')
+                .where('participants', 'array-contains', userId)
+                .onSnapshot(snapshot => {
+                    if (snapshot.empty) {
+                        updateInboxBadge(0);
+                        return;
+                    }
+
+                    let chatRooms = [];
+                    snapshot.forEach(docSnap => {
+                        chatRooms.push({ id: docSnap.id, ...docSnap.data() });
                     });
+
+                    let totalUnread = 0;
+                    let processed = 0;
+
+                    chatRooms.forEach(room => {
+                        db.collection('chats').doc(room.id).collection('messages')
+                            .where('senderUid', '!=', userId)
+                            .get().then(msgSnap => {
+                                msgSnap.forEach(mDoc => {
+                                    const mData = mDoc.data();
+                                    if (mData.status !== 'read') {
+                                        totalUnread++;
+                                    }
+                                });
+                                processed++;
+                                if (processed === chatRooms.length) {
+                                    updateInboxBadge(totalUnread);
+                                    if (totalUnread > 0) {
+                                        triggerPushNotification("New Messages on OldX", `You have ${totalUnread} unread message(s)!`);
+                                    }
+                                }
+                            }).catch(() => {
+                                processed++;
+                                if (processed === chatRooms.length) {
+                                    updateInboxBadge(totalUnread);
+                                }
+                            });
+                    });
+                }, error => {
+                    console.log("Global unread listener error:", error);
                 });
-            }, () => {});
         }
 
         function updateInboxBadge(count) {
             const badge = document.getElementById('inboxBadgeCount');
             if (!badge) return;
-            if (count > 0) { badge.innerText = count; badge.style.display = 'inline-block'; }
-            else { badge.style.display = 'none'; }
+            if (count > 0) {
+                badge.innerText = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
         }
 
         function calculatePrices(source) {
             const mrp = parseFloat(document.getElementById('adMrpPrice').value) || 0;
             const discount = parseFloat(document.getElementById('adDiscount').value) || 0;
             const finalPriceInput = document.getElementById('adPrice');
-            if ((source === 'mrp' || source === 'discount') && mrp > 0) {
-                const finalVal = Math.round(mrp - (mrp * (discount / 100)));
-                finalPriceInput.value = finalVal > 0 ? finalVal : '';
+
+            if (source === 'mrp' || source === 'discount') {
+                if (mrp > 0) {
+                    const finalVal = Math.round(mrp - (mrp * (discount / 100)));
+                    finalPriceInput.value = finalVal > 0 ? finalVal : '';
+                }
             } else if (source === 'final') {
                 const finalVal = parseFloat(finalPriceInput.value) || 0;
                 if (mrp > 0 && finalVal > 0 && mrp >= finalVal) {
-                    document.getElementById('adDiscount').value = Math.round(((mrp - finalVal) / mrp) * 100);
+                    const calcDiscount = Math.round(((mrp - finalVal) / mrp) * 100);
+                    document.getElementById('adDiscount').value = calcDiscount;
                 }
             }
         }
 
         function openInboxModal() {
-            if(!window.currentUser) { showCustomAlert("Login Required", "Please login!", "error"); openAuthModal(); return; }
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to view your messages!", "error");
+                openAuthModal();
+                return;
+            }
+
             const container = document.getElementById('inboxConversationsList');
-            container.innerHTML = `<div class="text-center py-10"><i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i><p class="text-xs text-gray-400">Loading...</p></div>`;
+            container.innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
+                    <p class="text-xs text-gray-400 font-medium">Loading conversations...</p>
+                </div>
+            `;
             document.getElementById('inboxModal').style.display = 'flex';
 
-            db.collection('chats').where('participants', 'array-contains', window.currentUser.uid).get().then(snapshot => {
-                container.innerHTML = '';
-                let myChats = [];
-                snapshot.forEach(doc => myChats.push({ chatRoomId: doc.id, ...doc.data() }));
+            db.collection('chats')
+              .where('participants', 'array-contains', window.currentUser.uid)
+              .get().then(snapshot => {
+                  container.innerHTML = '';
+                  let myChats = [];
 
-                if(myChats.length === 0) {
-                    container.innerHTML = `<div class="text-center py-14 space-y-2"><p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p></div>`;
-                    return;
-                }
+                  snapshot.forEach(doc => {
+                      myChats.push({ chatRoomId: doc.id, ...doc.data() });
+                  });
 
-                myChats.forEach(chat => {
-                    db.collection('chats').doc(chat.chatRoomId).collection('messages').orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
-                        let lastMsgText = "Tap to view conversation";
-                        let lastTime = "";
-                        if (!msgSnapshot.empty) {
-                            const d = msgSnapshot.docs[0].data();
-                            lastMsgText = (d.senderUid === window.currentUser.uid ? "You: " : "") + (d.text || "Attachment");
-                            lastTime = d.time || "";
-                        }
-                        const div = document.createElement('div');
-                        div.className = "flex items-center justify-between bg-white dark:bg-gray-700/45 border p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 transition";
-                        div.onclick = () => {
-                            closeInboxModal();
-                            activeChatRoomId = chat.chatRoomId;
-                            const otherUid = chat.participants.find(id => id !== window.currentUser.uid) || chat.productId;
-                            document.getElementById('chatSellerName').innerText = "Conversation";
-                            document.getElementById('fullChatPage').style.display = 'flex';
-                            history.pushState({page: 'chat'}, "", "#chat");
-                            loadChatMessages(chat.chatRoomId);
-                            trackUserStatus(otherUid);
-                            watchTypingStatus(chat.chatRoomId, otherUid);
-                        };
-                        div.innerHTML = `
-                            <div class="flex items-center gap-3 overflow-hidden">
-                                <div class="w-11 h-11 bg-teal-50 text-teal-700 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border"><i class="fa-solid fa-user"></i></div>
-                                <div class="overflow-hidden">
-                                    <div class="flex items-center gap-2"><h4 class="font-bold text-xs truncate">Chat Room</h4><span class="text-[9px] text-gray-400">${lastTime}</span></div>
-                                    <p class="text-[11px] text-gray-500 truncate mt-0.5">${lastMsgText}</p>
+                  if(myChats.length === 0) {
+                      container.innerHTML = `
+                          <div class="text-center py-14 space-y-2">
+                              <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
+                                  <i class="fa-solid fa-inbox"></i>
+                              </div>
+                              <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
+                              <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
+                          </div>
+                      `;
+                      return;
+                  }
+
+                  myChats.forEach(chat => {
+                      db.collection('chats').doc(chat.chatRoomId).collection('messages')
+                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
+                            let lastMsgText = "Tap to view conversation";
+                            let lastTime = "";
+                            
+                            if (!msgSnapshot.empty) {
+                                const lastMsgData = msgSnapshot.docs[0].data();
+                                const isMe = lastMsgData.senderUid === window.currentUser.uid;
+                                lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
+                                lastTime = lastMsgData.time || "";
+                            }
+
+                            const div = document.createElement('div');
+                            div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
+                            div.onclick = () => {
+                                closeInboxModal();
+                                activeChatRoomId = chat.chatRoomId;
+                                
+                                const otherUid = chat.participants.find(id => id !== window.currentUser.uid);
+                                const otherUserId = otherUid || chat.productId;
+
+                                document.getElementById('chatSellerName').innerText = "Conversation";
+                                document.getElementById('fullChatPage').style.display = 'flex';
+                                history.pushState({page: 'chat'}, "", "#chat");
+                                loadChatMessages(chat.chatRoomId);
+                                trackUserStatus(otherUserId);
+                                watchTypingStatus(chat.chatRoomId, otherUserId);
+                            };
+
+                            div.innerHTML = `
+                                <div class="flex items-center gap-3 overflow-hidden">
+                                    <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </div>
+                                    <div class="overflow-hidden">
+                                        <div class="flex items-center gap-2">
+                                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                            <span class="text-[9px] text-gray-400">${lastTime}</span>
+                                        </div>
+                                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                        container.appendChild(div);
-                    });
-                });
-            });
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
+                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                    </div>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        });
+                  });
+              });
         }
 
-        function closeInboxModal() { document.getElementById('inboxModal').style.display = 'none'; }
+        function closeInboxModal() {
+            document.getElementById('inboxModal').style.display = 'none';
+        }
 
         function openLiveChatModal() {
-            if (!window.currentUser) { showCustomAlert("Login Required", "Please login!", "error"); openAuthModal(); return; }
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to start chat!", "error");
+                openAuthModal();
+                return;
+            }
             if (!currentProduct) return;
-            if (window.currentUser.uid === currentProduct.sellerUid) { showCustomAlert("Notice", "Cannot chat on own ad.", "error"); return; }
 
-            activeChatRoomId = `${currentProduct.docId}_${window.currentUser.uid}`;
-            const otherUserId = currentProduct.sellerUid;
-            document.getElementById('chatSellerName').innerText = currentProduct.sellerName || 'Seller';
-            document.getElementById('chatCallBtn').href = `tel:${currentProduct.phone || '919876543210'}`;
+            const buyerId = window.currentUser.uid;
+            const sellerId = currentProduct.sellerUid;
+            
+            if (buyerId === sellerId) {
+                showCustomAlert("Notice", "You cannot chat on your own ad.", "error");
+                return;
+            }
+
+            activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
+            const otherUserId = (window.currentUser.uid === sellerId) ? buyerId : sellerId;
+            
+            document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
+            const sellerPhone = currentProduct.phone || '919876543210';
+            document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
 
             document.getElementById('fullChatPage').style.display = 'flex';
             history.pushState({page: 'chat'}, "", "#chat");
-
+            
             db.collection('chats').doc(activeChatRoomId).set({
-                participants: [window.currentUser.uid, otherUserId],
+                participants: [buyerId, sellerId],
                 productId: currentProduct.docId
             }, { merge: true });
 
@@ -2051,7 +2302,9 @@
             if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
-            if(window.location.hash === '#chat') history.back();
+            if(window.location.hash === '#chat') {
+                history.back();
+            }
         }
 
         function trackUserStatus(otherUserId) {
@@ -2064,10 +2317,11 @@
                     const dotEl = document.getElementById('chatOnlineDot');
                     if(data.isOnline) {
                         statusEl.innerText = "Online";
-                        statusEl.className = "text-[11px] text-green-600 font-semibold";
+                        statusEl.className = "text-[11px] text-green-600 dark:text-green-400 font-semibold";
                         if(dotEl) dotEl.style.display = 'block';
                     } else if(data.lastSeen) {
-                        statusEl.innerText = `Last seen recently`;
+                        const date = data.lastSeen.toDate();
+                        statusEl.innerText = `Last seen at ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                         statusEl.className = "text-[11px] text-gray-400 font-semibold";
                         if(dotEl) dotEl.style.display = 'none';
                     }
@@ -2075,42 +2329,122 @@
             });
         }
 
+        const chatInputEl = document.getElementById('fullChatInput');
+        if (chatInputEl) {
+            ['input', 'keyup', 'keydown'].forEach(eventType => {
+                chatInputEl.addEventListener(eventType, () => {
+                    if(!activeChatRoomId || !window.currentUser) return;
+                    
+                    db.collection('chats').doc(activeChatRoomId).set({
+                        [`typing_${window.currentUser.uid}`]: true
+                    }, { merge: true });
+
+                    clearTimeout(window.typingTimer);
+                    window.typingTimer = setTimeout(() => {
+                        if(activeChatRoomId && window.currentUser) {
+                            db.collection('chats').doc(activeChatRoomId).set({
+                                [`typing_${window.currentUser.uid}`]: false
+                            }, { merge: true });
+                        }
+                    }, 1500);
+                });
+            });
+        }
+
         function watchTypingStatus(chatRoomId, otherUserId) {
+            if(!chatRoomId || !otherUserId) return;
+
             db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
                 const statusEl = document.getElementById('chatUserStatus');
                 if (!statusEl) return;
-                if (doc.exists && doc.data() && doc.data()[`typing_${otherUserId}`] === true) {
-                    statusEl.innerText = "typing...";
-                    statusEl.className = "text-[11px] text-teal-600 font-bold animate-pulse";
-                } else { trackUserStatus(otherUserId); }
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (data && data[`typing_${otherUserId}`] === true) {
+                        statusEl.innerText = "typing...";
+                        statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
+                    } else {
+                        trackUserStatus(otherUserId);
+                    }
+                } else {
+                    trackUserStatus(otherUserId);
+                }
+            }, error => {
+                console.log("Typing Listener Error: ", error);
             });
         }
 
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
+            
+            setTimeout(() => {
+                db.collection('chats').doc(chatRoomId).collection('messages')
+                  .where('senderUid', '!=', window.currentUser.uid)
+                  .get().then(snapshot => {
+                      snapshot.forEach(doc => {
+                          doc.ref.update({ status: 'read' });
+                      });
+                  });
+            }, 300);
+
             if (activeChatUnsubscribe) activeChatUnsubscribe();
 
-            activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages').orderBy('createdAt', 'asc').limit(35).onSnapshot(snapshot => {
-                container.innerHTML = '';
-                if(snapshot.empty) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet.</p>`; return; }
-                snapshot.forEach(doc => {
-                    const msg = doc.data();
-                    const isMe = msg.senderUid === window.currentUser.uid;
-                    const msgCard = document.createElement('div');
-                    msgCard.className = `p-2.5 px-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative ${isMe ? 'bg-[#d9fdd3] text-gray-900 dark:bg-[#005c4b] dark:text-white ml-auto' : 'bg-white text-gray-900 dark:bg-[#202c33] dark:text-white mr-auto border'}`;
-                    msgCard.innerHTML = `${msg.text ? `<p class="font-medium">${msg.text}</p>` : ''}<span class="text-[9px] block text-right text-gray-400 mt-1">${msg.time || ''}</span>`;
-                    container.appendChild(msgCard);
-                });
-                container.scrollTop = container.scrollHeight;
-            });
+            activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
+              .orderBy('createdAt', 'asc').limit(35)
+              .onSnapshot(snapshot => {
+                  container.innerHTML = '';
+                  if(snapshot.empty) {
+                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet. Say hello!</p>`;
+                      return;
+                  }
+                  snapshot.forEach(doc => {
+                      const msg = doc.data();
+                      const isMe = msg.senderUid === window.currentUser.uid;
+                      
+                      let attachmentHTML = '';
+                      if (msg.attachment) {
+                          if (msg.attachment.type.startsWith('image/')) {
+                              attachmentHTML = `<img src="${msg.attachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                          } else {
+                              attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${msg.attachment.name}</span></div>`;
+                          }
+                      }
+
+                      const tickIcon = isMe 
+                          ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
+                          : '';
+
+                      const msgCard = document.createElement('div');
+                      msgCard.className = `p-2.5 px-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative ${
+                          isMe 
+                              ? 'bg-[#d9fdd3] text-gray-900 dark:bg-[#005c4b] dark:text-white ml-auto rounded-tr-none' 
+                              : 'bg-white text-gray-900 dark:bg-[#202c33] dark:text-white mr-auto rounded-tl-none border border-gray-100 dark:border-none'
+                      }`;
+                      msgCard.innerHTML = `
+                          ${attachmentHTML}
+                          ${msg.text ? `<p class="font-medium">${msg.text}</p>` : ''}
+                          <div class="flex justify-end items-center gap-1 mt-1">
+                              <span class="text-[9px] ${isMe ? 'text-gray-500 dark:text-teal-200' : 'text-gray-400'}">${msg.time || ''}</span>
+                              ${tickIcon}
+                          </div>
+                      `;
+                      container.appendChild(msgCard);
+                  });
+                  container.scrollTop = container.scrollHeight;
+              });
         }
 
         function handleChatFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(evt) {
-                currentChatAttachment = { name: file.name, type: file.type, data: evt.target.result };
+                currentChatAttachment = {
+                    name: file.name,
+                    type: file.type,
+                    data: evt.target.result
+                };
                 document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
                 document.getElementById('chatAttachmentPreview').style.display = 'flex';
             };
@@ -2126,11 +2460,34 @@
         function checkScamAndSendChatMessage() {
             const input = document.getElementById('fullChatInput');
             const msg = input.value.trim();
+
             if (!msg && !currentChatAttachment) return;
             if (!activeChatRoomId || !window.currentUser) return;
 
+            const lowerMsg = msg.toLowerCase();
+            const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
+            const isSuspicious = scamKeywords.some(keyword => lowerMsg.includes(keyword));
+
+            const warningBanner = document.getElementById('chatSafetyWarning');
+            const warningText = document.getElementById('chatSafetyWarningText');
+
+            if (isSuspicious) {
+                warningBanner.style.display = 'flex';
+                warningText.innerText = "⚠️ Caution: This message contains a suspicious link or scam attempt. Do not make online payments to strangers!";
+                showCustomAlert("Security Warning", "Message blocked due to suspected scam/fraud link.", "error");
+                return;
+            } else {
+                warningBanner.style.display = 'none';
+            }
+
+            if (activeChatRoomId && window.currentUser) {
+                db.collection('chats').doc(activeChatRoomId).set({
+                    [`typing_${window.currentUser.uid}`]: false
+                }, { merge: true });
+            }
+
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const sellerId = currentProduct ? currentProduct.sellerUid : (activeChatRoomId.split('_')[1] || '');
+            let sellerId = currentProduct ? currentProduct.sellerUid : (activeChatRoomId.split('_')[1] || '');
 
             db.collection('chats').doc(activeChatRoomId).set({
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
@@ -2149,6 +2506,8 @@
             }).then(() => {
                 input.value = '';
                 clearChatAttachment();
+            }).catch(err => {
+                console.error("Error sending message: ", err);
             });
         }
 
@@ -2157,220 +2516,714 @@
             document.getElementById('editProfileNameInput').value = window.currentUser.displayName || '';
             document.getElementById('editProfileModal').style.display = 'flex';
         }
-        function closeEditProfileModal() { document.getElementById('editProfileModal').style.display = 'none'; }
+
+        function closeEditProfileModal() {
+            document.getElementById('editProfileModal').style.display = 'none';
+        }
 
         async function saveProfileChangesWithFile() {
             const newName = document.getElementById('editProfileNameInput').value.trim();
             const photoFileInput = document.getElementById('editProfilePhotoFile');
             const btn = document.getElementById('saveProfileBtn');
-            btn.innerText = 'Saving...'; btn.disabled = true;
+
+            if(!window.currentUser) {
+                showCustomAlert("Error", "User not logged in!", "error");
+                return;
+            }
+
+            btn.innerText = 'Saving...'; 
+            btn.disabled = true;
 
             try {
-                let photoURL = window.currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                let photoURL = "";
+                const userDocRef = db.collection('users').doc(window.currentUser.uid);
+                const userSnap = await userDocRef.get();
+                if (userSnap.exists && userSnap.data().photoURL) {
+                    photoURL = userSnap.data().photoURL;
+                } else {
+                    photoURL = window.currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                }
+
                 if (photoFileInput.files && photoFileInput.files[0]) {
+                    const file = photoFileInput.files[0];
                     photoURL = await new Promise((resolve) => {
                         const reader = new FileReader();
-                        reader.onload = (e) => { resolve(e.target.result); };
-                        reader.readAsDataURL(photoFileInput.files[0]);
+                        reader.onerror = () => resolve(photoURL);
+                        reader.onload = (e) => {
+                            const img = new Image();
+                            img.onerror = () => resolve(photoURL);
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                
+                                const maxDim = 80;
+                                if (width > height && width > maxDim) { 
+                                    height *= maxDim / width; 
+                                    width = maxDim; 
+                                } else if (height > maxDim) { 
+                                    width *= maxDim / height; 
+                                    height = maxDim; 
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                ctx.drawImage(img, 0, 0, width, height);
+                                
+                                resolve(canvas.toDataURL('image/jpeg', 0.5));
+                            };
+                            img.src = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
                     });
                 }
-                await window.currentUser.updateProfile({ displayName: newName });
-                await db.collection('users').doc(window.currentUser.uid).set({ displayName: newName, photoURL: photoURL }, { merge: true });
+
+                await window.currentUser.updateProfile({
+                    displayName: newName
+                });
+
+                await userDocRef.set({
+                    displayName: newName,
+                    photoURL: photoURL,
+                    email: window.currentUser.email || ""
+                }, { merge: true });
+
                 closeEditProfileModal();
                 updateProfileDetails(window.currentUser);
                 renderProducts();
                 showCustomAlert("Success", "Profile updated successfully!", "success");
-            } catch (err) {
-                showCustomAlert("Error", "Failed to update profile.", "error");
+            } catch (error) {
+                console.error("Profile save error:", error);
+                showCustomAlert("Error", "Failed to update profile. Please try again later.", "error");
             } finally {
-                btn.innerText = 'Save Profile Changes'; btn.disabled = false;
+                btn.innerText = 'Save Profile Changes'; 
+                btn.disabled = false;
             }
         }
 
         function shareProfile() {
-            if(navigator.share) navigator.share({ title: 'My OldX Profile', url: window.location.href });
-            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Copied", "Link copied!", "success"); }
+            const profileUrl = window.location.href;
+            if(navigator.share) {
+                navigator.share({ title: 'My OldX Profile', url: profileUrl });
+            } else {
+                navigator.clipboard.writeText(profileUrl);
+                showCustomAlert("Copied", "Profile link copied to clipboard!", "success");
+            }
         }
 
         function openMyAdsModal() {
-            if(!window.currentUser) { showCustomAlert("Login Required", "Please login!", "error"); openAuthModal(); return; }
+            if(!window.currentUser) { 
+                showCustomAlert("Authentication Required", "Please login first to view your ads!", "error");
+                openAuthModal(); 
+                return; 
+            }
             const container = document.getElementById('myAdsContainer');
             container.innerHTML = '';
             const mine = products.filter(p => p.sellerUid === window.currentUser.uid);
-            if(mine.length === 0) { container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">No ads posted yet.</p>`; }
-            else {
+            
+            if(mine.length === 0) { 
+                container.innerHTML = `<p class="text-xs text-gray-400 text-center py-6">You haven't posted any ads yet.</p>`; 
+            } else {
                 mine.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = "p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2";
                     const isSold = p.isSold || false;
-                    container.innerHTML += `
-                        <div class="p-3 border rounded-2xl bg-gray-50 dark:bg-gray-700/50 space-y-2">
-                            <div class="flex justify-between items-start">
-                                <div><h4 class="font-bold text-xs">${p.title}</h4><p class="text-xs font-black text-teal-600">${p.finalPriceStr}</p></div>
-                            </div>
-                            <div class="flex gap-2 pt-1 border-t">
-                                <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600' : 'bg-amber-500'} text-white px-2 py-1 rounded text-xs font-bold flex-1 cursor-pointer">${isSold ? 'In Stock' : 'Out of Stock'}</button>
-                                <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 text-white px-3 py-1 rounded text-xs font-bold cursor-pointer">Delete</button>
+
+                    div.innerHTML = `
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
+                                    ${p.title}
+                                    ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
+                                </h4>
+                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
                             </div>
                         </div>
+                        <div class="flex items-center gap-2 pt-1 border-t">
+                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1 cursor-pointer">
+                                <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
+                            </button>
+                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
                     `;
+                    container.appendChild(div);
                 });
             }
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
         function toggleAdStockStatus(docId, currentStatus) {
-            db.collection('products').doc(docId).update({ isSold: !currentStatus }).then(() => openMyAdsModal());
+            db.collection('products').doc(docId).update({
+                isSold: !currentStatus
+            }).then(() => {
+                openMyAdsModal();
+            });
         }
 
         function confirmDeleteAd(docId) {
             pendingDeleteDocId = docId;
             document.getElementById('myAdsModal').style.display = 'none';
             document.getElementById('deleteConfirmModal').style.display = 'flex';
+            
             document.getElementById('confirmDeleteBtn').onclick = function() {
                 if (pendingDeleteDocId) {
                     db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
-                        document.getElementById('deleteConfirmModal').style.display = 'none';
+                        closeDeleteConfirmModal();
                         openMyAdsModal();
+                        showCustomAlert("Deleted", "Ad removed successfully!", "success");
                     });
                 }
             };
         }
 
         function closeDeleteConfirmModal() {
+            pendingDeleteDocId = null;
             document.getElementById('deleteConfirmModal').style.display = 'none';
             document.getElementById('myAdsModal').style.display = 'flex';
         }
 
-        function checkUserPinStatus(user) {
-            if (localStorage.getItem(`oldx_pin_disabled_${user.uid}`) === 'true') return;
-            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
-            if(!userSavedPin) { document.getElementById('setPinModal').style.display = 'flex'; }
-            else if(!sessionStorage.getItem('oldx_pin_unlocked')) { document.getElementById('verifyPinModal').style.display = 'flex'; }
+        function openEditAdModal(docId) {
+            closeMyAdsModal();
+            window.location.hash = `edit-${docId}`;
         }
 
-        function skipPinSetup() { sessionStorage.setItem('oldx_pin_unlocked', 'true'); document.getElementById('setPinModal').style.display = 'none'; }
-        function handlePinAutoInput(inputElem, mode) { if (inputElem.value.length === 4) { if(mode==='set') saveUserPin(); else verifyUserPin(); } }
+        function renderEditAdView(docId) {
+            const p = products.find(item => item.docId === docId);
+            if(!p) return;
+
+            document.getElementById('editDocId').value = p.docId;
+            document.getElementById('editTitle').value = p.title;
+            document.getElementById('editPrice').value = p.basePrice || 0;
+            document.getElementById('editDiscount').value = p.discountPercent || 0;
+            document.getElementById('editPhone').value = p.phone || '';
+            document.getElementById('editLocation').value = p.location || '';
+            document.getElementById('editDesc').value = p.desc || '';
+
+            const imgPreview = document.getElementById('editImagesPreview');
+            imgPreview.innerHTML = '';
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
+                });
+            }
+        }
+
+        function closeEditAdPage() {
+            window.location.hash = '';
+            setTimeout(() => openMyAdsModal(), 100);
+        }
+
+        async function handleEditAdSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('editSubmitBtn');
+            btn.innerText = 'Updating...'; btn.disabled = true;
+
+            try {
+                const docId = document.getElementById('editDocId').value;
+                const title = document.getElementById('editTitle').value;
+                const basePrice = parseFloat(document.getElementById('editPrice').value);
+                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
+                const phone = document.getElementById('editPhone').value;
+                const location = document.getElementById('editLocation').value;
+                const desc = document.getElementById('editDesc').value;
+                const newImgInput = document.getElementById('editNewImages');
+
+                const p = products.find(item => item.docId === docId);
+                let updatedImages = p ? p.images : [];
+
+                if (newImgInput.files && newImgInput.files.length > 0) {
+                    updatedImages = [];
+                    for (let i = 0; i < newImgInput.files.length; i++) {
+                        const compressed = await compressImage(newImgInput.files[i]);
+                        updatedImages.push(compressed);
+                    }
+                }
+
+                const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
+
+                await db.collection('products').doc(docId).update({
+                    title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
+                    images: updatedImages
+                });
+
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                closeEditAdPage();
+                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
+            } catch (err) {
+                btn.innerText = 'Save Changes'; btn.disabled = false;
+                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
+            }
+        }
+
+        function checkUserPinStatus(user) {
+            const isPinDisabled = localStorage.getItem(`oldx_pin_disabled_${user.uid}`) === 'true';
+            const userSavedPin = localStorage.getItem(`oldx_pin_${user.uid}`);
+            
+            const pinToggle = document.getElementById('pinToggleCheckbox');
+            if (pinToggle) {
+                pinToggle.checked = !isPinDisabled;
+            }
+
+            if (isPinDisabled) {
+                return;
+            }
+
+            if(!userSavedPin) {
+                const modal = document.getElementById('setPinModal');
+                modal.style.display = 'flex';
+                setTimeout(() => document.getElementById('newPinInput').focus(), 100);
+            } else if(!sessionStorage.getItem('oldx_pin_unlocked')) {
+                const modal = document.getElementById('verifyPinModal');
+                modal.style.display = 'flex';
+                setTimeout(() => document.getElementById('verifyPinInput').focus(), 100);
+            }
+        }
+
+        function skipPinSetup() {
+            if(window.currentUser) {
+                sessionStorage.setItem('oldx_pin_unlocked', 'true');
+            }
+            document.getElementById('setPinModal').style.display = 'none';
+        }
+
+        function handlePinAutoInput(inputElem, mode) {
+            if (inputElem.value.length === 4) {
+                if (mode === 'set') {
+                    saveUserPin();
+                } else if (mode === 'verify') {
+                    verifyUserPin();
+                }
+            }
+        }
 
         function saveUserPin() {
             const input = document.getElementById('newPinInput').value;
-            if(input && input.length === 4 && window.currentUser) {
-                localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
-                sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                document.getElementById('setPinModal').style.display = 'none';
-                showCustomAlert("Success", "PIN created!", "success");
+            if(input && input.length === 4 && !isNaN(input)) {
+                if(window.currentUser) {
+                    localStorage.setItem(`oldx_pin_${window.currentUser.uid}`, input);
+                    localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('setPinModal').style.display = 'none';
+                    showCustomAlert("Success", "4-Digit PIN created successfully!", "success");
+                }
+            } else {
+                showCustomAlert("Invalid PIN", "Please enter a valid 4-digit PIN!", "error");
             }
         }
 
         function verifyUserPin() {
             const input = document.getElementById('verifyPinInput').value;
-            if(window.currentUser && input === localStorage.getItem(`oldx_pin_${window.currentUser.uid}`)) {
-                sessionStorage.setItem('oldx_pin_unlocked', 'true');
-                document.getElementById('verifyPinModal').style.display = 'none';
-            } else { showCustomAlert("Incorrect PIN", "Try again.", "error"); document.getElementById('verifyPinInput').value = ''; }
+            if(window.currentUser) {
+                const correctPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(input === correctPin) {
+                    sessionStorage.setItem('oldx_pin_unlocked', 'true');
+                    document.getElementById('verifyPinModal').style.display = 'none';
+                    document.getElementById('verifyPinInput').value = '';
+                } else {
+                    showCustomAlert("Incorrect PIN", "Incorrect PIN! Try again.", "error");
+                    document.getElementById('verifyPinInput').value = '';
+                    document.getElementById('verifyPinInput').focus();
+                }
+            }
         }
 
         function handleForgotPin() {
-            document.getElementById('verifyPinModal').style.display = 'none';
-            auth.signOut().then(() => openAuthModal());
+            if(confirm("Forgot PIN? You can reset it by re-authenticating with Google or Email.")) {
+                document.getElementById('verifyPinModal').style.display = 'none';
+                if(window.currentUser) {
+                    localStorage.removeItem(`oldx_pin_${window.currentUser.uid}`);
+                }
+                auth.signOut().then(() => {
+                    openAuthModal();
+                });
+            }
         }
 
-        function openSetPinModal() { document.getElementById('setPinModal').style.display = 'flex'; }
+        function openSetPinModal() {
+            const modal = document.getElementById('setPinModal');
+            modal.style.display = 'flex';
+            setTimeout(() => document.getElementById('newPinInput').focus(), 100);
+        }
+
         function togglePinRequirement(isEnabled) {
             if(!window.currentUser) return;
-            if(isEnabled) localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
-            else localStorage.setItem(`oldx_pin_disabled_${window.currentUser.uid}`, 'true');
+
+            if(isEnabled) {
+                localStorage.removeItem(`oldx_pin_disabled_${window.currentUser.uid}`);
+                showCustomAlert("PIN Enabled", "Security PIN protection activated!", "success");
+                const userSavedPin = localStorage.getItem(`oldx_pin_${window.currentUser.uid}`);
+                if(!userSavedPin) {
+                    openSetPinModal();
+                }
+            } else {
+                localStorage.setItem(`oldx_pin_disabled_${window.currentUser.uid}`, 'true');
+                showCustomAlert("PIN Disabled", "PIN protection deactivated.", "info");
+            }
         }
 
-        function loginWithGoogle() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then(() => closeAuthModal()); }
+        function loginWithGoogle() { 
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then((result) => {
+                const user = result.user;
+                if(user) {
+                    db.collection('users').doc(user.uid).set({
+                        email: user.email || '',
+                        displayName: user.displayName || '',
+                        photoURL: user.photoURL || ''
+                    }, { merge: true });
+                }
+                closeAuthModal();
+            }); 
+        }
+
         function switchAuthTab(tab) {
-            document.getElementById('loginFormContainer').style.display = (tab === 'login') ? 'block' : 'none';
-            document.getElementById('signupFormContainer').style.display = (tab === 'signup') ? 'block' : 'none';
+            const loginForm = document.getElementById('loginFormContainer');
+            const signupForm = document.getElementById('signupFormContainer');
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const signupBtn = document.getElementById('tabSignupBtn');
+
+            if(tab === 'login') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+                loginBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-primary dark:text-white shadow-sm transition cursor-pointer";
+                signupBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+                signupBtn.className = "flex-1 py-2 rounded-lg bg-white dark:bg-gray-600 text-teal-700 dark:text-white shadow-sm transition cursor-pointer";
+                loginBtn.className = "flex-1 py-2 rounded-lg text-gray-500 dark:text-gray-300 transition cursor-pointer";
+            }
         }
 
         function handleEmailLogin(e) {
             e.preventDefault();
-            auth.signInWithEmailAndPassword(document.getElementById('loginEmail').value, document.getElementById('loginPassword').value)
-                .then(() => closeAuthModal()).catch(err => showCustomAlert("Error", err.message, "error"));
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            const rememberMe = document.getElementById('rememberMeCheckbox').checked;
+
+            const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
+
+            auth.setPersistence(persistence).then(() => {
+                return auth.signInWithEmailAndPassword(email, password);
+            }).then((result) => {
+                const user = result.user;
+                if(user) {
+                    db.collection('users').doc(user.uid).set({
+                        email: user.email || email,
+                        displayName: user.displayName || '',
+                        photoURL: user.photoURL || ''
+                    }, { merge: true });
+                }
+                closeAuthModal();
+                showCustomAlert("Success", "Login successful!", "success");
+            }).catch((error) => {
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                    showCustomAlert("Login Error", "This email is not registered! Please go to the 'Sign Up' tab to create a new account first.", "error");
+                } else if (error.code === 'auth/wrong-password') {
+                    showCustomAlert("Login Error", "Incorrect password! Please check your password.", "error");
+                } else {
+                    showCustomAlert("Login Error", error.message, "error");
+                }
+            });
         }
 
         function handleEmailSignup(e) {
             e.preventDefault();
-            const p1 = document.getElementById('signupPassword').value;
-            const p2 = document.getElementById('signupConfirmPassword').value;
-            if(p1 !== p2) { showCustomAlert("Error", "Passwords do not match", "error"); return; }
-            auth.createUserWithEmailAndPassword(document.getElementById('signupEmail').value, p1)
-                .then(() => closeAuthModal()).catch(err => showCustomAlert("Error", err.message, "error"));
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value.trim();
+            const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+
+            if (password !== confirmPassword) {
+                showCustomAlert("Password Mismatch", "Both passwords do not match! Please check.", "error");
+                return;
+            }
+
+            if (password.length < 6) {
+                showCustomAlert("Weak Password", "Password should be at least 6 characters long.", "error");
+                return;
+            }
+
+            auth.createUserWithEmailAndPassword(email, password).then((result) => {
+                const user = result.user;
+                if(user) {
+                    db.collection('users').doc(user.uid).set({
+                        email: user.email || email,
+                        displayName: user.displayName || '',
+                        photoURL: user.photoURL || ''
+                    }, { merge: true });
+                }
+                closeAuthModal();
+                showCustomAlert("Success", "Account created successfully!", "success");
+            }).catch((error) => {
+                showCustomAlert("Sign Up Error", error.message, "error");
+            });
         }
 
         function togglePasswordVisibility(fieldId, iconId) {
-            const f = document.getElementById(fieldId);
-            f.type = (f.type === 'password') ? 'text' : 'password';
+            const passwordInput = document.getElementById(fieldId);
+            const toggleIcon = document.getElementById(iconId);
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.className = 'fa-solid fa-eye';
+            }
         }
 
         function handleForgotPassword() {
-            auth.sendPasswordResetEmail(document.getElementById('loginEmail').value).then(() => showCustomAlert("Sent", "Reset email sent!", "success"));
+            const email = document.getElementById('loginEmail').value.trim() || document.getElementById('signupEmail').value.trim();
+            if (!email) {
+                showCustomAlert("Email Required", "Please enter your email address in the form first, then click Forgot Password.", "error");
+                return;
+            }
+
+            auth.sendPasswordResetEmail(email).then(() => {
+                showCustomAlert("Password Reset Email Sent", "Check your email inbox (and Spam folder) to reset your password securely!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
+            });
         }
 
-        function openProfilePage() { if(!window.currentUser) { openAuthModal(); return; } window.location.hash = 'profile'; }
+        function openProfilePage() { 
+            if(!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to view your account profile!", "error");
+                openAuthModal();
+                return;
+            }
+            window.location.hash = 'profile'; 
+        }
 
         function updateProfileDetails(user) {
             if(!user) return;
             document.getElementById('profileUserName').innerText = user.displayName || 'Registered User';
             document.getElementById('profileUserEmail').innerText = user.email || 'user@oldx.in';
-            document.getElementById('statMyAdsCount').innerText = products.filter(p => p.sellerUid === user.uid).length;
+            
+            db.collection('users').doc(user.uid).get().then(docSnap => {
+                if (docSnap.exists) {
+                    const data = docSnap.data();
+                    if(data.photoURL) document.getElementById('profileUserPhoto').src = data.photoURL;
+                    if(data.email) document.getElementById('profileUserEmail').innerText = data.email;
+                } else if (user.photoURL) {
+                    document.getElementById('profileUserPhoto').src = user.photoURL;
+                } else {
+                    document.getElementById('profileUserPhoto').src = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                }
+            }).catch(() => {
+                if(user.photoURL) document.getElementById('profileUserPhoto').src = user.photoURL;
+            });
+
+            const isGoogleUser = user.providerData.some(p => p.providerId === 'google.com');
+            const isEmailVerified = user.emailVerified || isGoogleUser;
+            
+            const badgeEl = document.getElementById('profileUserBadge');
+            const verifySection = document.getElementById('verificationSection');
+
+            if (isEmailVerified) {
+                badgeEl.innerText = 'Verified Member';
+                badgeEl.className = "bg-teal-100 text-teal-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'none';
+            } else {
+                badgeEl.innerText = 'Unverified Email';
+                badgeEl.className = "bg-amber-100 text-amber-800 text-[10px] font-black px-3 py-0.5 rounded-full uppercase";
+                if(verifySection) verifySection.style.display = 'block';
+            }
+
+            if (user.metadata && user.metadata.creationTime) {
+                const joinDate = new Date(user.metadata.creationTime);
+                const year = joinDate.getFullYear();
+                document.getElementById('profileMemberSince').innerHTML = `<i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since ${year}`;
+            } else {
+                document.getElementById('profileMemberSince').innerHTML = `<i class="fa-solid fa-calendar-days mr-1"></i> Member on OldX since 2026`;
+            }
+
+            const myAds = products.filter(p => p.sellerUid === user.uid);
+            const ratingBadge = document.getElementById('profileUserRatingBadge');
+            const ratingText = document.getElementById('profileRatingText');
+
+            if (myAds.length >= 1) {
+                ratingBadge.className = "bg-amber-100 text-amber-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1";
+                ratingText.innerText = "4.9 Rating";
+            } else {
+                ratingBadge.className = "bg-blue-100 text-blue-800 text-[10px] font-black px-2.5 py-0.5 rounded-full flex items-center gap-1";
+                ratingText.innerText = "New Seller";
+            }
+            
+            const myCount = myAds.length;
+            document.getElementById('statMyAdsCount').innerText = myCount;
             document.getElementById('statSavedAdsCount').innerText = getValidSavedCount();
         }
 
         function requestAccountVerification() {
-            auth.currentUser.sendEmailVerification().then(() => showCustomAlert("Sent", "Verification email sent!", "success"));
+            const user = firebase.auth().currentUser;
+            if (!user) return;
+            user.sendEmailVerification().then(() => {
+                showCustomAlert("Verification Sent", "Verification email sent successfully. Please check your inbox!", "success");
+            }).catch((error) => {
+                showCustomAlert("Error", error.message, "error");
+            });
         }
 
-        function handleLogout() { document.getElementById('customLogoutModal').style.display = 'flex'; }
-        function executeLogout() {
-            document.getElementById('customLogoutModal').style.display = 'none';
-            auth.signOut().then(() => window.location.hash = '');
+        function handleLogout() {
+            const logoutModal = document.getElementById('customLogoutModal');
+            if (logoutModal) {
+                logoutModal.style.display = 'flex';
+            } else {
+                executeLogout();
+            }
         }
-        function closeLogoutModal() { document.getElementById('customLogoutModal').style.display = 'none'; }
+
+        function executeLogout() {
+            closeLogoutModal();
+            if(window.currentUser) {
+                db.collection('users').doc(window.currentUser.uid).set({
+                    isOnline: false,
+                    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+            sessionStorage.removeItem('oldx_pin_unlocked');
+            auth.signOut().then(() => {
+                showCustomAlert("Logged Out", "Logged out successfully!", "success");
+                window.location.hash = '';
+            });
+        }
+
+        function closeLogoutModal() {
+            const logoutModal = document.getElementById('customLogoutModal');
+            if (logoutModal) logoutModal.style.display = 'none';
+        }
 
         function toggleCartProduct(docId, event) {
             if(event) event.stopPropagation();
-            const user = auth.currentUser;
-            if(!user) { openAuthModal(); return; }
+            
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            
+            if(!activeUser || !activeUser.uid) {
+                showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
+                openAuthModal();
+                return;
+            }
+            
+            let productObj = products.find(p => p.docId === docId);
+            if (!productObj && currentProduct && currentProduct.docId === docId) {
+                productObj = currentProduct;
+            }
+
             const storageKey = getSavedAdsStorageKey();
-            let list = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const idx = list.findIndex(i => ((typeof i === 'string') ? i : i.docId) === docId);
-            if(idx > -1) { list.splice(idx, 1); }
-            else { list.push({ docId }); }
-            localStorage.setItem(storageKey, JSON.stringify(list));
-            db.collection('users').doc(user.uid).set({ savedAds: list }, { merge: true });
+            let savedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+            const idx = savedList.findIndex(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === docId;
+            });
+
+            if(idx > -1) { 
+                savedList.splice(idx, 1); 
+                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
+            } else { 
+                savedList.push({
+                    docId: docId,
+                    title: productObj ? productObj.title : "Saved Ad",
+                    finalPriceStr: productObj ? productObj.finalPriceStr : "&#8377;0",
+                    image: (productObj && productObj.images && productObj.images.length > 0) ? productObj.images[0] : ""
+                });
+                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
+                triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
+            }
+            
+            localStorage.setItem(storageKey, JSON.stringify(savedList));
+
+            updateProfileDetails(activeUser);
             renderProducts();
-            if(currentProduct && currentProduct.docId === docId) renderProductDetailView(currentProduct);
+            
+            if(currentProduct && currentProduct.docId === docId) {
+                renderProductDetailView(currentProduct);
+            }
+            
+            const modalEl = document.getElementById('cartModal');
+            if (modalEl && modalEl.style.display === 'flex') {
+                openCartModal();
+            }
+
+            db.collection('users').doc(activeUser.uid).set({ 
+                savedAds: savedList 
+            }, { merge: true }).then(() => {
+                console.log("Cloud sync successful!");
+            }).catch(err => {
+                console.log("Firestore sync error:", err);
+            });
         }
 
-        function toggleCartCurrentProduct() { if(currentProduct) toggleCartProduct(currentProduct.docId); }
+        function toggleCartCurrentProduct() {
+            if(currentProduct) toggleCartProduct(currentProduct.docId);
+        }
 
         function openCartModal() {
-            if(!auth.currentUser) { openAuthModal(); return; }
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            if(!activeUser || !activeUser.uid) {
+                showCustomAlert("Login Required", "Please login to view saved ads!", "error");
+                openAuthModal();
+                return;
+            }
+            
             const container = document.getElementById('cartItemsContainer');
             document.getElementById('cartModal').style.display = 'flex';
+            container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">Loading saved items...</p>`;
+            
+            const storageKey = getSavedAdsStorageKey();
+            let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            
+            if(rawList.length === 0) { 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
+                return;
+            }
+
             container.innerHTML = '';
-            let rawList = JSON.parse(localStorage.getItem(getSavedAdsStorageKey()) || '[]');
-            if(rawList.length === 0) { container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads.</p>`; return; }
+            
             rawList.forEach(item => {
                 let id = (typeof item === 'string') ? item : item.docId;
-                let p = products.find(prod => prod.docId === id);
-                if(p) {
-                    container.innerHTML += `<div class="flex justify-between items-center bg-gray-50 border p-2.5 rounded-xl"><div onclick="closeCartModal(); openProductDetailPage('${id}')"><h4 class="font-bold text-xs">${p.title}</h4><p class="text-teal-600 text-xs">${p.finalPriceStr}</p></div><button onclick="removeFromCart('${id}')" class="text-red-500 text-xs">Remove</button></div>`;
-                }
+                let foundProduct = products.find(p => p.docId === id);
+
+                let title = foundProduct ? foundProduct.title : (item.title || "Saved Ad");
+                let price = foundProduct ? foundProduct.finalPriceStr : (item.finalPriceStr || "&#8377;0");
+                let img = (foundProduct && foundProduct.images && foundProduct.images.length > 0) ? foundProduct.images[0] : (item.image || '');
+
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
+                div.innerHTML = `
+                    <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
+                        <img src="${img || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                        <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${price}</p></div>
+                    </div>
+                    <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                `;
+                container.appendChild(div);
             });
         }
 
         function removeFromCart(id) {
-            let key = getSavedAdsStorageKey();
-            let list = JSON.parse(localStorage.getItem(key) || '[]').filter(i => ((typeof i === 'string') ? i : i.docId) !== id);
-            localStorage.setItem(key, JSON.stringify(list));
-            if(auth.currentUser) db.collection('users').doc(auth.currentUser.uid).set({ savedAds: list }, { merge: true });
-            openCartModal();
-            renderProducts();
+            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
+            if(!activeUser || !activeUser.uid) return;
+            
+            const storageKey = getSavedAdsStorageKey();
+            let cartList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            cartList = cartList.filter(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId !== id;
+            });
+            
+            localStorage.setItem(storageKey, JSON.stringify(cartList));
+            
+            db.collection('users').doc(activeUser.uid).set({ savedAds: cartList }, { merge: true }).then(() => {
+                updateProfileDetails(activeUser);
+                renderProducts();
+                openCartModal();
+            }).catch(err => console.log("Firestore remove error:", err));
         }
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
@@ -2378,108 +3231,497 @@
         function renderHomeCategories() {
             const grid = document.getElementById('homeCatGrid');
             if (!grid) return;
-            grid.innerHTML = `<div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] bg-white dark:bg-gray-800 p-3 rounded-2xl border text-center cursor-pointer"><p class="font-extrabold text-xs">All</p></div>`;
+            const isAllSelected = currentFilterCat === 'all';
+
+            grid.innerHTML = `
+                <div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
+                        <i class="fa-solid fa-border-all"></i>
+                    </div>
+                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
+                </div>
+            `;
+
             olxCategories.forEach(cat => {
-                grid.innerHTML += `<div onclick="filterCat('${cat.id}')" class="cat-card-hover shrink-0 min-w-[85px] bg-white dark:bg-gray-800 p-2.5 rounded-2xl border text-center cursor-pointer"><p class="font-bold text-xs truncate">${cat.name}</p></div>`;
+                const isSelected = currentFilterCat === cat.id;
+                const el = document.createElement('div');
+                el.className = `cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
+                el.onclick = () => filterCat(cat.id);
+                el.innerHTML = `
+                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
+                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                    </div>
+                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                `;
+                grid.appendChild(el);
             });
         }
 
-        function filterCat(catId) { currentFilterCat = catId; renderProducts(); }
+        function filterCat(catId) { 
+            currentFilterCat = catId; 
+            renderHomeCategories();
+            renderProducts(); 
+        }
 
         db.collection('products').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
             products = [];
             snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
             renderProducts();
+            renderRecentlyViewed();
+            if(window.currentUser) updateProfileDetails(window.currentUser);
             handleHashChange();
         });
 
-        function openProductDetailPage(docId) { window.location.hash = `product-${docId}`; }
+        function addToRecentlyViewed(p) {
+            let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+            history = history.filter(item => item.docId !== p.docId);
+            history.unshift({
+                docId: p.docId,
+                title: p.title,
+                finalPriceStr: p.finalPriceStr,
+                location: p.location,
+                category: p.category,
+                images: p.images,
+                isFeatured: p.isFeatured,
+                isShopVerified: p.isShopVerified,
+                isSold: p.isSold,
+                mrpPrice: p.mrpPrice,
+                basePrice: p.basePrice,
+                discountPercent: p.discountPercent
+            });
+            if (history.length > 8) history.pop();
+            localStorage.setItem('oldx_recently_viewed', JSON.stringify(history));
+            renderRecentlyViewed();
+        }
+
+        function renderRecentlyViewed() {
+            const section = document.getElementById('recentlyViewedSection');
+            const grid = document.getElementById('recentlyViewedGrid');
+            if(!section || !grid) return;
+
+            let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+            if (history.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            grid.innerHTML = '';
+            history.forEach(p => {
+                grid.appendChild(createProductCard(p, true));
+            });
+        }
+
+        function openProductDetailPage(docId) { 
+            const p = products.find(item => item.docId === docId);
+            if (p) {
+                if (p.category) {
+                    userCategoryViews[p.category] = (userCategoryViews[p.category] || 0) + 1;
+                    localStorage.setItem('oldx_cat_views', JSON.stringify(userCategoryViews));
+                }
+                addToRecentlyViewed(p);
+            }
+            window.location.hash = `product-${docId}`; 
+        }
 
         function handleHashChange() {
             const hash = window.location.hash;
-            if(hash.startsWith('#product-')) {
-                const p = products.find(item => item.docId === hash.replace('#product-', ''));
+
+            if(hash.startsWith('#edit-')) {
+                const docId = hash.replace('#edit-', '');
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'block';
+                renderEditAdView(docId);
+                window.scrollTo(0,0);
+                return;
+            } else if(hash.startsWith('#product-')) {
+                const docId = hash.replace('#product-', '');
+                let p = products.find(item => item.docId === docId);
+                if (!p) {
+                    let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+                    p = history.find(item => item.docId === docId);
+                }
                 if(p) {
                     currentProduct = p;
                     document.getElementById('homeView').style.display = 'none';
                     document.getElementById('sellWizardPage').style.display = 'none';
                     document.getElementById('profilePage').style.display = 'none';
-                    document.getElementById('productDetailView').style.display = 'block';
-                    renderProductDetailView(p);
-                    window.scrollTo(0,0);
+                    document.getElementById('fullEditPage').style.display = 'none';
+                    document.getElementById('productDetailView').style.display = 'none';
+                    document.getElementById('productSkeletonSlide').style.display = 'flex';
+
+                    setTimeout(() => {
+                        renderProductDetailView(p);
+                        document.getElementById('productSkeletonSlide').style.display = 'none';
+                        document.getElementById('productDetailView').style.display = 'block';
+                        window.scrollTo(0,0);
+                        initDetailMap(p);
+                    }, 400);
                     return;
                 }
             } else if(hash === '#sell') {
-                if(!window.currentUser) { window.location.hash = ''; openAuthModal(); return; }
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    showCustomAlert("Login Required", "Please login first to post an ad!", "error");
+                    openAuthModal();
+                    return;
+                }
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'block';
                 window.scrollTo(0,0);
                 setTimeout(() => initSellMapPicker(), 300);
                 return;
             } else if(hash === '#profile') {
-                if(!window.currentUser) { window.location.hash = ''; openAuthModal(); return; }
+                if(!window.currentUser) {
+                    window.location.hash = '';
+                    openAuthModal();
+                    return;
+                }
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'block';
                 updateProfileDetails(window.currentUser);
                 window.scrollTo(0,0);
                 return;
             }
+            
             document.getElementById('sellWizardPage').style.display = 'none';
             document.getElementById('profilePage').style.display = 'none';
+            document.getElementById('productSkeletonSlide').style.display = 'none';
             document.getElementById('productDetailView').style.display = 'none';
+            document.getElementById('fullEditPage').style.display = 'none';
             document.getElementById('homeView').style.display = 'block';
+            renderHomeCategories();
+            renderRecentlyViewed();
         }
 
         window.addEventListener('hashchange', handleHashChange);
-        function closeProductDetailView() { window.location.hash = ''; }
-        function closeSellWizardPage() { window.location.hash = ''; }
+
+        function closeProductDetailView() { 
+            window.location.hash = ''; 
+        }
+
+        function closeSellWizardPage() { 
+            window.location.hash = ''; 
+        }
 
         function initSellMapPicker() {
             const mapContainer = document.getElementById('adMapPicker');
             if (!mapContainer) return;
             mapContainer.innerHTML = '';
+
             createAdMap = L.map('adMapPicker').setView([selectedCoords.lat, selectedCoords.lng], 12);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(createAdMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(createAdMap);
             createAdMarker = L.marker([selectedCoords.lat, selectedCoords.lng], { draggable: true }).addTo(createAdMap);
-            createAdMarker.on('dragend', () => { selectedCoords = createAdMarker.getLatLng(); });
-            setTimeout(() => createAdMap.invalidateSize(), 200);
+
+            createAdMarker.on('dragend', function() {
+                const position = createAdMarker.getLatLng();
+                selectedCoords.lat = position.lat;
+                selectedCoords.lng = position.lng;
+            });
+
+            createAdMap.on('click', function(e) {
+                selectedCoords.lat = e.latlng.lat;
+                selectedCoords.lng = e.latlng.lng;
+                createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+            });
+
+            setTimeout(() => { createAdMap.invalidateSize(); }, 200);
         }
 
         function getCurrentLocationForAd() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    selectedCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                    if(createAdMap) { createAdMap.setView([selectedCoords.lat, selectedCoords.lng], 15); createAdMarker.setLatLng(selectedCoords); }
+                navigator.geolocation.getCurrentPosition(position => {
+                    selectedCoords.lat = position.coords.latitude;
+                    selectedCoords.lng = position.coords.longitude;
+                    if (createAdMap && createAdMarker) {
+                        createAdMap.setView([selectedCoords.lat, selectedCoords.lng], 15);
+                        createAdMarker.setLatLng([selectedCoords.lat, selectedCoords.lng]);
+                    }
+                    showCustomAlert("GPS Success", "Location successfully retrieved via GPS!", "success");
+                }, () => {
+                    showCustomAlert("GPS Error", "Unable to retrieve your location. Please click on the map.", "error");
                 });
+            } else {
+                showCustomAlert("Not Supported", "Geolocation is not supported by your browser.", "error");
             }
         }
+
+        function initDetailMap(p) {
+            const mapDiv = document.getElementById('detailMiniMap');
+            if (!mapDiv) return;
+            mapDiv.innerHTML = '';
+
+            const pLat = p.coords ? p.coords.lat : 22.3039;
+            const pLng = p.coords ? p.coords.lng : 70.8022;
+
+            const miniMap = L.map('detailMiniMap', { zoomControl: false, dragging: false }).setView([pLat, pLng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(miniMap);
+            L.marker([pLat, pLng]).addTo(miniMap);
+
+            document.getElementById('detailNavigateBtn').href = `https://www.google.com/maps/dir/?api=1&destination=${pLat},${pLng}`;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const uLat = position.coords.latitude;
+                    const uLng = position.coords.longitude;
+                    const distanceKm = calculateDistance(uLat, uLng, pLat, pLng);
+                    document.getElementById('detailDistanceBadge').innerText = `${distanceKm} km away`;
+                }, () => {
+                    document.getElementById('detailDistanceBadge').innerText = `Location unavailable`;
+                });
+            } else {
+                document.getElementById('detailDistanceBadge').innerText = `GPS not supported`;
+            }
+
+            setTimeout(() => { miniMap.invalidateSize(); }, 200);
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return (R * c).toFixed(1);
+        }
+
+        function deg2rad(deg) { return deg * (Math.PI / 180); }
 
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
+            
+            const storageKey = getSavedAdsStorageKey();
+            const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const isSaved = rawList.some(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === p.docId;
+            });
+            
+            const detailHeartIcon = document.getElementById('detailCartIcon');
+            if (detailHeartIcon) {
+                detailHeartIcon.className = `fa-solid fa-heart text-lg ${isSaved ? 'text-red-500' : 'text-gray-400'}`;
+            }
+
+            const shopBadge = document.getElementById('detailShopBadge');
+            if (shopBadge) {
+                shopBadge.style.display = p.isShopVerified ? 'flex' : 'none';
+            }
+
+            const mrpElem = document.getElementById('detailMrpPrice');
+            const discElem = document.getElementById('detailDiscountBadge');
+            
+            if (p.mrpPrice && p.mrpPrice > p.basePrice) {
+                mrpElem.innerText = `&#8377;${p.mrpPrice.toLocaleString('en-IN')}`;
+                mrpElem.style.display = 'inline';
+                if (p.discountPercent > 0) {
+                    discElem.innerText = `${p.discountPercent}% OFF`;
+                    discElem.style.display = 'inline-block';
+                } else {
+                    discElem.style.display = 'none';
+                }
+            } else {
+                mrpElem.style.display = 'none';
+                discElem.style.display = 'none';
+            }
+
             document.getElementById('detailLocation').innerText = p.location;
             document.getElementById('detailDescription').innerText = p.desc;
+
             const slider = document.getElementById('detailImageSlider');
             slider.innerHTML = '';
-            if(p.images) p.images.forEach(img => { slider.innerHTML += `<div class="w-full h-full flex items-center justify-center shrink-0"><img src="${img}" class="max-h-full object-contain"></div>`; });
-            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${p.phone || '919876543210'}`;
+            if(p.images && p.images.length > 0) {
+                p.images.forEach(img => {
+                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center cursor-zoom-in"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
+                });
+                document.getElementById('detailImgBadge').innerHTML = `<span>1/${p.images.length}</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>`;
+            }
+
+            const grid = document.getElementById('detailHighlightsGrid');
+            grid.innerHTML = '';
+            if(p.extraDetails) {
+                for(let k in p.extraDetails) {
+                    if(p.extraDetails[k]) {
+                        grid.innerHTML += `
+                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2">
+                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
+                                <div><p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p><p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p></div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+
+            const phone = p.phone || '919876543210';
+            const waMsg = encodeURIComponent(`Hi, I am interested in this item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
         }
 
-        function openOfferModal() { document.getElementById('offerModal').style.display = 'flex'; }
-        function closeOfferModal() { document.getElementById('offerModal').style.display = 'none'; }
-        function submitUserOffer() { closeOfferModal(); showCustomAlert("Success", "Offer sent!", "success"); }
+        let lightboxCurrentIndex = 0;
+        let isZoomed = false;
+
+        function openLightboxFromDetail() {
+            if (!currentProduct || !currentProduct.images || currentProduct.images.length === 0) return;
+            const slider = document.getElementById('detailImageSlider');
+            lightboxCurrentIndex = Math.round(slider.scrollLeft / slider.clientWidth);
+            if (lightboxCurrentIndex >= currentProduct.images.length) lightboxCurrentIndex = 0;
+            
+            showLightboxImage();
+            document.getElementById('imageLightboxModal').style.display = 'flex';
+        }
+
+        function showLightboxImage() {
+            const imgEl = document.getElementById('lightboxImage');
+            const counterEl = document.getElementById('lightboxCounter');
+            if(!currentProduct || !currentProduct.images) return;
+            
+            isZoomed = false;
+            imgEl.style.transform = 'scale(1)';
+            imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in';
+            imgEl.src = currentProduct.images[lightboxCurrentIndex];
+            counterEl.innerText = `${lightboxCurrentIndex + 1} / ${currentProduct.images.length}`;
+        }
+
+        function plusLightboxSlide(n) {
+            if(!currentProduct || !currentProduct.images) return;
+            lightboxCurrentIndex += n;
+            if (lightboxCurrentIndex >= currentProduct.images.length) {
+                lightboxCurrentIndex = 0;
+            } else if (lightboxCurrentIndex < 0) {
+                lightboxCurrentIndex = currentProduct.images.length - 1;
+            }
+            showLightboxImage();
+        }
+
+        function toggleLightboxZoom() {
+            const imgEl = document.getElementById('lightboxImage');
+            isZoomed = !isZoomed;
+            if (isZoomed) {
+                imgEl.style.transform = 'scale(2)';
+                imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-200 cursor-zoom-out';
+            } else {
+                imgEl.style.transform = 'scale(1)';
+                imgEl.className = 'max-h-full max-w-full object-contain transition-transform duration-200 transform scale-100 cursor-zoom-in';
+            }
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightboxModal').style.display = 'none';
+        }
+
+        function updateImageCounter() {
+            const slider = document.getElementById('detailImageSlider');
+            if(!currentProduct || !currentProduct.images) return;
+            const index = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+            document.getElementById('detailImgBadge').innerHTML = `<span>${index}/${currentProduct.images.length}</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>`;
+        }
+
+        function shareProductLink() {
+            if(navigator.share) { navigator.share({ title: currentProduct.title, url: window.location.href }); }
+            else { navigator.clipboard.writeText(window.location.href); showCustomAlert("Link Copied", "Product link copied to clipboard!", "success"); }
+        }
+
+        function openOfferModal() {
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Please login to make an offer!", "error");
+                openAuthModal();
+                return;
+            }
+            if (!currentProduct) return;
+
+            if (window.currentUser.uid === currentProduct.sellerUid) {
+                showCustomAlert("Notice", "You cannot make an offer on your own ad.", "error");
+                return;
+            }
+
+            document.getElementById('offerPriceInput').value = currentProduct.basePrice || '';
+            document.getElementById('offerMessageInput').value = `Hi, I am interested in this item. Can you accept ₹${currentProduct.basePrice || ''}?`;
+            document.getElementById('offerModal').style.display = 'flex';
+        }
+
+        function closeOfferModal() {
+            document.getElementById('offerModal').style.display = 'none';
+        }
+
+        function submitUserOffer() {
+            const offerPrice = document.getElementById('offerPriceInput').value.trim();
+            const customMsg = document.getElementById('offerMessageInput').value.trim();
+
+            if (!offerPrice) {
+                showCustomAlert("Error", "Please enter a valid offer price!", "error");
+                return;
+            }
+
+            if (!window.currentUser || !currentProduct) {
+                showCustomAlert("Error", "Login or product details missing!", "error");
+                return;
+            }
+
+            const buyerId = window.currentUser.uid;
+            const sellerId = currentProduct.sellerUid;
+
+            if (!sellerId) {
+                showCustomAlert("Error", "Seller information is missing for this product.", "error");
+                return;
+            }
+
+            const chatRoomId = `${currentProduct.docId}_${buyerId}`;
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const productImage = (currentProduct.images && currentProduct.images.length > 0) ? currentProduct.images[0] : '';
+            const fullOfferText = `🏷️ **Price Offer Sent: ₹${offerPrice}**\n${customMsg}`;
+
+            db.collection('chats').doc(chatRoomId).set({
+                participants: [buyerId, sellerId],
+                productId: currentProduct.docId,
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                return db.collection('chats').doc(chatRoomId).collection('messages').add({
+                    text: fullOfferText,
+                    attachment: productImage ? { type: 'image/jpeg', name: currentProduct.title, data: productImage } : null,
+                    senderUid: buyerId,
+                    senderName: window.currentUser.displayName || 'Buyer',
+                    status: 'sent',
+                    time: timeStr,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }).then(() => {
+                closeOfferModal();
+                showCustomAlert("Offer Sent!", "Your offer has been successfully sent to the seller's inbox!", "success");
+                triggerPushNotification("New Offer Received!", `${window.currentUser.displayName || 'Buyer'} offered ₹${offerPrice} on your ad!`);
+            }).catch(err => {
+                console.error("Error sending offer detail:", err);
+                showCustomAlert("Database Error", "Could not send offer: " + err.message, "error");
+            });
+        }
 
         function startSellWizard() {
-            if (!window.currentUser) { openAuthModal(); return; }
+            if (!window.currentUser) {
+                showCustomAlert("🔒 Login Required", "Only registered members can post ads on OldX. Login or sign up to publish your ad for FREE!", "error");
+                openAuthModal();
+                return;
+            }
+
             window.location.hash = 'sell';
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
             olxCategories.forEach(cat => {
-                list.innerHTML += `<div onclick='selectWizardMain(${JSON.stringify(cat)})' class="p-3 border rounded-xl cursor-pointer text-center"><img src="${cat.img}" class="w-12 h-12 mx-auto"><span class="text-xs font-bold">${cat.name}</span></div>`;
+                const card = document.createElement('div');
+                card.className = "p-3 border rounded-2xl bg-white dark:bg-gray-800 hover:border-primary cursor-pointer flex flex-col items-center text-center gap-2 shadow-sm transition transform hover:-translate-y-1";
+                card.onclick = () => selectWizardMain(cat);
+                card.innerHTML = `<img src="${cat.img}" class="w-16 h-16 rounded-2xl object-cover shadow-sm"><span class="font-bold text-xs text-gray-800 dark:text-gray-100">${cat.name}</span>`;
+                list.appendChild(card);
             });
             document.getElementById('wizardStage1').style.display = 'block';
             document.getElementById('wizardStage2').style.display = 'none';
@@ -2489,23 +3731,66 @@
 
         function selectWizardMain(cat) {
             selectedMainCat = cat;
+            document.getElementById('wizardSubCatTitle').innerText = cat.name;
             const subList = document.getElementById('wizardSubCatList');
             subList.innerHTML = '';
-            cat.subs.forEach(sub => { subList.innerHTML += `<div onclick="selectWizardSub('${sub}')" class="p-3 border rounded-xl cursor-pointer">${sub}</div>`; });
+            cat.subs.forEach(sub => {
+                const item = document.createElement('div');
+                item.className = "p-4 border rounded-2xl bg-white dark:bg-gray-800 hover:bg-teal-50 dark:hover:bg-gray-700 cursor-pointer text-sm font-semibold flex justify-between items-center shadow-sm";
+                item.onclick = () => selectWizardSub(sub);
+                item.innerHTML = `<span>${sub}</span> <i class="fa-solid fa-chevron-right text-xs text-gray-400"></i>`;
+                subList.appendChild(item);
+            });
             document.getElementById('wizardStage1').style.display = 'none';
             document.getElementById('wizardStage2').style.display = 'block';
         }
 
         function selectWizardSub(sub) {
             selectedSubCat = sub;
-            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + sub;
+            document.getElementById('wizardPathBadge').innerText = selectedMainCat.name + ' > ' + selectedSubCat;
+            const dynContainer = document.getElementById('dynamicFormFields');
+            dynContainer.innerHTML = '';
+
+            if(selectedMainCat.id === 'cars') {
+                dynContainer.innerHTML = `
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold mb-1">Brand *</label>
+                            <select id="dynBrand" required class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Brand</option><option value="Maruti Suzuki">Maruti Suzuki</option><option value="Hyundai">Hyundai</option><option value="Tata">Tata</option><option value="Mahindra">Mahindra</option><option value="Honda">Honda</option><option value="Toyota">Toyota</option><option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-bold mb-1">Model / Variant *</label>
+                            <input type="text" id="dynModel" required placeholder="e.g. Aura 1.2 Petrol" class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                        </div>
+                    </div>
+                `;
+            } else {
+                dynContainer.innerHTML = `
+                    <div>
+                        <label class="block font-bold mb-1">Type / Details *</label>
+                        <input type="text" id="dynType" required placeholder="Specify details..." class="w-full px-3 py-2.5 border rounded-xl dark:bg-gray-700 dark:border-gray-600">
+                    </div>
+                `;
+            }
+
             document.getElementById('wizardStage2').style.display = 'none';
             document.getElementById('wizardStage3').style.display = 'block';
         }
 
         function autoGenerateText() {
-            document.getElementById('adTitle').value = `${selectedSubCat} in good condition`;
-            document.getElementById('adDesc').value = `Selling ${selectedSubCat} cleanly maintained. Contact if interested.`;
+            const brand = document.getElementById('dynBrand')?.value || '';
+            const model = document.getElementById('dynModel')?.value || '';
+            const type = document.getElementById('dynType')?.value || selectedSubCat;
+
+            if(selectedMainCat.id === 'cars') {
+                document.getElementById('adTitle').value = `${brand} ${model}`;
+                document.getElementById('adDesc').value = `Elevate your drive with this ${brand} ${model}. Excellent condition.`;
+            } else {
+                document.getElementById('adTitle').value = `${type} - Good Condition`;
+                document.getElementById('adDesc').value = `Selling ${type} in excellent condition. Contact for details.`;
+            }
         }
 
         function goToPhotoUploadStep(e) {
@@ -2513,6 +3798,7 @@
             document.getElementById('wizardStage3').style.display = 'none';
             document.getElementById('wizardStage4').style.display = 'block';
             updateWizardDistricts();
+            setTimeout(() => { if (createAdMap) createAdMap.invalidateSize(); }, 200);
         }
 
         function backToWizardStage1() { document.getElementById('wizardStage2').style.display = 'none'; document.getElementById('wizardStage1').style.display = 'block'; }
@@ -2520,90 +3806,327 @@
         function backToWizardStage3() { document.getElementById('wizardStage4').style.display = 'none'; document.getElementById('wizardStage3').style.display = 'block'; }
 
         function updateWizardDistricts() {
+            const state = document.getElementById('adState').value;
             const distSelect = document.getElementById('adDistrict');
             distSelect.innerHTML = '';
-            (districtData[document.getElementById('adState').value] || ['General']).forEach(d => { distSelect.innerHTML += `<option value="${d}">${d}</option>`; });
+            (districtData[state] || ['General']).forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d; opt.textContent = d;
+                distSelect.appendChild(opt);
+            });
         }
 
         function compressImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = (e) => { resolve(e.target.result); };
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width; let height = img.height;
+                        const maxDim = 800;
+                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                        canvas.width = width; canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                    img.src = e.target.result;
+                };
                 reader.readAsDataURL(file);
             });
         }
 
         async function handleFinalAdSubmit(e) {
             e.preventDefault();
-            if(!window.currentUser) { openAuthModal(); return; }
+
+            if (!window.currentUser) {
+                showCustomAlert("Login Required", "Please login first to post an ad!", "error");
+                openAuthModal();
+                return;
+            }
+
             const btn = document.getElementById('adSubmitBtn');
             btn.innerText = 'Publishing...'; btn.disabled = true;
 
             try {
-                let images = [];
-                const imgInput = document.getElementById('adImages');
-                if (imgInput.files) {
-                    for (let i = 0; i < imgInput.files.length; i++) images.push(await compressImage(imgInput.files[i]));
+                let userIp = 'N/A';
+                try {
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    userIp = ipData.ip || 'N/A';
+                } catch (ipErr) {
+                    console.log("IP fetch error on ad post:", ipErr);
                 }
+
+                const title = document.getElementById('adTitle').value;
+                const desc = document.getElementById('adDesc').value;
                 const basePrice = parseFloat(document.getElementById('adPrice').value);
-                await db.collection('products').add({
+                const mrpPrice = parseFloat(document.getElementById('adMrpPrice').value) || basePrice;
+                const discountPercent = parseFloat(document.getElementById('adDiscount').value) || 0;
+                const phone = document.getElementById('adPhone').value;
+                const state = document.getElementById('adState').value;
+                const district = document.getElementById('adDistrict').value;
+                const village = document.getElementById('adVillage').value;
+                const imgInput = document.getElementById('adImages');
+                const isFeatured = document.getElementById('adIsFeatured').checked;
+                const isShopVerified = document.getElementById('adIsShopVerified').checked;
+
+                let extraDetails = {
+                    brand: document.getElementById('dynBrand')?.value || '',
+                    model: document.getElementById('dynModel')?.value || '',
+                    type: document.getElementById('dynType')?.value || ''
+                };
+
+                const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
+
+                let images = [];
+                if (imgInput.files && imgInput.files.length > 0) {
+                    for (let i = 0; i < imgInput.files.length; i++) {
+                        const compressed = await compressImage(imgInput.files[i]);
+                        images.push(compressed);
+                    }
+                }
+
+                const adData = {
                     sellerUid: window.currentUser.uid,
                     sellerName: window.currentUser.displayName || 'Seller',
+                    userIp: userIp,
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
-                    title: document.getElementById('adTitle').value,
-                    desc: document.getElementById('adDesc').value,
-                    basePrice,
-                    finalPriceStr: '₹' + basePrice.toLocaleString('en-IN'),
-                    phone: document.getElementById('adPhone').value,
-                    location: `${document.getElementById('adVillage').value}, ${document.getElementById('adDistrict').value}`,
-                    state: document.getElementById('adState').value,
+                    title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
+                    extraDetails,
                     coords: selectedCoords,
+                    location: `${village}, ${district}, ${state}`, 
+                    state, 
                     images,
-                    isFeatured: document.getElementById('adIsFeatured').checked,
-                    isShopVerified: document.getElementById('adIsShopVerified').checked,
+                    isFeatured: isFeatured,
+                    isShopVerified: isShopVerified,
                     isSold: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                db.collection('products').add(adData).then(() => {
+                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                    document.getElementById('successAdModal').style.display = 'flex';
                 });
-                btn.innerText = 'Post Now'; btn.disabled = false;
-                document.getElementById('successAdModal').style.display = 'flex';
             } catch (err) {
-                btn.innerText = 'Post Now'; btn.disabled = false;
-                showCustomAlert("Error", err.message, "error");
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
             }
         }
 
-        function closeSuccessModalAndGoHome() { document.getElementById('successAdModal').style.display = 'none'; window.location.hash = ''; }
-        function closeSuccessModalAndOpenMyAds() { document.getElementById('successAdModal').style.display = 'none'; window.location.hash = ''; openMyAdsModal(); }
+        function closeSuccessModalAndGoHome() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+        }
+
+        function closeSuccessModalAndOpenMyAds() {
+            document.getElementById('successAdModal').style.display = 'none';
+            window.location.hash = '';
+            openMyAdsModal();
+        }
+
         function openAuthModal() { document.getElementById('authModal').style.display = 'flex'; }
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
-        function handleSearchInput() { renderProducts(); }
+        function handleSearchInput() {
+            renderProducts();
+            const query = document.getElementById('searchInput').value.trim().toLowerCase();
+            const dropdown = document.getElementById('searchAutocompleteDropdown');
+            if(!dropdown) return;
+
+            if(!query) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            const matches = products.filter(p => p.title.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)).slice(0, 5);
+            if(matches.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+
+            dropdown.innerHTML = '';
+            matches.forEach(m => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex items-center gap-3 p-2.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl cursor-pointer text-xs font-bold text-gray-800 dark:text-gray-200";
+                itemDiv.onclick = () => {
+                    document.getElementById('searchInput').value = m.title;
+                    dropdown.style.display = 'none';
+                    openProductDetailPage(m.docId);
+                };
+                itemDiv.innerHTML = `
+                    <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-10 h-10 rounded-xl object-cover bg-gray-200 shrink-0">
+                    <div class="flex-1 overflow-hidden">
+                        <p class="font-bold text-gray-900 dark:text-white text-xs truncate whitespace-normal leading-snug">${m.title}</p>
+                        <p class="text-[11px] text-teal-600 dark:text-teal-400 font-extrabold mt-0.5">${m.finalPriceStr}</p>
+                    </div>
+                `;
+                dropdown.appendChild(itemDiv);
+            });
+            dropdown.style.display = 'block';
+        }
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('searchAutocompleteDropdown');
+            const searchInput = document.getElementById('searchInput');
+            if (dropdown && searchInput && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
 
         function renderProducts() {
             const grid = document.getElementById('productGrid');
+            const recSection = document.getElementById('aiRecommendedSection');
+            const recGrid = document.getElementById('recommendedProductGrid');
+            const featuredSection = document.getElementById('featuredSection');
+            const featuredGrid = document.getElementById('featuredProductGrid');
             const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const stateVal = currentSelectedState;
+            const distLimit = currentSelectedDistance;
+            
             if(!grid) return;
             grid.innerHTML = '';
-            products.filter(p => (currentFilterCat === 'all' || p.category === currentFilterCat) && p.title.toLowerCase().includes(searchVal)).forEach(p => {
-                grid.appendChild(createProductCard(p));
+            if(recGrid) recGrid.innerHTML = '';
+            if(featuredGrid) featuredGrid.innerHTML = '';
+
+            if (currentFilterCat === 'all' && !searchVal && featuredSection && featuredGrid) {
+                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (featuredItems.length > 0) {
+                    featuredSection.style.display = 'block';
+                    featuredItems.forEach(p => {
+                        featuredGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    featuredSection.style.display = 'none';
+                }
+            } else if (featuredSection) {
+                featuredSection.style.display = 'none';
+            }
+
+            let topCat = null;
+            let maxViews = 0;
+            for (let cat in userCategoryViews) {
+                if (userCategoryViews[cat] > maxViews) {
+                    maxViews = userCategoryViews[cat];
+                    topCat = cat;
+                }
+            }
+
+            if (topCat && currentFilterCat === 'all' && !searchVal && recSection && recGrid) {
+                const recommendedItems = products.filter(p => p.category === topCat && (!stateVal || p.state === stateVal)).slice(0, 6);
+                if (recommendedItems.length > 0) {
+                    recSection.style.display = 'block';
+                    recommendedItems.forEach(p => {
+                        recGrid.appendChild(createProductCard(p, true));
+                    });
+                } else {
+                    recSection.style.display = 'none';
+                }
+            } else if (recSection) {
+                recSection.style.display = 'none';
+            }
+
+            const filtered = products.filter(p => {
+                const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
+                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchState = (!stateVal || p.state === stateVal);
+                
+                let matchDistance = true;
+                if (distLimit !== 'all' && p.coords) {
+                    const dist = calculateDistance(userCurrentLocation.lat, userCurrentLocation.lng, p.coords.lat, p.coords.lng);
+                    matchDistance = parseFloat(dist) <= parseFloat(distLimit);
+                }
+
+                return matchCat && matchSearch && matchState && matchDistance;
+            });
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fa-solid fa-box-open text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+                        <p class="text-gray-500 dark:text-gray-400 font-bold text-sm">No local items found matching your filter</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.forEach(p => {
+                grid.appendChild(createProductCard(p, false));
             });
         }
 
-        function createProductCard(p) {
+        function createProductCard(p, isCarousel = false) {
+            const storageKey = getSavedAdsStorageKey();
+            const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+            const isSaved = rawList.some(item => {
+                const itemId = (typeof item === 'string') ? item : item.docId;
+                return itemId === p.docId;
+            });
+            
             const card = document.createElement('div');
-            card.className = "bg-white dark:bg-gray-800 rounded-2xl border shadow-sm overflow-hidden flex flex-col justify-between cursor-pointer";
+            const carouselClass = isCarousel ? "shrink-0 w-44 sm:w-56 md:w-auto" : "";
+            
+            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
             card.onclick = () => openProductDetailPage(p.docId);
+            
+            const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
+                ? `<span class="text-[11px] text-gray-400 line-through font-semibold ml-1">&#8377;${p.mrpPrice.toLocaleString('en-IN')}</span>` 
+                : '';
+
+            const discBadge = (p.discountPercent && p.discountPercent > 0)
+                ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
+                : '';
+
+            const featuredBadge = p.isFeatured
+                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
+                : (p.isShopVerified 
+                    ? `<span class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-store"></i> SHOP</span>`
+                    : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide">&#9733; VERIFIED</span>`);
+
+            const soldBadge = p.isSold 
+                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-[10px] px-2 py-1 rounded uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
+                : '';
+
             card.innerHTML = `
-                <div class="h-40 bg-gray-100 overflow-hidden relative">
-                    ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover">` : ''}
+                ${soldBadge}
+                <div>
+                    <div class="h-36 sm:h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                        ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
+                        
+                        <div class="absolute top-2 left-2 flex items-center gap-1 z-10">
+                            ${featuredBadge}
+                            ${discBadge}
+                        </div>
+
+                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110">
+                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500 font-black text-sm' : 'text-gray-400 text-xs'}"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-3 space-y-1.5">
+                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
+                            <span class="truncate max-w-[110px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
+                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.2 rounded-full capitalize text-[9px]">${p.category}</span>
+                        </div>
+
+                        <h4 class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
+                            ${p.title}
+                        </h4>
+
+                        <div class="flex items-baseline gap-1 pt-0.5">
+                            <span class="text-base sm:text-lg font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
+                            ${mrpMarkup}
+                        </div>
+                    </div>
                 </div>
-                <div class="p-3 space-y-1">
-                    <p class="text-xs text-gray-400">${p.location}</p>
-                    <h4 class="font-bold text-xs truncate">${p.title}</h4>
-                    <span class="text-base font-black text-primary">${p.finalPriceStr}</span>
-                </div>
+
+                <button class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-paper-plane text-[10px]"></i> Chat / Buy
+                </button>
             `;
             return card;
         }
