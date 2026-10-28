@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#002f34">
-    <title>OldX Admin Control Center</title>
+    <title>OldX Admin Control Center - Investigation & Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-black text-white tracking-tight">OldX Admin Control Center</h1>
-                    <p class="text-[10px] text-teal-200">System Management & Live Analytics</p>
+                    <p class="text-[10px] text-teal-200">System Management & Cyber Investigation Logs</p>
                 </div>
             </div>
 
@@ -114,7 +114,7 @@
                 <i class="fa-solid fa-list-check"></i> Manage All Ads
             </button>
             <button onclick="switchAdminTab('users')" id="tabBtnUsers" class="pb-3 border-b-2 border-transparent text-gray-500 hover:text-gray-800 dark:hover:text-gray-200 flex items-center gap-2 cursor-pointer">
-                <i class="fa-solid fa-users-gear"></i> Manage Users
+                <i class="fa-solid fa-users-gear"></i> Manage Users & Investigation Logs
             </button>
         </div>
 
@@ -141,17 +141,29 @@
             <div id="adminAdsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
-        <!-- SECTION 2: MANAGE USERS -->
+        <!-- SECTION 2: MANAGE USERS & INVESTIGATION LOGS -->
         <div id="adminSectionUsers" style="display: none;" class="space-y-4">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="Search users by email or ID..." class="w-full pl-10 pr-4 py-2 border rounded-xl text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <p class="text-xs text-gray-400 font-bold">Total Found: <span id="userSearchCount">0</span></p>
+            </div>
+
             <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <h3 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Registered User Directory</h3>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-base text-gray-900 dark:text-white">Registered User Directory & Forensic Logs</h3>
+                    <span class="text-[10px] bg-teal-50 text-teal-700 dark:bg-teal-950 dark:text-teal-300 font-bold px-2.5 py-1 rounded-full border border-teal-200">Click row for investigation audit</span>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="border-b dark:border-gray-700 text-gray-400 uppercase text-[10px]">
-                                <th class="py-2.5 px-3">Email</th>
-                                <th class="py-2.5 px-3">Status</th>
-                                <th class="py-2.5 px-3">Actions</th>
+                                <th class="py-2.5 px-3">USER IDENTITY (NAME / EMAIL)</th>
+                                <th class="py-2.5 px-3">CONNECTION LOG (IP & TIMESTAMP)</th>
+                                <th class="py-2.5 px-3">STATUS</th>
+                                <th class="py-2.5 px-3">ACTIONS</th>
                             </tr>
                         </thead>
                         <tbody id="adminUsersTableBody" class="divide-y dark:divide-gray-700 font-medium"></tbody>
@@ -161,6 +173,26 @@
         </div>
 
     </main>
+
+    <!-- USER INVESTIGATION DETAILS MODAL -->
+    <div id="userInvestigationModal" style="display: none;" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 w-full max-w-2xl rounded-3xl p-6 relative max-h-[85vh] overflow-y-auto shadow-2xl space-y-4 border border-gray-100 dark:border-gray-700">
+            <button onclick="closeInvestigationModal()" class="absolute top-4 right-4 text-gray-400 hover:text-black dark:hover:text-white text-xl font-bold cursor-pointer">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 border-b pb-3">
+                <div class="w-12 h-12 rounded-2xl bg-teal-50 dark:bg-teal-950 text-teal-600 flex items-center justify-center text-xl font-black">
+                    <i class="fa-solid fa-shield-halved"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white">User Forensic Audit & Investigation File</h3>
+                    <p class="text-[11px] text-gray-400">Complete connection logs, identity, listings & chat records</p>
+                </div>
+            </div>
+
+            <div id="investigationContent" class="space-y-4 text-xs"></div>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
@@ -245,14 +277,27 @@
                 allUsers = [];
                 snapshot.forEach(doc => {
                     const uData = doc.data();
+                    const userEmail = uData.email || uData.userEmail || uData.mail || 'N/A';
+                    const userName = uData.displayName || uData.name || 'Anonymous User';
+                    const userIp = uData.lastIp || uData.ip || 'Logged via Web Client';
+                    
+                    let timeStr = 'N/A';
+                    if (uData.lastSeen && uData.lastSeen.toDate) {
+                        timeStr = uData.lastSeen.toDate().toLocaleString();
+                    }
+
                     allUsers.push({ 
                         uid: doc.id, 
-                        email: uData.email || uData.userEmail || 'N/A',
-                        isOnline: uData.isOnline || false
+                        email: userEmail,
+                        name: userName,
+                        ip: userIp,
+                        lastSeen: timeStr,
+                        isOnline: uData.isOnline || false,
+                        raw: uData
                     });
                 });
                 document.getElementById('statTotalUsers').innerText = allUsers.length;
-                renderAdminUsersTable();
+                filterAdminUsers();
             });
         }
 
@@ -304,6 +349,108 @@
             });
         }
 
+        function filterAdminUsers() {
+            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch'].value.toLowerCase() : '';
+            const tbody = document.getElementById('adminUsersTableBody');
+            tbody.innerHTML = '';
+
+            const filteredUsers = allUsers.filter(u => u.email.toLowerCase().includes(searchVal) || u.name.toLowerCase().includes(searchVal) || u.uid.toLowerCase().includes(searchVal));
+            document.getElementById('userSearchCount').innerText = filteredUsers.length;
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
+                return;
+            }
+
+            filteredUsers.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-teal-50/50 dark:hover:bg-gray-700/50 cursor-pointer transition";
+                tr.onclick = () => openUserInvestigationModal(u);
+                
+                const statusBadgeClass = u.isOnline ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300';
+                const statusText = u.isOnline ? 'Online' : 'Offline';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-3">
+                        <p class="font-bold text-gray-900 dark:text-white">${u.name}</p>
+                        <p class="text-[10px] text-gray-500 font-medium">${u.email}</p>
+                        <p class="text-[9px] text-teal-600 font-mono">ID: ${u.uid}</p>
+                    </td>
+                    <td class="py-3 px-3">
+                        <p class="font-mono text-gray-700 dark:text-gray-300"><i class="fa-solid fa-network-wired text-teal-600 mr-1"></i>${u.ip}</p>
+                        <p class="text-[10px] text-gray-400"><i class="fa-solid fa-clock mr-1"></i>${u.lastSeen}</p>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${statusBadgeClass}">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3" onclick="event.stopPropagation()">
+                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-user-slash"></i> Remove
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openUserInvestigationModal(u) {
+            const container = document.getElementById('investigationContent');
+            const userAds = allProducts.filter(p => p.sellerUid === u.uid);
+
+            let adsHtml = '';
+            if (userAds.length === 0) {
+                adsHtml = `<p class="text-gray-400 italic">No listings posted by this user.</p>`;
+            } else {
+                userAds.forEach(ad => {
+                    adsHtml += `
+                        <div class="bg-gray-50 dark:bg-gray-700/50 p-3 rounded-xl border flex items-center justify-between">
+                            <div>
+                                <p class="font-bold text-xs text-gray-900 dark:text-white">${ad.title}</p>
+                                <p class="text-[10px] text-teal-600 font-extrabold">${ad.finalPriceStr || ('₹' + ad.basePrice)} | Location: ${ad.location}</p>
+                            </div>
+                            <span class="text-[9px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold uppercase">${ad.category}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = `
+                <div class="space-y-3">
+                    <div class="bg-teal-50 dark:bg-gray-700/60 p-3.5 rounded-2xl border border-teal-200 dark:border-gray-600 space-y-1">
+                        <h4 class="font-black text-primary dark:text-teal-300 text-xs uppercase tracking-wider">1. User Identity & Authentication</h4>
+                        <p><strong>Name:</strong> ${u.name}</p>
+                        <p><strong>Registered Email:</strong> ${u.email}</p>
+                        <p><strong>Google / Auth UID:</strong> <span class="font-mono bg-white dark:bg-gray-800 px-2 py-0.5 rounded border">${u.uid}</span></p>
+                    </div>
+
+                    <div class="bg-blue-50 dark:bg-gray-700/60 p-3.5 rounded-2xl border border-blue-200 dark:border-gray-600 space-y-1">
+                        <h4 class="font-black text-blue-900 dark:text-blue-300 text-xs uppercase tracking-wider">2. Connection Logs & Network Info</h4>
+                        <p><strong>IP Address:</strong> <span class="font-mono bg-white dark:bg-gray-800 px-2 py-0.5 rounded border">${u.ip}</span></p>
+                        <p><strong>Last Activity Timestamp:</strong> ${u.lastSeen}</p>
+                    </div>
+
+                    <div class="bg-amber-50 dark:bg-gray-700/60 p-3.5 rounded-2xl border border-amber-200 dark:border-gray-600 space-y-2">
+                        <h4 class="font-black text-amber-900 dark:text-amber-300 text-xs uppercase tracking-wider">3. Listings & Ad History (${userAds.length} Ads)</h4>
+                        <div class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                            ${adsHtml}
+                        </div>
+                    </div>
+
+                    <div class="bg-emerald-50 dark:bg-gray-700/60 p-3 rounded-2xl border border-emerald-200 text-emerald-900 dark:text-emerald-300 text-[11px] font-semibold">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Data Compliance Notice: All user activities, connection logs, and listings are securely recorded in compliance with cyber investigation guidelines.
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('userInvestigationModal').style.display = 'flex';
+        }
+
+        function closeInvestigationModal() {
+            document.getElementById('userInvestigationModal').style.display = 'none';
+        }
+
         function toggleFeatureAd(docId, currentStatus) {
             db.collection('products').doc(docId).update({
                 isFeatured: !currentStatus
@@ -318,36 +465,6 @@
                     alert("Ad successfully deleted!");
                 }).catch(err => alert("Error deleting ad: " + err.message));
             }
-        }
-
-        function renderAdminUsersTable() {
-            const tbody = document.getElementById('adminUsersTableBody');
-            tbody.innerHTML = '';
-
-            if (allUsers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
-                return;
-            }
-
-            allUsers.forEach(u => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50";
-                
-                tr.innerHTML = `
-                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300 truncate max-w-[200px] font-semibold">${u.email}</td>
-                    <td class="py-3 px-3">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${u.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                            ${u.isOnline ? 'Online' : 'Offline'}
-                        </span>
-                    </td>
-                    <td class="py-3 px-3">
-                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer flex items-center gap-1">
-                            <i class="fa-solid fa-user-slash"></i> Remove
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
         function deleteAdminUser(uid) {
