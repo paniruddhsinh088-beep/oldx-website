@@ -143,15 +143,22 @@
 
         <!-- SECTION 2: MANAGE USERS -->
         <div id="adminSectionUsers" style="display: none;" class="space-y-4">
+            <!-- User Search Bar Added Here -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="relative w-full sm:w-80">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                    <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="Search users by email..." class="w-full pl-10 pr-4 py-2 border rounded-xl text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                </div>
+                <p class="text-xs text-gray-400 font-bold">Total Found: <span id="userSearchCount">0</span></p>
+            </div>
+
             <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Registered User Directory</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="border-b dark:border-gray-700 text-gray-400 uppercase text-[10px]">
-                                <th class="py-2.5 px-3">User</th>
                                 <th class="py-2.5 px-3">Email</th>
-                                <th class="py-2.5 px-3">IP Address</th>
                                 <th class="py-2.5 px-3">Status</th>
                                 <th class="py-2.5 px-3">Actions</th>
                             </tr>
@@ -218,8 +225,8 @@
                 if (doc.exists && doc.data().totalViews) {
                     document.getElementById('statTotalViews').innerText = doc.data().totalViews;
                 } else {
-                    db.collection('stats').doc('traffic').set({ totalViews: 1 }, { merge: true });
-                    document.getElementById('statTotalViews').innerText = '1';
+                    db.collection('stats').doc('traffic').set({ totalViews: 0 }, { merge: true });
+                    document.getElementById('statTotalViews').innerText = '0';
                 }
             });
         }
@@ -249,15 +256,12 @@
                     const uData = doc.data();
                     allUsers.push({ 
                         uid: doc.id, 
-                        displayName: uData.displayName || uData.name || 'User',
                         email: uData.email || uData.userEmail || 'N/A',
-                        photoURL: uData.photoURL || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                        isOnline: uData.isOnline || false,
-                        lastIp: uData.lastIp || uData.ip || 'N/A'
+                        isOnline: uData.isOnline || false
                     });
                 });
                 document.getElementById('statTotalUsers').innerText = allUsers.length;
-                renderAdminUsersTable();
+                filterAdminUsers();
             });
         }
 
@@ -309,6 +313,40 @@
             });
         }
 
+        function filterAdminUsers() {
+            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch').value.toLowerCase() : '';
+            const tbody = document.getElementById('adminUsersTableBody');
+            tbody.innerHTML = '';
+
+            const filteredUsers = allUsers.filter(u => u.email.toLowerCase().includes(searchVal));
+            document.getElementById('userSearchCount').innerText = filteredUsers.length;
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
+                return;
+            }
+
+            filteredUsers.forEach(u => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50";
+                
+                tr.innerHTML = `
+                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300 truncate max-w-[200px] font-semibold">${u.email}</td>
+                    <td class="py-3 px-3">
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${u.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
+                            ${u.isOnline ? 'Online' : 'Offline'}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer flex items-center gap-1">
+                            <i class="fa-solid fa-user-slash"></i> Remove
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
         function toggleFeatureAd(docId, currentStatus) {
             db.collection('products').doc(docId).update({
                 isFeatured: !currentStatus
@@ -323,41 +361,6 @@
                     alert("Ad successfully deleted!");
                 }).catch(err => alert("Error deleting ad: " + err.message));
             }
-        }
-
-        function renderAdminUsersTable() {
-            const tbody = document.getElementById('adminUsersTableBody');
-            tbody.innerHTML = '';
-
-            if (allUsers.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
-                return;
-            }
-
-            allUsers.forEach(u => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50";
-                
-                tr.innerHTML = `
-                    <td class="py-3 px-3 flex items-center gap-2">
-                        <img src="${u.photoURL}" class="w-7 h-7 rounded-full object-cover">
-                        <span class="font-bold text-gray-900 dark:text-white truncate max-w-[120px]">${u.displayName}</span>
-                    </td>
-                    <td class="py-3 px-3 text-gray-600 dark:text-gray-300 truncate max-w-[140px]">${u.email}</td>
-                    <td class="py-3 px-3 text-gray-500 font-mono text-[11px]">${u.lastIp}</td>
-                    <td class="py-3 px-3">
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${u.isOnline ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}">
-                            ${u.isOnline ? 'Online' : 'Offline'}
-                        </span>
-                    </td>
-                    <td class="py-3 px-3">
-                        <button onclick="deleteAdminUser('${u.uid}')" class="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer">
-                            <i class="fa-solid fa-user-slash"></i> Remove
-                        </button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
         function deleteAdminUser(uid) {
