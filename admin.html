@@ -143,15 +143,6 @@
 
         <!-- SECTION 2: MANAGE USERS -->
         <div id="adminSectionUsers" style="display: none;" class="space-y-4">
-            <!-- User Search Bar Added Here -->
-            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center gap-3">
-                <div class="relative w-full sm:w-80">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
-                    <input type="text" id="adminUserSearch" oninput="filterAdminUsers()" placeholder="Search users by email..." class="w-full pl-10 pr-4 py-2 border rounded-xl text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                </div>
-                <p class="text-xs text-gray-400 font-bold">Total Found: <span id="userSearchCount">0</span></p>
-            </div>
-
             <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <h3 class="font-bold text-base mb-3 text-gray-900 dark:text-white">Registered User Directory</h3>
                 <div class="overflow-x-auto">
@@ -261,7 +252,7 @@
                     });
                 });
                 document.getElementById('statTotalUsers').innerText = allUsers.length;
-                filterAdminUsers();
+                renderAdminUsersTable();
             });
         }
 
@@ -313,20 +304,32 @@
             });
         }
 
-        function filterAdminUsers() {
-            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch').value.toLowerCase() : '';
+        function toggleFeatureAd(docId, currentStatus) {
+            db.collection('products').doc(docId).update({
+                isFeatured: !currentStatus
+            }).then(() => {
+                console.log("Featured status updated!");
+            }).catch(err => alert("Error: " + err.message));
+        }
+
+        function deleteAdminAd(docId) {
+            if (confirm("Are you sure you want to PERMANENTLY delete this ad as Admin?")) {
+                db.collection('products').doc(docId).delete().then(() => {
+                    alert("Ad successfully deleted!");
+                }).catch(err => alert("Error deleting ad: " + err.message));
+            }
+        }
+
+        function renderAdminUsersTable() {
             const tbody = document.getElementById('adminUsersTableBody');
             tbody.innerHTML = '';
 
-            const filteredUsers = allUsers.filter(u => u.email.toLowerCase().includes(searchVal));
-            document.getElementById('userSearchCount').innerText = filteredUsers.length;
-
-            if (filteredUsers.length === 0) {
+            if (allUsers.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
                 return;
             }
 
-            filteredUsers.forEach(u => {
+            allUsers.forEach(u => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50 dark:hover:bg-gray-700/50";
                 
@@ -345,22 +348,6 @@
                 `;
                 tbody.appendChild(tr);
             });
-        }
-
-        function toggleFeatureAd(docId, currentStatus) {
-            db.collection('products').doc(docId).update({
-                isFeatured: !currentStatus
-            }).then(() => {
-                console.log("Featured status updated!");
-            }).catch(err => alert("Error: " + err.message));
-        }
-
-        function deleteAdminAd(docId) {
-            if (confirm("Are you sure you want to PERMANENTLY delete this ad as Admin?")) {
-                db.collection('products').doc(docId).delete().then(() => {
-                    alert("Ad successfully deleted!");
-                }).catch(err => alert("Error deleting ad: " + err.message));
-            }
         }
 
         function deleteAdminUser(uid) {
