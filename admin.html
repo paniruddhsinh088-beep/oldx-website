@@ -218,7 +218,6 @@
                     window.location.href = "index.html";
                     return;
                 }
-                // Directly load admin data once authenticated
                 initAdminData();
             });
         });
@@ -263,7 +262,8 @@
                 allUsers = [];
                 snapshot.forEach(doc => {
                     const uData = doc.data();
-                    const userEmail = uData.email || uData.userEmail || uData.mail || 'N/A';
+                    // Enhanced robust fallback for email identification
+                    const userEmail = uData.email || uData.userEmail || uData.mail || `ID: ${doc.id.substring(0, 12)}...`;
                     const userName = uData.displayName || uData.name || 'Anonymous User';
                     const userIp = uData.lastIp || uData.ip || 'N/A';
                     
@@ -339,7 +339,7 @@
         }
 
         function filterAdminUsers() {
-            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch').value.toLowerCase() : '';
+            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch'].value.toLowerCase() : '';
             const tbody = document.getElementById('adminUsersTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
