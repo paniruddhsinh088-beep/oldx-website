@@ -3357,12 +3357,18 @@
             renderRecentlyViewed();
         }
 
+        // 🔥 FIXED RECENTLY VIEWED CACHE TO SYNC WITH FIREBASE DATABASE DELETION
         function renderRecentlyViewed() {
             const section = document.getElementById('recentlyViewedSection');
             const grid = document.getElementById('recentlyViewedGrid');
             if(!section || !grid) return;
 
             let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+            
+            // Only keep items that actually exist in the active products database array
+            history = history.filter(item => products.some(p => p.docId === item.docId));
+            localStorage.setItem('oldx_recently_viewed', JSON.stringify(history));
+
             if (history.length === 0) {
                 section.style.display = 'none';
                 return;
