@@ -1939,6 +1939,15 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
+                // Fetch & Update IP for the logged-in user
+                fetch('https://api.ipify.org?format=json')
+                    .then(res => res.json())
+                    .then(data => {
+                        db.collection('users').doc(user.uid).set({
+                            lastIp: data.ip || 'N/A'
+                        }, { merge: true });
+                    }).catch(err => console.log("User IP fetch error:", err));
+
                 const guestKey = 'oldx_saved_ads_guest';
                 const userKey = 'oldx_saved_ads_' + user.uid;
                 let guestAds = JSON.parse(localStorage.getItem(guestKey) || '[]');
@@ -3775,6 +3784,16 @@
             btn.innerText = 'Publishing...'; btn.disabled = true;
 
             try {
+                // Fetch User IP Address before saving post
+                let userIp = 'N/A';
+                try {
+                    const ipRes = await fetch('https://api.ipify.org?format=json');
+                    const ipData = await ipRes.json();
+                    userIp = ipData.ip || 'N/A';
+                } catch (ipErr) {
+                    console.log("IP fetch error on ad post:", ipErr);
+                }
+
                 const title = document.getElementById('adTitle').value;
                 const desc = document.getElementById('adDesc').value;
                 const basePrice = parseFloat(document.getElementById('adPrice').value);
@@ -3807,6 +3826,7 @@
                 const adData = {
                     sellerUid: window.currentUser.uid,
                     sellerName: window.currentUser.displayName || 'Seller',
+                    userIp: userIp,
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
                     title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
