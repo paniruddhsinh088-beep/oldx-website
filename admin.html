@@ -218,22 +218,8 @@
                     window.location.href = "index.html";
                     return;
                 }
-
-                if (user.email === 'paniruddhsinh088@gmail.com') {
-                    initAdminData();
-                } else {
-                    db.collection('admins').doc(user.uid).get().then(docSnap => {
-                        if (docSnap.exists) {
-                            initAdminData();
-                        } else {
-                            alert("Access Denied! You don't have Admin privileges.");
-                            window.location.href = "index.html";
-                        }
-                    }).catch(() => {
-                        alert("Access Denied! Security check failed.");
-                        window.location.href = "index.html";
-                    });
-                }
+                // Directly load admin data once authenticated
+                initAdminData();
             });
         });
 
@@ -248,8 +234,8 @@
                 if (doc.exists && doc.data().totalViews) {
                     document.getElementById('statTotalViews').innerText = doc.data().totalViews;
                 } else {
-                    db.collection('stats').doc('traffic').set({ totalViews: 0 }, { merge: true });
-                    document.getElementById('statTotalViews').innerText = '0';
+                    db.collection('stats').doc('traffic').set({ totalViews: 1 }, { merge: true });
+                    document.getElementById('statTotalViews').innerText = '1';
                 }
             });
         }
@@ -279,7 +265,7 @@
                     const uData = doc.data();
                     const userEmail = uData.email || uData.userEmail || uData.mail || 'N/A';
                     const userName = uData.displayName || uData.name || 'Anonymous User';
-                    const userIp = uData.lastIp || uData.ip || 'Logged via Web Client';
+                    const userIp = uData.lastIp || uData.ip || 'N/A';
                     
                     let timeStr = 'N/A';
                     if (uData.lastSeen && uData.lastSeen.toDate) {
@@ -302,9 +288,12 @@
         }
 
         function filterAdminAds() {
-            const searchVal = document.getElementById('adminAdSearch').value.toLowerCase();
-            const catVal = document.getElementById('adminCatFilter').value.toLowerCase();
+            const searchInput = document.getElementById('adminAdSearch');
+            const searchVal = searchInput ? searchInput.value.toLowerCase() : '';
+            const catFilter = document.getElementById('adminCatFilter');
+            const catVal = catFilter ? catFilter.value.toLowerCase() : 'all';
             const container = document.getElementById('adminAdsList');
+            if(!container) return;
             container.innerHTML = '';
 
             const filtered = allProducts.filter(p => {
@@ -327,8 +316,8 @@
                     <div class="flex items-center gap-3">
                         <img src="${img}" class="w-16 h-16 rounded-xl object-cover border bg-gray-100 shrink-0">
                         <div class="overflow-hidden">
-                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.title}</h4>
-                            <p class="text-teal-600 font-extrabold text-xs mt-0.5">${p.finalPriceStr || ('₹' + p.basePrice)}</p>
+                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">${p.title || 'Untitled'}</h4>
+                            <p class="text-teal-600 font-extrabold text-xs mt-0.5">${p.finalPriceStr || ('₹' + (p.basePrice || 0))}</p>
                             <p class="text-[10px] text-gray-400 mt-0.5"><i class="fa-solid fa-user mr-1"></i>${p.sellerName || 'Seller'} | <i class="fa-solid fa-location-dot text-red-500"></i> ${p.location || 'N/A'}</p>
                         </div>
                     </div>
@@ -350,12 +339,14 @@
         }
 
         function filterAdminUsers() {
-            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch'].value.toLowerCase() : '';
+            const searchVal = document.getElementById('adminUserSearch') ? document.getElementById('adminUserSearch').value.toLowerCase() : '';
             const tbody = document.getElementById('adminUsersTableBody');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             const filteredUsers = allUsers.filter(u => u.email.toLowerCase().includes(searchVal) || u.name.toLowerCase().includes(searchVal) || u.uid.toLowerCase().includes(searchVal));
-            document.getElementById('userSearchCount').innerText = filteredUsers.length;
+            const countElem = document.getElementById('userSearchCount');
+            if(countElem) countElem.innerText = filteredUsers.length;
 
             if (filteredUsers.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="py-4 text-center text-gray-400">No users found.</td></tr>`;
