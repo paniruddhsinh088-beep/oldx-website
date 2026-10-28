@@ -308,9 +308,16 @@
         }
 
         function deleteAdminAd(docId) {
-            if (confirm("Are you sure you want to delete this ad?")) {
+            if (confirm("Are you sure you want to permanently delete this ad?")) {
                 db.collection('products').doc(docId).delete().then(() => {
-                    fetchAllAdminData();
+                    console.log("Successfully deleted from Firestore:", docId);
+                    allAdsCache = allAdsCache.filter(a => a.docId !== docId);
+                    document.getElementById('statTotalAds').innerText = allAdsCache.length;
+                    renderAdsTable(allAdsCache);
+                    alert("Ad successfully deleted!");
+                }).catch((error) => {
+                    console.error("Delete failed due to permission or network:", error);
+                    alert("Delete Failed! Error: " + error.message + "\n(Check Firebase Security Rules or Admin UID)");
                 });
             }
         }
