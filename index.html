@@ -1327,7 +1327,59 @@
             renderHomeCategories();
             initCustomPickers();
             autoDetectUserLocation();
+            initNativePermissionsAndBackButton();
         });
+
+        // 3. HARDWARE BACK BUTTON & NATIVE PERMISSIONS HANDLING
+        function initNativePermissionsAndBackButton() {
+            // Hardware Back Button Handling for Web Views / Mobile Apps
+            window.addEventListener('popstate', (event) => {
+                const fullChatPage = document.getElementById('fullChatPage');
+                const sellWizardPage = document.getElementById('sellWizardPage');
+                const profilePage = document.getElementById('profilePage');
+                const productDetailView = document.getElementById('productDetailView');
+                const fullEditPage = document.getElementById('fullEditPage');
+
+                if (fullChatPage && fullChatPage.style.display === 'flex') {
+                    event.preventDefault();
+                    closeFullChatPage();
+                } else if (sellWizardPage && sellWizardPage.style.display === 'block') {
+                    event.preventDefault();
+                    closeSellWizardPage();
+                } else if (profilePage && profilePage.style.display === 'block') {
+                    event.preventDefault();
+                    window.location.hash = '';
+                } else if (productDetailView && productDetailView.style.display === 'block') {
+                    event.preventDefault();
+                    closeProductDetailView();
+                } else if (fullEditPage && fullEditPage.style.display === 'block') {
+                    event.preventDefault();
+                    closeEditAdPage();
+                }
+            });
+
+            // Request Native Geolocation Permission proactively
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        console.log("Geolocation permission granted successfully.");
+                    },
+                    (error) => {
+                        console.log("Geolocation permission denied or not available:", error.message);
+                    },
+                    { timeout: 10000, maximumAge: 60000 }
+                );
+            }
+
+            // Request Web Push Notification (FCM / Notifications) Permission
+            if ("Notification" in window && Notification.permission !== "granted") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        console.log("Push Notification permission granted.");
+                    }
+                });
+            }
+        }
 
         function autoDetectUserLocation() {
             if (navigator.geolocation) {
@@ -1711,20 +1763,14 @@
             });
         }
 
-        function requestPushNotificationPermission() {
-            if ("Notification" in window && Notification.permission !== "granted") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") {
-                        showCustomAlert("Notifications Enabled", "You will now receive instant push alerts for chat messages and offers!", "success");
-                    }
-                });
-            }
-        }
-
         function triggerPushNotification(title, body) {
             try {
                 if ("Notification" in window && Notification.permission === "granted") {
-                    console.log("Notification:", title, body);
+                    // Native FCM / Web Push Notification Trigger
+                    new Notification(title, {
+                        body: body,
+                        icon: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+                    });
                 }
             } catch (e) {
                 console.log("Notification skipped:", e);
@@ -1939,7 +1985,6 @@
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
-                // Fetch & Update IP for the logged-in user
                 fetch('https://api.ipify.org?format=json')
                     .then(res => res.json())
                     .then(data => {
@@ -2029,7 +2074,6 @@
                     </button>
                 `;
                 checkUserPinStatus(user);
-                requestPushNotificationPermission();
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
                 if(inboxListenerUnsubscribe) inboxListenerUnsubscribe();
@@ -2164,28 +2208,16 @@
 
                   myChats.forEach(chat => {
                       db.collection('chats').doc(chat.chatRoomId).collection('messages')
-                        .orderBy('createdAt', 'desc').get().then(msgSnapshot => {
+                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
                             let lastMsgText = "Tap to view conversation";
                             let lastTime = "";
-                            let unreadRoomCount = 0;
                             
                             if (!msgSnapshot.empty) {
                                 const lastMsgData = msgSnapshot.docs[0].data();
                                 const isMe = lastMsgData.senderUid === window.currentUser.uid;
                                 lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
                                 lastTime = lastMsgData.time || "";
-
-                                msgSnapshot.forEach(mDoc => {
-                                    const mData = mDoc.data();
-                                    if (mData.senderUid !== window.currentUser.uid && mData.status !== 'read') {
-                                        unreadRoomCount++;
-                                    }
-                                });
                             }
-
-                            const unreadBadgeHTML = unreadRoomCount > 0 
-                                ? `<span class="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow shrink-0">${unreadRoomCount}</span>` 
-                                : '';
 
                             const div = document.createElement('div');
                             div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
@@ -2198,6 +2230,7 @@
 
                                 document.getElementById('chatSellerName').innerText = "Conversation";
                                 document.getElementById('fullChatPage').style.display = 'flex';
+                                history.pushState({page: 'chat'}, "", "#chat");
                                 loadChatMessages(chat.chatRoomId);
                                 trackUserStatus(otherUserId);
                                 watchTypingStatus(chat.chatRoomId, otherUserId);
@@ -2217,7 +2250,6 @@
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2 shrink-0">
-                                    ${unreadBadgeHTML}
                                     <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
                                         <i class="fa-solid fa-chevron-right text-[10px]"></i>
                                     </div>
@@ -2257,6 +2289,7 @@
             document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
 
             document.getElementById('fullChatPage').style.display = 'flex';
+            history.pushState({page: 'chat'}, "", "#chat");
             
             db.collection('chats').doc(activeChatRoomId).set({
                 participants: [buyerId, sellerId],
@@ -2272,6 +2305,9 @@
             if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
+            if(window.location.hash === '#chat') {
+                history.back();
+            }
         }
 
         function trackUserStatus(otherUserId) {
@@ -2344,18 +2380,20 @@
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
             
-            db.collection('chats').doc(chatRoomId).collection('messages')
-              .where('senderUid', '!=', window.currentUser.uid)
-              .get().then(snapshot => {
-                  snapshot.forEach(doc => {
-                      doc.ref.update({ status: 'read' });
+            setTimeout(() => {
+                db.collection('chats').doc(chatRoomId).collection('messages')
+                  .where('senderUid', '!=', window.currentUser.uid)
+                  .get().then(snapshot => {
+                      snapshot.forEach(doc => {
+                          doc.ref.update({ status: 'read' });
+                      });
                   });
-              });
+            }, 300);
 
             if (activeChatUnsubscribe) activeChatUnsubscribe();
 
             activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
-              .orderBy('createdAt', 'asc')
+              .orderBy('createdAt', 'asc').limit(35)
               .onSnapshot(snapshot => {
                   container.innerHTML = '';
                   if(snapshot.empty) {
@@ -2471,7 +2509,6 @@
             }).then(() => {
                 input.value = '';
                 clearChatAttachment();
-                triggerPushNotification("New Message on OldX", `${window.currentUser.displayName || 'User'}: ${msg || 'Sent an attachment'}`);
             }).catch(err => {
                 console.error("Error sending message: ", err);
             });
@@ -3343,8 +3380,13 @@
 
         window.addEventListener('hashchange', handleHashChange);
 
-        function closeProductDetailView() { window.location.hash = ''; }
-        function closeSellWizardPage() { window.location.hash = ''; }
+        function closeProductDetailView() { 
+            window.location.hash = ''; 
+        }
+
+        function closeSellWizardPage() { 
+            window.location.hash = ''; 
+        }
 
         function initSellMapPicker() {
             const mapContainer = document.getElementById('adMapPicker');
@@ -3784,7 +3826,6 @@
             btn.innerText = 'Publishing...'; btn.disabled = true;
 
             try {
-                // Fetch User IP Address before saving post
                 let userIp = 'N/A';
                 try {
                     const ipRes = await fetch('https://api.ipify.org?format=json');
