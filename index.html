@@ -2767,19 +2767,15 @@
         }
 
         function openEditAdModal(docId) {
-            // Open the edit page directly instead of relying only on hashchange timing.
+            // Close My Ads first, then let the single hash router open and populate the edit page.
             const myAdsModal = document.getElementById('myAdsModal');
             if (myAdsModal) myAdsModal.style.display = 'none';
-            document.getElementById('homeView').style.display = 'none';
-            document.getElementById('sellWizardPage').style.display = 'none';
-            document.getElementById('profilePage').style.display = 'none';
-            document.getElementById('productSkeletonSlide').style.display = 'none';
-            document.getElementById('productDetailView').style.display = 'none';
-            document.getElementById('storePage').style.display = 'none';
-            document.getElementById('fullEditPage').style.display = 'block';
-            window.scrollTo(0, 0);
-            window.location.hash = `edit-${docId}`;
-            renderEditAdView(docId);
+            const hash = `#edit-${docId}`;
+            if (window.location.hash === hash) {
+                handleHashChange();
+            } else {
+                window.location.hash = hash;
+            }
         }
 
         async function renderEditAdView(docId) {
@@ -3513,10 +3509,14 @@
                 document.getElementById('homeView').style.display = 'none';
                 document.getElementById('sellWizardPage').style.display = 'none';
                 document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productSkeletonSlide').style.display = 'none';
                 document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('storePage').style.display = 'none';
+                const myAdsModal = document.getElementById('myAdsModal');
+                if (myAdsModal) myAdsModal.style.display = 'none';
                 document.getElementById('fullEditPage').style.display = 'block';
-                renderEditAdView(docId);
                 window.scrollTo(0,0);
+                renderEditAdView(docId);
                 return;
             } else if(hash.startsWith('#product-')) {
                 const docId = hash.replace('#product-', '');
