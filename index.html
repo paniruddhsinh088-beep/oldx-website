@@ -3642,8 +3642,13 @@
             storeMapMarker.on('dragend', () => { const p = storeMapMarker.getLatLng(); update(p.lat, p.lng); });
             storeMapInstance.on('click', e => update(e.latlng.lat, e.latlng.lng));
             document.getElementById('storeCoordsText').textContent = `Latitude: ${storeMapCoords.lat.toFixed(6)}, Longitude: ${storeMapCoords.lng.toFixed(6)}`;
-            setTimeout(() => storeMapInstance && storeMapInstance.invalidateSize(), 250);
+            [250, 700, 1400].forEach(delay => setTimeout(() => {
+                if (storeMapInstance) storeMapInstance.invalidateSize(true);
+            }, delay));
         }
+        window.addEventListener('resize', () => {
+            if (storeMapInstance) setTimeout(() => storeMapInstance && storeMapInstance.invalidateSize(true), 150);
+        });
 
         function locateStoreOnMap() {
             if (!navigator.geolocation) { showCustomAlert('GPS unavailable', 'તમારા browser માં GPS ઉપલબ્ધ નથી.', 'error'); return; }
@@ -3662,6 +3667,16 @@
         }
         document.addEventListener('input', e => { if (e.target && e.target.id === 'storeMobile' && document.getElementById('storeSameMobile').checked) document.getElementById('storeWhatsapp').value = e.target.value; });
         document.addEventListener('change', e => { if (e.target && e.target.id === 'storePhotoFile') { const f=e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/') || f.size > 5*1024*1024) { e.target.value=''; showCustomAlert('Invalid photo', 'માત્ર image file અને 5 MB સુધીની photo પસંદ કરો.', 'error'); return; } const im=document.getElementById('storePhotoPreview'); im.src=URL.createObjectURL(f); im.style.display='block'; } });
+
+        function storeOperationTimeout(promise, label, ms = 20000) {
+            let timer;
+            return Promise.race([
+                promise,
+                new Promise((_, reject) => {
+                    timer = setTimeout(() => reject(new Error(label + ' timeout: 20 seconds સુધી જવાબ મળ્યો નથી.')), ms);
+                })
+            ]).finally(() => clearTimeout(timer));
+        }
 
         async function saveStoreDetails(event) {
             event.preventDefault();
@@ -3684,11 +3699,11 @@
                 if (file) {
                     const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
                     const ref = storeStorage.ref(`stores/${user.uid}/${Date.now()}_${safeName}`);
-                    const uploaded = await ref.put(file, { contentType: file.type }); photoURL = await uploaded.ref.getDownloadURL();
+                    const uploaded = await storeOperationTimeout(ref.put(file, { contentType: file.type }), 'Photo upload'); photoURL = await storeOperationTimeout(uploaded.ref.getDownloadURL(), 'Photo URL');
                 }
                 const data = { uid: user.uid, shopName, ownerName, address, mobile, whatsapp, sameAsMobile, photoURL, categories, coords: storeMapCoords, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (!currentStoreData) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-                await db.collection('stores').doc(user.uid).set(data, { merge: true });
+                await storeOperationTimeout(db.collection('stores').doc(user.uid).set(data, { merge: true }), 'Firestore save');
                 currentStoreData = { ...currentStoreData, ...data };
                 refreshStoreHeader(user);
                 showCustomAlert('Store Saved', 'તમારી દુકાન સફળતાપૂર્વક સેવ થઈ ગઈ છે. હવે My Store ખોલીને Share Store કરી શકો છો.', 'success');
