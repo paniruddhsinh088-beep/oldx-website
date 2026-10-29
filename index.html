@@ -458,6 +458,7 @@
             <div><label class="block text-xs font-bold mb-1">Shop Photo *</label><input id="storePhotoFile" type="file" accept="image/*" class="w-full border rounded-xl p-3 text-xs dark:bg-gray-700 dark:border-gray-600"><p class="text-[11px] text-gray-400 mt-1">JPG/PNG/WebP, maximum 5 MB. Existing photo stays if you edit without selecting a new one.</p><img id="storePhotoPreview" style="display:none" class="mt-3 w-28 h-28 object-cover rounded-2xl border" alt="Shop photo preview"></div>
             <div><label class="block text-xs font-bold mb-2">Product Categories *</label><div id="storeCategoriesList" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div></div>
             <div><div class="flex items-center justify-between mb-2"><label class="text-xs font-bold">Live Map Pinning / GPS Location *</label><button type="button" onclick="locateStoreOnMap()" class="text-xs font-bold text-teal-700 dark:text-teal-300"><i class="fa-solid fa-location-crosshairs"></i> Use my GPS</button></div><div id="storeMapPicker" class="w-full h-64 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100"></div><p id="storeCoordsText" class="text-[11px] text-gray-500 mt-2">Map પર pin ખસેડો અથવા map પર tap કરો.</p></div>
+            <p id="storeSaveNotice" style="display:none" class="text-center text-sm font-bold text-emerald-600 py-2" role="status" aria-live="polite"></p>
             <button id="saveStoreBtn" type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl shadow">Save Store</button>
           </form>
         </div>
@@ -2770,9 +2771,22 @@
             window.location.hash = `edit-${docId}`;
         }
 
-        function renderEditAdView(docId) {
-            const p = products.find(item => item.docId === docId);
-            if(!p) return;
+        async function renderEditAdView(docId) {
+            let p = products.find(item => item.docId === docId);
+            if (!p) {
+                try {
+                    const snap = await db.collection('products').doc(docId).get();
+                    if (snap.exists) p = { docId: snap.id, ...snap.data() };
+                } catch (err) {
+                    console.error('Could not load product for editing:', err);
+                    showCustomAlert('Edit Error', 'Product માહિતી લોડ થઈ શકી નથી. Login અને Firestore permissions તપાસો.', 'error');
+                    return;
+                }
+            }
+            if (!p) {
+                showCustomAlert('Edit Error', 'આ Product મળી નથી અથવા તેને વાંચવાની permission નથી.', 'error');
+                return;
+            }
 
             document.getElementById('editDocId').value = p.docId;
             document.getElementById('editTitle').value = p.title;
@@ -3693,7 +3707,7 @@
                     initStoreMapPicker();
                     if (storeMapInstance) storeMapInstance.setView([lat, lng], 16);
                 }
-                coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (accuracy ±${Math.round(pos.coords.accuracy)} m)`;
+                coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (GPS accuracy ±${Math.round(pos.coords.accuracy)} m). જો pin થોડું ખોટું હોય તો map પર યોગ્ય જગ્યાએ tap કરો અથવા pin drag કરો.`;
             }, err => {
                 console.error('Store GPS error:', err.code, err.message);
                 const messages = {
@@ -3767,7 +3781,13 @@
                 await storeOperationTimeout(db.collection('stores').doc(user.uid).set(data, { merge: true }), 'Firestore save');
                 currentStoreData = { ...currentStoreData, ...data };
                 refreshStoreHeader(user);
-                showCustomAlert('Store Saved', 'તમારી દુકાન સફળતાપૂર્વક સેવ થઈ ગઈ છે. હવે My Store ખોલીને Share Store કરી શકો છો.', 'success');
+                closeCustomAlert();
+                const storeNotice = document.getElementById('storeSaveNotice');
+                if (storeNotice) {
+                    storeNotice.textContent = '✓ તમારી દુકાન સફળતાપૂર્વક સેવ થઈ ગઈ છે.';
+                    storeNotice.style.display = 'block';
+                    setTimeout(() => { storeNotice.style.display = 'none'; }, 5000);
+                }
                 renderOwnStoreSummary();
             } catch (err) {
                 console.error('Save store failed:', err);
