@@ -73,6 +73,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 
     <script>
         tailwind.config = {
@@ -105,6 +106,9 @@
             <div class="flex items-center space-x-2">
                <button id="headerAdminBtn" onclick="openAdminPanel()" style="display: none;" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-amber-500 to-red-600 rounded-full shadow-md hover:from-amber-600 hover:to-red-700 transition-all transform hover:scale-105">
                     <i class="fa-solid fa-shield-halved text-yellow-200"></i> Admin Panel
+                </button>
+                <button id="storeHeaderBtn" onclick="handleStoreHeaderClick()" class="bg-amber-400 hover:bg-amber-500 text-primary px-3 py-2 rounded-xl font-black text-xs md:text-sm shadow transition cursor-pointer whitespace-nowrap">
+                    <i class="fa-solid fa-store mr-1"></i> Create Store
                 </button>
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
@@ -431,6 +435,35 @@
             </div>
         </div>
     </div>
+
+    <!-- STORE FEATURE: CREATE / OWNER / PUBLIC STORE PAGE -->
+    <section id="storePage" style="display:none;" class="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+      <div class="sticky top-0 z-30 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between shadow-sm">
+        <button onclick="closeStorePage()" class="text-xs font-bold text-gray-600 dark:text-gray-200 flex items-center gap-2"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <h2 id="storePageHeading" class="font-black text-primary dark:text-teal-400">My Store</h2>
+        <button id="storeShareTopBtn" onclick="shareCurrentStore()" style="display:none" class="text-xs font-bold text-teal-700 dark:text-teal-300"><i class="fa-solid fa-share-nodes"></i> Share</button>
+      </div>
+      <div id="storeFormWrap" class="max-w-2xl mx-auto p-4 md:p-6" style="display:none">
+        <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 md:p-7">
+          <h3 class="text-xl font-black text-gray-900 dark:text-white">Create Your Store</h3>
+          <p class="text-xs text-gray-500 mt-1 mb-5">તમારી દુકાનની વિગતો ભરીને તમારી પોતાની public store link બનાવો.</p>
+          <form id="createStoreForm" onsubmit="saveStoreDetails(event)" class="space-y-4">
+            <div><label class="block text-xs font-bold mb-1">Shop Name *</label><input id="storeShopName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="દુકાનનું નામ"></div>
+            <div><label class="block text-xs font-bold mb-1">Owner Name *</label><input id="storeOwnerName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="માલિકનું નામ"></div>
+            <div><label class="block text-xs font-bold mb-1">Shop Address *</label><textarea id="storeAddress" required maxlength="500" rows="2" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="દુકાનનું સંપૂર્ણ સરનામું"></textarea></div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs font-bold mb-1">Mobile Number *</label><input id="storeMobile" required inputmode="tel" pattern="[0-9+() -]{10,18}" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Mobile number"></div>
+              <div><label class="block text-xs font-bold mb-1">WhatsApp Number *</label><input id="storeWhatsapp" required inputmode="tel" pattern="[0-9+() -]{10,18}" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="WhatsApp number"><label class="flex items-center gap-2 mt-2 text-xs"><input type="checkbox" id="storeSameMobile" onchange="copyStoreMobile()"> Same as Mobile</label></div>
+            </div>
+            <div><label class="block text-xs font-bold mb-1">Shop Photo *</label><input id="storePhotoFile" type="file" accept="image/*" class="w-full border rounded-xl p-3 text-xs dark:bg-gray-700 dark:border-gray-600"><p class="text-[11px] text-gray-400 mt-1">JPG/PNG/WebP, maximum 5 MB. Existing photo stays if you edit without selecting a new one.</p><img id="storePhotoPreview" style="display:none" class="mt-3 w-28 h-28 object-cover rounded-2xl border" alt="Shop photo preview"></div>
+            <div><label class="block text-xs font-bold mb-2">Product Categories *</label><div id="storeCategoriesList" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div></div>
+            <div><div class="flex items-center justify-between mb-2"><label class="text-xs font-bold">Live Map Pinning / GPS Location *</label><button type="button" onclick="locateStoreOnMap()" class="text-xs font-bold text-teal-700 dark:text-teal-300"><i class="fa-solid fa-location-crosshairs"></i> Use my GPS</button></div><div id="storeMapPicker" class="w-full h-64 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100"></div><p id="storeCoordsText" class="text-[11px] text-gray-500 mt-2">Map પર pin ખસેડો અથવા map પર tap કરો.</p></div>
+            <button id="saveStoreBtn" type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl shadow">Save Store</button>
+          </form>
+        </div>
+      </div>
+      <div id="storePublicWrap" class="max-w-5xl mx-auto p-4 md:p-6" style="display:none"></div>
+    </section>
 
     <!-- NATIVE BOTTOM APP BAR (Mobile Only) -->
     <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 px-3 py-2 shadow-2xl flex justify-around items-center md:hidden">
@@ -1309,6 +1342,14 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const storeStorage = firebase.storage();
+        let currentStoreData = null;
+        let storeMapInstance = null;
+        let storeMapMarker = null;
+        let storeMapCoords = { lat: 23.0225, lng: 72.5714 };
+        let publicStoreOwnerUid = null;
+        let currentStoreProductsCache = [];
+        let publicStoreMapInstance = null;
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
@@ -2007,6 +2048,7 @@
 
         auth.onAuthStateChanged(user => {
             window.currentUser = user;
+            refreshStoreHeader(user);
             const container = document.getElementById('authContainer');
             const adminBtn = document.getElementById('headerAdminBtn');
 
@@ -3420,6 +3462,25 @@
         function handleHashChange() {
             const hash = window.location.hash;
 
+            if (hash === '#store' || hash.startsWith('#store-')) {
+                document.getElementById('homeView').style.display = 'none';
+                document.getElementById('sellWizardPage').style.display = 'none';
+                document.getElementById('profilePage').style.display = 'none';
+                document.getElementById('productSkeletonSlide').style.display = 'none';
+                document.getElementById('productDetailView').style.display = 'none';
+                document.getElementById('fullEditPage').style.display = 'none';
+                document.getElementById('storePage').style.display = 'block';
+                window.scrollTo(0, 0);
+                if (hash === '#store') {
+                    if (!window.currentUser) { window.location.hash = ''; openAuthModal(); return; }
+                    openOwnStorePage();
+                } else {
+                    const ownerUid = hash.slice('#store-'.length);
+                    if (ownerUid) openPublicStorePage(ownerUid);
+                }
+                return;
+            }
+            document.getElementById('storePage').style.display = 'none';
             if(hash.startsWith('#edit-')) {
                 const docId = hash.replace('#edit-', '');
                 document.getElementById('homeView').style.display = 'none';
@@ -3497,6 +3558,214 @@
         }
 
         window.addEventListener('hashchange', handleHashChange);
+
+        // STORE FEATURE FUNCTIONS (isolated from existing marketplace logic)
+        function refreshStoreHeader(user) {
+            const btn = document.getElementById('storeHeaderBtn');
+            if (!btn) return;
+            if (!user) {
+                btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store';
+                btn.style.display = 'inline-flex';
+                return;
+            }
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Store';
+            db.collection('stores').doc(user.uid).get().then(doc => {
+                if (window.currentUser && window.currentUser.uid === user.uid) {
+                    currentStoreData = doc.exists ? { uid: user.uid, ...doc.data() } : null;
+                    btn.innerHTML = currentStoreData ? '<i class="fa-solid fa-store mr-1"></i> My Store' : '<i class="fa-solid fa-store mr-1"></i> Create Store';
+                }
+            }).catch(() => { btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store'; });
+        }
+
+        function handleStoreHeaderClick() {
+            if (!window.currentUser) { openAuthModal(); return; }
+            window.location.hash = '#store';
+        }
+
+        function closeStorePage() {
+            if (storeMapInstance) { storeMapInstance.remove(); storeMapInstance = null; storeMapMarker = null; }
+            window.location.hash = '';
+        }
+
+        function renderStoreCategoryChoices(selected = []) {
+            const box = document.getElementById('storeCategoriesList');
+            if (!box) return;
+            box.innerHTML = '';
+            (typeof olxCategories !== 'undefined' ? olxCategories : []).forEach(cat => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 dark:border-gray-600 text-xs font-semibold cursor-pointer';
+                const input = document.createElement('input'); input.type = 'checkbox'; input.name = 'storeCategory'; input.value = cat.id; input.checked = selected.includes(cat.id); input.className = 'accent-teal-700';
+                const span = document.createElement('span'); span.textContent = cat.name;
+                label.append(input, span); box.appendChild(label);
+            });
+        }
+
+        async function openOwnStorePage() {
+            const user = window.currentUser;
+            if (!user) { openAuthModal(); return; }
+            document.getElementById('storePageHeading').textContent = 'My Store';
+            document.getElementById('storeShareTopBtn').style.display = 'none';
+            document.getElementById('storeFormWrap').style.display = 'block';
+            document.getElementById('storePublicWrap').style.display = 'none';
+            try {
+                const snap = await db.collection('stores').doc(user.uid).get();
+                currentStoreData = snap.exists ? { uid: user.uid, ...snap.data() } : null;
+                const d = currentStoreData || {};
+                document.getElementById('storeShopName').value = d.shopName || '';
+                document.getElementById('storeOwnerName').value = d.ownerName || user.displayName || '';
+                document.getElementById('storeAddress').value = d.address || '';
+                document.getElementById('storeMobile').value = d.mobile || '';
+                document.getElementById('storeWhatsapp').value = d.whatsapp || '';
+                document.getElementById('storeSameMobile').checked = !!d.sameAsMobile;
+                if (d.photoURL) { const im = document.getElementById('storePhotoPreview'); im.src = d.photoURL; im.style.display = 'block'; }
+                renderStoreCategoryChoices(d.categories || []);
+                storeMapCoords = d.coords && Number.isFinite(d.coords.lat) && Number.isFinite(d.coords.lng) ? d.coords : { lat: 23.0225, lng: 72.5714 };
+                setTimeout(initStoreMapPicker, 250);
+                if (d.shopName) {
+                    document.getElementById('storePageHeading').textContent = 'My Store';
+                    document.getElementById('saveStoreBtn').textContent = 'Update Store';
+                    renderOwnStoreSummary();
+                } else document.getElementById('saveStoreBtn').textContent = 'Save Store';
+            } catch (err) { console.error('Store load error:', err); showCustomAlert('Store Error', 'Store load ન થઈ શક્યું. Firebase Firestore rules તપાસો.', 'error'); }
+        }
+
+        function initStoreMapPicker() {
+            const el = document.getElementById('storeMapPicker');
+            if (!el || !window.L || document.getElementById('storeFormWrap').style.display === 'none') return;
+            if (storeMapInstance) { storeMapInstance.remove(); storeMapInstance = null; }
+            storeMapInstance = L.map(el).setView([storeMapCoords.lat, storeMapCoords.lng], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(storeMapInstance);
+            storeMapMarker = L.marker([storeMapCoords.lat, storeMapCoords.lng], { draggable: true }).addTo(storeMapInstance);
+            const update = (lat, lng) => { storeMapCoords = { lat, lng }; storeMapMarker.setLatLng([lat, lng]); document.getElementById('storeCoordsText').textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)}`; };
+            storeMapMarker.on('dragend', () => { const p = storeMapMarker.getLatLng(); update(p.lat, p.lng); });
+            storeMapInstance.on('click', e => update(e.latlng.lat, e.latlng.lng));
+            document.getElementById('storeCoordsText').textContent = `Latitude: ${storeMapCoords.lat.toFixed(6)}, Longitude: ${storeMapCoords.lng.toFixed(6)}`;
+            setTimeout(() => storeMapInstance && storeMapInstance.invalidateSize(), 250);
+        }
+
+        function locateStoreOnMap() {
+            if (!navigator.geolocation) { showCustomAlert('GPS unavailable', 'તમારા browser માં GPS ઉપલબ્ધ નથી.', 'error'); return; }
+            navigator.geolocation.getCurrentPosition(pos => {
+                storeMapCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                if (storeMapInstance) { storeMapInstance.setView([storeMapCoords.lat, storeMapCoords.lng], 16); storeMapMarker.setLatLng([storeMapCoords.lat, storeMapCoords.lng]); }
+                document.getElementById('storeCoordsText').textContent = `Latitude: ${storeMapCoords.lat.toFixed(6)}, Longitude: ${storeMapCoords.lng.toFixed(6)}`;
+            }, err => showCustomAlert('Location permission', 'GPS location મેળવવા માટે browser location permission આપો.', 'error'), { enableHighAccuracy: true, timeout: 12000 });
+        }
+
+        function copyStoreMobile() {
+            const checked = document.getElementById('storeSameMobile').checked;
+            const wa = document.getElementById('storeWhatsapp');
+            if (checked) wa.value = document.getElementById('storeMobile').value;
+            wa.readOnly = checked;
+        }
+        document.addEventListener('input', e => { if (e.target && e.target.id === 'storeMobile' && document.getElementById('storeSameMobile').checked) document.getElementById('storeWhatsapp').value = e.target.value; });
+        document.addEventListener('change', e => { if (e.target && e.target.id === 'storePhotoFile') { const f=e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/') || f.size > 5*1024*1024) { e.target.value=''; showCustomAlert('Invalid photo', 'માત્ર image file અને 5 MB સુધીની photo પસંદ કરો.', 'error'); return; } const im=document.getElementById('storePhotoPreview'); im.src=URL.createObjectURL(f); im.style.display='block'; } });
+
+        async function saveStoreDetails(event) {
+            event.preventDefault();
+            const user = window.currentUser;
+            if (!user) { openAuthModal(); return; }
+            const shopName = document.getElementById('storeShopName').value.trim();
+            const ownerName = document.getElementById('storeOwnerName').value.trim();
+            const address = document.getElementById('storeAddress').value.trim();
+            const mobile = document.getElementById('storeMobile').value.trim();
+            const sameAsMobile = document.getElementById('storeSameMobile').checked;
+            const whatsapp = (sameAsMobile ? mobile : document.getElementById('storeWhatsapp').value).trim();
+            const categories = [...document.querySelectorAll('input[name="storeCategory"]:checked')].map(x => x.value);
+            const file = document.getElementById('storePhotoFile').files[0];
+            if (!categories.length) { showCustomAlert('Categories required', 'ઓછામાં ઓછી એક Product Category પસંદ કરો.', 'error'); return; }
+            if (!currentStoreData?.photoURL && !file) { showCustomAlert('Photo required', 'કૃપા કરીને દુકાનનો ફોટો અપલોડ કરો.', 'error'); return; }
+            if (!Number.isFinite(storeMapCoords.lat) || !Number.isFinite(storeMapCoords.lng)) { showCustomAlert('Location required', 'Map પર દુકાનનું location પસંદ કરો.', 'error'); return; }
+            const btn = document.getElementById('saveStoreBtn'); btn.disabled = true; btn.textContent = 'Saving...';
+            try {
+                let photoURL = currentStoreData?.photoURL || '';
+                if (file) {
+                    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                    const ref = storeStorage.ref(`stores/${user.uid}/${Date.now()}_${safeName}`);
+                    const uploaded = await ref.put(file, { contentType: file.type }); photoURL = await uploaded.ref.getDownloadURL();
+                }
+                const data = { uid: user.uid, shopName, ownerName, address, mobile, whatsapp, sameAsMobile, photoURL, categories, coords: storeMapCoords, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (!currentStoreData) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection('stores').doc(user.uid).set(data, { merge: true });
+                currentStoreData = { ...currentStoreData, ...data };
+                refreshStoreHeader(user);
+                showCustomAlert('Store Saved', 'તમારી દુકાન સફળતાપૂર્વક સેવ થઈ ગઈ છે. હવે My Store ખોલીને Share Store કરી શકો છો.', 'success');
+                renderOwnStoreSummary();
+            } catch (err) {
+                console.error('Save store failed:', err);
+                showCustomAlert('Save Failed', 'Store save ન થઈ શક્યું. Firebase Storage અને Firestore rules/configuration તપાસો. ' + (err.message || ''), 'error');
+            } finally { btn.disabled = false; btn.textContent = currentStoreData?.shopName ? 'Update Store' : 'Save Store'; }
+        }
+
+        function renderOwnStoreSummary() {
+            if (!currentStoreData) return;
+            document.getElementById('storeFormWrap').style.display = 'none';
+            document.getElementById('storePublicWrap').style.display = 'block';
+            document.getElementById('storeShareTopBtn').style.display = 'inline-block';
+            document.getElementById('storePageHeading').textContent = currentStoreData.shopName || 'My Store';
+            renderStorePublicContent(currentStoreData, true);
+        }
+
+        async function openPublicStorePage(ownerUid) {
+            publicStoreOwnerUid = ownerUid;
+            document.getElementById('storeFormWrap').style.display = 'none';
+            document.getElementById('storePublicWrap').style.display = 'block';
+            document.getElementById('storeShareTopBtn').style.display = 'inline-block';
+            document.getElementById('storePageHeading').textContent = 'Store';
+            const wrap = document.getElementById('storePublicWrap'); wrap.innerHTML = '<div class="text-center py-16 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-3">Loading store...</p></div>';
+            try {
+                const snap = await db.collection('stores').doc(ownerUid).get();
+                if (!snap.exists) { wrap.innerHTML = '<div class="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center"><h3 class="font-black text-lg">Store not found</h3><p class="text-sm text-gray-500 mt-2">આ Store ઉપલબ્ધ નથી અથવા બનાવવામાં આવી નથી.</p></div>'; return; }
+                const data = { uid: ownerUid, ...snap.data() };
+                currentStoreData = data;
+                document.getElementById('storePageHeading').textContent = data.shopName || 'Store';
+                renderStorePublicContent(data, !!window.currentUser && window.currentUser.uid === ownerUid);
+            } catch (err) { wrap.innerHTML = '<div class="p-8 text-center text-red-600">Store load ન થઈ શક્યું. Firestore rules તપાસો.</div>'; console.error(err); }
+        }
+
+        function renderStorePublicContent(data, isOwner) {
+            const wrap = document.getElementById('storePublicWrap');
+            const catNames = (data.categories || []).map(id => (olxCategories.find(c => c.id === id) || {name:id}).name);
+            const mapLink = data.coords ? `https://www.openstreetmap.org/?mlat=${data.coords.lat}&mlon=${data.coords.lng}#map=16/${data.coords.lat}/${data.coords.lng}` : '';
+            const waNumber = (data.whatsapp || '').replace(/[^0-9]/g, '');
+            wrap.innerHTML = `<div class="bg-white dark:bg-gray-800 rounded-3xl overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm"><div class="h-44 sm:h-64 bg-gradient-to-r from-teal-800 to-primary overflow-hidden">${data.photoURL ? `<img src="${escapeStoreHtml(data.photoURL)}" class="w-full h-full object-cover" alt="Shop photo">` : ''}</div><div class="p-5 md:p-7"><div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"><div><p class="text-xs text-teal-600 font-black uppercase tracking-wider">OldX Verified Store Page</p><h2 class="text-2xl md:text-3xl font-black mt-1 text-gray-900 dark:text-white">${escapeStoreHtml(data.shopName || 'Store')}</h2><p class="text-sm text-gray-500 mt-1">Owner: ${escapeStoreHtml(data.ownerName || '')}</p><p class="text-sm text-gray-600 dark:text-gray-300 mt-3"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${escapeStoreHtml(data.address || '')}</p></div><div class="flex flex-wrap gap-2">${isOwner ? `<button onclick="editMyStore()" class="px-4 py-2 rounded-xl bg-amber-400 text-primary text-xs font-black"><i class="fa-solid fa-pen mr-1"></i> Edit Store</button>` : ''}${waNumber ? `<a target="_blank" rel="noopener" href="https://wa.me/${waNumber}" class="px-4 py-2 rounded-xl bg-green-600 text-white text-xs font-black"><i class="fa-brands fa-whatsapp mr-1"></i> WhatsApp</a>` : ''}<a href="tel:${escapeStoreHtml(data.mobile || '')}" class="px-4 py-2 rounded-xl bg-teal-700 text-white text-xs font-black"><i class="fa-solid fa-phone mr-1"></i> Call</a>${mapLink ? `<a target="_blank" rel="noopener" href="${mapLink}" class="px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white text-xs font-black"><i class="fa-solid fa-map-location-dot mr-1"></i> Directions</a>` : ''}</div></div><div class="mt-5 flex flex-wrap gap-2">${catNames.map(n=>`<span class="px-3 py-1 rounded-full bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 text-xs font-bold">${escapeStoreHtml(n)}</span>`).join('')}</div>${data.coords ? `<div class="mt-6"><h3 class="font-black text-base text-gray-900 dark:text-white mb-2">Store Location</h3><div id="storePublicMap" class="w-full h-56 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"></div></div>` : ''}<div class="mt-6"><h3 class="font-black text-lg text-gray-900 dark:text-white mb-3">Products from this Store</h3><div id="storeCategoryFilters" class="flex flex-wrap gap-2 mb-3"><button onclick="filterStoreProducts('all')" class="px-3 py-2 rounded-full bg-primary text-white text-xs font-bold">All Products</button>${(data.categories || []).map(id=>{const c=olxCategories.find(x=>x.id===id);return `<button onclick="filterStoreProducts('${escapeStoreHtml(id)}')" class="px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold">${escapeStoreHtml(c ? c.name : id)}</button>`;}).join('')}</div><div id="storeProductsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"><p class="text-xs text-gray-500">Loading products...</p></div></div></div></div>`;
+            if (data.coords && window.L) {
+                setTimeout(() => {
+                    const mapEl = document.getElementById('storePublicMap');
+                    if (!mapEl) return;
+                    if (publicStoreMapInstance) { publicStoreMapInstance.remove(); publicStoreMapInstance = null; }
+                    publicStoreMapInstance = L.map(mapEl).setView([data.coords.lat, data.coords.lng], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(publicStoreMapInstance);
+                    L.marker([data.coords.lat, data.coords.lng]).addTo(publicStoreMapInstance).bindPopup(escapeStoreHtml(data.shopName || 'Store')).openPopup();
+                    setTimeout(() => publicStoreMapInstance && publicStoreMapInstance.invalidateSize(), 200);
+                }, 100);
+            }
+            db.collection('products').where('sellerUid', '==', data.uid).get().then(snap => {
+                const grid = document.getElementById('storeProductsGrid'); if (!grid) return;
+                currentStoreProductsCache = []; snap.forEach(doc => currentStoreProductsCache.push({ docId: doc.id, ...doc.data() }));
+                filterStoreProducts('all');
+            }).catch(err => { const grid=document.getElementById('storeProductsGrid'); if(grid) grid.innerHTML='<p class="col-span-full text-xs text-red-500">Products load ન થઈ શક્યાં.</p>'; console.error(err); });
+        }
+
+        function filterStoreProducts(categoryId) {
+            const grid = document.getElementById('storeProductsGrid'); if (!grid) return;
+            grid.innerHTML = '';
+            const items = categoryId === 'all' ? currentStoreProductsCache : currentStoreProductsCache.filter(p => p.category === categoryId || p.mainCategory === categoryId || p.categoryId === categoryId);
+            document.querySelectorAll('#storeCategoryFilters button').forEach(btn => { btn.className = 'px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold'; });
+            const buttons = document.querySelectorAll('#storeCategoryFilters button');
+            buttons.forEach(btn => { if ((categoryId === 'all' && btn.textContent.trim() === 'All Products') || (categoryId !== 'all' && btn.getAttribute('onclick') === `filterStoreProducts('${categoryId}')`)) btn.className = 'px-3 py-2 rounded-full bg-primary text-white text-xs font-bold'; });
+            if (!items.length) { grid.innerHTML = `<p class="col-span-full text-sm text-gray-500 py-5">${categoryId === 'all' ? 'આ દુકાનની કોઈ product હજી ઉપલબ્ધ નથી.' : 'આ category માં કોઈ product ઉપલબ્ધ નથી.'}</p>`; return; }
+            items.forEach(p => { if (typeof createProductCard === 'function') grid.appendChild(createProductCard(p, false)); });
+        }
+
+        function escapeStoreHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+        function editMyStore() { if (!window.currentUser || !currentStoreData || currentStoreData.uid !== window.currentUser.uid) return; document.getElementById('storePublicWrap').style.display='none'; document.getElementById('storeFormWrap').style.display='block'; document.getElementById('storeShareTopBtn').style.display='none'; renderStoreCategoryChoices(currentStoreData.categories || []); setTimeout(initStoreMapPicker, 200); }
+        async function shareCurrentStore() {
+            const data = currentStoreData;
+            if (!data || !data.uid) { showCustomAlert('Store unavailable', 'Share કરવા માટે પહેલાં Store ખોલો.', 'error'); return; }
+            const url = `${window.location.origin}${window.location.pathname}#store-${data.uid}`;
+            try { if (navigator.share) await navigator.share({ title: data.shopName || 'OldX Store', text: `Visit ${data.shopName || 'this store'} on OldX`, url }); else if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(url); showCustomAlert('Link Copied', 'Store link clipboard માં copy થઈ ગઈ છે.', 'success'); } else { window.prompt('Copy your store link:', url); } } catch (err) { if (err.name !== 'AbortError') window.prompt('Copy your store link:', url); }
+        }
 
         function closeProductDetailView() { 
             window.location.hash = ''; 
