@@ -3667,12 +3667,42 @@
         });
 
         function locateStoreOnMap() {
-            if (!navigator.geolocation) { showCustomAlert('GPS unavailable', 'તમારા browser માં GPS ઉપલબ્ધ નથી.', 'error'); return; }
+            if (!navigator.geolocation) {
+                showCustomAlert('GPS unavailable', 'આ browser માં GPS/geolocation ઉપલબ્ધ નથી.', 'error');
+                return;
+            }
+            if (!window.isSecureContext) {
+                showCustomAlert('Secure connection required', 'GPS માટે HTTPS પરની વેબસાઇટ ખોલો (GitHub Pages સામાન્ય રીતે HTTPS હોય છે).', 'error');
+                return;
+            }
+            const coordsText = document.getElementById('storeCoordsText');
+            coordsText.textContent = 'તમારું GPS સ્થાન મેળવી રહ્યા છીએ...';
             navigator.geolocation.getCurrentPosition(pos => {
-                storeMapCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                if (storeMapInstance) { storeMapInstance.setView([storeMapCoords.lat, storeMapCoords.lng], 16); storeMapMarker.setLatLng([storeMapCoords.lat, storeMapCoords.lng]); }
-                document.getElementById('storeCoordsText').textContent = `Latitude: ${storeMapCoords.lat.toFixed(6)}, Longitude: ${storeMapCoords.lng.toFixed(6)}`;
-            }, err => showCustomAlert('Location permission', 'GPS location મેળવવા માટે browser location permission આપો.', 'error'), { enableHighAccuracy: true, timeout: 12000 });
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                    showCustomAlert('GPS error', 'Browser તરફથી યોગ્ય latitude/longitude મળ્યા નથી. ફરી પ્રયાસ કરો.', 'error');
+                    return;
+                }
+                storeMapCoords = { lat, lng };
+                if (storeMapInstance) {
+                    storeMapMarker.setLatLng([lat, lng]);
+                    storeMapInstance.setView([lat, lng], 16, { animate: true });
+                    setTimeout(() => storeMapInstance && storeMapInstance.invalidateSize(true), 150);
+                } else {
+                    initStoreMapPicker();
+                    if (storeMapInstance) storeMapInstance.setView([lat, lng], 16);
+                }
+                coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (accuracy ±${Math.round(pos.coords.accuracy)} m)`;
+            }, err => {
+                console.error('Store GPS error:', err.code, err.message);
+                const messages = {
+                    1: 'Browser/website માટે Location permission denied છે. Address bar ની site settings માં Location = Allow કરો.',
+                    2: 'હાલ device નું સ્થાન મળી શક્યું નથી. Phone Location/GPS ચાલુ કરીને બહાર અથવા બારી પાસે ફરી પ્રયાસ કરો.',
+                    3: 'GPS મેળવવામાં સમય પૂરો થયો. Phone Location ચાલુ રાખીને ફરી પ્રયાસ કરો.'
+                };
+                showCustomAlert('GPS location error', messages[err.code] || ('GPS સ્થાન મળ્યું નથી: ' + (err.message || 'Unknown error')), 'error');
+            }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
         }
 
         function copyStoreMobile() {
