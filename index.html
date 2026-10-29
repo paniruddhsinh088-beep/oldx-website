@@ -3607,6 +3607,8 @@
             document.getElementById('storeShareTopBtn').style.display = 'none';
             document.getElementById('storeFormWrap').style.display = 'block';
             document.getElementById('storePublicWrap').style.display = 'none';
+            // Render category choices immediately, even if the Firestore store read is denied.
+            renderStoreCategoryChoices();
             try {
                 const snap = await db.collection('stores').doc(user.uid).get();
                 currentStoreData = snap.exists ? { uid: user.uid, ...snap.data() } : null;
