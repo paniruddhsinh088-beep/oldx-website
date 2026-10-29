@@ -3697,9 +3697,24 @@
             try {
                 let photoURL = currentStoreData?.photoURL || '';
                 if (file) {
-                    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-                    const ref = storeStorage.ref(`stores/${user.uid}/${Date.now()}_${safeName}`);
-                    const uploaded = await storeOperationTimeout(ref.put(file, { contentType: file.type }), 'Photo upload'); photoURL = await storeOperationTimeout(uploaded.ref.getDownloadURL(), 'Photo URL');
+                    // Upload store photos to Cloudinary instead of Firebase Storage.
+                    const cloudinaryForm = new FormData();
+                    cloudinaryForm.append('file', file);
+                    cloudinaryForm.append('upload_preset', 'Oldxbazar');
+                    cloudinaryForm.append('folder', 'oldx-stores');
+                    const cloudinaryResponse = await storeOperationTimeout(
+                        fetch('https://api.cloudinary.com/v1_1/tfizvbzc/image/upload', {
+                            method: 'POST',
+                            body: cloudinaryForm
+                        }),
+                        'Cloudinary photo upload',
+                        60000
+                    );
+                    const cloudinaryResult = await cloudinaryResponse.json();
+                    if (!cloudinaryResponse.ok || !cloudinaryResult.secure_url) {
+                        throw new Error('Cloudinary upload failed: ' + (cloudinaryResult.error?.message || cloudinaryResponse.statusText || 'Unknown error'));
+                    }
+                    photoURL = cloudinaryResult.secure_url;
                 }
                 const data = { uid: user.uid, shopName, ownerName, address, mobile, whatsapp, sameAsMobile, photoURL, categories, coords: storeMapCoords, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (!currentStoreData) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -3710,7 +3725,7 @@
                 renderOwnStoreSummary();
             } catch (err) {
                 console.error('Save store failed:', err);
-                showCustomAlert('Save Failed', 'Store save ન થઈ શક્યું. Firebase Storage અને Firestore rules/configuration તપાસો. ' + (err.message || ''), 'error');
+                showCustomAlert('Save Failed', 'Store save ન થઈ શક્યું. Cloudinary upload અથવા Firestore rules/configuration તપાસો. ' + (err.message || ''), 'error');
             } finally { btn.disabled = false; btn.textContent = currentStoreData?.shopName ? 'Update Store' : 'Save Store'; }
         }
 
