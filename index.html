@@ -2767,14 +2767,35 @@
         }
 
         function openEditAdModal(docId) {
-            // Close My Ads first, then let the single hash router open and populate the edit page.
-            const myAdsModal = document.getElementById('myAdsModal');
-            if (myAdsModal) myAdsModal.style.display = 'none';
-            const hash = `#edit-${docId}`;
-            if (window.location.hash === hash) {
-                handleHashChange();
-            } else {
-                window.location.hash = hash;
+            // Open the edit page directly. Do not rely on hashchange, which can race
+            // with Firebase product-list refreshes on mobile browsers.
+            try {
+                if (!docId) {
+                    showCustomAlert('Edit Error', 'Product ID missing. My Ads fari kholo.', 'error');
+                    return;
+                }
+                const myAdsModal = document.getElementById('myAdsModal');
+                const editPage = document.getElementById('fullEditPage');
+                if (!editPage) {
+                    showCustomAlert('Edit Error', 'Edit page load nathi thai. Website refresh karo.', 'error');
+                    return;
+                }
+                if (myAdsModal) myAdsModal.style.display = 'none';
+                ['homeView','sellWizardPage','profilePage','productSkeletonSlide','productDetailView','storePage'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                editPage.style.display = 'block';
+                window.scrollTo(0, 0);
+                // Update the URL without firing a second hashchange handler.
+                try { history.replaceState(null, '', '#edit-' + encodeURIComponent(docId)); } catch (_) {}
+                Promise.resolve(renderEditAdView(docId)).catch(err => {
+                    console.error('Edit page failed:', err);
+                    showCustomAlert('Edit Error', 'Edit form kholi shakai nathi. Fari try karo.', 'error');
+                });
+            } catch (err) {
+                console.error('openEditAdModal failed:', err);
+                showCustomAlert('Edit Error', 'Edit form kholti vakhat error aavyo.', 'error');
             }
         }
 
