@@ -2767,8 +2767,19 @@
         }
 
         function openEditAdModal(docId) {
-            closeMyAdsModal();
+            // Open the edit page directly instead of relying only on hashchange timing.
+            const myAdsModal = document.getElementById('myAdsModal');
+            if (myAdsModal) myAdsModal.style.display = 'none';
+            document.getElementById('homeView').style.display = 'none';
+            document.getElementById('sellWizardPage').style.display = 'none';
+            document.getElementById('profilePage').style.display = 'none';
+            document.getElementById('productSkeletonSlide').style.display = 'none';
+            document.getElementById('productDetailView').style.display = 'none';
+            document.getElementById('storePage').style.display = 'none';
+            document.getElementById('fullEditPage').style.display = 'block';
+            window.scrollTo(0, 0);
             window.location.hash = `edit-${docId}`;
+            renderEditAdView(docId);
         }
 
         async function renderEditAdView(docId) {
@@ -2784,11 +2795,13 @@
                 }
             }
             if (!p) {
-                showCustomAlert('Edit Error', 'આ Product મળી નથી અથવા તેને વાંચવાની permission નથી.', 'error');
+                showCustomAlert('Edit Error', 'આ Product મળી નથી અથવા તેને વાંચવાની permission નથી. My Ads માંથી ફરી Edit ખોલો.', 'error');
                 return;
             }
 
             document.getElementById('editDocId').value = p.docId;
+            document.getElementById('editTitle').value = p.title || '';
+
             document.getElementById('editTitle').value = p.title;
             document.getElementById('editPrice').value = p.basePrice || 0;
             document.getElementById('editDiscount').value = p.discountPercent || 0;
