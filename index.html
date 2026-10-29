@@ -3628,7 +3628,23 @@
                     document.getElementById('saveStoreBtn').textContent = 'Update Store';
                     renderOwnStoreSummary();
                 } else document.getElementById('saveStoreBtn').textContent = 'Save Store';
-            } catch (err) { console.error('Store load error:', err); showCustomAlert('Store Error', 'Store load ન થઈ શક્યું. Firebase Firestore rules તપાસો.', 'error'); }
+            } catch (err) {
+                console.error('Store load error:', err);
+                // Keep the form and map usable even when Firestore denies reading this user's store.
+                currentStoreData = null;
+                storeMapCoords = { lat: 23.0225, lng: 72.5714 };
+                document.getElementById('storeShopName').value = '';
+                document.getElementById('storeOwnerName').value = user.displayName || '';
+                document.getElementById('storeAddress').value = '';
+                document.getElementById('storeMobile').value = '';
+                document.getElementById('storeWhatsapp').value = '';
+                document.getElementById('storeSameMobile').checked = false;
+                document.getElementById('storePhotoPreview').style.display = 'none';
+                document.getElementById('saveStoreBtn').textContent = 'Save Store';
+                renderStoreCategoryChoices();
+                setTimeout(initStoreMapPicker, 250);
+                showCustomAlert('Store Read Error', 'Firebase માંથી જૂની Store માહિતી વાંચી શકાઈ નથી. Map શરૂ કરવાનો પ્રયાસ કર્યો છે. Save કરવા Firestore Rules માં signed-in user ને પોતાના stores/{uid} document માટે permission હોવી જરૂરી છે.', 'error');
+            }
         }
 
         function initStoreMapPicker() {
