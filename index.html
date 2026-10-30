@@ -2909,6 +2909,21 @@
                 if (cachedIndex >= 0) products[cachedIndex] = updatedProduct;
                 else products.push(updatedProduct);
 
+                // Keep the Recently Viewed localStorage cache in sync after editing a product.
+                // Preserve the viewing order and update only the matching product's saved fields.
+                try {
+                    const history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
+                    const historyIndex = history.findIndex(item => item.docId === docId);
+                    if (historyIndex >= 0) {
+                        history[historyIndex] = { ...history[historyIndex], ...updatedProduct };
+                        localStorage.setItem('oldx_recently_viewed', JSON.stringify(history));
+                    }
+                } catch (cacheError) {
+                    console.warn('Could not sync Recently Viewed cache:', cacheError);
+                }
+                renderRecentlyViewed();
+                renderProducts();
+
                 if (btn) { btn.innerText = originalButtonText; btn.disabled = false; }
                 closeEditAdPage();
                 showCustomAlert('Success!', 'Ad Updated Successfully!', 'success');
