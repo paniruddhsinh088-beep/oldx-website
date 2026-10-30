@@ -102,8 +102,8 @@ The create flow writes a broad payload including seller identity, category/subca
 
 ## Decisions needed before final Rules implementation
 
-- Confirm whether `isSold` can be changed by sellers after listing creation.
-- Confirm which admin user fields are actually needed in the admin table; avoid showing IP and private settings by default.
-- Confirm whether admin user listing must support pagination/search and which fields are essential.
+- CONFIRMED BY OWNER: Sellers must retain the current ability to toggle their own `isSold` status (Sold / Available). Rules must permit only the owner to change this boolean field, without permitting changes to ownership or privileged fields.
+- CONFIRMED BY OWNER: Admin Panel must continue to show all users, not a restricted subset. Preserve the current all-users management capability. Implement it through a verified-admin-only backend with pagination and least-privilege field selection; include email/IP only where required by the existing admin workflow, and never expose this dataset to ordinary users.
+- Implementation requirement: Admin user listing must support all users with pagination/search so the panel remains usable as the user base grows. Confirm the exact columns currently rendered in `admin.html` before deciding which fields the backend returns.
 - Confirm whether product verification/featured status is manual admin-only or has any paid/automated workflow.
 - Confirm final attachment/image count and maximum payload targets.
