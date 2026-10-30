@@ -107,3 +107,31 @@ The create flow writes a broad payload including seller identity, category/subca
 - Implementation requirement: Admin user listing must support all users with pagination/search so the panel remains usable as the user base grows. Confirm the exact columns currently rendered in `admin.html` before deciding which fields the backend returns.
 - Confirm whether product verification/featured status is manual admin-only or has any paid/automated workflow.
 - Confirm final attachment/image count and maximum payload targets.
+
+
+## Owner clarification: Admin-only access and fraud-evidence retention
+
+### Admin identity and visibility
+
+- OWNER REQUIREMENT: Only the administrator account/email configured by the owner may access the Admin Panel and its user records.
+- Enforce this on the trusted backend and Firestore Rules, not only by hiding the Admin button or checking a value in browser JavaScript.
+- Bind the configured, verified Firebase Auth identity to its immutable UID (and verify the expected email where appropriate). Do not authorize by an email string supplied by the browser, localStorage, or an editable profile field.
+- Admin may view the complete user directory and the user information needed for legitimate administration. Use pagination/search; protect sensitive fields such as email, IP, account identifiers, and evidence records from all non-admin users.
+- Log administrative access and sensitive actions (admin actor UID, action, target record, timestamp, reason, and outcome). Protect these audit logs from client modification/deletion.
+
+### Fraud investigation and account deletion
+
+- OWNER REQUIREMENT: Preserve a usable record of every user's relevant account and platform activity so that, if a user deletes an account after suspected fraud, OLDX can preserve evidence and respond to a valid police/law-enforcement request.
+- Account deletion must not immediately erase records subject to a documented legal hold, active fraud investigation, or other lawful retention requirement. Use a soft-delete/deactivation state first; separate public profile removal from restricted evidence retention.
+- Evidence candidates, subject to legal review and data minimisation: stable internal user UID; registration and account-change timestamps; verified contact details where collected; login/session/security events; IP address with timestamp and timezone where lawfully collected; product/listing create/edit/delete history; transaction/order/payment references if those features exist; chat/message records and attachment metadata/content where necessary; reports, moderation decisions, and admin actions.
+- Preserve original timestamps, source identifiers, and integrity metadata. Keep evidence in a separate restricted collection/storage area, encrypted and backed up, with immutable or append-only audit history and tightly limited access. Record every view/export.
+- Provide a controlled evidence-export workflow: record the request authority/reference, legal basis, scope, approving admin, exported items, export timestamp, and recipient; export only the responsive records through a secure channel. Do not provide data merely on an informal request; verify and follow applicable legal process.
+- Define retention periods by data category and applicable law. Expire/delete data when the purpose and lawful retention period end, unless a valid legal hold applies. Do not promise indefinite retention or collect/store every possible personal detail by default.
+- The account deletion flow must first check for legal hold/investigation status and preserve required evidence, then remove or anonymise non-required personal data and public content according to the approved policy. Make deletion resumable and auditable.
+- Static source review has not verified the live Firebase, Cloudinary, hosting, payment, or authentication logs. These systems must be inventoried before claiming complete evidence coverage.
+
+### Compliance note (India; legal review required)
+
+- CERT-In's 28 April 2022 Directions require entities within their scope to securely retain ICT system logs for a rolling 180 days in India; applicability and implementation details should be confirmed for OLDX's actual role and infrastructure. See the official [CERT-In Directions](https://www.cert-in.org.in/PDF/CERT-In_Directions_70B_28.04.2022.pdf).
+- India's DPDP Act and 2025 Rules include erasure/retention requirements and exceptions where retention is necessary to comply with law; the final retention schedule and police-disclosure process must be reviewed by qualified Indian counsel. See the [MeitY/PIB announcement of the DPDP Rules, 2025](https://www.pib.gov.in/PressReleasePage.aspx?PRID=2190655&lang=2&reg=48).
+- This document is an engineering plan, not a legal opinion. No production data, Firebase Rules, or deployment were changed.
