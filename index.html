@@ -941,7 +941,7 @@
 
             <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
-            <button onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow cursor-pointer shrink-0">
+            <button type="button" id="chatSendButton" onpointerdown="event.preventDefault()" onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow cursor-pointer shrink-0">
                 <i class="fa-solid fa-paper-plane"></i>
             </button>
         </div>
@@ -2495,6 +2495,16 @@
                 if (e.target && e.target.id === 'fullChatInput') setTimeout(sync, 80);
             });
             chatPage.addEventListener('focusout', () => setTimeout(sync, 80));
+
+            // Keep the software keyboard open after tapping Send. Hide it only
+            // when the user taps the conversation area outside the composer.
+            chatPage.addEventListener('pointerdown', (event) => {
+                const composer = event.target.closest('#fullChatPage > .bg-white.border-t');
+                const input = document.getElementById('fullChatInput');
+                if (!composer && input && document.activeElement === input) {
+                    input.blur();
+                }
+            }, true);
         })();
 
         const chatInputEl = document.getElementById('fullChatInput');
@@ -2747,8 +2757,18 @@
                 time: timeStr,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
+                const keepKeyboardOpen = document.activeElement === input ||
+                    (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
                 input.value = '';
                 clearChatAttachment();
+                // Re-focus after the send button interaction so mobile users can
+                // continue typing without reopening the keyboard each time.
+                if (keepKeyboardOpen) {
+                    requestAnimationFrame(() => {
+                        try { input.focus({ preventScroll: true }); }
+                        catch (_) { input.focus(); }
+                    });
+                }
             }).catch(err => {
                 console.error("Error sending message: ", err);
             });
