@@ -3314,6 +3314,9 @@
 
             updateProfileDetails(activeUser);
             renderProducts();
+            // Refresh Recently Viewed cards immediately so the heart reflects
+            // the updated saved-ads localStorage state without a page reload.
+            renderRecentlyViewed();
             
             if(currentProduct && currentProduct.docId === docId) {
                 renderProductDetailView(currentProduct);
