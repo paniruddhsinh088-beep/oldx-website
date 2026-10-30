@@ -275,3 +275,57 @@ OLDX is not considered complete until:
 - All Firestore Rules and backend tests pass in staging.
 - Existing product, saved ads, chat, online status, stores, edit, and Sold/Available behaviour pass regression tests.
 - Owner separately approves production rollout.
+
+
+---
+
+## Owner-approved decisions and implementation amendment (2026-10-31)
+
+### Confirmed owner choices
+
+- Admin access: **multiple Admin accounts may be authorised, but only accounts explicitly approved by the owner**.
+- Evidence retention: **retain evidence for the period required by applicable law and for the duration of a valid Legal Hold; release/delete when the lawful period and hold both end**, subject to any other applicable obligation.
+- Existing decisions remain: Admin must be able to find all users; seller can toggle own Sold/Available status.
+
+### Multiple-admin governance (replace single-admin-only assumptions above)
+
+1. Maintain a server-controlled allowlist of Admin UIDs. Each entry records UID, verified email, role, who approved it, approval timestamp, activation/revocation timestamp, and reason.
+2. Owner approval is mandatory before an account is added, elevated, or restored. A user cannot self-enrol by changing their email, profile, Firestore document, localStorage, or client code.
+3. Use Firebase custom claims or equivalent trusted role records set only by a private Admin SDK/operator process. The backend checks token validity, UID, active allowlist entry, role, and (where appropriate) verified email on every privileged request.
+4. Define roles with least privilege:
+   - `Owner Admin`: approve/revoke Admins, configure security, approve sensitive evidence exports and retention exceptions.
+   - `Operations Admin`: manage listings/users and ordinary moderation; no role management and no unrestricted evidence export by default.
+   - `Evidence Reviewer`: access only assigned cases and prepare evidence packages; cannot approve own export.
+   - `Read-only Admin`: view operational dashboard fields only.
+   These are proposed roles; owner must approve actual role assignments before activation.
+5. Require MFA for all Admins. Require recent reauthentication for role changes, bulk exports, legal holds/releases, account deletion overrides, and sensitive record reveal.
+6. Use two-person approval for Admin provisioning/revocation, legal holds, and police/law-enforcement exports wherever staffing permits. The requester must not approve their own action. If only one eligible operator exists, pause high-risk export until a second approver/legal counsel is available; document emergency exceptions.
+7. Log every Admin login/access to sensitive user records, search/export, role change, moderation action, hold change, and disclosure. Alert owner on new Admin creation, privilege escalation, unusual bulk reads, and repeated failed access.
+8. Revocation must invalidate/reject subsequent privileged requests promptly, revoke claims/tokens as supported, and preserve the audit trail. Maintain an offline break-glass recovery process; no shared accounts.
+
+### Evidence retention policy decision
+
+- Do not implement a blanket “keep everything forever” policy.
+- Create a counsel-approved retention matrix per data category, purpose, legal basis, start event, standard retention period, legal-hold rule, backup expiry, and disposal method.
+- Evidence linked to a valid case/hold remains restricted and preserved only for the documented scope and period. Record periodic review dates and the person approving release.
+- On hold release, resume the ordinary retention clock or securely delete/anonymise if its lawful purpose/period has ended. Keep a minimal deletion/hold audit record where legally permitted/required.
+- Police disclosure requires verification of authority and legal process, scoped data minimisation, approval, secure delivery, manifest/hash, recipient acknowledgement, and chain-of-custody record.
+- A lawful preservation request may require preserving relevant records before any account deletion cleanup. Obtain counsel guidance on the precise scope and whether/when notice to the user is permitted.
+
+### India legal commencement caution (verified against official sources on 2026-10-31)
+
+- DPDP Act provisions and DPDP Rules 2025 are phased. The official commencement notification schedules some provisions from 13 November 2025, Rule 4 / specified provisions after one year, and the main substantive provisions after eighteen months (13 May 2027). Do not state that every DPDP duty is already fully operative on 31 October 2026; map each provision to its effective date and check later amendments/corrigenda before launch. Official MeitY materials: https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa and https://www.meity.gov.in/writereaddata/files/Explanatory-Note-DPDP-Rules-2025.pdf. The PIB summary describes the phased implementation: https://www.pib.gov.in/PressReleasePage.aspx?PRID=2190014&lang=1&reg=3.
+- CERT-In Directions and the 180-day log-retention requirement must be assessed against OLDX's actual legal classification, covered systems, and current directions; do not assume all user content must be retained for 180 days. Official source: https://www.cert-in.org.in/Directions70B.jsp.
+- Indian counsel must confirm applicable provisions, commencement dates, preservation/disclosure authority, retention periods, user notice, and any sector-specific rules before production implementation.
+
+### Immediate implementation order following owner approval
+
+1. **Discovery:** map existing Admin emails/UIDs and identify exact current Admin Panel actions/columns; inspect Firebase project, Auth providers, backend/runtime, Rules, and all data stores. Do not activate any additional Admin until the owner names/approves the accounts.
+2. **Admin foundation:** implement owner-controlled UID allowlist, role claims, MFA, backend middleware, paginated all-user API, audit events, and revocation. Test direct API/Firestore bypass attempts in staging.
+3. **Data split:** migrate public/private user fields with dual-read/write, reconciliation, rollback, then tighten Rules.
+4. **Evidence service:** create event taxonomy, case/hold workflow, restricted encrypted store, retention scheduler, export approvals, evidence manifest, and access logs.
+5. **Deletion workflow:** reauthentication first; case/hold check; preserve scoped evidence; remove public/non-required data; resumable cleanup; notify user.
+6. **Rules/chat/product hardening:** enforce participant/owner/admin field-level operation constraints while preserving seller Sold/Available toggle.
+7. **Staging and release gate:** emulator tests, regression tests, restore test, mock deletion/hold/disclosure exercise, independent security/legal review. Production deployment requires separate explicit owner approval.
+
+**No Admin account has been added, no Firebase claim or Rules has been changed, no retention automation has been enabled, and no production deployment has occurred as part of this amendment.**
