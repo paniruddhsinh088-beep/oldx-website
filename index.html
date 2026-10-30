@@ -2816,26 +2816,34 @@
                 return;
             }
 
+            // Keep the loaded product available even when it was not in the in-memory list.
+            window.currentEditingProduct = p;
             document.getElementById('editDocId').value = p.docId;
             document.getElementById('editTitle').value = p.title || '';
-
-            document.getElementById('editTitle').value = p.title;
-            document.getElementById('editPrice').value = p.basePrice || 0;
-            document.getElementById('editDiscount').value = p.discountPercent || 0;
+            document.getElementById('editPrice').value = p.basePrice ?? 0;
+            document.getElementById('editDiscount').value = p.discountPercent ?? 0;
             document.getElementById('editPhone').value = p.phone || '';
             document.getElementById('editLocation').value = p.location || '';
             document.getElementById('editDesc').value = p.desc || '';
 
             const imgPreview = document.getElementById('editImagesPreview');
-            imgPreview.innerHTML = '';
-            if(p.images && p.images.length > 0) {
-                p.images.forEach(img => {
-                    imgPreview.innerHTML += `<img src="${img}" class="w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0">`;
+            if (imgPreview) {
+                imgPreview.replaceChildren();
+                const images = Array.isArray(p.images) ? p.images : [];
+                images.forEach(src => {
+                    if (typeof src !== 'string' || !/^(https?:\/\/|data:image\/)/i.test(src)) return;
+                    const img = document.createElement('img');
+                    img.src = src;
+                    img.alt = 'Current product image';
+                    img.loading = 'lazy';
+                    img.className = 'w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0';
+                    imgPreview.appendChild(img);
                 });
             }
         }
 
         function closeEditAdPage() {
+            window.currentEditingProduct = null;
             window.location.hash = '';
             setTimeout(() => openMyAdsModal(), 100);
         }
@@ -2843,42 +2851,72 @@
         async function handleEditAdSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('editSubmitBtn');
-            btn.innerText = 'Updating...'; btn.disabled = true;
+            const originalButtonText = btn ? btn.innerText : 'Save Changes';
+            if (btn) { btn.innerText = 'Updating...'; btn.disabled = true; }
 
             try {
                 const docId = document.getElementById('editDocId').value;
-                const title = document.getElementById('editTitle').value;
-                const basePrice = parseFloat(document.getElementById('editPrice').value);
-                const discountPercent = parseFloat(document.getElementById('editDiscount').value) || 0;
-                const phone = document.getElementById('editPhone').value;
-                const location = document.getElementById('editLocation').value;
-                const desc = document.getElementById('editDesc').value;
+                const title = document.getElementById('editTitle').value.trim();
+                const basePrice = Number(document.getElementById('editPrice').value);
+                const discountRaw = document.getElementById('editDiscount').value;
+                const discountPercent = discountRaw.trim() === '' ? 0 : Number(discountRaw);
+                const phone = document.getElementById('editPhone').value.trim();
+                const location = document.getElementById('editLocation').value.trim();
+                const desc = document.getElementById('editDesc').value.trim();
                 const newImgInput = document.getElementById('editNewImages');
 
-                const p = products.find(item => item.docId === docId);
-                let updatedImages = p ? p.images : [];
+                if (!docId) throw new Error('Product ID missing.');
+                if (!title) {
+                    showCustomAlert('Check Details', 'Product title khali na rakho.', 'error');
+                    return;
+                }
+                if (!Number.isFinite(basePrice) || basePrice <= 0) {
+                    showCustomAlert('Check Price', 'Valid price lakho.', 'error');
+                    return;
+                }
+                if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+                    showCustomAlert('Check Discount', 'Discount 0 thi 100 vachche lakho.', 'error');
+                    return;
+                }
 
+                // Fetch the latest record when the product isn't present in the in-memory array.
+                let p = products.find(item => item.docId === docId) || window.currentEditingProduct;
+                if (!p || !Array.isArray(p.images)) {
+                    const snap = await db.collection('products').doc(docId).get();
+                    if (!snap.exists) throw new Error('Product not found.');
+                    p = { docId: snap.id, ...snap.data() };
+                }
+
+                // Keep existing images unless the user explicitly selects replacement images.
+                let updatedImages = Array.isArray(p.images) ? [...p.images] : [];
                 if (newImgInput.files && newImgInput.files.length > 0) {
-                    updatedImages = [];
+                    const replacementImages = [];
                     for (let i = 0; i < newImgInput.files.length; i++) {
                         const compressed = await compressImage(newImgInput.files[i]);
-                        updatedImages.push(compressed);
+                        replacementImages.push(compressed);
                     }
+                    updatedImages = replacementImages;
                 }
 
                 const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
-
                 await db.collection('products').doc(docId).update({
                     title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
                     images: updatedImages
                 });
 
-                btn.innerText = 'Save Changes'; btn.disabled = false;
+                const cachedIndex = products.findIndex(item => item.docId === docId);
+                const updatedProduct = { ...p, title, basePrice, discountPercent, finalPriceStr, phone, location, desc, images: updatedImages };
+                if (cachedIndex >= 0) products[cachedIndex] = updatedProduct;
+                else products.push(updatedProduct);
+
+                if (btn) { btn.innerText = originalButtonText; btn.disabled = false; }
                 closeEditAdPage();
-                showCustomAlert("Success!", "Ad Updated Successfully!", "success");
+                showCustomAlert('Success!', 'Ad Updated Successfully!', 'success');
             } catch (err) {
-                btn.innerText = 'Save Changes'; btn.disabled = false;
-                showCustomAlert("Error", "Error updating ad. Please try again.", "error");
+                console.error('Error updating ad:', err);
+                showCustomAlert('Error', 'Ad update thai shakyo nathi. Internet/permissions check kari fari try karo.', 'error');
+            } finally {
+                if (btn) { btn.innerText = originalButtonText; btn.disabled = false; }
             }
         }
 
