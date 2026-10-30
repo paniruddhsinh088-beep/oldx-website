@@ -287,25 +287,31 @@
     </div>
 
     <!-- INBOX MODAL -->
-    <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md rounded-3xl p-5 relative max-h-[85vh] flex flex-col shadow-2xl animate-scale-up border border-gray-100 dark:border-gray-700">
-            <button onclick="closeInboxModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
-                <i class="fa-solid fa-xmark text-sm"></i>
-            </button>
-            
-            <div class="flex items-center gap-2.5 mb-3">
-                <div class="w-10 h-10 rounded-2xl bg-teal-50 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 flex items-center justify-center text-lg font-black shadow-inner">
-                    <i class="fa-solid fa-comments"></i>
-                </div>
-                <div>
-                    <h3 class="text-base font-black text-gray-900 dark:text-white">Messages</h3>
-                    <p class="text-[11px] text-gray-400 font-medium">Your recent buyer & seller chats</p>
+    <div id="inboxModal" style="display: none;" class="fixed inset-0 bg-gray-50 dark:bg-gray-900 z-[60] flex items-center justify-center">
+        <div class="bg-gray-50 dark:bg-gray-900 w-full h-full relative flex flex-col overflow-hidden">
+            <div class="bg-white dark:bg-gray-800 px-4 pt-5 pb-4 shadow-sm border-b border-gray-100 dark:border-gray-700 shrink-0">
+                <div class="flex items-center justify-between gap-3 max-w-3xl mx-auto">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-600 text-white flex items-center justify-center text-xl shadow-lg shadow-teal-500/20">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-black text-gray-900 dark:text-white">Messages</h3>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">Your conversations</p>
+                        </div>
+                    </div>
+                    <button onclick="closeInboxModal()" aria-label="Close messages" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-200 hover:bg-teal-50 hover:text-teal-700 transition cursor-pointer">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
                 </div>
             </div>
-
-            <div class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-            
-            <div id="inboxConversationsList" class="flex-1 overflow-y-auto space-y-2.5 pr-1 pt-2"></div>
+            <div class="w-full max-w-3xl mx-auto flex-1 min-h-0 flex flex-col px-3 sm:px-5">
+                <div class="flex items-center justify-between py-4 shrink-0">
+                    <h4 class="text-sm font-extrabold text-gray-800 dark:text-gray-100">All chats</h4>
+                    <span class="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-full">Unread first</span>
+                </div>
+                <div id="inboxConversationsList" class="flex-1 min-h-0 overflow-y-auto space-y-3 pb-5"></div>
+            </div>
         </div>
     </div>
 
@@ -2249,6 +2255,7 @@
                 return;
             }
 
+            const currentUid = window.currentUser.uid;
             const container = document.getElementById('inboxConversationsList');
             container.innerHTML = `
                 <div class="text-center py-10">
@@ -2259,14 +2266,9 @@
             document.getElementById('inboxModal').style.display = 'flex';
 
             db.collection('chats')
-              .where('participants', 'array-contains', window.currentUser.uid)
-              .get().then(snapshot => {
-                  container.innerHTML = '';
-                  let myChats = [];
-
-                  snapshot.forEach(doc => {
-                      myChats.push({ chatRoomId: doc.id, ...doc.data() });
-                  });
+              .where('participants', 'array-contains', currentUid)
+              .get().then(async snapshot => {
+                  const myChats = snapshot.docs.map(doc => ({ chatRoomId: doc.id, ...doc.data() }));
 
                   if(myChats.length === 0) {
                       container.innerHTML = `
@@ -2281,58 +2283,85 @@
                       return;
                   }
 
-                  myChats.forEach(chat => {
-                      db.collection('chats').doc(chat.chatRoomId).collection('messages')
-                        .orderBy('createdAt', 'desc').limit(1).get().then(msgSnapshot => {
-                            let lastMsgText = "Tap to view conversation";
-                            let lastTime = "";
-                            
-                            if (!msgSnapshot.empty) {
-                                const lastMsgData = msgSnapshot.docs[0].data();
-                                const isMe = lastMsgData.senderUid === window.currentUser.uid;
-                                lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
-                                lastTime = lastMsgData.time || "";
-                            }
+                  try {
+                      // Load each conversation's messages so unread chats can be sorted first.
+                      const conversations = await Promise.all(myChats.map(async chat => {
+                          const messagesSnapshot = await db.collection('chats').doc(chat.chatRoomId)
+                              .collection('messages').orderBy('createdAt', 'desc').get();
+                          const docs = messagesSnapshot.docs;
+                          const latestDoc = docs[0];
+                          const latest = latestDoc ? latestDoc.data() : null;
+                          const unreadCount = docs.filter(doc => {
+                              const data = doc.data();
+                              return data.senderUid !== currentUid && data.status !== 'read';
+                          }).length;
+                          const createdAt = latest && latest.createdAt && latest.createdAt.toMillis
+                              ? latest.createdAt.toMillis() : 0;
+                          return { chat, latest, unreadCount, createdAt };
+                      }));
 
-                            const div = document.createElement('div');
-                            div.className = "flex items-center justify-between bg-white dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700 p-3 rounded-2xl gap-3 cursor-pointer hover:border-teal-500 dark:hover:border-teal-500 hover:shadow-md transition group";
-                            div.onclick = () => {
-                                closeInboxModal();
-                                activeChatRoomId = chat.chatRoomId;
-                                
-                                const otherUid = chat.participants.find(id => id !== window.currentUser.uid);
-                                const otherUserId = otherUid || chat.productId;
+                      // Unread conversations first; within each group, newest activity first.
+                      conversations.sort((a, b) => (b.unreadCount > 0) - (a.unreadCount > 0) || b.createdAt - a.createdAt);
+                      container.innerHTML = '';
 
-                                document.getElementById('chatSellerName').innerText = "Conversation";
-                                document.getElementById('fullChatPage').style.display = 'flex';
-                                history.pushState({page: 'chat'}, "", "#chat");
-                                loadChatMessages(chat.chatRoomId);
-                                trackUserStatus(otherUserId);
-                                watchTypingStatus(chat.chatRoomId, otherUserId);
-                            };
+                      conversations.forEach(item => {
+                          const chat = item.chat;
+                          const lastMsgData = item.latest;
+                          let lastMsgText = "Tap to view conversation";
+                          let lastTime = "";
+                          if (lastMsgData) {
+                              const isMe = lastMsgData.senderUid === currentUid;
+                              lastMsgText = (isMe ? "You: " : "") + (lastMsgData.text || (lastMsgData.attachment ? "Attachment sent" : "1 message"));
+                              lastTime = lastMsgData.time || "";
+                          }
 
-                            div.innerHTML = `
-                                <div class="flex items-center gap-3 overflow-hidden">
-                                    <div class="w-11 h-11 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
-                                        <i class="fa-solid fa-user-shield"></i>
-                                    </div>
-                                    <div class="overflow-hidden">
-                                        <div class="flex items-center gap-2">
-                                            <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
-                                            <span class="text-[9px] text-gray-400">${lastTime}</span>
-                                        </div>
-                                        <p class="text-[11px] text-gray-500 dark:text-gray-400 truncate mt-0.5 font-medium">${lastMsgText}</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-center gap-2 shrink-0">
-                                    <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
-                                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                                    </div>
-                                </div>
-                            `;
-                            container.appendChild(div);
-                        });
-                  });
+                          const div = document.createElement('div');
+                          div.className = "flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 rounded-2xl gap-3 cursor-pointer hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-lg transition group shadow-sm min-h-[82px]";
+                          div.onclick = () => {
+                              closeInboxModal();
+                              activeChatRoomId = chat.chatRoomId;
+                              const otherUid = (chat.participants || []).find(id => id !== currentUid && id !== 'guest');
+                              const otherUserId = otherUid || chat.productId;
+                              document.getElementById('chatSellerName').innerText = "Conversation";
+                              document.getElementById('fullChatPage').style.display = 'flex';
+                              history.pushState({page: 'chat'}, "", "#chat");
+                              loadChatMessages(chat.chatRoomId);
+                              trackUserStatus(otherUserId);
+                              watchTypingStatus(chat.chatRoomId, otherUserId);
+                          };
+
+                          const unreadBadge = item.unreadCount > 0
+                              ? `<span class="ml-1 inline-flex items-center justify-center min-w-[19px] h-[19px] px-1 rounded-full bg-teal-600 text-white text-[10px] font-bold">${item.unreadCount}</span>`
+                              : '';
+                          div.innerHTML = `
+                              <div class="flex items-center gap-3 overflow-hidden">
+                                  <div class="w-12 h-12 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
+                                      <i class="fa-solid fa-user-shield"></i>
+                                  </div>
+                                  <div class="overflow-hidden">
+                                      <div class="flex items-center gap-2">
+                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
+                                          <span class="text-[9px] text-gray-400">${lastTime}</span>
+                                          ${unreadBadge}
+                                      </div>
+                                      <p class="text-[11px] ${item.unreadCount > 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-500 dark:text-gray-400'} truncate mt-0.5">${lastMsgText}</p>
+                                  </div>
+                              </div>
+                              <div class="flex items-center gap-2 shrink-0">
+                                  <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
+                                      <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                  </div>
+                              </div>
+                          `;
+                          container.appendChild(div);
+                      });
+                  } catch (err) {
+                      console.error("Inbox loading error:", err);
+                      container.innerHTML = '<p class="text-center text-xs text-red-500 py-8">Could not load conversations. Please try again.</p>';
+                  }
+              }).catch(err => {
+                  console.error("Inbox loading error:", err);
+                  container.innerHTML = '<p class="text-center text-xs text-red-500 py-8">Could not load conversations. Please try again.</p>';
               });
         }
 
@@ -2391,6 +2420,8 @@
             activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
                 if(doc.exists) {
                     const data = doc.data();
+                    const profileName = data.displayName || data.name || data.fullName || data.username;
+                    if (profileName) document.getElementById('chatSellerName').innerText = profileName;
                     const statusEl = document.getElementById('chatUserStatus');
                     const dotEl = document.getElementById('chatOnlineDot');
                     if(data.isOnline) {
@@ -2439,7 +2470,8 @@
                 if (doc.exists) {
                     const data = doc.data();
                     if (data && data[`typing_${otherUserId}`] === true) {
-                        statusEl.innerText = "typing...";
+                        const typingName = (document.getElementById('chatSellerName').innerText || 'User').trim();
+                        statusEl.innerText = `${typingName} is typing...`;
                         statusEl.className = "text-[11px] text-teal-600 dark:text-teal-400 font-bold animate-pulse";
                     } else {
                         trackUserStatus(otherUserId);
@@ -2565,12 +2597,10 @@
             }
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            let sellerId = currentProduct ? currentProduct.sellerUid : (activeChatRoomId.split('_')[1] || '');
-
+            // Do not rebuild participants from the chat ID here: its second part is
+            // the chat starter UID, not necessarily the seller. Preserve the verified list.
             db.collection('chats').doc(activeChatRoomId).set({
-                lastUpdated: firebase.firestore.FieldValue.serverTimestamp(),
-                participants: [window.currentUser.uid, sellerId],
-                productId: activeChatRoomId.split('_')[0]
+                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
             db.collection('chats').doc(activeChatRoomId).collection('messages').add({
