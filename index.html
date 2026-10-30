@@ -2555,7 +2555,7 @@
 
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
-            
+
             setTimeout(() => {
                 db.collection('chats').doc(chatRoomId).collection('messages')
                   .where('senderUid', '!=', window.currentUser.uid)
@@ -2563,7 +2563,7 @@
                       snapshot.forEach(doc => {
                           doc.ref.update({ status: 'read' });
                       });
-                  });
+                  }).catch(err => console.warn('Read receipt update failed:', err));
             }, 300);
 
             if (activeChatUnsubscribe) activeChatUnsubscribe();
@@ -2571,61 +2571,94 @@
             activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
               .orderBy('createdAt', 'asc').limit(35)
               .onSnapshot(snapshot => {
-                  container.innerHTML = '';
-                  if(snapshot.empty) {
-                      container.innerHTML = `<p class="text-center text-xs text-gray-400 py-4">No messages yet. Say hello!</p>`;
+                  container.replaceChildren();
+                  if (snapshot.empty) {
+                      const empty = document.createElement('p');
+                      empty.className = 'text-center text-xs text-gray-400 py-4';
+                      empty.textContent = 'No messages yet. Say hello!';
+                      container.appendChild(empty);
                       return;
                   }
                   snapshot.forEach(doc => {
-                      const msg = doc.data();
+                      const msg = doc.data() || {};
                       const isMe = msg.senderUid === window.currentUser.uid;
                       if (Array.isArray(msg.hiddenFor) && msg.hiddenFor.includes(window.currentUser.uid)) return;
-                      const isDeletedForEveryone = msg.deletedForEveryone === true;
-                      
-                      let attachmentHTML = '';
-                      if (msg.attachment && !isDeletedForEveryone) {
-                          if (msg.attachment.type.startsWith('image/')) {
-                              attachmentHTML = `<img src="${msg.attachment.data}" class="rounded-lg max-h-48 object-cover mb-1 border">`;
+                      const deleted = msg.deletedForEveryone === true;
+                      const card = document.createElement('div');
+                      card.className = 'p-2.5 px-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative ' +
+                        (isMe
+                          ? 'bg-[#d9fdd3] text-gray-900 dark:bg-[#005c4b] dark:text-white ml-auto rounded-tr-none'
+                          : 'bg-white text-gray-900 dark:bg-[#202c33] dark:text-white mr-auto rounded-tl-none border border-gray-100 dark:border-none');
+
+                      const attachment = msg.attachment;
+                      if (attachment && !deleted) {
+                          const mime = typeof attachment.type === 'string' ? attachment.type.toLowerCase() : '';
+                          const data = typeof attachment.data === 'string' ? attachment.data : '';
+                          if (/^image\/(png|jpeg|gif|webp)$/.test(mime) &&
+                              /^data:image\/(png|jpeg|gif|webp);base64,[a-z0-9+/=]+$/i.test(data)) {
+                              const img = document.createElement('img');
+                              img.src = data;
+                              img.alt = 'Chat attachment';
+                              img.className = 'rounded-lg max-h-48 object-cover mb-1 border';
+                              img.loading = 'lazy';
+                              card.appendChild(img);
                           } else {
-                              attachmentHTML = `<div class="p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1"><i class="fa-solid fa-file text-teal-600"></i> <span class="font-bold truncate max-w-[150px]">${msg.attachment.name}</span></div>`;
+                              const file = document.createElement('div');
+                              file.className = 'p-2 bg-teal-100 dark:bg-gray-700 rounded-lg flex items-center gap-2 mb-1';
+                              const icon = document.createElement('i');
+                              icon.className = 'fa-solid fa-file text-teal-600';
+                              const name = document.createElement('span');
+                              name.className = 'font-bold truncate max-w-[150px]';
+                              name.textContent = typeof attachment.name === 'string' ? attachment.name : 'Attachment';
+                              file.append(icon, name);
+                              card.appendChild(file);
                           }
                       }
 
-                      const tickIcon = isMe 
-                          ? (msg.status === 'read' ? '<i class="fa-solid fa-check-double text-[10px] text-blue-400"></i>' : '<i class="fa-solid fa-check text-[10px] text-gray-300"></i>')
-                          : '';
+                      if (deleted) {
+                          const deletedText = document.createElement('p');
+                          deletedText.className = 'italic text-gray-400';
+                          deletedText.textContent = 'This message was deleted';
+                          card.appendChild(deletedText);
+                      } else if (msg.text) {
+                          const text = document.createElement('p');
+                          text.className = 'font-medium';
+                          text.textContent = String(msg.text);
+                          card.appendChild(text);
+                      }
 
-                      const msgCard = document.createElement('div');
-                      msgCard.className = `p-2.5 px-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative ${
-                          isMe 
-                              ? 'bg-[#d9fdd3] text-gray-900 dark:bg-[#005c4b] dark:text-white ml-auto rounded-tr-none' 
-                              : 'bg-white text-gray-900 dark:bg-[#202c33] dark:text-white mr-auto rounded-tl-none border border-gray-100 dark:border-none'
-                      }`;
-                      msgCard.innerHTML = `
-                          ${attachmentHTML}
-                          ${isDeletedForEveryone ? `<p class="italic text-gray-400">This message was deleted</p>` : (msg.text ? `<p class="font-medium"></p>` : '')}
-                          <div class="flex justify-end items-center gap-1 mt-1">
-                              <span class="text-[9px] ${isMe ? 'text-gray-500 dark:text-teal-200' : 'text-gray-400'}">${msg.time || ''}</span>
-                              ${tickIcon}
-                          </div>
-                      `;
-                      const textNode = msgCard.querySelector('p.font-medium');
-                      if (textNode && !isDeletedForEveryone) textNode.textContent = msg.text || '';
-                      if (!isDeletedForEveryone) {
+                      const footer = document.createElement('div');
+                      footer.className = 'flex justify-end items-center gap-1 mt-1';
+                      const time = document.createElement('span');
+                      time.className = 'text-[9px] ' + (isMe ? 'text-gray-500 dark:text-teal-200' : 'text-gray-400');
+                      time.textContent = typeof msg.time === 'string' ? msg.time : '';
+                      footer.appendChild(time);
+                      if (isMe) {
+                          const tick = document.createElement('i');
+                          tick.className = msg.status === 'read'
+                            ? 'fa-solid fa-check-double text-[10px] text-blue-400'
+                            : 'fa-solid fa-check text-[10px] text-gray-300';
+                          footer.appendChild(tick);
+                      }
+                      card.appendChild(footer);
+
+                      if (!deleted) {
                           const action = document.createElement('button');
                           action.type = 'button';
                           action.className = 'text-[10px] opacity-60 hover:opacity-100 ml-2';
                           action.textContent = '⋯';
                           action.title = 'Message options';
-                          action.onclick = (ev) => { ev.stopPropagation(); openMessageActions(doc.id, msg.senderUid); };
-                          msgCard.appendChild(action);
+                          action.addEventListener('click', ev => {
+                              ev.stopPropagation();
+                              openMessageActions(doc.id, msg.senderUid);
+                          });
+                          card.appendChild(action);
                       }
-                      container.appendChild(msgCard);
+                      container.appendChild(card);
                   });
                   container.scrollTop = container.scrollHeight;
-              });
+              }, error => console.error('Chat message listener failed:', error));
         }
-
         function openMessageActions(messageId, senderUid) {
             const choice = prompt("Message options:\n1 = Delete for me\n2 = Delete for everyone (only your own message)");
             if (choice === '1') {
@@ -2675,22 +2708,36 @@
         }
 
         function handleChatFileUpload(e) {
-            const file = e.target.files[0];
+            const file = e.target.files && e.target.files[0];
             if (!file) return;
-
+            const allowedTypes = [
+                'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+                'video/mp4', 'application/pdf', 'application/msword',
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            ];
+            if (!allowedTypes.includes(file.type)) {
+                showCustomAlert('Unsupported file', 'Please choose a JPG, PNG, GIF, WebP, MP4, PDF or Word document.', 'error');
+                e.target.value = '';
+                return;
+            }
             const reader = new FileReader();
             reader.onload = function(evt) {
-                currentChatAttachment = {
-                    name: file.name,
-                    type: file.type,
-                    data: evt.target.result
-                };
-                document.getElementById('chatAttachmentName').innerText = `Attached: ${file.name}`;
+                const result = evt.target && typeof evt.target.result === 'string' ? evt.target.result : '';
+                if (!result.startsWith('data:')) {
+                    showCustomAlert('Upload error', 'Could not read this attachment. Please try again.', 'error');
+                    return;
+                }
+                currentChatAttachment = { name: file.name, type: file.type, data: result };
+                document.getElementById('chatAttachmentName').textContent = 'Attached: ' + file.name;
                 document.getElementById('chatAttachmentPreview').style.display = 'flex';
+            };
+            reader.onerror = function() {
+                showCustomAlert('Upload error', 'Could not read this attachment. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
         }
 
+        
         function clearChatAttachment() {
             currentChatAttachment = null;
             document.getElementById('chatFileInput').value = '';
