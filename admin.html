@@ -203,13 +203,19 @@
 
         let allAdsCache = [];
         let allUsersCache = [];
+        const AUTHORIZED_ADMIN_UID = 'ghuDBBk8jdOfM2no7lyQobQN7WI2';
 
         auth.onAuthStateChanged(user => {
             if (!user) {
                 window.location.href = 'index.html';
-            } else {
-                fetchAllAdminData();
+                return;
             }
+            if (user.uid !== AUTHORIZED_ADMIN_UID) {
+                alert('Access denied: this account is not authorized for the OLDX admin dashboard.');
+                auth.signOut().finally(() => { window.location.href = 'index.html'; });
+                return;
+            }
+            fetchAllAdminData();
         });
 
         function adminLogout() {
@@ -274,33 +280,50 @@
             }
         }
 
+        function addTextCell(row, value, className) {
+            const cell = document.createElement('td');
+            cell.className = className || 'p-3';
+            cell.textContent = value == null || value === '' ? 'N/A' : String(value);
+            row.appendChild(cell);
+            return cell;
+        }
+
         function renderAdsTable(ads) {
             const tbody = document.getElementById('adminAdsTableBody');
-            tbody.innerHTML = '';
-            if (ads.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400">No ads found.</td></tr>`;
+            tbody.replaceChildren();
+            if (!ads.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 6;
+                cell.className = 'text-center py-6 text-gray-400';
+                cell.textContent = 'No ads found.';
+                row.appendChild(cell);
+                tbody.appendChild(row);
                 return;
             }
-
             ads.forEach(ad => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 transition";
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-gray-900 truncate max-w-[180px]">${ad.title || 'Untitled'}</td>
-                    <td class="p-3"><span class="bg-teal-50 text-teal-800 px-2.5 py-0.5 rounded-full capitalize text-[10px]">${ad.category || 'N/A'}</span></td>
-                    <td class="p-3 font-extrabold text-primary">${ad.finalPriceStr || '₹0'}</td>
-                    <td class="p-3 text-gray-500">${ad.location || 'N/A'}</td>
-                    <td class="p-3 text-gray-400 font-mono text-[10px]">${ad.sellerUid || 'N/A'}</td>
-                    <td class="p-3 text-right">
-                        <button onclick="deleteAdminAd('${ad.docId}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded-lg font-bold transition cursor-pointer">
-                            <i class="fa-solid fa-trash-can"></i> Delete
-                        </button>
-                    </td>
-                `;
+                tr.className = 'border-b hover:bg-gray-50 transition';
+                addTextCell(tr, ad.title || 'Untitled', 'p-3 font-bold text-gray-900 truncate max-w-[180px]');
+                const category = addTextCell(tr, ad.category || 'N/A', 'p-3');
+                const pill = document.createElement('span');
+                pill.className = 'bg-teal-50 text-teal-800 px-2.5 py-0.5 rounded-full capitalize text-[10px]';
+                pill.textContent = ad.category || 'N/A';
+                category.replaceChildren(pill);
+                addTextCell(tr, ad.finalPriceStr || '₹0', 'p-3 font-extrabold text-primary');
+                addTextCell(tr, ad.location || 'N/A', 'p-3 text-gray-500');
+                addTextCell(tr, ad.sellerUid || 'N/A', 'p-3 text-gray-400 font-mono text-[10px]');
+                const actions = document.createElement('td');
+                actions.className = 'p-3 text-right';
+                const button = document.createElement('button');
+                button.className = 'bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded-lg font-bold transition cursor-pointer';
+                button.innerHTML = '<i class="fa-solid fa-trash-can"></i> Delete';
+                button.addEventListener('click', () => deleteAdminAd(ad.docId));
+                actions.appendChild(button);
+                tr.appendChild(actions);
                 tbody.appendChild(tr);
             });
         }
-
         function filterAdminAds() {
             const q = document.getElementById('adminSearchAds').value.toLowerCase();
             const filtered = allAdsCache.filter(a => (a.title && a.title.toLowerCase().includes(q)) || (a.location && a.location.toLowerCase().includes(q)));
@@ -324,30 +347,35 @@
 
         function renderUsersTable(users) {
             const tbody = document.getElementById('adminUsersTableBody');
-            tbody.innerHTML = '';
-            if (users.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-400">No users found.</td></tr>`;
+            tbody.replaceChildren();
+            if (!users.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.className = 'text-center py-6 text-gray-400';
+                cell.textContent = 'No users found.';
+                row.appendChild(cell);
+                tbody.appendChild(row);
                 return;
             }
-
             users.forEach(u => {
                 const tr = document.createElement('tr');
-                tr.className = "border-b hover:bg-gray-50 transition";
-                tr.innerHTML = `
-                    <td class="p-3 font-bold text-gray-900">${u.displayName || 'Anonymous User'}</td>
-                    <td class="p-3 text-gray-600">${u.email || 'N/A'}</td>
-                    <td class="p-3 text-gray-500 font-mono">${u.lastIp || 'N/A'}</td>
-                    <td class="p-3 text-gray-400 font-mono text-[10px]">${u.uid}</td>
-                    <td class="p-3 text-right">
-                        <button onclick='openForensicModal(${JSON.stringify(u)})' class="bg-teal-50 text-teal-700 hover:bg-teal-100 px-3 py-1 rounded-lg font-bold transition cursor-pointer">
-                            <i class="fa-solid fa-file-shield"></i> View Audit File
-                        </button>
-                    </td>
-                `;
+                tr.className = 'border-b hover:bg-gray-50 transition';
+                addTextCell(tr, u.displayName || 'Anonymous User', 'p-3 font-bold text-gray-900');
+                addTextCell(tr, u.email || 'N/A', 'p-3 text-gray-600');
+                addTextCell(tr, u.lastIp || 'N/A', 'p-3 text-gray-500 font-mono');
+                addTextCell(tr, u.uid || 'N/A', 'p-3 text-gray-400 font-mono text-[10px]');
+                const actions = document.createElement('td');
+                actions.className = 'p-3 text-right';
+                const button = document.createElement('button');
+                button.className = 'bg-teal-50 text-teal-700 hover:bg-teal-100 px-3 py-1 rounded-lg font-bold transition cursor-pointer';
+                button.innerHTML = '<i class="fa-solid fa-file-shield"></i> View Audit File';
+                button.addEventListener('click', () => openForensicModal(u));
+                actions.appendChild(button);
+                tr.appendChild(actions);
                 tbody.appendChild(tr);
             });
         }
-
         function filterAdminUsers() {
             const q = document.getElementById('adminSearchUsers').value.toLowerCase();
             const filtered = allUsersCache.filter(u => (u.displayName && u.displayName.toLowerCase().includes(q)) || (u.email && u.email.toLowerCase().includes(q)));
@@ -357,33 +385,58 @@
         function openForensicModal(userData) {
             const container = document.getElementById('forensicContentContainer');
             const userAds = allAdsCache.filter(a => a.sellerUid === userData.uid);
+            container.replaceChildren();
 
-            container.innerHTML = `
-                <div class="bg-gray-50 p-3.5 rounded-2xl border space-y-1.5">
-                    <h4 class="font-bold text-gray-900 border-b pb-1">1. USER IDENTITY & AUTHENTICATION</h4>
-                    <p><strong>Name:</strong> ${userData.displayName || 'Anonymous User'}</p>
-                    <p><strong>Registered Email:</strong> ${userData.email || 'N/A'}</p>
-                    <p><strong>Google / Auth UID:</strong> <span class="font-mono text-[10px]">${userData.uid}</span></p>
-                </div>
-
-                <div class="bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 space-y-1.5">
-                    <h4 class="font-bold text-blue-900 border-b pb-1">2. CONNECTION LOGS & NETWORK INFO</h4>
-                    <p><strong>IP Address:</strong> ${userData.lastIp || 'N/A'}</p>
-                    <p><strong>Last Activity Timestamp:</strong> ${new Date().toLocaleString()}</p>
-                </div>
-
-                <div class="bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 space-y-1.5">
-                    <h4 class="font-bold text-amber-900 border-b pb-1">3. LISTINGS & AD HISTORY (${userAds.length} ADS)</h4>
-                    ${userAds.length === 0 ? '<p class="text-gray-400">No listings posted by this user.</p>' : userAds.map(a => `<p>• ${a.title} (${a.finalPriceStr})</p>`).join('')}
-                </div>
-
-                <div class="bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 text-emerald-800 text-[11px] font-semibold">
-                    <i class="fa-solid fa-shield-check mr-1"></i> Data Compliance Notice: All user activities, connection logs, and listings are securely recorded in compliance with cyber investigation guidelines.
-                </div>
-            `;
+            const addSection = (heading, className, lines) => {
+                const section = document.createElement('div');
+                section.className = className;
+                const title = document.createElement('h4');
+                title.className = 'font-bold border-b pb-1';
+                title.textContent = heading;
+                section.appendChild(title);
+                lines.forEach(([label, value]) => {
+                    const p = document.createElement('p');
+                    const strong = document.createElement('strong');
+                    strong.textContent = label + ': ';
+                    p.append(strong, document.createTextNode(value == null || value === '' ? 'N/A' : String(value)));
+                    section.appendChild(p);
+                });
+                container.appendChild(section);
+            };
+            addSection('1. USER IDENTITY & AUTHENTICATION', 'bg-gray-50 p-3.5 rounded-2xl border space-y-1.5', [
+                ['Name', userData.displayName || 'Anonymous User'],
+                ['Registered Email', userData.email || 'N/A'],
+                ['Google / Auth UID', userData.uid]
+            ]);
+            addSection('2. CONNECTION LOGS & NETWORK INFO', 'bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 space-y-1.5', [
+                ['IP Address', userData.lastIp || 'N/A'],
+                ['Last Activity Timestamp', new Date().toLocaleString()]
+            ]);
+            const listingSection = document.createElement('div');
+            listingSection.className = 'bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 space-y-1.5';
+            const listingTitle = document.createElement('h4');
+            listingTitle.className = 'font-bold text-amber-900 border-b pb-1';
+            listingTitle.textContent = '3. LISTINGS & AD HISTORY (' + userAds.length + ' ADS)';
+            listingSection.appendChild(listingTitle);
+            if (!userAds.length) {
+                const p = document.createElement('p');
+                p.className = 'text-gray-400';
+                p.textContent = 'No listings posted by this user.';
+                listingSection.appendChild(p);
+            } else {
+                userAds.forEach(ad => {
+                    const p = document.createElement('p');
+                    p.textContent = '• ' + (ad.title || 'Untitled') + ' (' + (ad.finalPriceStr || 'N/A') + ')';
+                    listingSection.appendChild(p);
+                });
+            }
+            container.appendChild(listingSection);
+            const notice = document.createElement('div');
+            notice.className = 'bg-emerald-50/50 p-3 rounded-xl border border-emerald-200 text-emerald-800 text-[11px] font-semibold';
+            notice.textContent = 'Data Compliance Notice: User activity and listings are displayed from available OLDX records.';
+            container.appendChild(notice);
             document.getElementById('forensicModal').style.display = 'flex';
         }
-
         function closeForensicModal() {
             document.getElementById('forensicModal').style.display = 'none';
         }
