@@ -1500,18 +1500,10 @@
                 return;
             }
 
-            if (window.currentUser.email === 'paniruddhsinh088@gmail.com') {
+            if (window.currentUser.uid === 'ghuDBBk8jdOfM2no7lyQobQN7WI2') {
                 window.location.href = 'admin.html';
             } else {
-                db.collection('admins').doc(window.currentUser.uid).get().then(docSnap => {
-                    if (docSnap.exists) {
-                        window.location.href = 'admin.html';
-                    } else {
-                        showCustomAlert("Access Denied ❌", "You do not have admin privileges!", "error");
-                    }
-                }).catch(() => {
-                    showCustomAlert("Access Denied ❌", "You do not have admin privileges!", "error");
-                });
+                showCustomAlert("Access Denied ❌", "You do not have admin privileges!", "error");
             }
         };
 
@@ -2165,18 +2157,9 @@
                     setUserOnlineStatus(false);
                 });
 
-                if (user.email === 'paniruddhsinh088@gmail.com') {
-                    if(adminBtn) adminBtn.style.display = 'flex';
-                } else {
-                    db.collection('admins').doc(user.uid).get().then(docSnap => {
-                        if(docSnap.exists && adminBtn) {
-                            adminBtn.style.display = 'flex';
-                        } else if(adminBtn) {
-                            adminBtn.style.display = 'none';
-                        }
-                    }).catch(() => {
-                        if(adminBtn) adminBtn.style.display = 'none';
-                    });
+                if(adminBtn) {
+                    adminBtn.style.display =
+                        user.uid === 'ghuDBBk8jdOfM2no7lyQobQN7WI2' ? 'flex' : 'none';
                 }
 
                 container.innerHTML = `
