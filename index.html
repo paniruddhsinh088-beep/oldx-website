@@ -452,18 +452,18 @@
       <div id="storeFormWrap" class="max-w-2xl mx-auto p-4 md:p-6" style="display:none">
         <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 md:p-7">
           <h3 class="text-xl font-black text-gray-900 dark:text-white">Create Your Store</h3>
-          <p class="text-xs text-gray-500 mt-1 mb-5">તમારી દુકાનની વિગતો ભરીને તમારી પોતાની public store link બનાવો.</p>
+          <p class="text-xs text-gray-500 mt-1 mb-5">Enter your store details to create your own public store link.</p>
           <form id="createStoreForm" onsubmit="saveStoreDetails(event)" class="space-y-4">
-            <div><label class="block text-xs font-bold mb-1">Shop Name *</label><input id="storeShopName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="દુકાનનું નામ"></div>
-            <div><label class="block text-xs font-bold mb-1">Owner Name *</label><input id="storeOwnerName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="માલિકનું નામ"></div>
-            <div><label class="block text-xs font-bold mb-1">Shop Address *</label><textarea id="storeAddress" required maxlength="500" rows="2" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="દુકાનનું સંપૂર્ણ સરનામું"></textarea></div>
+            <div><label class="block text-xs font-bold mb-1">Shop Name *</label><input id="storeShopName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Store Name"></div>
+            <div><label class="block text-xs font-bold mb-1">Owner Name *</label><input id="storeOwnerName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Owner Name"></div>
+            <div><label class="block text-xs font-bold mb-1">Shop Address *</label><textarea id="storeAddress" required maxlength="500" rows="2" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Full Store Address"></textarea></div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label class="block text-xs font-bold mb-1">Mobile Number *</label><input id="storeMobile" required inputmode="tel" pattern="[0-9+() -]{10,18}" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Mobile number"></div>
               <div><label class="block text-xs font-bold mb-1">WhatsApp Number *</label><input id="storeWhatsapp" required inputmode="tel" pattern="[0-9+() -]{10,18}" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="WhatsApp number"><label class="flex items-center gap-2 mt-2 text-xs"><input type="checkbox" id="storeSameMobile" onchange="copyStoreMobile()"> Same as Mobile</label></div>
             </div>
             <div><label class="block text-xs font-bold mb-1">Shop Photo *</label><input id="storePhotoFile" type="file" accept="image/*" class="w-full border rounded-xl p-3 text-xs dark:bg-gray-700 dark:border-gray-600"><p class="text-[11px] text-gray-400 mt-1">JPG/PNG/WebP, maximum 5 MB. Existing photo stays if you edit without selecting a new one.</p><img id="storePhotoPreview" style="display:none" class="mt-3 w-28 h-28 object-cover rounded-2xl border" alt="Shop photo preview"></div>
             <div><label class="block text-xs font-bold mb-2">Product Categories *</label><div id="storeCategoriesList" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div></div>
-            <div><div class="flex items-center justify-between mb-2"><label class="text-xs font-bold">Live Map Pinning / GPS Location *</label><button type="button" onclick="locateStoreOnMap()" class="text-xs font-bold text-teal-700 dark:text-teal-300"><i class="fa-solid fa-location-crosshairs"></i> Use my GPS</button></div><div id="storeMapPicker" class="w-full h-64 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100"></div><p id="storeCoordsText" class="text-[11px] text-gray-500 mt-2">Map પર pin ખસેડો અથવા map પર tap કરો.</p></div>
+            <div><div class="flex items-center justify-between mb-2"><label class="text-xs font-bold">Live Map Pinning / GPS Location *</label><button type="button" onclick="locateStoreOnMap()" class="text-xs font-bold text-teal-700 dark:text-teal-300"><i class="fa-solid fa-location-crosshairs"></i> Use my GPS</button></div><div id="storeMapPicker" class="w-full h-64 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-100"></div><p id="storeCoordsText" class="text-[11px] text-gray-500 mt-2">Move the pin or tap on the map.</p></div>
             <p id="storeSaveNotice" style="display:none" class="text-center text-sm font-bold text-emerald-600 py-2" role="status" aria-live="polite"></p>
             <button id="saveStoreBtn" type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-black py-3.5 rounded-xl shadow">Save Store</button>
           </form>
@@ -1978,7 +1978,7 @@
                 return false;
             }
             if (!window.currentUser) {
-                showCustomAlert('Login Required', 'WhatsApp par contact karva mate pela OLDX ma login karo.', 'error');
+                showCustomAlert('Login Required', 'Please log in to OLDX before contacting this seller on WhatsApp.', 'error');
                 openAuthModal();
                 return false;
             }
@@ -2927,12 +2927,12 @@
                     if (snap.exists) p = { docId: snap.id, ...snap.data() };
                 } catch (err) {
                     console.error('Could not load product for editing:', err);
-                    showCustomAlert('Edit Error', 'Product માહિતી લોડ થઈ શકી નથી. Login અને Firestore permissions તપાસો.', 'error');
+                    showCustomAlert('Edit Error', 'Product information could not be loaded. Please check your login and Firestore permissions.', 'error');
                     return;
                 }
             }
             if (!p) {
-                showCustomAlert('Edit Error', 'આ Product મળી નથી અથવા તેને વાંચવાની permission નથી. My Ads માંથી ફરી Edit ખોલો.', 'error');
+                showCustomAlert('Edit Error', 'This product was not found or you do not have permission to view it. Please reopen Edit from My Ads.', 'error');
                 return;
             }
 
@@ -3867,7 +3867,7 @@
                 document.getElementById('saveStoreBtn').textContent = 'Save Store';
                 renderStoreCategoryChoices();
                 setTimeout(initStoreMapPicker, 250);
-                showCustomAlert('Store Read Error', 'Firebase માંથી જૂની Store માહિતી વાંચી શકાઈ નથી. Map શરૂ કરવાનો પ્રયાસ કર્યો છે. Save કરવા Firestore Rules માં signed-in user ને પોતાના stores/{uid} document માટે permission હોવી જરૂરી છે.', 'error');
+                showCustomAlert('Store Read Error', 'Could not load the existing store information from Firebase. The map has been opened. To save, Firestore Rules must allow the signed-in user to access their own stores/{uid} document.', 'error');
             }
         }
 
@@ -3892,20 +3892,20 @@
 
         function locateStoreOnMap() {
             if (!navigator.geolocation) {
-                showCustomAlert('GPS unavailable', 'આ browser માં GPS/geolocation ઉપલબ્ધ નથી.', 'error');
+                showCustomAlert('GPS unavailable', 'GPS/location services are not available in this browser.', 'error');
                 return;
             }
             if (!window.isSecureContext) {
-                showCustomAlert('Secure connection required', 'GPS માટે HTTPS પરની વેબસાઇટ ખોલો (GitHub Pages સામાન્ય રીતે HTTPS હોય છે).', 'error');
+                showCustomAlert('Secure connection required', 'Please open the website over HTTPS to use GPS. GitHub Pages usually supports HTTPS.', 'error');
                 return;
             }
             const coordsText = document.getElementById('storeCoordsText');
-            coordsText.textContent = 'તમારું GPS સ્થાન મેળવી રહ્યા છીએ...';
+            coordsText.textContent = 'Getting your GPS location...';
             navigator.geolocation.getCurrentPosition(pos => {
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-                    showCustomAlert('GPS error', 'Browser તરફથી યોગ્ય latitude/longitude મળ્યા નથી. ફરી પ્રયાસ કરો.', 'error');
+                    showCustomAlert('GPS error', 'The browser did not return valid latitude/longitude coordinates. Please try again.', 'error');
                     return;
                 }
                 storeMapCoords = { lat, lng };
@@ -3917,15 +3917,15 @@
                     initStoreMapPicker();
                     if (storeMapInstance) storeMapInstance.setView([lat, lng], 16);
                 }
-                coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (GPS accuracy ±${Math.round(pos.coords.accuracy)} m). જો pin થોડું ખોટું હોય તો map પર યોગ્ય જગ્યાએ tap કરો અથવા pin drag કરો.`;
+                coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (GPS accuracy ±${Math.round(pos.coords.accuracy)} m). If the pin is slightly inaccurate, tap the correct place on the map or drag the pin.`;
             }, err => {
                 console.error('Store GPS error:', err.code, err.message);
                 const messages = {
-                    1: 'Browser/website માટે Location permission denied છે. Address bar ની site settings માં Location = Allow કરો.',
-                    2: 'હાલ device નું સ્થાન મળી શક્યું નથી. Phone Location/GPS ચાલુ કરીને બહાર અથવા બારી પાસે ફરી પ્રયાસ કરો.',
-                    3: 'GPS મેળવવામાં સમય પૂરો થયો. Phone Location ચાલુ રાખીને ફરી પ્રયાસ કરો.'
+                    1: 'Location permission is denied for this website. Open the site settings from your browser address bar and set Location to Allow.',
+                    2: 'Your device location could not be determined. Turn on Location/GPS and try again outdoors or near a window.',
+                    3: 'The GPS request timed out. Keep Location enabled on your phone and try again.'
                 };
-                showCustomAlert('GPS location error', messages[err.code] || ('GPS સ્થાન મળ્યું નથી: ' + (err.message || 'Unknown error')), 'error');
+                showCustomAlert('GPS location error', messages[err.code] || ('Could not get GPS location: ' + (err.message || 'Unknown error')), 'error');
             }, { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 });
         }
 
@@ -3936,14 +3936,14 @@
             wa.readOnly = checked;
         }
         document.addEventListener('input', e => { if (e.target && e.target.id === 'storeMobile' && document.getElementById('storeSameMobile').checked) document.getElementById('storeWhatsapp').value = e.target.value; });
-        document.addEventListener('change', e => { if (e.target && e.target.id === 'storePhotoFile') { const f=e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/') || f.size > 5*1024*1024) { e.target.value=''; showCustomAlert('Invalid photo', 'માત્ર image file અને 5 MB સુધીની photo પસંદ કરો.', 'error'); return; } const im=document.getElementById('storePhotoPreview'); im.src=URL.createObjectURL(f); im.style.display='block'; } });
+        document.addEventListener('change', e => { if (e.target && e.target.id === 'storePhotoFile') { const f=e.target.files && e.target.files[0]; if (!f) return; if (!f.type.startsWith('image/') || f.size > 5*1024*1024) { e.target.value=''; showCustomAlert('Invalid photo', 'Please select an image file no larger than 5 MB.', 'error'); return; } const im=document.getElementById('storePhotoPreview'); im.src=URL.createObjectURL(f); im.style.display='block'; } });
 
         function storeOperationTimeout(promise, label, ms = 20000) {
             let timer;
             return Promise.race([
                 promise,
                 new Promise((_, reject) => {
-                    timer = setTimeout(() => reject(new Error(label + ' timeout: 20 seconds સુધી જવાબ મળ્યો નથી.')), ms);
+                    timer = setTimeout(() => reject(new Error(label + ' timeout: No response received within 20 seconds.')), ms);
                 })
             ]).finally(() => clearTimeout(timer));
         }
@@ -3960,9 +3960,9 @@
             const whatsapp = (sameAsMobile ? mobile : document.getElementById('storeWhatsapp').value).trim();
             const categories = [...document.querySelectorAll('input[name="storeCategory"]:checked')].map(x => x.value);
             const file = document.getElementById('storePhotoFile').files[0];
-            if (!categories.length) { showCustomAlert('Categories required', 'ઓછામાં ઓછી એક Product Category પસંદ કરો.', 'error'); return; }
-            if (!currentStoreData?.photoURL && !file) { showCustomAlert('Photo required', 'કૃપા કરીને દુકાનનો ફોટો અપલોડ કરો.', 'error'); return; }
-            if (!Number.isFinite(storeMapCoords.lat) || !Number.isFinite(storeMapCoords.lng)) { showCustomAlert('Location required', 'Map પર દુકાનનું location પસંદ કરો.', 'error'); return; }
+            if (!categories.length) { showCustomAlert('Categories required', 'Please select at least one product category.', 'error'); return; }
+            if (!currentStoreData?.photoURL && !file) { showCustomAlert('Photo required', 'Please upload a photo of your store.', 'error'); return; }
+            if (!Number.isFinite(storeMapCoords.lat) || !Number.isFinite(storeMapCoords.lng)) { showCustomAlert('Location required', 'Please select your store location on the map.', 'error'); return; }
             const btn = document.getElementById('saveStoreBtn'); btn.disabled = true; btn.textContent = 'Saving...';
             try {
                 let photoURL = currentStoreData?.photoURL || '';
@@ -3994,14 +3994,14 @@
                 closeCustomAlert();
                 const storeNotice = document.getElementById('storeSaveNotice');
                 if (storeNotice) {
-                    storeNotice.textContent = '✓ તમારી દુકાન સફળતાપૂર્વક સેવ થઈ ગઈ છે.';
+                    storeNotice.textContent = '✓ Your store has been saved successfully.';
                     storeNotice.style.display = 'block';
                     setTimeout(() => { storeNotice.style.display = 'none'; }, 5000);
                 }
                 renderOwnStoreSummary();
             } catch (err) {
                 console.error('Save store failed:', err);
-                showCustomAlert('Save Failed', 'Store save ન થઈ શક્યું. Cloudinary upload અથવા Firestore rules/configuration તપાસો. ' + (err.message || ''), 'error');
+                showCustomAlert('Save Failed', 'Could not save the store. Please check the Cloudinary upload and Firestore rules/configuration. ' + (err.message || ''), 'error');
             } finally { btn.disabled = false; btn.textContent = currentStoreData?.shopName ? 'Update Store' : 'Save Store'; }
         }
 
@@ -4023,12 +4023,12 @@
             const wrap = document.getElementById('storePublicWrap'); wrap.innerHTML = '<div class="text-center py-16 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-3">Loading store...</p></div>';
             try {
                 const snap = await db.collection('stores').doc(ownerUid).get();
-                if (!snap.exists) { wrap.innerHTML = '<div class="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center"><h3 class="font-black text-lg">Store not found</h3><p class="text-sm text-gray-500 mt-2">આ Store ઉપલબ્ધ નથી અથવા બનાવવામાં આવી નથી.</p></div>'; return; }
+                if (!snap.exists) { wrap.innerHTML = '<div class="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center"><h3 class="font-black text-lg">Store not found</h3><p class="text-sm text-gray-500 mt-2">This store is unavailable or has not been created.</p></div>'; return; }
                 const data = { uid: ownerUid, ...snap.data() };
                 currentStoreData = data;
                 document.getElementById('storePageHeading').textContent = data.shopName || 'Store';
                 renderStorePublicContent(data, !!window.currentUser && window.currentUser.uid === ownerUid);
-            } catch (err) { wrap.innerHTML = '<div class="p-8 text-center text-red-600">Store load ન થઈ શક્યું. Firestore rules તપાસો.</div>'; console.error(err); }
+            } catch (err) { wrap.innerHTML = '<div class="p-8 text-center text-red-600">Could not load the store. Please check the Firestore rules.</div>'; console.error(err); }
         }
 
         function renderStorePublicContent(data, isOwner) {
@@ -4052,7 +4052,7 @@
                 const grid = document.getElementById('storeProductsGrid'); if (!grid) return;
                 currentStoreProductsCache = []; snap.forEach(doc => currentStoreProductsCache.push({ docId: doc.id, ...doc.data() }));
                 filterStoreProducts('all');
-            }).catch(err => { const grid=document.getElementById('storeProductsGrid'); if(grid) grid.innerHTML='<p class="col-span-full text-xs text-red-500">Products load ન થઈ શક્યાં.</p>'; console.error(err); });
+            }).catch(err => { const grid=document.getElementById('storeProductsGrid'); if(grid) grid.innerHTML='<p class="col-span-full text-xs text-red-500">Could not load products.</p>'; console.error(err); });
         }
 
         function filterStoreProducts(categoryId) {
@@ -4062,7 +4062,7 @@
             document.querySelectorAll('#storeCategoryFilters button').forEach(btn => { btn.className = 'px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold'; });
             const buttons = document.querySelectorAll('#storeCategoryFilters button');
             buttons.forEach(btn => { if ((categoryId === 'all' && btn.textContent.trim() === 'All Products') || (categoryId !== 'all' && btn.getAttribute('onclick') === `filterStoreProducts('${categoryId}')`)) btn.className = 'px-3 py-2 rounded-full bg-primary text-white text-xs font-bold'; });
-            if (!items.length) { grid.innerHTML = `<p class="col-span-full text-sm text-gray-500 py-5">${categoryId === 'all' ? 'આ દુકાનની કોઈ product હજી ઉપલબ્ધ નથી.' : 'આ category માં કોઈ product ઉપલબ્ધ નથી.'}</p>`; return; }
+            if (!items.length) { grid.innerHTML = `<p class="col-span-full text-sm text-gray-500 py-5">${categoryId === 'all' ? 'No products are available in this store yet.' : 'No products are available in this category.'}</p>`; return; }
             items.forEach(p => { if (typeof createProductCard === 'function') grid.appendChild(createProductCard(p, false)); });
         }
 
@@ -4070,9 +4070,9 @@
         function editMyStore() { if (!window.currentUser || !currentStoreData || currentStoreData.uid !== window.currentUser.uid) return; document.getElementById('storePublicWrap').style.display='none'; document.getElementById('storeFormWrap').style.display='block'; document.getElementById('storeShareTopBtn').style.display='none'; renderStoreCategoryChoices(currentStoreData.categories || []); setTimeout(initStoreMapPicker, 200); }
         async function shareCurrentStore() {
             const data = currentStoreData;
-            if (!data || !data.uid) { showCustomAlert('Store unavailable', 'Share કરવા માટે પહેલાં Store ખોલો.', 'error'); return; }
+            if (!data || !data.uid) { showCustomAlert('Store unavailable', 'Open your Store first to share it.', 'error'); return; }
             const url = `${window.location.origin}${window.location.pathname}#store-${data.uid}`;
-            try { if (navigator.share) await navigator.share({ title: data.shopName || 'OldX Store', text: `Visit ${data.shopName || 'this store'} on OldX`, url }); else if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(url); showCustomAlert('Link Copied', 'Store link clipboard માં copy થઈ ગઈ છે.', 'success'); } else { window.prompt('Copy your store link:', url); } } catch (err) { if (err.name !== 'AbortError') window.prompt('Copy your store link:', url); }
+            try { if (navigator.share) await navigator.share({ title: data.shopName || 'OldX Store', text: `Visit ${data.shopName || 'this store'} on OldX`, url }); else if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(url); showCustomAlert('Link Copied', 'The store link has been copied to your clipboard.', 'success'); } else { window.prompt('Copy your store link:', url); } } catch (err) { if (err.name !== 'AbortError') window.prompt('Copy your store link:', url); }
         }
 
         function closeProductDetailView() { 
