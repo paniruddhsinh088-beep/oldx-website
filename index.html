@@ -67,7 +67,14 @@
             from { width: 0%; }
             to { width: 100%; }
         }
-    </style>
+    
+        /* Mobile chat: keep the conversation header and composer visible above the keyboard. */
+        #fullChatPage { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+        #fullChatPage > .sticky { position: relative; top: auto; flex: 0 0 auto; }
+        #fullChatMessages { min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        #fullChatPage input#fullChatInput { min-width: 0; min-height: 42px; font-size: 16px !important; line-height: 1.35; }
+        #fullChatPage > .bg-white.border-t { flex: 0 0 auto; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+</style>
 
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1984,7 +1991,7 @@
             }
             showCustomConfirm(
                 'Open WhatsApp?',
-                'You are leaving OLDX and opening WhatsApp, a third-party app. WhatsApp ni privacy policy ane terms lagu padshe. Continue karvu chhe?',
+                'You are leaving OLDX and opening WhatsApp, a third-party app. WhatsApp’s own Privacy Policy and Terms will apply. Do you want to continue?',
                 function() { window.location.href = targetUrl; }
             );
             return false;
@@ -2462,6 +2469,34 @@
             });
         }
 
+        // Keep the chat viewport fitted to the visible screen when the mobile keyboard opens.
+        (function keepChatVisibleAboveKeyboard() {
+            const chatPage = document.getElementById('fullChatPage');
+            if (!chatPage) return;
+            const sync = () => {
+                if (chatPage.style.display !== 'flex') return;
+                const vv = window.visualViewport;
+                if (vv) {
+                    chatPage.style.height = Math.round(vv.height) + 'px';
+                    chatPage.style.top = Math.max(0, Math.round(vv.offsetTop)) + 'px';
+                } else {
+                    chatPage.style.height = window.innerHeight + 'px';
+                    chatPage.style.top = '0px';
+                }
+            };
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', sync);
+                window.visualViewport.addEventListener('scroll', sync);
+            }
+            window.addEventListener('resize', sync);
+            const observer = new MutationObserver(sync);
+            observer.observe(chatPage, { attributes: true, attributeFilter: ['style'] });
+            chatPage.addEventListener('focusin', e => {
+                if (e.target && e.target.id === 'fullChatInput') setTimeout(sync, 80);
+            });
+            chatPage.addEventListener('focusout', () => setTimeout(sync, 80));
+        })();
+
         const chatInputEl = document.getElementById('fullChatInput');
         if (chatInputEl) {
             ['input', 'keyup', 'keydown'].forEach(eventType => {
@@ -2605,15 +2640,25 @@
             try {
                 const snap = await userRef.get();
                 const blocked = (snap.exists && snap.data().blockedUsers || []).includes(activeChatOtherUserId);
-                const choice = prompt(`Chat privacy options:\n1 = ${blocked ? 'Unblock' : 'Block'} this user`);
-                if (choice !== '1') return;
-                if (!blocked && !confirm("Block this user? You will not be able to exchange new messages.")) return;
-                await userRef.update({ blockedUsers: blocked
-                    ? firebase.firestore.FieldValue.arrayRemove(activeChatOtherUserId)
-                    : firebase.firestore.FieldValue.arrayUnion(activeChatOtherUserId) });
-                showCustomAlert("Updated", blocked ? "User unblocked." : "User blocked.", "success");
-                if (!blocked) document.getElementById('fullChatInput').disabled = true;
-                else document.getElementById('fullChatInput').disabled = false;
+                showCustomConfirm(
+                    blocked ? "Unblock this user?" : "Block this user?",
+                    blocked
+                      ? "This user will be able to message you again. You can block them anytime."
+                      : "You will no longer receive messages from this user, and you will not be able to send them messages. You can unblock them anytime.",
+                    async function() {
+                      try {
+                        await userRef.update({ blockedUsers: blocked
+                          ? firebase.firestore.FieldValue.arrayRemove(activeChatOtherUserId)
+                          : firebase.firestore.FieldValue.arrayUnion(activeChatOtherUserId) });
+                        const input = document.getElementById('fullChatInput');
+                        if (input) input.disabled = !blocked;
+                        showCustomAlert("Updated", blocked ? "User unblocked successfully." : "User blocked successfully.", "success");
+                      } catch (updateError) {
+                        showCustomAlert("Error", "Could not update block settings: " + updateError.message, "error");
+                      }
+                    }
+                );
+                return;
             } catch (err) {
                 showCustomAlert("Error", "Could not update block settings: " + err.message, "error");
             }
