@@ -6,7 +6,7 @@
 
 ## Executive summary
 
-Several dynamic values are interpolated into `innerHTML` templates. Some values originate from user input, Seller-created Product documents, chat input, or remote/AI output. If attacker-controlled markup is stored or returned, the browser may interpret it as HTML/script-capable markup.
+Several dynamic values are interpolated into `innerHTML` templates. Some values originate from user input, Seller-created Product documents, chat messages, or Firestore conversation previews. The current AI reply text is hard-coded. If attacker-controlled markup is stored or returned, the browser may interpret it as HTML/script-capable markup.
 
 This is a potentially high-severity stored/reflected XSS class of issue. Exploitability and exact execution context must be verified safely in a local synthetic browser test before release. Do not rely on Firestore Rules alone: a malicious or compromised account may still create allowed text values that become dangerous at an HTML sink.
 
@@ -15,7 +15,7 @@ This is a potentially high-severity stored/reflected XSS class of issue. Exploit
 | Approx. source line | Rendering context | Dynamic values | Risk / required treatment |
 |---|---|---|---|
 | 1939 | AI/chat user message bubble | `msg`, `timeStr` | User-entered text must use `textContent` or a safe text node; do not interpolate into HTML. |
-| 1961 | AI reply bubble | `aiReply`, `timeStr` | Treat model/service output as untrusted text; render as text unless a deliberately sanitized rich-text format is required. |
+| 1961 | AI reply bubble | `aiReply`, `timeStr` | Current `aiReply` values are hard-coded strings, not live model output. Still render as text; if this later becomes service/model output, continue treating it as untrusted. |
 | 2346 onward | Inbox/chat list | Other-user display name and room metadata should be traced in the full template | Use text nodes for user-controlled labels; validate IDs separately before event handlers. |
 | 2922 onward | Seller's My Ads cards | `p.title` and product display fields | Seller-controlled Product values must be text nodes; image URLs need URL validation and safe attribute assignment. |
 | 3612 | Cart rows | `id`, `title`, `price`, `img` | Avoid HTML interpolation and inline JavaScript handlers containing document IDs. Use DOM nodes and event listeners. |
