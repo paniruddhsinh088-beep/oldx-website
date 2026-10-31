@@ -157,6 +157,20 @@ test("client-supplied audit identity and outcome fields remain nested untrusted 
   assert.notEqual(commit.operation, commit.body.operation);
 });
 
+test("validator exception never reaches atomic commit and returns generic error", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
+    validateMutationInput: async () => { throw new Error("private validator details"); },
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 500);
+  assert.equal(result.body.error.code, "INTERNAL_ERROR");
+  assert.equal(JSON.stringify(result.body).includes("private validator details"), false);
+  assert.equal(commitCalled, false);
+});
+
 test("atomic commit failure returns generic error without leaking internals", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
