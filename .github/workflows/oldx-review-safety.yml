@@ -1,0 +1,34 @@
+name: OLDX review-branch safety tests
+
+on:
+  push:
+    branches:
+      - security-hardening-review
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oldx-safety-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-safety-tests:
+    name: Local config and emulator-safety tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out review branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Run dependency-free safety tests
+        run: npm run test:emulator:safety
