@@ -81,8 +81,8 @@ This section supersedes the earlier statement above that no Storage Emulator is 
 - Emulator config: `firebase.storage-emulator.json` (Storage Emulator bound to `127.0.0.1:9199`; rules loaded from `tests/storage-emulator/candidate.rules`).
 - Runtime suite: `tests/storage-emulator/rules-runtime.test.mjs`.
 - CI command: `npm run test:storage:rules`, executed through Firebase Emulator CI.
-- GitHub Actions run **41236897893** completed with conclusion **success** on commit `fc91c2cd97dc4b21b334a722dd5653e707e0415b`. The Storage Emulator authorization step and Firestore Emulator authorization step both completed successfully, as did the preceding source/config/Admin starter test steps.
-- Runtime scenarios exercised: anonymous upload denied; seller own-UID upload allowed and cross-seller upload denied; unsupported GIF and exactly-10-MiB upload denied; pending download URL denied; approved-object read allowed (approved fixture seeded with rules disabled); owner deletion of own pending object allowed; deletion of approved or another seller's pending object denied; client overwrite and client metadata approval attempt denied.
+- GitHub Actions run **41237343639** completed with conclusion **success** on commit `83df7462a73d79f7c1a7dd786c121302d1e10d73` (latest review-branch head at this update). The Storage Emulator authorization step and Firestore Emulator authorization step both completed successfully, as did the preceding source/config/Admin starter test steps.
+- Runtime scenarios exercised: anonymous upload denied; seller own-UID upload allowed and cross-seller upload denied; unsupported GIF and exactly-10-MiB upload denied; malformed product IDs and filenames denied; client-supplied `approved` metadata denied; pending download URL denied; approved-object read allowed (approved fixture seeded with rules disabled); owner deletion of own pending object allowed; deletion of approved or another seller's pending object denied; client overwrite and client metadata approval attempt denied.
 
 ### What this proves—and does not prove
 
