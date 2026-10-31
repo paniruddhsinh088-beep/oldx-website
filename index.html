@@ -4741,20 +4741,36 @@
         }
 
         function compressImage(file) {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
+                if (!file || typeof file.type !== 'string' || !file.type.startsWith('image/')) {
+                    reject(new Error('Please select a valid image file.'));
+                    return;
+                }
+
                 const reader = new FileReader();
+                reader.onerror = () => reject(new Error('Could not read the selected image. Please try another file.'));
                 reader.onload = (e) => {
                     const img = new Image();
+                    img.onerror = () => reject(new Error('This image format could not be opened by your browser. Please choose a JPG, PNG, or WebP image.'));
                     img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let width = img.width; let height = img.height;
-                        const maxDim = 800;
-                        if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
-                        else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
-                        canvas.width = width; canvas.height = height;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, width, height);
-                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                        try {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width; let height = img.height;
+                            const maxDim = 800;
+                            if (width > height && width > maxDim) { height *= maxDim / width; width = maxDim; }
+                            else if (height > maxDim) { width *= maxDim / height; height = maxDim; }
+                            canvas.width = width; canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) throw new Error('Image processing is unavailable in this browser.');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                            if (!compressed.startsWith('data:image/jpeg;base64,')) {
+                                throw new Error('The selected image could not be compressed.');
+                            }
+                            resolve(compressed);
+                        } catch (error) {
+                            reject(error);
+                        }
                     };
                     img.src = e.target.result;
                 };
@@ -4831,10 +4847,9 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
-                db.collection('products').add(adData).then(() => {
-                    btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
-                    document.getElementById('successAdModal').style.display = 'flex';
-                });
+                await db.collection('products').add(adData);
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                document.getElementById('successAdModal').style.display = 'flex';
             } catch (err) {
                 btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
                 showCustomAlert("Error", "Something went wrong. Please try again.", "error");
