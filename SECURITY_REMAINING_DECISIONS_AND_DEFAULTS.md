@@ -47,3 +47,16 @@ Recommended interpretation of the already stated one-way policy: A can still sen
 ## Non-authorization
 
 This brief does not authorize reading real user documents, migrating data, changing Firebase Rules, deploying an Admin backend, enabling public Store fields, or changing Production.
+
+
+## Additional static source scan (current review-branch snapshot)
+
+A repository client-source scan of `index.html` and `admin.html` found:
+
+- No `users/{uid}.status` read/write usage in these two browser files. The `status` references found are message delivery/read states (`sent` / `read`) and HTML accessibility `role="status"`. Treat a legacy user-level `status` field as unused by the reviewed browser UI unless another service or older supported client is discovered.
+- Email is written redundantly into the user document by auth/profile flows, while the profile page already has Firebase Auth's `user.email` and `user.emailVerified`. The Admin UI reads stored `u.email` for its ordinary list and forensic modal. This supports removing email from broad public/private profile migration targets, but Admin UI must be redesigned or supplied through a separately authorized, audited endpoint before the legacy field is retired.
+- `lastIp` is populated from a browser-side external IP lookup and written to the user document; this is client-reported, not verified server evidence.
+- Product creation writes a client-derived `userIp` field. It must not be treated as trusted forensic evidence or used for authorization.
+- This scan is static and limited to the reviewed `index.html` and `admin.html`; it does not prove that no external integration, older app version or backend consumes these fields.
+
+These findings refine the recommendations above but do not authorize changing existing user records or removing fields.
