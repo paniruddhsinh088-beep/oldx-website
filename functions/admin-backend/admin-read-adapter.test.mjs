@@ -17,13 +17,24 @@ class Timestamp { constructor(seconds, nanoseconds) { this.seconds = seconds; th
 const documentIdField = { name: "__name__" };
 const doc = (id, data) => ({ id, data: () => data });
 
+test("requires explicit readiness allowlist before any Firestore query", async () => {
+  const db = makeFirestore([]);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "users.list", Timestamp, documentIdField
+  }), /not enabled/);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "users.list", enabledOperations: ["users.dumpAll"], Timestamp, documentIdField
+  }), /allowlist/);
+  assert.equal(db.calls.length, 0);
+});
+
 test("uses only the fixed products collection and approved projection", async () => {
   const db = makeFirestore([doc("p1", {
     title: "Cycle", category: "Sports", finalPriceStr: "100",
     location: "Ahmedabad", sellerUid: "seller-1", phone: "private", userIp: "private",
     createdAt: { seconds: 100, nanoseconds: 0 }
   })]);
-  const result = await executeAdminReadPage({ firestore: db, operation: "products.list", Timestamp, documentIdField });
+  const result = await executeAdminReadPage({ firestore: db, operation: "products.list", enabledOperations: ["products.list"], Timestamp, documentIdField });
   assert.deepEqual(db.calls.slice(0, 4), [
     ["collection", "products"],
     ["select", "title", "category", "finalPriceStr", "location", "sellerUid", "createdAt"],
@@ -43,7 +54,7 @@ test("uses a bounded look-ahead and emits cursor from last visible item", async 
     doc("u0", { displayName: "Lookahead", status: "active", createdAt: { seconds: 1, nanoseconds: 0 } })
   ]);
   const result = await executeAdminReadPage({
-    firestore: db, operation: "users.list", pageSize: 2, Timestamp, documentIdField
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"], pageSize: 2, Timestamp, documentIdField
   });
   assert.deepEqual(db.calls.find(call => call[0] === "limit"), ["limit", 3]);
   assert.deepEqual(result.items.map(x => x.id), ["u2", "u1"]);
@@ -55,7 +66,7 @@ test("uses a bounded look-ahead and emits cursor from last visible item", async 
 test("validates cursor and applies it as timestamp plus document ID", async () => {
   const db = makeFirestore([]);
   await executeAdminReadPage({
-    firestore: db, operation: "users.list", pageSize: 10,
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"], pageSize: 10,
     cursorPosition: { createdAt: { seconds: 9, nanoseconds: 123000000 }, documentId: "u9" },
     Timestamp, documentIdField
   });
@@ -67,13 +78,13 @@ test("validates cursor and applies it as timestamp plus document ID", async () =
 test("rejects arbitrary operation, invalid page size, and malformed cursor before query", async () => {
   const db = makeFirestore([]);
   await assert.rejects(() => executeAdminReadPage({
-    firestore: db, operation: "users.dumpAll", Timestamp, documentIdField
+    firestore: db, operation: "users.dumpAll", enabledOperations: ["users.list"], Timestamp, documentIdField
   }), /Unsupported/);
   await assert.rejects(() => executeAdminReadPage({
-    firestore: db, operation: "users.list", pageSize: 51, Timestamp, documentIdField
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"], pageSize: 51, Timestamp, documentIdField
   }), /page size/);
   await assert.rejects(() => executeAdminReadPage({
-    firestore: db, operation: "users.list",
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"],
     cursorPosition: { collection: "users", path: "users/u1" }, Timestamp, documentIdField
   }), /cursor/);
   assert.equal(db.calls.length, 0);
@@ -81,17 +92,17 @@ test("rejects arbitrary operation, invalid page size, and malformed cursor befor
 
 test("does not produce a next cursor when there is no look-ahead document", async () => {
   const db = makeFirestore([doc("u1", { displayName: "One", status: "active", createdAt: { seconds: 1, nanoseconds: 0 } })]);
-  const result = await executeAdminReadPage({ firestore: db, operation: "users.list", Timestamp, documentIdField });
+  const result = await executeAdminReadPage({ firestore: db, operation: "users.list", enabledOperations: ["users.list"], Timestamp, documentIdField });
   assert.equal(result.nextPosition, null);
 });
 
 test("fails closed for search text and filters not implemented by the adapter", async () => {
   const db = makeFirestore([]);
   await assert.rejects(() => executeAdminReadPage({
-    firestore: db, operation: "products.list", queryText: "bike", Timestamp, documentIdField
+    firestore: db, operation: "products.list", enabledOperations: ["products.list"], queryText: "bike", Timestamp, documentIdField
   }), /Search is not supported/);
   await assert.rejects(() => executeAdminReadPage({
-    firestore: db, operation: "products.list", filters: { status: "active" }, Timestamp, documentIdField
+    firestore: db, operation: "products.list", enabledOperations: ["products.list"], filters: { status: "active" }, Timestamp, documentIdField
   }), /Filters are not supported/);
   assert.equal(db.calls.length, 0);
 });
