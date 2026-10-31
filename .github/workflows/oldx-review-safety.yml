@@ -30,6 +30,12 @@ jobs:
         with:
           node-version: 24
 
+      - name: Set up Java 21 for Firestore Emulator
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Run dependency-free safety tests
         run: npm run test:emulator:safety
 
