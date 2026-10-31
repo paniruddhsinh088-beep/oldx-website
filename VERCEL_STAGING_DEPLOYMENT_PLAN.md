@@ -6,7 +6,8 @@ This plan applies to the `security-hardening-review` branch only. It does not au
 ## Current repository facts
 - The site is a static HTML application with `index.html` and `admin.html`.
 - There is no package.json or established build pipeline in the repository tree inspected for this review.
-- Both HTML pages currently initialize Firebase directly with the Production project ID `oldx-1c983`.
+- Both HTML pages now load `firebase-env.js` and `firebase-config-guard.js` before their inline Firebase initialization code.
+- Both pages now use `window.OLDX_FIREBASE_CONFIG`; their inline Production Firebase config objects were removed.
 - `firebase-config-guard.js` expects `window.OLDX_FIREBASE_CONFIG` to be defined before it loads.
 - `firebase-env.example.js` is a placeholder template, not a deployable configuration.
 - Staging Firebase project: `oldx-staging`. Staging Firestore rules currently deny all access.
@@ -23,7 +24,7 @@ The browser Firebase configuration is public client configuration, not a service
    - staging -> `oldx-staging`
    - production -> `oldx-1c983`
    It must exit non-zero on missing, malformed, or mismatched values.
-4. Load the generated `firebase-env.js` before `firebase-config-guard.js`, and load both before either page initializes Firebase. Both `index.html` and `admin.html` must use the same guarded config object.
+4. Completed on `security-hardening-review`: both `index.html` and `admin.html` load generated `firebase-env.js`, then `firebase-config-guard.js`, before Firebase initialization and read the shared guarded config object.
 5. Do not expose any service-account JSON, private key, OAuth client secret, or other server credential in browser code or build output.
 6. Configure the Vercel project so the review branch gets a Preview deployment, not a Production deployment. Confirm the exact Vercel project, connected repository, Production Branch, domains, and Preview deployment URL before changing settings.
 7. Use synthetic test data only in staging. Do not copy Production users, chats, products, stores, or evidence into staging.
@@ -46,5 +47,10 @@ The browser Firebase configuration is public client configuration, not a service
 - No service-account or private-key material is present in generated browser assets.
 - Existing page behavior is regression-tested in staging before any Production release.
 
+## Current implementation status
+- HTML config integration is committed on `security-hardening-review` (index commit `1cbe80c`; admin commit `40049b0`).
+- The build helper was exercised locally with synthetic staging values: config generation and JavaScript syntax check passed; mismatched project ID and missing environment were rejected.
+- These are build-helper checks only, not a full Vercel build or browser/runtime regression test.
+
 ## Not yet performed
-No Vercel settings were accessed or changed. No Vercel deployment was created. No HTML initialization code was changed. No Firebase rules or data were changed. No runtime/browser/Emulator tests have been run.
+No Vercel settings were accessed or changed. No Vercel deployment was created. No Firebase rules or data were changed. No browser/Emulator tests have been run.
