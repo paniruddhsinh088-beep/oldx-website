@@ -113,3 +113,34 @@ Detection and enforcement must not rely only on browser JavaScript. Rate limits,
 - Any paid provider, new Firebase/Storage schema, backend deployment, Firestore Rules publication, real-data migration or Production rollout.
 
 **Current implementation status:** This file records requirements and a safe delivery sequence. It does not mean chat detection, image moderation, warning UI, automatic removal, or performance optimization has already been implemented or tested.
+
+
+## G. Initial source inspection findings (2026-11-01)
+
+These are static source observations from the current `security-hardening-review` branch; they are not runtime measurements.
+
+### Chat safety and media
+- `checkScamAndSendChatMessage()` currently uses a small browser-side keyword list and blocks messages containing matches. This is not trusted enforcement and can create false positives (for example, broad tokens such as `won`) while missing more complex scams.
+- The same function checks the recipient's `users/{uid}.blockedUsers` from the browser before sending. This is not an authorization boundary; authoritative block enforcement remains a Firestore/backend Rules requirement.
+- Chat attachments are read as Base64 Data URLs in the browser and stored with the message. The inspected upload handler has a MIME allowlist but no visible byte-size limit or server-side content moderation. This can increase Firestore document size and client memory/network work.
+- No server-side suspicious-activity scoring, trusted rate limiting, image moderation pipeline, quarantine workflow or appeal workflow was found in the inspected Chat/Product paths.
+
+### Product photos
+- Product images are compressed in the browser with canvas (maximum dimension 800px, JPEG quality 0.7) and placed into the product document as Base64 strings.
+- Product edit follows a similar browser-side compression path.
+- The inspected upload path does not run a server-side explicit-content classifier before images become part of the product record. Client-side file selection and compression are not content moderation.
+- Store-photo upload uses a separate Cloudinary browser upload path; it also needs its own moderation/security review before any shared photo policy can be considered complete.
+
+### Performance
+- Global unread badge listener reads every message in every chat room for the signed-in user, then calculates unread count in the browser.
+- Opening Inbox fetches all chat rooms and then downloads the full message history for each room to calculate latest message and unread count.
+- Opening a Chat performs another unbounded query for messages from other senders and updates their read status one document at a time, even though the visible chat listener is limited to 35 messages.
+- These patterns are likely to increase Firestore reads, latency and memory use as users accumulate chats. They are high-priority optimization candidates, but changing unread/read semantics requires a tested design (for example, bounded pagination and trusted unread/read metadata).
+- The initial HTML loads Tailwind from its CDN and Leaflet JS in the document head; these are candidates for load-path measurement and deferred/non-blocking loading, but must be regression-tested before changes.
+
+### Next technical work
+1. Trace the full product-image and edit-image upload contracts, accepted file counts/sizes, and any legacy data compatibility before designing moderation.
+2. Trace chat attachment compatibility, message write/read semantics and existing safety warning UI before changing message behavior.
+3. Establish a repeatable baseline for Firestore reads, initial render, image bytes and interaction latency.
+4. Design bounded inbox/chat pagination and unread/read metadata that preserve correct counts and all existing message visibility rules.
+5. Only then implement isolated Staging changes with source tests and browser/device tests.
