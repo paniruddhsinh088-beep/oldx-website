@@ -76,7 +76,10 @@ export async function executeAdminReadPage({
   }
 
   const snapshot = await query.limit(pageSize + 1).get();
-  const docs = Array.isArray(snapshot?.docs) ? snapshot.docs : [];
+  if (!snapshot || !Array.isArray(snapshot.docs) || snapshot.docs.length > pageSize + 1) {
+    throw new TypeError("Invalid Firestore page snapshot.");
+  }
+  const docs = snapshot.docs;
   const hasMore = docs.length > pageSize;
   const pageDocs = docs.slice(0, pageSize);
   const items = pageDocs.map(doc => {
