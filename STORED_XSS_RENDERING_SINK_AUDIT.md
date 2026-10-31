@@ -98,3 +98,11 @@ This audit does not change `index.html`, Firestore Rules, Firebase data, externa
 - Product-detail highlight labels and values now use `textContent`, preventing stored product metadata from becoming markup.
 - Added `xss-product-detail-source.test.mjs` to the dependency-free safety suite. It checks the source patterns for dynamic highlight text and image URL filtering.
 - This is a source-level mitigation. It has not yet been run in CI or verified in a browser/device. Product-card, My Ads and cart rendering still need remediation.
+
+
+**Further review-branch remediation (My Ads, Saved Ads Cart, Product Cards):**
+- My Ads product titles and prices are now assigned through `textContent`; stock/edit/delete actions use event listeners and close over the product ID rather than interpolating it into inline JavaScript.
+- Saved Ads Cart titles/prices now use `textContent`; product navigation/removal use event listeners. Cart image sources are restricted to HTTP(S) or base64 PNG/JPEG/WebP/GIF data URLs, with a fixed placeholder for other values.
+- Product cards now use a static DOM skeleton; Firestore-controlled location, category, title and price are populated through text nodes. Save/buy actions use event listeners. Product image URLs use the same restricted scheme check.
+- Added `xss-product-card-cart-myads.test.mjs` to the dependency-free safety test command.
+- Source review confirms these paths no longer interpolate the listed dynamic fields or IDs into their HTML/inline handlers. The new test suite is configured in GitHub Actions, but no passing CI result has yet been observed for this commit. Browser interaction/regression tests remain outstanding.
