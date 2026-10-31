@@ -1,17 +1,25 @@
 import { executeAdminReadPage } from "./admin-read-adapter.mjs";
 
 /**
- * Bridges the HTTP handler's normalized list contract to the fixed Firestore
- * read adapter. Search and filters are forwarded explicitly; the adapter
- * rejects them until a reviewed indexed implementation exists.
+ * Bridges normalized HTTP list requests to the fixed Firestore adapter.
+ * Operations are disabled unless a trusted server composition explicitly
+ * enables them after collection-specific schema/index verification.
  */
-export function createAdminReadExecutor({ firestore, Timestamp, documentIdField } = {}) {
+export function createAdminReadExecutor({
+  firestore, Timestamp, documentIdField, enabledOperations = []
+} = {}) {
   if (!firestore || typeof firestore.collection !== "function" ||
-      typeof Timestamp !== "function" || !documentIdField) {
+      typeof Timestamp !== "function" || !documentIdField ||
+      !Array.isArray(enabledOperations) ||
+      enabledOperations.some(operation => typeof operation !== "string")) {
     throw new TypeError("Admin read executor dependencies are incomplete.");
   }
 
+  const enabled = new Set(enabledOperations);
   return async function executeOperation({ operation, query = {}, cursorPosition = null } = {}) {
+    if (!enabled.has(operation)) {
+      throw new TypeError("Admin read operation is not enabled pending schema readiness verification.");
+    }
     return executeAdminReadPage({
       firestore,
       Timestamp,
