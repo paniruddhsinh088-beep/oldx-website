@@ -28,4 +28,7 @@ test('Public Store category filters use data attributes and event listeners', ()
   assert.doesNotMatch(block, /getAttribute\('onclick'\)/);
   assert.match(source, /function isSafeStoreImageUrl\(value\)/);
   assert.match(block, /isSafeStoreImageUrl\(data\.photoURL\)/);
+  assert.match(source, /function getValidStoreCoordinates\(coords\)/);
+  assert.match(block, /const storeCoords = getValidStoreCoordinates\(data\.coords\)/);
+  assert.doesNotMatch(block, /data\.coords\.(?:lat|lng)/);
 });
