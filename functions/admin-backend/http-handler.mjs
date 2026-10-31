@@ -16,9 +16,12 @@ function response(status, payload) {
 }
 
 /**
- * Framework-neutral request adapter. The host runtime must translate this
- * result to its HTTP response and inject real token verification, role lookup,
- * operation handlers and append-only audit storage.
+ * Framework-neutral request adapter.
+ *
+ * Reads use executeOperation. Mutations MUST use commitMutation, whose trusted
+ * adapter is responsible for committing the domain change and append-only audit
+ * event in one database transaction/batch. No separate post-mutation audit write
+ * is allowed because it could fail after the business change has committed.
  */
 export async function handleAdminRequest({
   request,
@@ -27,7 +30,7 @@ export async function handleAdminRequest({
   verifyIdToken,
   resolveActiveRole,
   executeOperation,
-  writeAuditEvent,
+  commitMutation,
   isMutation = false,
   requestId
 }) {
@@ -53,28 +56,26 @@ export async function handleAdminRequest({
     return response(auth.status, { ok: false, error: { code: auth.code, message: "Request not permitted" }, requestId: id });
   }
 
-  if (typeof executeOperation !== "function") {
-    return response(503, { ok: false, error: { code: "SERVICE_UNAVAILABLE", message: "Operation is not configured" }, requestId: id });
+  const handler = isMutation ? commitMutation : executeOperation;
+  if (typeof handler !== "function") {
+    return response(503, {
+      ok: false,
+      error: { code: isMutation ? "ATOMIC_COMMIT_NOT_CONFIGURED" : "SERVICE_UNAVAILABLE", message: "Operation is not configured" },
+      requestId: id
+    });
   }
 
   try {
-    const data = await executeOperation({
+    const context = {
       actorUid: auth.identity.uid,
+      actorRole: "admin",
       operation,
-      body: isMutation ? request.body : undefined
-    });
+      requestId: id
+    };
+    const data = isMutation
+      ? await commitMutation({ ...context, body: request.body })
+      : await executeOperation({ actorUid: auth.identity.uid, operation });
 
-    if (isMutation) {
-      if (typeof writeAuditEvent !== "function") {
-        return response(503, { ok: false, error: { code: "AUDIT_NOT_CONFIGURED", message: "Operation unavailable" }, requestId: id });
-      }
-      await writeAuditEvent({
-        actorUid: auth.identity.uid,
-        actorRole: "admin",
-        operation,
-        requestId: id
-      });
-    }
     return response(200, { ok: true, data, requestId: id });
   } catch {
     return response(500, { ok: false, error: { code: "INTERNAL_ERROR", message: "Operation failed" }, requestId: id });
