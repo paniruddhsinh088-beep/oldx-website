@@ -3252,18 +3252,35 @@
             }
         }
 
-        function loginWithGoogle() { 
-            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).then((result) => {
-                const user = result.user;
-                if(user) {
-                    db.collection('users').doc(user.uid).set({
-                        email: user.email || '',
-                        displayName: user.displayName || '',
-                        photoURL: user.photoURL || ''
-                    }, { merge: true });
-                }
-                closeAuthModal();
-            }); 
+        function loginWithGoogle() {
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+                .then((result) => {
+                    const user = result.user;
+                    if (user) {
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email || '',
+                            displayName: user.displayName || '',
+                            photoURL: user.photoURL || ''
+                        }, { merge: true }).catch((error) => {
+                            console.error('[OLDX] Could not update the signed-in user profile:', error);
+                        });
+                    }
+                    closeAuthModal();
+                    showCustomAlert("Success", "Login successful!", "success");
+                })
+                .catch((error) => {
+                    console.error('[OLDX] Google sign-in failed:', error);
+                    const message = error && error.code === 'auth/popup-blocked'
+                        ? 'Your browser blocked the sign-in popup. Allow popups for this Preview site and try again.'
+                        : error && error.code === 'auth/popup-closed-by-user'
+                            ? 'The sign-in window was closed before login finished. Please try again.'
+                            : error && error.code === 'auth/unauthorized-domain'
+                                ? 'This website domain is not authorized for Firebase Authentication.'
+                                : error && error.code === 'auth/network-request-failed'
+                                    ? 'Could not reach Firebase Authentication. Check the connection and try again.'
+                                    : (error && error.message) || 'Google sign-in could not be completed. Please try again.';
+                    showCustomAlert("Google Login Error", message, "error");
+                });
         }
 
         function switchAuthTab(tab) {
