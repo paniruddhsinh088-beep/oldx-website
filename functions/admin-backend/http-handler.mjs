@@ -90,7 +90,7 @@ export async function handleAdminRequest({
   } : null;
 
   if (listQuery?.pageToken) {
-    if (!pageTokenSecret) {
+    if (typeof pageTokenSecret !== "string" || Buffer.byteLength(pageTokenSecret, "utf8") < 32) {
       return response(503, { ok: false, error: { code: "PAGINATION_NOT_CONFIGURED", message: "Operation is not configured" }, requestId: id });
     }
     const verified = verifyAdminPageToken({ token: listQuery.pageToken, context: pageContext, secret: pageTokenSecret });
