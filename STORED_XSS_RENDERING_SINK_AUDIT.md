@@ -74,3 +74,14 @@ Acceptance:
 ## Safety boundary
 
 This audit does not change `index.html`, Firestore Rules, Firebase data, external services, or deployments. A focused remediation patch should be made on the review branch with synthetic regression tests, then verified in Staging before Production approval.
+
+
+## Review-branch remediation status
+
+**Fixed in `index.html` (review branch):**
+- User-entered AI-chat prompt is now placed into a paragraph using `textContent`; multiline input is preserved with `white-space: pre-wrap`.
+- The current hard-coded chatbot reply and timestamp are also rendered through text nodes. The existing greeting entity is converted to a literal waving-hand emoji so it remains user-friendly without HTML parsing.
+
+**Verification level:** The updated source block was fetched back from GitHub and visually checked after the commits. This is source-level verification only. No browser execution, automated XSS regression test, Staging deployment, or mobile test has yet been completed.
+
+**Still open:** Inbox preview, Product cards, My Ads, Product detail highlights/images, Recently Viewed, cart, and remaining dynamic templates listed above. The chatbot fix does not make the entire website XSS-safe.
