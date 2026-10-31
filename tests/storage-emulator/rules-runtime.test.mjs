@@ -51,6 +51,13 @@ test('uploads reject unsupported MIME types and files over the provisional size 
   await assertFails(upload(seller, 'product-media/seller-a/product-1/large.jpg', 'image/jpeg', 10 * 1024 * 1024));
 });
 
+test('uploads reject malformed product IDs, filenames, and non-pending client metadata', async () => {
+  const seller = env.authenticatedContext('seller-a');
+  await assertFails(upload(seller, 'product-media/seller-a/bad!id/photo.jpg'));
+  await assertFails(upload(seller, 'product-media/seller-a/product-1/bad name.jpg'));
+  await assertFails(upload(seller, 'product-media/seller-a/product-1/client-approved.jpg', 'image/jpeg', 128, 'approved'));
+});
+
 test('pending photos cannot be read, while approved photos can be read', async () => {
   const seller = env.authenticatedContext('seller-a');
   await assertSucceeds(upload(seller, 'product-media/seller-a/product-2/pending.jpg'));
