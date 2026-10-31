@@ -20,3 +20,9 @@ Run `npm run test:admin-backend` with Node.js 20 or newer. Tests use synthetic i
 No cloud resources, billing, service accounts, IAM roles, secrets, endpoints, Firestore Rules, deployment scripts, or real Admin roles are created. Before a runtime adapter is written, the owner must approve backend platform, region, billing, service identity, IAM and secret storage in `STAGING_BACKEND_PREFLIGHT.md`.
 
 Do not import service credentials into browser code or commit credentials to this repository.
+
+## Mutation and audit atomicity
+
+The HTTP adapter separates read handlers from mutation handlers. Mutations require a `commitMutation` adapter that must commit the domain change and append-only audit event atomically in one trusted database transaction/batch. A separate audit write after a successful mutation is deliberately not supported because it can leave an unlogged privileged change. If atomic commit support is absent or fails, the handler returns an error and does not report success.
+
+The adapter still does not provide transaction semantics itself. The eventual Firebase Admin/Firestore implementation must prove atomicity with Emulator integration tests before any staging rollout.
