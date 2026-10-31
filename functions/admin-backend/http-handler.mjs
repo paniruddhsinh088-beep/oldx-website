@@ -1,5 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { authorizeAdminRequest } from "./authz.mjs";
+import { parseAdminListQuery } from "./list-query.mjs";
+
+const LIST_OPERATION_FILTERS = Object.freeze({
+  "users.list": [],
+  "products.list": ["status"],
+  "stores.list": ["status"],
+  "reports.list": ["status"],
+  "audit.list": ["targetType"]
+});
 
 const SAFE_HEADERS = Object.freeze({
   "Cache-Control": "no-store, max-age=0",
@@ -57,6 +66,17 @@ export async function handleAdminRequest({
     return response(auth.status, { ok: false, error: { code: auth.code, message: "Request not permitted" }, requestId: id });
   }
 
+  let listQuery;
+  if (!isMutation && Object.hasOwn(LIST_OPERATION_FILTERS, operation)) {
+    const parsed = parseAdminListQuery(request.query ?? {}, { allowedFilters: LIST_OPERATION_FILTERS[operation] });
+    if (!parsed.ok) {
+      return response(400, { ok: false, error: { code: parsed.code, message: "Invalid list query" }, requestId: id });
+    }
+    listQuery = parsed.value;
+  } else if (!isMutation && request.query && Object.keys(request.query).length > 0) {
+    return response(400, { ok: false, error: { code: "UNSUPPORTED_QUERY_PARAMETER", message: "Invalid query" }, requestId: id });
+  }
+
   const handler = isMutation ? commitMutation : executeOperation;
   if (typeof handler !== "function") {
     return response(503, {
@@ -75,7 +95,7 @@ export async function handleAdminRequest({
     };
     const data = isMutation
       ? await commitMutation({ ...context, body: request.body })
-      : await executeOperation({ actorUid: auth.identity.uid, operation });
+      : await executeOperation({ actorUid: auth.identity.uid, operation, ...(listQuery ? { query: listQuery } : {}) });
 
     return response(200, { ok: true, data, requestId: id });
   } catch {
