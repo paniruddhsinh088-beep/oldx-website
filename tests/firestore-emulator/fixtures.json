@@ -1,0 +1,43 @@
+{
+  "users": {
+    "sellerA": {
+      "uid": "synthetic-seller-a",
+      "displayName": "Synthetic Seller A",
+      "email": "seller-a@example.invalid"
+    },
+    "buyerB": {
+      "uid": "synthetic-buyer-b",
+      "displayName": "Synthetic Buyer B",
+      "email": "buyer-b@example.invalid"
+    }
+  },
+  "products": {
+    "sellerListing": {
+      "sellerUid": "synthetic-seller-a",
+      "title": "Synthetic test listing",
+      "price": 100,
+      "isSold": false,
+      "isFeatured": false,
+      "isShopVerified": false
+    }
+  },
+  "stores": {
+    "sellerStore": {
+      "uid": "synthetic-seller-a",
+      "shopName": "Synthetic Test Store"
+    }
+  },
+  "chats": {
+    "sellerBuyerChat": {
+      "participants": ["synthetic-seller-a", "synthetic-buyer-b"],
+      "productId": "sellerListing"
+    }
+  },
+  "messages": {
+    "sellerMessage": {
+      "senderUid": "synthetic-seller-a",
+      "text": "Synthetic test message",
+      "status": "sent"
+    }
+  }
+}
