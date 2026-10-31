@@ -2353,29 +2353,46 @@
                               watchTypingStatus(chat.chatRoomId, otherUserId);
                           };
 
-                          const unreadBadge = item.unreadCount > 0
-                              ? `<span class="ml-1 inline-flex items-center justify-center min-w-[19px] h-[19px] px-1 rounded-full bg-teal-600 text-white text-[10px] font-bold">${item.unreadCount}</span>`
-                              : '';
-                          div.innerHTML = `
-                              <div class="flex items-center gap-3 overflow-hidden">
-                                  <div class="w-12 h-12 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition">
-                                      <i class="fa-solid fa-user-shield"></i>
-                                  </div>
-                                  <div class="overflow-hidden">
-                                      <div class="flex items-center gap-2">
-                                          <h4 class="font-bold text-xs text-gray-900 dark:text-white truncate">Chat Room</h4>
-                                          <span class="text-[9px] text-gray-400">${lastTime}</span>
-                                          ${unreadBadge}
-                                      </div>
-                                      <p class="text-[11px] ${item.unreadCount > 0 ? 'text-gray-900 dark:text-white font-bold' : 'text-gray-500 dark:text-gray-400'} truncate mt-0.5">${lastMsgText}</p>
-                                  </div>
-                              </div>
-                              <div class="flex items-center gap-2 shrink-0">
-                                  <div class="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition">
-                                      <i class="fa-solid fa-chevron-right text-[10px]"></i>
-                                  </div>
-                              </div>
-                          `;
+                          const mainRow = document.createElement('div');
+                          mainRow.className = "flex items-center gap-3 overflow-hidden";
+                          const avatar = document.createElement('div');
+                          avatar.className = "w-12 h-12 bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-2xl flex items-center justify-center font-bold text-sm shrink-0 border border-teal-100 dark:border-teal-800 group-hover:scale-105 transition";
+                          avatar.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
+
+                          const details = document.createElement('div');
+                          details.className = "overflow-hidden";
+                          const heading = document.createElement('div');
+                          heading.className = "flex items-center gap-2";
+                          const roomTitle = document.createElement('h4');
+                          roomTitle.className = "font-bold text-xs text-gray-900 dark:text-white truncate";
+                          roomTitle.textContent = "Chat Room";
+                          const timeLabel = document.createElement('span');
+                          timeLabel.className = "text-[9px] text-gray-400";
+                          timeLabel.textContent = String(lastTime);
+                          heading.append(roomTitle, timeLabel);
+
+                          if (item.unreadCount > 0) {
+                              const unreadBadge = document.createElement('span');
+                              unreadBadge.className = "ml-1 inline-flex items-center justify-center min-w-[19px] h-[19px] px-1 rounded-full bg-teal-600 text-white text-[10px] font-bold";
+                              unreadBadge.textContent = String(item.unreadCount);
+                              heading.appendChild(unreadBadge);
+                          }
+
+                          const preview = document.createElement('p');
+                          preview.className = "text-[11px] truncate mt-0.5 " + (item.unreadCount > 0
+                              ? "text-gray-900 dark:text-white font-bold"
+                              : "text-gray-500 dark:text-gray-400");
+                          preview.textContent = String(lastMsgText);
+                          details.append(heading, preview);
+                          mainRow.append(avatar, details);
+
+                          const actionRow = document.createElement('div');
+                          actionRow.className = "flex items-center gap-2 shrink-0";
+                          const arrow = document.createElement('div');
+                          arrow.className = "w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-teal-600 group-hover:text-white transition";
+                          arrow.innerHTML = '<i class="fa-solid fa-chevron-right text-[10px]"></i>';
+                          actionRow.appendChild(arrow);
+                          div.append(mainRow, actionRow);
                           container.appendChild(div);
                       });
                   } catch (err) {
