@@ -52,7 +52,23 @@ The browser currently reads `stats/traffic` and derives other counts from full p
 - Cursor position must be a strict adapter-defined structure. Reject unknown keys, wrong types, oversized values, and any attempt to pass a raw document path.
 - Use document snapshots or a stable composite key only inside the trusted adapter; never expose raw snapshot objects or internal paths to the browser.
 
-## 6. Blockers before implementation
+## 6.1 Users pagination schema verification (2026-10-31)
+
+A source-level review of `index.html` confirms the current Authentication/profile write paths use merge writes for `email`, `displayName`, and `photoURL`. The reviewed paths do not set a `createdAt` field:
+- Auth state synchronization (`auth.onAuthStateChanged`)
+- Google sign-in profile synchronization
+- Email sign-in profile synchronization
+- Email account creation profile synchronization
+
+The existing user document is also updated for preferences and presence, but those writes do not establish a reliable immutable creation timestamp for all legacy and new users. The inventory does not document a universal stable ordering field. Therefore:
+- Keep `users.list` unavailable from the Firestore pagination adapter until a stable, backfilled ordering key is approved and verified for every record.
+- Do not add a client-side `createdAt` write as a quick fix: it would not repair legacy records and would be client-controlled.
+- Do not silently substitute `lastSeen`, `updatedAt`, or document ID as creation order.
+- Any future backfill must be a separately reviewed, resumable trusted migration with dry-run, audit, and rollback/recovery plan.
+
+This is a source-code finding, not a claim that no individual user document happens to contain `createdAt`.
+
+## 6.2 Blockers before implementation
 
 1. Verify exact Product document field types, nullability, and ordering field presence from source/write contracts and synthetic Emulator fixtures.
 2. Verify whether Users records contain a stable creation/order field; do not infer one.
