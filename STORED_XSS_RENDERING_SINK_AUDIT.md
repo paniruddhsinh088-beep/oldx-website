@@ -106,3 +106,12 @@ This audit does not change `index.html`, Firestore Rules, Firebase data, externa
 - Product cards now use a static DOM skeleton; Firestore-controlled location, category, title and price are populated through text nodes. Save/buy actions use event listeners. Product image URLs use the same restricted scheme check.
 - Added `xss-product-card-cart-myads.test.mjs` to the dependency-free safety test command.
 - Source review confirms these paths no longer interpolate the listed dynamic fields or IDs into their HTML/inline handlers. The new test suite is configured in GitHub Actions, but no passing CI result has yet been observed for this commit. Browser interaction/regression tests remain outstanding.
+
+
+**Additional review-branch remediation (Search Autocomplete and Public Store):**
+- Search autocomplete no longer interpolates product title, price or image URL into an HTML template. Titles/prices are assigned with `textContent`; image URLs are limited to HTTP(S) and base64 PNG/JPEG/WebP/GIF data URLs.
+- Public Store category filter buttons no longer place category IDs into inline JavaScript. They carry escaped data attributes and bind click listeners; active-filter state reads the data attribute rather than parsing an `onclick` string.
+- Public Store shop-photo rendering now rejects unsupported URL schemes and accepts only HTTP(S) or base64 PNG/JPEG/WebP/GIF data URLs.
+- Added `xss-search-store-source.test.mjs` to the dependency-free safety test command, covering autocomplete text/image handling, Store category action binding and shop-photo URL validation.
+- Admin source scan found only two `innerHTML` assignments in `admin.html`, both constant developer-authored icon/button labels; the row data is built separately. This is a source scan, not a full Admin runtime security review.
+- The new source tests are configured in GitHub Actions; no passing result or browser-based execution has yet been confirmed. Store public page visual/functional regression testing remains outstanding.
