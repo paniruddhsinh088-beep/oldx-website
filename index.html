@@ -4353,26 +4353,53 @@
             document.getElementById('detailDescription').innerText = p.desc;
 
             const slider = document.getElementById('detailImageSlider');
-            slider.innerHTML = '';
-            if(p.images && p.images.length > 0) {
-                p.images.forEach(img => {
-                    slider.innerHTML += `<div class="snap-center shrink-0 w-full h-full flex items-center justify-center cursor-zoom-in"><img src="${img}" class="max-h-full max-w-full object-contain"></div>`;
-                });
-                document.getElementById('detailImgBadge').innerHTML = `<span>1/${p.images.length}</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>`;
+            slider.replaceChildren();
+            const safeProductImages = Array.isArray(p.images) ? p.images : [];
+            safeProductImages.forEach(imageValue => {
+                if (typeof imageValue !== 'string') return;
+                const trimmedImage = imageValue.trim();
+                const isSafeImageUrl = /^https?:\/\//i.test(trimmedImage)
+                    || /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(trimmedImage);
+                if (!isSafeImageUrl) return;
+
+                const frame = document.createElement('div');
+                frame.className = "snap-center shrink-0 w-full h-full flex items-center justify-center cursor-zoom-in";
+                const image = document.createElement('img');
+                image.className = "max-h-full max-w-full object-contain";
+                image.alt = String(p.title || "Product image");
+                image.src = trimmedImage;
+                frame.appendChild(image);
+                slider.appendChild(frame);
+            });
+            const imageBadge = document.getElementById('detailImgBadge');
+            imageBadge.replaceChildren();
+            if (safeProductImages.length > 0) {
+                const count = document.createElement('span');
+                count.textContent = `1/${slider.children.length}`;
+                const expandIcon = document.createElement('i');
+                expandIcon.className = "fa-solid fa-expand text-[10px] ml-1";
+                imageBadge.append(count, document.createTextNode(' '), expandIcon);
             }
 
             const grid = document.getElementById('detailHighlightsGrid');
-            grid.innerHTML = '';
-            if(p.extraDetails) {
-                for(let k in p.extraDetails) {
-                    if(p.extraDetails[k]) {
-                        grid.innerHTML += `
-                            <div class="bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2">
-                                <i class="fa-solid fa-circle-check text-teal-600 text-xs"></i>
-                                <div><p class="text-[10px] text-gray-400 capitalize font-medium">${k}</p><p class="text-xs font-bold text-gray-800 dark:text-gray-100">${p.extraDetails[k]}</p></div>
-                            </div>
-                        `;
-                    }
+            grid.replaceChildren();
+            if(p.extraDetails && typeof p.extraDetails === 'object') {
+                for(const [detailKey, detailValue] of Object.entries(p.extraDetails)) {
+                    if(detailValue === null || detailValue === undefined || detailValue === '') continue;
+                    const card = document.createElement('div');
+                    card.className = "bg-gray-50 dark:bg-gray-700/60 p-2.5 rounded-xl border flex items-center gap-2";
+                    const icon = document.createElement('i');
+                    icon.className = "fa-solid fa-circle-check text-teal-600 text-xs";
+                    const content = document.createElement('div');
+                    const label = document.createElement('p');
+                    label.className = "text-[10px] text-gray-400 capitalize font-medium";
+                    label.textContent = String(detailKey);
+                    const value = document.createElement('p');
+                    value.className = "text-xs font-bold text-gray-800 dark:text-gray-100";
+                    value.textContent = String(detailValue);
+                    content.append(label, value);
+                    card.append(icon, content);
+                    grid.appendChild(card);
                 }
             }
 
