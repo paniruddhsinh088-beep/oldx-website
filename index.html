@@ -4925,72 +4925,94 @@
         function createProductCard(p, isCarousel = false) {
             const storageKey = getSavedAdsStorageKey();
             const rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            const isSaved = rawList.some(item => {
-                const itemId = (typeof item === 'string') ? item : item.docId;
-                return itemId === p.docId;
-            });
-            
+            const isSaved = rawList.some(item => (typeof item === 'string' ? item : item.docId) === p.docId);
             const card = document.createElement('div');
-            const carouselClass = isCarousel ? "shrink-0 w-44 sm:w-56 md:w-auto" : "";
-            
-            card.className = `${carouselClass} bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1`;
-            card.onclick = () => openProductDetailPage(p.docId);
-            
-            const mrpMarkup = (p.mrpPrice && p.mrpPrice > p.basePrice) 
-                ? `<span class="text-[11px] text-gray-400 line-through font-semibold ml-1">&#8377;${p.mrpPrice.toLocaleString('en-IN')}</span>` 
-                : '';
-
-            const discBadge = (p.discountPercent && p.discountPercent > 0)
-                ? `<span class="bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm">${p.discountPercent}% OFF</span>`
-                : '';
-
-            const featuredBadge = p.isFeatured
-                ? `<span class="bg-amber-500 text-primary text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-bolt"></i> FEATURED</span>`
-                : (p.isShopVerified 
-                    ? `<span class="bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide flex items-center gap-1"><i class="fa-solid fa-store"></i> SHOP</span>`
-                    : `<span class="bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide">&#9733; VERIFIED</span>`);
-
-            const soldBadge = p.isSold 
-                ? `<div class="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20"><span class="bg-red-600 text-white font-black text-[10px] px-2 py-1 rounded uppercase tracking-wider shadow-lg">OUT OF STOCK</span></div>`
-                : '';
+            card.className = (isCarousel ? "shrink-0 w-44 sm:w-56 md:w-auto " : "") +
+                "bg-white dark:bg-gray-800 rounded-2xl border border-gray-200/80 dark:border-gray-700/80 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group flex flex-col justify-between cursor-pointer relative transform hover:-translate-y-1";
+            card.addEventListener('click', () => openProductDetailPage(p.docId));
 
             card.innerHTML = `
-                ${soldBadge}
-                <div>
-                    <div class="h-36 sm:h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
-                        ${p.images && p.images.length > 0 ? `<img src="${p.images[0]}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">` : `<div class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>`}
-                        
-                        <div class="absolute top-2 left-2 flex items-center gap-1 z-10">
-                            ${featuredBadge}
-                            ${discBadge}
-                        </div>
-
-                        <button onclick="event.stopPropagation(); toggleCartProduct('${p.docId}')" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110">
-                            <i class="fa-solid fa-heart ${isSaved ? 'text-red-500 font-black text-sm' : 'text-gray-400 text-xs'}"></i>
-                        </button>
+                <div data-card-body>
+                    <div data-card-image-area class="h-36 sm:h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                        <div data-image-placeholder class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>
+                        <div data-card-badges class="absolute top-2 left-2 flex items-center gap-1 z-10"></div>
+                        <button data-save-button type="button" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110" aria-label="Save ad"><i data-heart-icon class="fa-solid fa-heart"></i></button>
                     </div>
-
                     <div class="p-3 space-y-1.5">
                         <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                            <span class="truncate max-w-[110px]"><i class="fa-solid fa-location-dot text-red-500 mr-1"></i>${p.location}</span>
-                            <span class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.2 rounded-full capitalize text-[9px]">${p.category}</span>
+                            <span data-card-location class="truncate max-w-[110px]"></span>
+                            <span data-card-category class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.2 rounded-full capitalize text-[9px]"></span>
                         </div>
-
-                        <h4 class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition">
-                            ${p.title}
-                        </h4>
-
-                        <div class="flex items-baseline gap-1 pt-0.5">
-                            <span class="text-base sm:text-lg font-black text-primary dark:text-teal-400 tracking-tight">${p.finalPriceStr}</span>
-                            ${mrpMarkup}
-                        </div>
+                        <h4 data-card-title class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition"></h4>
+                        <div class="flex items-baseline gap-1 pt-0.5"><span data-card-price class="text-base sm:text-lg font-black text-primary dark:text-teal-400 tracking-tight"></span><span data-card-mrp class="text-[11px] text-gray-400 line-through font-semibold ml-1"></span></div>
                     </div>
                 </div>
-
-                <button class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer">
-                    <i class="fa-solid fa-paper-plane text-[10px]"></i> Chat / Buy
-                </button>
+                <button data-card-buy type="button" class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"><i class="fa-solid fa-paper-plane text-[10px]"></i> Chat / Buy</button>
             `;
+
+            const imageArea = card.querySelector('[data-card-image-area]');
+            const imageValue = Array.isArray(p.images) && typeof p.images[0] === 'string' ? p.images[0].trim() : '';
+            if (/^https?:\/\//i.test(imageValue) || /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(imageValue)) {
+                const image = document.createElement('img');
+                image.src = imageValue;
+                image.alt = String(p.title || 'Product image');
+                image.className = "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500";
+                card.querySelector('[data-image-placeholder]').replaceWith(image);
+            }
+
+            const badges = card.querySelector('[data-card-badges]');
+            if (p.isFeatured || p.isShopVerified) {
+                const badge = document.createElement('span');
+                badge.className = p.isFeatured
+                    ? "bg-amber-500 text-primary text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide"
+                    : "bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide";
+                badge.textContent = p.isFeatured ? '⚡ FEATURED' : 'SHOP';
+                badges.appendChild(badge);
+            } else {
+                const badge = document.createElement('span');
+                badge.className = "bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide";
+                badge.textContent = '★ VERIFIED';
+                badges.appendChild(badge);
+            }
+            if (p.discountPercent && p.discountPercent > 0) {
+                const discount = document.createElement('span');
+                discount.className = "bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm";
+                discount.textContent = String(p.discountPercent) + '% OFF';
+                badges.appendChild(discount);
+            }
+            if (p.isSold) {
+                const overlay = document.createElement('div');
+                overlay.className = "absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20";
+                const label = document.createElement('span');
+                label.className = "bg-red-600 text-white font-black text-[10px] px-2 py-1 rounded uppercase tracking-wider shadow-lg";
+                label.textContent = 'OUT OF STOCK';
+                overlay.appendChild(label);
+                card.appendChild(overlay);
+            }
+
+            const location = card.querySelector('[data-card-location]');
+            const locationIcon = document.createElement('i');
+            locationIcon.className = "fa-solid fa-location-dot text-red-500 mr-1";
+            location.append(locationIcon, document.createTextNode(String(p.location || '')));
+            card.querySelector('[data-card-category]').textContent = String(p.category || '');
+            card.querySelector('[data-card-title]').textContent = String(p.title || '');
+            card.querySelector('[data-card-price]').textContent = String(p.finalPriceStr || '');
+            if (p.mrpPrice && p.mrpPrice > p.basePrice) {
+                card.querySelector('[data-card-mrp]').textContent = '₹' + Number(p.mrpPrice).toLocaleString('en-IN');
+            } else {
+                card.querySelector('[data-card-mrp]').remove();
+            }
+
+            const heart = card.querySelector('[data-heart-icon]');
+            heart.className = "fa-solid fa-heart " + (isSaved ? "text-red-500 font-black text-sm" : "text-gray-400 text-xs");
+            card.querySelector('[data-save-button]').addEventListener('click', event => {
+                event.stopPropagation();
+                toggleCartProduct(p.docId);
+            });
+            card.querySelector('[data-card-buy]').addEventListener('click', event => {
+                event.stopPropagation();
+                openProductDetailPage(p.docId);
+            });
             return card;
         }
     </script>
