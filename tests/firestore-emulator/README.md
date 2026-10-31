@@ -9,27 +9,31 @@ This harness is for local development and synthetic test data only.
 - Do not run `firebase deploy` as part of these tests.
 - Do not import a production or staging database export.
 - The Emulator binds to `127.0.0.1` only; do not expose port 8080 publicly.
+- Use `firebase.emulator.json` for the local test Rules. The root `firebase.json` remains deployment-free.
 
 ## Current state
 
-The repository does not yet contain an approved `firestore.rules` file or a complete package/test setup. The root `firebase.json` intentionally configures only the local Firestore Emulator. It does not define deployed Rules, hosting, functions, or project aliases.
+The emulator-specific config loads `tests/firestore-emulator/deny-all.rules`. This is a deliberately restrictive baseline: all client reads and writes are denied. It proves the emulator can be pointed at an isolated Rules file without creating an application policy.
 
-This is infrastructure scaffolding, not a passing security test. No application Rules are loaded and no app access policy is validated yet.
+**This is not the OLDX application authorization policy and does not validate guest browsing, seller ownership, private user data, stores, chat participants, message transitions, or privileged fields.** Do not publish this deny-all fixture to staging or production.
 
-## Next implementation steps
+The repository still needs an approved application Rules policy based on the completed schema and authorization decisions. No Rules have been published.
 
-1. Install Firebase CLI and Node.js locally.
-2. Start only the local Firestore Emulator with project ID `demo-oldx-emulator`.
-3. Add the test runner and `@firebase/rules-unit-testing` as development-only dependencies once the repository's build/test tooling is agreed.
-4. Author candidate Rules only after completing the outstanding schema and authorization decisions in `FIRESTORE_RULES_HARDENING_PLAN.md`.
-5. Load candidate Rules directly into the Emulator test environment; never publish them from this workflow.
-6. Add synthetic tests for guest browsing, seller ownership and sold toggle, private user data, stores, chat participants, message transitions, and privileged fields.
-7. Require an explicit owner review before any separate staging Rules publication.
+## Safe local command
 
-## Safe local command (after Firebase CLI installation)
+After installing Firebase CLI:
 
 ```sh
-firebase emulators:start --only firestore --project demo-oldx-emulator
+firebase emulators:start --only firestore --project demo-oldx-emulator --config firebase.emulator.json
 ```
 
-Do not replace the demo project ID with either live project ID. This command starts the local emulator only; it does not deploy anything.
+For a one-shot local test session, use `firebase emulators:exec` with the same `--project` and `--config` values. Keep the project ID exactly `demo-oldx-emulator`.
+
+## Next steps
+
+1. Add the emulator runtime and `@firebase/rules-unit-testing` as development-only dependencies.
+2. Run real authenticated and unauthenticated authorization tests against the deny-all baseline.
+3. Complete outstanding schema and authorization decisions in `FIRESTORE_RULES_HARDENING_PLAN.md`.
+4. Author a separate candidate application Rules policy only after those decisions are reviewed.
+5. Test guest browsing, seller ownership and two-way sold toggle, private user data, stores, chat participants, message transitions, and privileged fields against synthetic data.
+6. Require explicit owner review before any separate staging Rules publication.
