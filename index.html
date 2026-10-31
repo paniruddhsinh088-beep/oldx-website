@@ -3645,12 +3645,30 @@
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-gray-50 dark:bg-gray-700/50 border p-2.5 rounded-xl gap-2";
                 div.innerHTML = `
-                    <div class="flex items-center gap-2 cursor-pointer overflow-hidden" onclick="closeCartModal(); openProductDetailPage('${id}')">
-                        <img src="${img || 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png'}" class="w-12 h-12 rounded-lg object-cover bg-gray-200">
-                        <div><h4 class="font-bold text-xs truncate max-w-[180px]">${title}</h4><p class="text-teal-600 font-extrabold text-xs">${price}</p></div>
+                    <div data-cart-open class="flex items-center gap-2 cursor-pointer overflow-hidden">
+                        <img data-cart-image class="w-12 h-12 rounded-lg object-cover bg-gray-200">
+                        <div><h4 data-cart-title class="font-bold text-xs truncate max-w-[180px]"></h4><p data-cart-price class="text-teal-600 font-extrabold text-xs"></p></div>
                     </div>
-                    <button onclick="event.stopPropagation(); removeFromCart('${id}')" class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+                    <button data-cart-remove class="text-red-500 p-2 text-xs font-bold cursor-pointer hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
                 `;
+                const cartImage = div.querySelector('[data-cart-image]');
+                const cartImageUrl = (typeof img === 'string') ? img.trim() : '';
+                if (/^https?:\/\//i.test(cartImageUrl) || /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(cartImageUrl)) {
+                    cartImage.src = cartImageUrl;
+                } else {
+                    cartImage.src = 'https://cdn-icons-png.flaticon.com/512/1165/1165677.png';
+                }
+                cartImage.alt = String(title || 'Saved product');
+                div.querySelector('[data-cart-title]').textContent = String(title || '');
+                div.querySelector('[data-cart-price]').textContent = String(price || '');
+                div.querySelector('[data-cart-open]').addEventListener('click', () => {
+                    closeCartModal();
+                    openProductDetailPage(id);
+                });
+                div.querySelector('[data-cart-remove]').addEventListener('click', event => {
+                    event.stopPropagation();
+                    removeFromCart(id);
+                });
                 container.appendChild(div);
             });
         }
