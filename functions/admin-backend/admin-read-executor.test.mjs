@@ -60,6 +60,17 @@ test("forwards verified cursor position unchanged to adapter", async () => {
   ]);
 });
 
+test("rejects unknown readiness operations at construction", () => {
+  const firestore = makeFirestore();
+  assert.throws(() => createAdminReadExecutor({
+    firestore, Timestamp, documentIdField, enabledOperations: ["users.dumpAll"]
+  }), /dependencies are incomplete/);
+  assert.throws(() => createAdminReadExecutor({
+    firestore, Timestamp, documentIdField, enabledOperations: ["users.list", "reports.list"]
+  }), /dependencies are incomplete/);
+  assert.equal(firestore.calls.length, 0);
+});
+
 test("requires trusted Firestore dependencies at construction", () => {
   assert.throws(() => createAdminReadExecutor({}), /dependencies are incomplete/);
 });
