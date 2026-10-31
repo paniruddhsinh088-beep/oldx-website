@@ -89,3 +89,17 @@ A test suite is not considered complete until:
 7. Move browser writes to traffic counters and other privileged operations to trusted backend code.
 
 No Firestore Rules are supplied by this document. It is deliberately a readiness and test specification, not a deployable Ruleset.
+
+
+## CI verification record (2026-10-31)
+
+- GitHub Actions run: [41207574562](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41207574562)
+- Commit: `0851d90aff5b177bb0c5f44beffe1649d2253773`
+- Result: successful.
+- Dependency-free safety/configuration tests: 21 passed, 0 failed.
+- Firestore Emulator runtime tests: 5 passed, 0 failed.
+- CI installs Java 21, starts only the Firestore Emulator, and uses project ID `demo-oldx-emulator`.
+- Runtime checks verify that unauthenticated clients, authenticated sellers, and an admin-like test identity are all denied read/write access by the isolated deny-all baseline.
+- This verifies the test harness and deny-all baseline only. It does **not** validate an OLDX application Ruleset, public marketplace reads, seller workflows, chat access, or production/staging behavior.
+- The npm test-tool install reported 21 dependency audit findings (16 moderate, 5 high). These are dependency-tree findings and have not been remediated or assessed for exploitability in this project.
+- No Firebase Rules were deployed and no Firebase project or Vercel Production settings were changed.
