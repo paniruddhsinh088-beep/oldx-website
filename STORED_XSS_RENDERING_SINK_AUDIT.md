@@ -115,3 +115,6 @@ This audit does not change `index.html`, Firestore Rules, Firebase data, externa
 - Added `xss-search-store-source.test.mjs` to the dependency-free safety test command, covering autocomplete text/image handling, Store category action binding and shop-photo URL validation.
 - Admin source scan found only two `innerHTML` assignments in `admin.html`, both constant developer-authored icon/button labels; the row data is built separately. This is a source scan, not a full Admin runtime security review.
 - The new source tests are configured in GitHub Actions; no passing result or browser-based execution has yet been confirmed. Store public page visual/functional regression testing remains outstanding.
+
+- Public Store map coordinates are now converted to finite numbers and range-checked (latitude -90..90, longitude -180..180) before being used in the map, directions URL or map container. Empty, missing and out-of-range coordinates suppress the map/directions rather than being interpolated into an HTML attribute.
+- The Store source test now guards coordinate validation as well as image URL validation.
