@@ -39,12 +39,15 @@
 
 ### User data migration
 
-Target collections:
+Target collections (candidate schema; see `PUBLIC_PRIVATE_PROFILE_MIGRATION_PLAN.md`):
 
-- `publicProfiles/{uid}`: only public display fields such as `displayName`, `photoURL`, `isOnline`, `lastSeen` (confirm product/privacy decision for presence before making it public).
-- `privateUsers/{uid}`: `email`, `lastIp` (prefer not to collect/store unless essential), `savedAds`, `blockedUsers`, and other private settings.
-- Existing `users/{uid}` remains during a compatibility period. Do not close its access until all app reads/writes have migrated and verified.
-- Do not copy private fields into `publicProfiles`. Keep a field-level migration inventory and backfill status.
+- `publicProfiles/{uid}`: only explicitly approved public display fields such as `displayName` and `photoURL`. Do not put global `isOnline` or `lastSeen` here.
+- `privateUsers/{uid}`: owner-only private account data and preferences. Store email only if a documented operational need exists; Firebase Authentication remains the identity source. Do not collect/copy `lastIp` unless a documented need is approved.
+- `privateUsers/{uid}/savedAds/{productId}`: candidate owner-only Saved Ads records to avoid an unbounded array; confirm legacy metadata needs before implementation.
+- `userBlocks/{blockerUid}/blocked/{blockedUid}`: candidate private one-way block relation; only the blocker can read/manage their list. Message authorization must reject a new message from the blocked user to the blocker without exposing the list.
+- `chats/{chatId}/presence/{uid}`: candidate participant-scoped presence; only participants in that chat can read it, and a participant can write only their own presence.
+- Existing `users/{uid}` remains during a compatibility period. Do not close its access or delete legacy fields until every read/write path is migrated and verified.
+- Never copy private fields into `publicProfiles`. Keep a field-level migration inventory, backfill status, and rollback plan.
 
 ### Products
 
@@ -69,7 +72,9 @@ Target collections:
 - Chat updates should permit only known fields, e.g. typing indicators for the current user and a bounded `lastUpdated`; do not allow participants or product linkage to be rewritten.
 - Message read requires parent chat membership.
 - Message create requires `senderUid == request.auth.uid`, sender is a parent participant, and only approved fields are present.
-- Message update must be narrowly scoped to supported transitions: read receipt by recipient, hide-for-me by the requesting participant, and delete-for-everyone by the original sender if this is confirmed intended behavior.
+- Message update must be narrowly scoped to supported transitions: read receipt by recipient, hide-for-me by the requesting participant, and delete-for-everyone only by the original sender within 15 minutes of the server-created message timestamp. Use trusted server time and immutable `createdAt`; if Rules cannot safely enforce the exact time window, use a trusted backend endpoint.
+- Approved block behavior is one-way: a blocked user cannot send new messages to the blocker. Both parties retain access to existing chat history. Do not assume the blocker is also prevented from sending unless separately approved.
+- Online Status / Last Seen is visible only to participants in the relevant chat, never publicly through a profile document.
 - Do not permit arbitrary message overwrite or deletion.
 - Attachments require a strict MIME allowlist and size limits; Firestore Rules cannot inspect the actual bytes of a data URL. Long-term, move large attachments to controlled object storage with backend validation.
 - Blocking is not securely enforced merely by checking another user's private `blockedUsers` field in browser code. Define the authoritative block direction and enforce sending through a trusted backend or a rules-verifiable block record. Avoid exposing private block lists.
@@ -127,9 +132,10 @@ Target collections:
 ## Open decisions before implementation
 
 - Confirm the exact deployed Ruleset and Firebase project/environment.
-- Confirm whether online presence and last-seen are public to all users or only chat participants.
-- Confirm whether users should be able to delete messages for everyone, and the allowed time window.
-- Confirm whether blocking is one-way or mutual and whether a blocked user can still see an existing chat.
+- Owner-confirmed: Online Status / Last Seen is visible only to participants in the relevant chat.
+- Owner-confirmed: only the original sender may Delete for Everyone within 15 minutes; Delete for Me is a separate per-user hide action.
+- Owner-confirmed: blocking is one-way; the blocked user cannot send new messages to the blocker, while both parties retain access to existing chat history.
+- Still confirm the exact public profile allowlist, presence lifecycle, Saved Ads legacy metadata, and account deletion/retention details before implementation.
 - Confirm product/store fields that sellers may edit after listing publication.
 - Confirm whether saved ads are strictly private to the owner.
 - Confirm whether product and chat attachments remain inline temporarily or migrate to object storage.
