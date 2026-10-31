@@ -86,3 +86,35 @@ test("migration helper is pure and does not reference Firebase or production pro
   const source = await readFile(new URL("./profile-migration-transform.mjs", import.meta.url), "utf8");
   assert.doesNotMatch(source, /firebase-admin|initializeApp|oldx-1c983|oldx-staging|fetch\s*\(/i);
 });
+
+test("saved-ad and blocked-user arrays are capped to their documented bounds", () => {
+  const savedAds = Array.from({ length: 125 }, (_, i) => `ad_${i}`);
+  const blockedUsers = Array.from({ length: 225 }, (_, i) => `user_${i}`);
+  const result = projectLegacyUser({ savedAds, blockedUsers });
+  assert.equal(result.privateProfile.savedAds.length, 100);
+  assert.equal(result.privateProfile.blockedUsers.length, 200);
+  assert.equal(result.privateProfile.savedAds[99], "ad_99");
+  assert.equal(result.privateProfile.blockedUsers[199], "user_199");
+});
+
+test("non-array and malformed private preference values safely become empty lists", () => {
+  const result = projectLegacyUser({
+    savedAds: { first: "ad-one" },
+    blockedUsers: "user-two"
+  });
+  assert.deepEqual(result.privateProfile, {
+    savedAds: [],
+    blockedUsers: []
+  });
+});
+
+test("projection does not mutate the legacy input object or its arrays", () => {
+  const legacy = {
+    displayName: "Synthetic",
+    savedAds: ["ad-one", "ad-one", "../invalid"],
+    blockedUsers: ["user-one"]
+  };
+  const before = structuredClone(legacy);
+  projectLegacyUser(legacy);
+  assert.deepEqual(legacy, before);
+});
