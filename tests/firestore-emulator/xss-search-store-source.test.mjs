@@ -26,4 +26,6 @@ test('Public Store category filters use data attributes and event listeners', ()
   assert.match(block, /addEventListener\('click',[\s\S]*?filterStoreProducts\(button\.getAttribute\('data-store-category'\)\)/);
   assert.doesNotMatch(block, /onclick="filterStoreProducts/);
   assert.doesNotMatch(block, /getAttribute\('onclick'\)/);
+  assert.match(source, /function isSafeStoreImageUrl\(value\)/);
+  assert.match(block, /isSafeStoreImageUrl\(data\.photoURL\)/);
 });
