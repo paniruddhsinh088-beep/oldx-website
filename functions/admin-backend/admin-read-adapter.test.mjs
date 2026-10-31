@@ -63,6 +63,20 @@ test("uses a bounded look-ahead and emits cursor from last visible item", async 
   });
 });
 
+test("rejects malformed and oversized Firestore page snapshots", async () => {
+  for (const docs of [null, {}, [doc("a", { createdAt: { seconds: 1, nanoseconds: 0 } }), doc("b", { createdAt: { seconds: 2, nanoseconds: 0 } }), doc("c", { createdAt: { seconds: 3, nanoseconds: 0 } }), doc("d", { createdAt: { seconds: 4, nanoseconds: 0 } })]]) {
+    const db = makeFirestore([]);
+    db.collection = () => ({
+      select() { return this; }, orderBy() { return this; }, limit() { return this; },
+      async get() { return { docs }; }
+    });
+    await assert.rejects(() => executeAdminReadPage({
+      firestore: db, operation: "users.list", enabledOperations: ["users.list"],
+      pageSize: 2, Timestamp, documentIdField
+    }), /page snapshot/);
+  }
+});
+
 test("validates cursor and applies it as timestamp plus document ID", async () => {
   const db = makeFirestore([]);
   await executeAdminReadPage({
