@@ -1,8 +1,11 @@
 # Location Accuracy and Google Maps UX Requirements
 
-Status: requirements captured; implementation not started.
+Status: owner-approved UX requirement; implementation not started.
 Branch: `security-hardening-review`
 Scope: Staging-first only. Do not change Production or deploy without owner approval.
+
+## Owner's standing improvement authorization
+The owner authorizes proactive identification and correction of bugs and user-convenience improvements as part of the OldX roadmap. Small, low-risk, reversible changes may be implemented on the review/Staging branch after source inspection and tests. Larger changes, schema or data migrations, privacy/security policy changes, paid services, external integrations, and any Production action still require a clear proposal and explicit approval. Keep a record of each change and its test evidence; never claim a fix is complete until verified.
 
 ## Owner request
 
