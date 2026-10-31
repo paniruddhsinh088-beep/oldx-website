@@ -54,6 +54,7 @@ test("mutation delegates one atomic commit with server-derived actor and body", 
   assert.equal(commit.actorUid, "admin-a");
   assert.equal(commit.actorRole, "admin");
   assert.equal(commit.operation, "users.suspend");
+  assert.equal(commit.requestId, "synthetic-request-1");
   assert.deepEqual(commit.body, { uid: "user-b", role: "owner" });
 });
 
