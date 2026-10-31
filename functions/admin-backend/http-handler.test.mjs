@@ -37,7 +37,8 @@ test("unconfigured read operation fails closed", async () => {
 test("mutation fails closed if atomic commit adapter is missing", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
-    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", reason: "test" } }
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", reason: "test" } },
+    validateMutationInput: async ({ body }) => ({ ok: true, value: body })
   });
   assert.equal(result.status, 503);
   assert.equal(result.body.error.code, "ATOMIC_COMMIT_NOT_CONFIGURED");
