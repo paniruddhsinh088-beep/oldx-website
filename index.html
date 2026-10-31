@@ -4455,7 +4455,7 @@
         function openLightboxFromDetail() {
             if (!currentProduct || currentProductSafeImages.length === 0) return;
             const slider = document.getElementById('detailImageSlider');
-            lightboxCurrentIndex = Math.round(slider.scrollLeft / slider.clientWidth);
+            lightboxCurrentIndex = Math.round(slider.scrollLeft / Math.max(1, slider.clientWidth));
             if (lightboxCurrentIndex >= currentProductSafeImages.length) lightboxCurrentIndex = 0;
             
             showLightboxImage();
