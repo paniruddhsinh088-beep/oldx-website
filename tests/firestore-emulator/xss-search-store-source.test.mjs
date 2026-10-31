@@ -32,3 +32,18 @@ test('Public Store category filters use data attributes and event listeners', ()
   assert.match(block, /const storeCoords = getValidStoreCoordinates\(data\.coords\)/);
   assert.doesNotMatch(block, /data\.coords\.(?:lat|lng)/);
 });
+
+test('Store catalogue provides accessible search, sorting, counts and share action', () => {
+  const block = section('function renderStorePublicContent(data, isOwner)', 'function escapeStoreHtml');
+  assert.match(block, /id="storeProductSearch"/);
+  assert.match(block, /aria-label="Search products in this shop"/);
+  assert.match(block, /id="storeProductSort"/);
+  assert.match(block, /price-low/);
+  assert.match(block, /available/);
+  assert.match(block, /id="storeProductsCount"/);
+  assert.match(block, /Share this Shop/);
+  assert.match(source, /function filterStoreProducts\(categoryId\)/);
+  assert.match(source, /p\.title, p\.description, p\.desc, p\.location, p\.brand/);
+  assert.match(source, /Number\(!!a\.isSold\) - Number\(!!b\.isSold\)/);
+  assert.match(source, /items\.forEach\(p => \{ if \(typeof createProductCard/);
+});
