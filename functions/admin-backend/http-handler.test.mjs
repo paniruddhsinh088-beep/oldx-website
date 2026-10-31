@@ -43,11 +43,37 @@ test("mutation fails closed if atomic commit adapter is missing", async () => {
   assert.equal(result.body.error.code, "ATOMIC_COMMIT_NOT_CONFIGURED");
 });
 
+test("mutation fails closed when operation-specific validation is not configured", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 503);
+  assert.equal(result.body.error.code, "MUTATION_VALIDATION_NOT_CONFIGURED");
+  assert.equal(commitCalled, false);
+});
+
+test("invalid mutation input never reaches atomic commit adapter", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", role: "admin" } },
+    validateMutationInput: async () => ({ ok: false }),
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "INVALID_MUTATION_INPUT");
+  assert.equal(commitCalled, false);
+});
+
 test("mutation delegates one atomic commit with server-derived actor and body", async () => {
   let commit;
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", role: "owner" } },
+    validateMutationInput: async ({ body }) => ({ ok: true, value: body }),
     commitMutation: async value => { commit = value; return { suspended: true }; }
   });
   assert.equal(result.status, 200);
@@ -74,6 +100,7 @@ test("client-supplied audit identity and outcome fields remain nested untrusted 
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: forgedBody },
+    validateMutationInput: async ({ body }) => ({ ok: true, value: body }),
     commitMutation: async value => { commit = value; return { suspended: true }; }
   });
   assert.equal(result.status, 200);
@@ -90,6 +117,7 @@ test("atomic commit failure returns generic error without leaking internals", as
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" } },
+    validateMutationInput: async ({ body }) => ({ ok: true, value: body }),
     commitMutation: async () => { throw new Error("private db path"); }
   });
   assert.equal(result.status, 500);
