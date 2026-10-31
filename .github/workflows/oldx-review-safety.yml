@@ -50,3 +50,6 @@ jobs:
 
       - name: Run Firestore Emulator authorization tests
         run: npm run test:emulator:rules
+
+      - name: Run Firebase Storage Emulator authorization tests
+        run: npm run test:storage:rules
