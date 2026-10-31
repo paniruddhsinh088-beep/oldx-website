@@ -16,6 +16,16 @@ function scalar(value) {
  * validate its signature and bind it to the query/order before using it.
  */
 export function parseAdminListQuery(input = {}, { allowedFilters = Object.keys(ALLOWED_FILTERS) } = {}) {
+  if (!input || typeof input !== "object" || Array.isArray(input) ||
+      Object.getPrototypeOf(input) !== Object.prototype && Object.getPrototypeOf(input) !== null) {
+    return { ok: false, code: "INVALID_QUERY" };
+  }
+  const allowedInputKeys = new Set(["pageSize", "pageToken", "q", ...allowedFilters]);
+  for (const [key, value] of Object.entries(input)) {
+    if (!allowedInputKeys.has(key)) return { ok: false, code: "UNSUPPORTED_QUERY_PARAMETER" };
+    if (typeof value !== "string") return { ok: false, code: "INVALID_QUERY" };
+  }
+
   const rawPageSize = scalar(input.pageSize);
   let pageSize = DEFAULT_PAGE_SIZE;
   if (rawPageSize !== "") {
@@ -46,12 +56,6 @@ export function parseAdminListQuery(input = {}, { allowedFilters = Object.keys(A
       if (!allowed.has(value)) return { ok: false, code: "INVALID_FILTER" };
       filters[key] = value;
     }
-  }
-
-  // Reject unknown keys so clients cannot smuggle arbitrary paths/order fields.
-  const allowedKeys = new Set(["pageSize", "pageToken", "q", ...allowedFilters]);
-  if (Object.keys(input).some(key => !allowedKeys.has(key))) {
-    return { ok: false, code: "UNSUPPORTED_QUERY_PARAMETER" };
   }
 
   return { ok: true, value: { pageSize, pageToken: pageToken || null, q, filters } };
