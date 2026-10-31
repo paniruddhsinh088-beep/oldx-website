@@ -91,3 +91,10 @@ This audit does not change `index.html`, Firestore Rules, Firebase data, externa
 - Inbox conversation previews, timestamps and unread-count badges now use DOM text nodes. The remaining `innerHTML` assignments in that inbox card are limited to fixed, developer-authored icon markup; chat preview text and time are no longer interpolated into HTML.
 - Added `tests/firestore-emulator/xss-rendering-source.test.mjs` and included it in `npm run test:emulator:safety`. It statically guards the chatbot and inbox source patterns against regression.
 - The test has been committed but has not yet been executed in GitHub Actions or a local Node runtime in this session. It is a source-pattern regression check, not a substitute for a browser-based XSS test.
+
+
+**Additional Product-detail remediation on the review branch:**
+- Product-detail image slider now creates image elements with DOM APIs instead of interpolating image URLs into HTML. It accepts HTTP(S) URLs and base64 PNG/JPEG/WebP/GIF data images only; other schemes and SVG data URLs are rejected.
+- Product-detail highlight labels and values now use `textContent`, preventing stored product metadata from becoming markup.
+- Added `xss-product-detail-source.test.mjs` to the dependency-free safety suite. It checks the source patterns for dynamic highlight text and image URL filtering.
+- This is a source-level mitigation. It has not yet been run in CI or verified in a browser/device. Product-card, My Ads and cart rendering still need remediation.
