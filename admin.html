@@ -406,7 +406,7 @@
             ]);
             addSection('2. CONNECTION LOGS & NETWORK INFO', 'bg-blue-50/50 p-3.5 rounded-2xl border border-blue-100 space-y-1.5', [
                 ['IP Address', userData.lastIp || 'N/A'],
-                ['Last Activity Timestamp', new Date().toLocaleString()]
+                ['Last Recorded Activity (lastSeen)', userData.lastSeen && typeof userData.lastSeen.toDate === 'function' ? userData.lastSeen.toDate().toLocaleString() : 'Not available']
             ]);
             const listingSection = document.createElement('div');
             listingSection.className = 'bg-amber-50/50 p-3.5 rounded-2xl border border-amber-100 space-y-1.5';
