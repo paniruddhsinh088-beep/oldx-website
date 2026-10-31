@@ -53,3 +53,47 @@ Operation names are proposed contract identifiers and must be reconciled with th
 - Is product deletion permanent, or should Admin actions use a recoverable moderation state?
 
 Until these are decided, implement the least-privilege default: omit email and IP from ordinary directory responses, and do not expose forensic details through a general list endpoint.
+
+
+## Verified migration readiness checklist (2026-10-31)
+
+This checklist separates code foundations from deployable functionality. A checked item means repository-level evidence exists; it does not imply a live endpoint or deployed backend.
+
+### Read foundations
+- [x] Framework-neutral Admin HTTP handler with bearer-token/role-resolver injection points.
+- [x] Signed pagination token binds actor, operation, query, filters, ordering and page size.
+- [x] Fixed collection mapping and field projection in the read adapter.
+- [x] Adapter rejects unsupported search and filters before issuing a Firestore query.
+- [x] Handler + fake Firestore end-to-end pagination test passes in CI.
+- [ ] Real Firebase Admin SDK verifier and server-controlled active-role resolver.
+- [ ] Owner-approved staging runtime, region, billing, service identity, IAM and managed secret storage.
+- [ ] Read-only staging data audit proving timestamp presence/type and index readiness.
+- [ ] Live endpoint integration tests against staging Emulator/runtime.
+
+### Collection-specific readiness
+| Area | Source review | Pagination readiness | Required next proof |
+|---|---|---|---|
+| Products | New create path writes server createdAt | Not yet established for all existing records | Read-only staging coverage/type audit; confirm indexes and projection |
+| Stores | New store path writes server createdAt; update path does not backfill | Not yet established for all existing records | Read-only staging coverage/type audit; confirm indexes and projection |
+| Users | Reviewed profile creation/sync paths do not write universal createdAt | Blocked | Identify approved stable ordering field or design trusted backfill; no client workaround |
+
+### Admin UI cutover gates
+- [ ] Replace initial browser reads of stats/traffic, all products, and all users with bounded API calls.
+- [ ] Remove browser-side full-collection caches and implement server pagination.
+- [ ] Keep search and filters visibly unavailable until indexed implementations exist; never download all records to simulate them.
+- [ ] Remove email and IP from ordinary Users table unless a documented owner-approved purpose and access policy exist.
+- [ ] Replace forensic modal with case-linked, purpose-bound and audited reads.
+- [ ] Replace direct Product delete with a separately approved recoverable moderation mutation; permanent delete remains disabled.
+- [ ] Ensure all mutation controls fail closed when endpoint is absent or authorization is denied.
+- [ ] Add keyboard, mobile-width, loading, empty, error and retry UX tests for each migrated section.
+
+### Release gates (all required; none implied by this checklist)
+1. Backend runtime and staging project binding are owner-approved and startup rejects Production.
+2. Token verification, active-role lookup, revocation behavior, rate limiting and audit writes are implemented server-side.
+3. Collection timestamp coverage and indexes are verified in staging without modifying user data.
+4. Emulator and staging integration tests pass with synthetic fixtures, including denied users and malformed tokens/cursors.
+5. Admin UI no longer performs broad direct reads or direct privileged writes.
+6. Security/privacy review approves projections, forensic access, retention, mutation recovery and audit retention.
+7. Explicit owner approval is obtained before any staging deployment or Rules publication.
+
+**Current decision:** Continue repository-only review and test improvements. Do not wire the Admin UI to the inactive API client, provision cloud resources, run collection scans, migrate records, publish Rules, or deploy. Production remains out of scope.
