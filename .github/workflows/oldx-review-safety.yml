@@ -20,7 +20,7 @@ jobs:
   local-safety-tests:
     name: Local config and emulator-safety tests
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out review branch
         uses: actions/checkout@v4
@@ -32,3 +32,9 @@ jobs:
 
       - name: Run dependency-free safety tests
         run: npm run test:emulator:safety
+
+      - name: Install test-only Firebase tooling
+        run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
+
+      - name: Run Firestore Emulator authorization tests
+        run: npm run test:emulator:rules
