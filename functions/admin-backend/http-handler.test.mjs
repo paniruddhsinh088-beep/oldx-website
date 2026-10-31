@@ -74,3 +74,21 @@ test("unknown operation is denied even for Admin", async () => {
   });
   assert.equal(result.status, 403);
 });
+
+test("missing request ID is generated as a UUID", async () => {
+  const result = await handleAdminRequest({
+    ...common, requestId: undefined,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" } }
+  });
+  assert.equal(result.status, 200);
+  assert.match(result.body.requestId, /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+});
+
+test("blank request ID is replaced with a generated UUID", async () => {
+  const result = await handleAdminRequest({
+    ...common, requestId: "   ",
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" } }
+  });
+  assert.equal(result.status, 200);
+  assert.match(result.body.requestId, /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
+});
