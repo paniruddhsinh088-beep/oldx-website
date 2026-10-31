@@ -84,7 +84,11 @@ test("incomplete successful validator results never reach atomic commit", async 
     Object.assign(new Date(), { ok: true, value: { uid: "user-b" } }),
     Object.create({ value: { uid: "user-b" }, ok: true }),
     Object.defineProperty({ ok: true }, "value", { get() { throw new Error("getter must not run"); } }),
-    { ok: true, value: undefined }
+    { ok: true, value: undefined },
+    { ok: true, value: "user-b" },
+    { ok: true, value: ["user-b"] },
+    { ok: true, value: null },
+    { ok: true, value: new Date() }
   ];
   for (const invalidResult of invalidResults) {
     await t.test(String(invalidResult), async () => {
