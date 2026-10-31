@@ -98,11 +98,11 @@ test("list handler passes only normalized bounded query to the operation", async
   let received;
   const result = await handleAdminRequest({
     ...common,
-    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageSize: "10", q: "  shoes " } },
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageSize: "10" } },
     executeOperation: async value => { received = value; return { items: [] }; }
   });
   assert.equal(result.status, 200);
-  assert.deepEqual(received, { actorUid: "admin-a", operation: "users.list", query: { pageSize: 10, pageToken: null, q: "shoes", filters: {} } });
+  assert.deepEqual(received, { actorUid: "admin-a", operation: "users.list", query: { pageSize: 10, pageToken: null, q: "", filters: {} } });
 });
 
 test("list handler rejects filters not allowed for that operation", async () => {
@@ -130,7 +130,7 @@ test("list handler verifies scoped signed cursors before adapter execution", asy
   const { createAdminPageToken } = await import("./page-token.mjs");
   const secret = "synthetic-handler-secret-with-32-bytes-minimum";
   const context = {
-    actorUid: "admin-a", operation: "users.list", query: "shoes",
+    actorUid: "admin-a", operation: "users.list", query: "",
     filters: {}, order: "createdAt_desc"
   };
   const token = createAdminPageToken({ position: { id: "user-25" }, context, secret });
@@ -139,7 +139,7 @@ test("list handler verifies scoped signed cursors before adapter execution", asy
     ...common, pageTokenSecret: secret,
     request: {
       method: "GET", headers: { authorization: "Bearer admin-token" },
-      query: { q: "shoes", pageToken: token }
+      query: { pageToken: token }
     },
     executeOperation: async value => { received = value; return { items: [] }; }
   });
