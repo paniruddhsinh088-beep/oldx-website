@@ -22,7 +22,7 @@ test("bridges normalized list query and returns bounded page", async () => {
     doc("p1", { title: "Cycle", createdAt: { seconds: 2, nanoseconds: 0 } }),
     doc("p0", { title: "Lookahead", createdAt: { seconds: 1, nanoseconds: 0 } })
   ]);
-  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["products.list"] });
   const result = await execute({
     operation: "products.list",
     query: { pageSize: 1, q: "", filters: {} }
@@ -35,7 +35,7 @@ test("bridges normalized list query and returns bounded page", async () => {
 
 test("forwards non-empty search and filters so adapter fails closed before Firestore", async () => {
   const firestore = makeFirestore();
-  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["products.list"] });
   await assert.rejects(() => execute({
     operation: "products.list",
     query: { pageSize: 25, q: "bike", filters: {} }
@@ -49,7 +49,7 @@ test("forwards non-empty search and filters so adapter fails closed before Fires
 
 test("forwards verified cursor position unchanged to adapter", async () => {
   const firestore = makeFirestore([]);
-  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["products.list"] });
   await execute({
     operation: "users.list",
     query: { pageSize: 10, q: "", filters: {} },
