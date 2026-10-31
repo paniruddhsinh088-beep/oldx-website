@@ -8,7 +8,8 @@
     "test:emulator:rules": "firebase emulators:exec --only firestore --project demo-oldx-emulator --config firebase.emulator.json \"node --test tests/firestore-emulator/rules-runtime.test.mjs tests/firestore-emulator/admin-atomic-audit.test.mjs\"",
     "test:profile-migration": "node --test tests/firestore-emulator/profile-migration-transform.test.mjs",
     "test:admin-backend": "node --test functions/admin-backend/*.test.mjs",
-    "test:firebase-config": "node --test scripts/generate-firebase-env.test.js"
+    "test:firebase-config": "node --test scripts/generate-firebase-env.test.js",
+    "test:storage:rules": "firebase emulators:exec --only storage --project demo-oldx-storage --config firebase.storage-emulator.json \"node --test tests/storage-emulator/rules-runtime.test.mjs\""
   },
   "engines": {
     "node": ">=20"
