@@ -1,0 +1,12 @@
+{
+  "name": "oldx-security-review",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local safety checks for the OLDX security review branch",
+  "scripts": {
+    "test:emulator:safety": "node --test tests/firestore-emulator/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
