@@ -187,6 +187,20 @@
                 <div class="flex items-center gap-3 overflow-x-auto no-scrollbar md:grid md:grid-cols-6 md:gap-4 pb-2" id="homeCatGrid"></div>
             </section>
 
+            <!-- LOCAL STORES DISCOVERY -->
+            <section id="homeStoresSection" class="space-y-4" style="display:none;" aria-labelledby="homeStoresHeading">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <h3 id="homeStoresHeading" class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-store text-teal-600"></i> Discover Local Stores
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium">Explore shops and products from local sellers</p>
+                    </div>
+                    <span class="text-xs font-bold text-teal-700 dark:text-teal-300">On OldX</span>
+                </div>
+                <div id="homeStoresGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3"></div>
+            </section>
+
             <!-- 3. FEATURED / BOOSTED ADS SECTION -->
             <section id="featuredSection" style="display: none;" class="space-y-4 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent p-4 md:p-6 rounded-3xl border border-amber-200/60 dark:border-amber-500/20">
                 <div class="flex justify-between items-center">
@@ -1382,6 +1396,7 @@
             });
             checkLaunchBanner();
             renderHomeCategories();
+            loadHomeStores();
             initCustomPickers();
             autoDetectUserLocation();
             initNativePermissionsAndBackButton();
@@ -3758,6 +3773,53 @@
                 `;
                 grid.appendChild(el);
             });
+        }
+
+        // Load a small, bounded set of public Stores for homepage discovery.
+        // If public Store reads are not allowed by the active Firestore rules, fail quietly.
+        async function loadHomeStores() {
+            const section = document.getElementById('homeStoresSection');
+            const grid = document.getElementById('homeStoresGrid');
+            if (!section || !grid || typeof db === 'undefined') return;
+            try {
+                const snapshot = await db.collection('stores').orderBy('updatedAt', 'desc').limit(6).get();
+                const stores = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data() || {};
+                    if (data.shopName && data.photoURL && isSafeStoreImageUrl(data.photoURL)) {
+                        stores.push({ uid: doc.id, shopName: data.shopName, photoURL: data.photoURL, categories: Array.isArray(data.categories) ? data.categories : [] });
+                    }
+                });
+                grid.replaceChildren();
+                if (!stores.length) { section.style.display = 'none'; return; }
+                stores.forEach(store => {
+                    const card = document.createElement('button');
+                    card.type = 'button';
+                    card.className = 'text-left overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition focus:outline-none focus:ring-2 focus:ring-teal-500';
+                    card.setAttribute('aria-label', 'Visit ' + store.shopName + ' on OldX');
+                    const photo = document.createElement('img');
+                    photo.src = store.photoURL;
+                    photo.alt = store.shopName + ' shop';
+                    photo.loading = 'lazy';
+                    photo.className = 'w-full h-28 sm:h-32 object-cover bg-gray-100 dark:bg-gray-700';
+                    const details = document.createElement('div');
+                    details.className = 'p-3';
+                    const name = document.createElement('p');
+                    name.className = 'font-black text-xs sm:text-sm text-gray-900 dark:text-white truncate';
+                    name.textContent = store.shopName;
+                    const category = document.createElement('p');
+                    category.className = 'text-[10px] text-gray-500 dark:text-gray-400 mt-1 truncate';
+                    category.textContent = store.categories.slice(0, 2).map(id => (olxCategories.find(c => c.id === id) || { name: id }).name).join(' · ') || 'Local shop';
+                    details.append(name, category);
+                    card.append(photo, details);
+                    card.addEventListener('click', () => { window.location.hash = 'store-' + store.uid; });
+                    grid.appendChild(card);
+                });
+                section.style.display = 'block';
+            } catch (error) {
+                section.style.display = 'none';
+                console.info('[OLDX] Homepage Store discovery is unavailable:', error);
+            }
         }
 
         function filterCat(catId) { 

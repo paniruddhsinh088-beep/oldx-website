@@ -47,3 +47,15 @@ test('Store catalogue provides accessible search, sorting, counts and share acti
   assert.match(source, /Number\(!!a\.isSold\) - Number\(!!b\.isSold\)/);
   assert.match(source, /items\.forEach\(p => \{ if \(typeof createProductCard/);
 });
+
+test('Homepage Store discovery uses a bounded public query and safe DOM rendering', () => {
+  assert.match(source, /id="homeStoresSection"/);
+  assert.match(source, /id="homeStoresGrid"/);
+  assert.match(source, /loadHomeStores\(\);/);
+  const block = section('async function loadHomeStores()', 'function filterCat(catId)');
+  assert.match(block, /collection\('stores'\)\.orderBy\('updatedAt', 'desc'\)\.limit\(6\)\.get\(\)/);
+  assert.match(block, /isSafeStoreImageUrl\(data\.photoURL\)/);
+  assert.match(block, /name\.textContent\s*=\s*store\.shopName/);
+  assert.match(block, /card\.addEventListener\('click'/);
+  assert.doesNotMatch(block, /innerHTML\s*=/);
+});
