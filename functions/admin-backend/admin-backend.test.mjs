@@ -66,3 +66,48 @@ test("role lookup errors fail closed", async () => {
   const result = await authorizeAdminRequest({ authorization: "Bearer synthetic", verifyIdToken: async () => ({ uid: "admin-a" }), resolveActiveRole: async () => { throw new Error("db"); }, requiredOperation: "users.list", allowedOperations: ["users.list"] });
   assert.equal(result.status, 503);
 });
+
+
+test("invalid token never reaches active-role resolver", async () => {
+  let roleLookupCalled = false;
+  const result = await authorizeAdminRequest({
+    authorization: "Bearer invalid",
+    verifyIdToken: async () => { throw new Error("invalid token"); },
+    resolveActiveRole: async () => { roleLookupCalled = true; return "admin"; },
+    requiredOperation: "users.list",
+    allowedOperations: ["users.list"]
+  });
+  assert.equal(result.status, 401);
+  assert.equal(roleLookupCalled, false);
+});
+
+test("role is resolved from verified UID on every request", async () => {
+  let activeRole = "admin";
+  let verificationCount = 0;
+  let roleLookupCount = 0;
+  const deps = {
+    authorization: "Bearer synthetic",
+    verifyIdToken: async () => { verificationCount += 1; return { uid: "admin-a", role: "admin" }; },
+    resolveActiveRole: async uid => { roleLookupCount += 1; assert.equal(uid, "admin-a"); return activeRole; },
+    requiredOperation: "users.list",
+    allowedOperations: ["users.list"]
+  };
+  assert.equal((await authorizeAdminRequest(deps)).ok, true);
+  activeRole = null; // simulate owner-side revocation between requests
+  assert.equal((await authorizeAdminRequest(deps)).status, 403);
+  assert.equal(verificationCount, 2);
+  assert.equal(roleLookupCount, 2);
+});
+
+test("malformed verified identity never reaches role resolver", async () => {
+  let roleLookupCalled = false;
+  const result = await authorizeAdminRequest({
+    authorization: "Bearer synthetic",
+    verifyIdToken: async () => ({ uid: "" }),
+    resolveActiveRole: async () => { roleLookupCalled = true; return "admin"; },
+    requiredOperation: "users.list",
+    allowedOperations: ["users.list"]
+  });
+  assert.equal(result.status, 401);
+  assert.equal(roleLookupCalled, false);
+});
