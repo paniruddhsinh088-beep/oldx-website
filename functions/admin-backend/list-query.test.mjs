@@ -42,6 +42,17 @@ test("rejects unknown fields such as collection path or sort order", () => {
   assert.equal(parseAdminListQuery({ orderBy: "email" }).code, "UNSUPPORTED_QUERY_PARAMETER");
 });
 
-test("rejects non-string query values rather than coercing objects", () => {
-  assert.equal(parseAdminListQuery({ q: { toString: () => "users" } }).value.q, "");
+test("rejects non-string query values rather than silently defaulting", () => {
+  for (const input of [
+    { q: { toString: () => "users" } },
+    { pageSize: 25 },
+    { pageToken: ["a.b"] },
+    { status: null },
+    [],
+    null,
+    "pageSize=10"
+  ]) {
+    assert.equal(parseAdminListQuery(input).ok, false);
+  }
+  assert.equal(parseAdminListQuery({ q: "users" }).value.q, "users");
 });
