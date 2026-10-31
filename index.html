@@ -3722,7 +3722,12 @@
                   isFetchingProducts = false;
                   const spinner = document.getElementById('scrollLoadingSpinner');
                   if (spinner) spinner.style.display = 'none';
-                  console.log("Error listening products: ", error);
+                  console.error("[OLDX] Products listener failed:", error);
+                  showCustomAlert(
+                      "Products could not load",
+                      "We could not load products right now. Please check your connection and try refreshing the page. If the problem continues, contact support.",
+                      "error"
+                  );
               });
         }
 
