@@ -75,6 +75,12 @@ export async function handleAdminRequest({
       return response(400, { ok: false, error: { code: parsed.code, message: "Invalid list query" }, requestId: id });
     }
     listQuery = parsed.value;
+    // The current Firestore adapter has no reviewed indexed search/filter
+    // implementation. Reject these client options as a client error before
+    // invoking the adapter rather than turning them into an internal 500.
+    if (listQuery.q || Object.keys(listQuery.filters).length > 0) {
+      return response(400, { ok: false, error: { code: "UNSUPPORTED_QUERY_FEATURE", message: "Search and filters are not available yet" }, requestId: id });
+    }
   } else if (!isMutation && request.query && Object.keys(request.query).length > 0) {
     return response(400, { ok: false, error: { code: "UNSUPPORTED_QUERY_PARAMETER", message: "Invalid query" }, requestId: id });
   }
