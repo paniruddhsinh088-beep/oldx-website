@@ -3094,7 +3094,7 @@
             }
 
             images.forEach((src, index) => {
-                if (typeof src !== 'string' || !/^(https?:\\/\\/|data:image\\/)/i.test(src)) return;
+                if (typeof src !== 'string' || !(src.startsWith('https://') || src.startsWith('http://') || src.startsWith('data:image/'))) return;
                 const item = document.createElement('div');
                 item.className = 'relative flex-shrink-0';
                 const img = document.createElement('img');
@@ -3121,7 +3121,7 @@
             renderEditImagesPreview();
         }
 
-                function closeEditAdPage() {
+        function closeEditAdPage() {
             window.currentEditingProduct = null;
             window.location.hash = '';
             setTimeout(() => openMyAdsModal(), 100);
