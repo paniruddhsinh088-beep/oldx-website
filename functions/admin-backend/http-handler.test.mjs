@@ -123,6 +123,23 @@ test("hostile validator result proxy fails closed without commit", async () => {
   assert.equal(commitCalled, false);
 });
 
+test("hostile normalized payload proxy never reaches atomic commit", async () => {
+  let commitCalled = false;
+  const hostilePayload = new Proxy({}, {
+    getPrototypeOf() { throw new Error("private payload proxy trap"); }
+  });
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
+    validateMutationInput: async () => ({ ok: true, value: hostilePayload }),
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 500);
+  assert.equal(result.body.error.code, "INTERNAL_ERROR");
+  assert.equal(JSON.stringify(result.body).includes("private payload proxy trap"), false);
+  assert.equal(commitCalled, false);
+});
+
 test("invalid mutation input never reaches atomic commit adapter", async () => {
   let commitCalled = false;
   const result = await handleAdminRequest({
