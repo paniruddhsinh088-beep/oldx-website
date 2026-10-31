@@ -116,8 +116,30 @@ function render(){
  let rows=demoProviders.filter(p=>(activeCategory==="બધી સેવાઓ"||p.services.some(s=>s.includes(activeCategory)))&&(!q||(p.name+" "+p.services.join(" ")+" "+p.about).toLocaleLowerCase("gu").includes(q))&&(!area||p.area.toLocaleLowerCase("gu").includes(area)));
  if(sort==="experience")rows.sort((a,b)=>b.experience-a.experience);if(sort==="name")rows.sort((a,b)=>a.name.localeCompare(b.name,"gu"));
  $("resultCount").textContent=rows.length+" ડેમો પ્રોફાઇલ્સ";
- $("results").innerHTML=rows.length?rows.map(p=>'<article class="provider"><div class="provider-top"><div class="avatar" aria-hidden="true">'+p.icon+'</div><div><h3>'+p.name+'</h3><div class="meta">'+p.area+'</div></div></div><div class="tags">'+p.services.map(s=>'<span class="tag">'+s+'</span>').join("")+'</div><div class="meta">'+p.experience+' વર્ષનો અનુભવ · સેવા આપનારની આપેલી માહિતી</div><div class="provider-foot"><strong>ડેમો પ્રોફાઇલ</strong><button class="btn" data-open="'+p.id+'">પ્રોફાઇલ જુઓ</button></div></article>').join(""):'<div class="empty">આ શોધ માટે ડેમો પ્રોફાઇલ મળી નથી. શબ્દ અથવા વિસ્તાર બદલીને જુઓ.</div>';
- document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openProfile(b.dataset.open)));
+ const results=$("results");
+ results.replaceChildren();
+ if(!rows.length){
+   const empty=document.createElement("div");empty.className="empty";
+   empty.textContent="આ શોધ માટે ડેમો પ્રોફાઇલ મળી નથી. શબ્દ અથવા વિસ્તાર બદલીને જુઓ.";
+   results.append(empty);
+ }else{
+   rows.forEach(p=>{
+     const article=document.createElement("article");article.className="provider";
+     const top=document.createElement("div");top.className="provider-top";
+     const avatar=document.createElement("div");avatar.className="avatar";avatar.setAttribute("aria-hidden","true");avatar.textContent=p.icon;
+     const identity=document.createElement("div");
+     const name=document.createElement("h3");name.textContent=p.name;
+     const areaText=document.createElement("div");areaText.className="meta";areaText.textContent=p.area;
+     identity.append(name,areaText);top.append(avatar,identity);
+     const tags=document.createElement("div");tags.className="tags";
+     p.services.forEach(service=>{const tag=document.createElement("span");tag.className="tag";tag.textContent=service;tags.append(tag)});
+     const meta=document.createElement("div");meta.className="meta";meta.textContent=p.experience+" વર્ષનો અનુભવ · સેવા આપનારની આપેલી માહિતી";
+     const foot=document.createElement("div");foot.className="provider-foot";
+     const label=document.createElement("strong");label.textContent="ડેમો પ્રોફાઇલ";
+     const button=document.createElement("button");button.className="btn";button.textContent="પ્રોફાઇલ જુઓ";button.addEventListener("click",()=>openProfile(p.id));
+     foot.append(label,button);article.append(top,tags,meta,foot);results.append(article);
+   });
+ }
 }
 function show(id){["browseView","profileView","providerView"].forEach(v=>$(v).classList.toggle("active",v===id));window.scrollTo({top:0,behavior:"smooth"})}
 function openProfile(id){const p=demoProviders.find(x=>x.id===id);if(!p)return;$("pName").textContent=p.name;$("pArea").textContent=p.area;$("pServices").innerHTML=p.services.map(s=>'<span class="tag">'+s+'</span>').join("");$("pAbout").textContent=p.about;$("pExperience").textContent=p.experience+" વર્ષનો અનુભવ · "+p.area+" (ડેમો માહિતી)";show("profileView")}
