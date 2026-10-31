@@ -88,7 +88,7 @@ test("Admin HTTP list flow rejects search and filters before any Firestore query
     ...common,
     request: { method: "GET", headers: { authorization: "Bearer synthetic" }, query: { q: "private search" } }
   });
-  assert.equal(result.status, 500);
-  assert.equal(result.body.error.code, "INTERNAL_ERROR");
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "UNSUPPORTED_QUERY_FEATURE");
   assert.equal(firestore.calls.length, 0);
 });
