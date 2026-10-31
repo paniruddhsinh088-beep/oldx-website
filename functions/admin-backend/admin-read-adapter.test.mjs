@@ -84,3 +84,14 @@ test("does not produce a next cursor when there is no look-ahead document", asyn
   const result = await executeAdminReadPage({ firestore: db, operation: "users.list", Timestamp, documentIdField });
   assert.equal(result.nextPosition, null);
 });
+
+test("fails closed for search text and filters not implemented by the adapter", async () => {
+  const db = makeFirestore([]);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "products.list", queryText: "bike", Timestamp, documentIdField
+  }), /Search is not supported/);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "products.list", filters: { status: "active" }, Timestamp, documentIdField
+  }), /Filters are not supported/);
+  assert.equal(db.calls.length, 0);
+});

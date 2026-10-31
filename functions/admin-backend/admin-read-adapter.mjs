@@ -41,7 +41,7 @@ function timestampParts(value) {
  */
 export async function executeAdminReadPage({
   firestore, operation, pageSize = 25, cursorPosition = null,
-  Timestamp, documentIdField
+  queryText = "", filters = {}, Timestamp, documentIdField
 } = {}) {
   const definition = OPERATIONS[operation];
   if (!definition) throw new TypeError("Unsupported Admin read operation.");
@@ -50,6 +50,13 @@ export async function executeAdminReadPage({
     throw new TypeError("Firestore adapter dependencies are incomplete.");
   }
   if (!validPageSize(pageSize)) throw new TypeError("Invalid page size.");
+  if (typeof queryText !== "string" || queryText.trim().length > 0) {
+    throw new TypeError("Search is not supported by this read adapter.");
+  }
+  if (!filters || typeof filters !== "object" || Array.isArray(filters) ||
+      Object.keys(filters).length !== 0) {
+    throw new TypeError("Filters are not supported by this read adapter.");
+  }
 
   const cursor = cursorPosition === null ? null : parseCursor(cursorPosition);
   let query = firestore.collection(definition.collection)
