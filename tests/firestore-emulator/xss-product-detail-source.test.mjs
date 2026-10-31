@@ -16,7 +16,7 @@ test('Product detail highlights render dynamic labels and values as text', () =>
 });
 
 test('Product detail image URLs reject non-http and non-raster data schemes', () => {
-  const start = source.indexOf("const safeProductImages = Array.isArray(p.images)");
+  const start = source.indexOf("const rawProductImages = Array.isArray(p.images)");
   const end = source.indexOf("const imageBadge =", start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
@@ -24,4 +24,17 @@ test('Product detail image URLs reject non-http and non-raster data schemes', ()
   assert.match(block, /\^https\?:/);
   assert.match(block, /data:image\\\/(?:png\|jpeg\|webp\|gif\);base64/);
   assert.match(block, /image\.src\s*=\s*trimmedImage/);
+});
+
+test('Product lightbox uses the same validated image list as the detail slider', () => {
+  assert.match(source, /let currentProductSafeImages = \[\];/);
+  assert.match(source, /imgEl\.src\s*=\s*currentProductSafeImages\[lightboxCurrentIndex\]/);
+  assert.match(source, /counterEl\.textContent\s*=\s*`\$\{lightboxCurrentIndex \+ 1\} \/ \$\{currentProductSafeImages\.length\}`/);
+  assert.doesNotMatch(source, /imgEl\.src\s*=\s*currentProduct\.images\[lightboxCurrentIndex\]/);
+});
+
+test('Product image badge safely handles an empty validated image list', () => {
+  assert.match(source, /if \(currentProductSafeImages\.length > 0\)/);
+  assert.match(source, /if\(!currentProduct \|\| currentProductSafeImages\.length === 0\)/);
+  assert.match(source, /detailImgBadge'\)\.replaceChildren\(\)/);
 });
