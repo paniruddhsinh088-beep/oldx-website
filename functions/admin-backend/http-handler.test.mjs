@@ -58,6 +58,34 @@ test("mutation delegates one atomic commit with server-derived actor and body", 
   assert.deepEqual(commit.body, { uid: "user-b", role: "owner" });
 });
 
+test("client-supplied audit identity and outcome fields remain nested untrusted input", async () => {
+  let commit;
+  const forgedBody = {
+    uid: "target-user",
+    actorUid: "forged-admin",
+    actorRole: "owner",
+    operation: "roles.grant",
+    requestId: "forged-request",
+    eventId: "forged-event",
+    occurredAt: "2000-01-01T00:00:00.000Z",
+    outcome: "success",
+    auditPath: "adminAudit/forged"
+  };
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: forgedBody },
+    commitMutation: async value => { commit = value; return { suspended: true }; }
+  });
+  assert.equal(result.status, 200);
+  assert.equal(commit.actorUid, "admin-a");
+  assert.equal(commit.actorRole, "admin");
+  assert.equal(commit.operation, "users.suspend");
+  assert.equal(commit.requestId, "synthetic-request-1");
+  assert.deepEqual(commit.body, forgedBody);
+  assert.notEqual(commit.actorUid, commit.body.actorUid);
+  assert.notEqual(commit.operation, commit.body.operation);
+});
+
 test("atomic commit failure returns generic error without leaking internals", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
