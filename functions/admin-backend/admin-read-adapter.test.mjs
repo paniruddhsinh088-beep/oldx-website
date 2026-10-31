@@ -60,7 +60,7 @@ test("validates cursor and applies it as timestamp plus document ID", async () =
     Timestamp, documentIdField
   });
   assert.deepEqual(db.calls.find(call => call[0] === "startAfter"), [
-    "startAfter", { millis: 9123 }, "u9"
+    "startAfter", new Timestamp(9, 123000000), "u9"
   ]);
 });
 
