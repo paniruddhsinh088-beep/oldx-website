@@ -90,6 +90,19 @@ test("rejects arbitrary operation, invalid page size, and malformed cursor befor
   assert.equal(db.calls.length, 0);
 });
 
+test("fails closed when a visible page boundary has a missing or invalid createdAt", async () => {
+  for (const createdAt of [undefined, null, "2026-01-01", { seconds: 1, nanoseconds: 1e9 }]) {
+    const db = makeFirestore([
+      doc("u1", { displayName: "One", status: "active", ...(createdAt === undefined ? {} : { createdAt }) }),
+      doc("u0", { displayName: "Lookahead", status: "active", createdAt: { seconds: 0, nanoseconds: 0 } })
+    ]);
+    await assert.rejects(() => executeAdminReadPage({
+      firestore: db, operation: "users.list", enabledOperations: ["users.list"],
+      pageSize: 1, Timestamp, documentIdField
+    }), /createdAt timestamp/);
+  }
+});
+
 test("does not produce a next cursor when there is no look-ahead document", async () => {
   const db = makeFirestore([doc("u1", { displayName: "One", status: "active", createdAt: { seconds: 1, nanoseconds: 0 } })]);
   const result = await executeAdminReadPage({ firestore: db, operation: "users.list", enabledOperations: ["users.list"], Timestamp, documentIdField });
