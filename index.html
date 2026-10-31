@@ -4981,6 +4981,8 @@
                 const image = document.createElement('img');
                 image.src = imageValue;
                 image.alt = String(p.title || 'Product image');
+                image.loading = 'lazy';
+                image.decoding = 'async';
                 image.className = "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500";
                 card.querySelector('[data-image-placeholder]').replaceWith(image);
             }
