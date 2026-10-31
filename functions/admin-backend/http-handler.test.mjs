@@ -178,3 +178,23 @@ test("list handler signs adapter next positions and never exposes raw positions"
   assert.equal(typeof result.body.data.nextPageToken, "string");
   assert.equal(JSON.stringify(result.body).includes("last-doc"), false);
 });
+
+
+test("list handler rejects a signed cursor replayed with a different page size", async () => {
+  const { createAdminPageToken } = await import("./page-token.mjs");
+  const secret = "synthetic-handler-secret-with-32-bytes-minimum";
+  const token = createAdminPageToken({
+    position: "doc-10",
+    context: { actorUid: "admin-a", operation: "users.list", query: "", filters: {}, order: "createdAt_desc", pageSize: 10 },
+    secret
+  });
+  let called = false;
+  const result = await handleAdminRequest({
+    ...common, pageTokenSecret: secret,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageSize: "25", pageToken: token } },
+    executeOperation: async () => { called = true; return { items: [] }; }
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "PAGE_TOKEN_SCOPE_MISMATCH");
+  assert.equal(called, false);
+});
