@@ -28,7 +28,8 @@ export function createAdminReadExecutor({
       pageSize: query.pageSize,
       cursorPosition,
       queryText: query.q ?? "",
-      filters: query.filters ?? {}
+      filters: query.filters ?? {},
+      enabledOperations: [...enabled]
     });
   };
 }
