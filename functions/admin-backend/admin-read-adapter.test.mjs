@@ -112,6 +112,18 @@ test("rejects arbitrary operation, invalid page size, and malformed cursor befor
   assert.equal(db.calls.length, 0);
 });
 
+test("validates createdAt on every visible row, not only the cursor row", async () => {
+  const db = makeFirestore([
+    doc("u2", { displayName: "Two", status: "active", createdAt: { seconds: 2, nanoseconds: 0 } }),
+    doc("u1", { displayName: "One", status: "active" }),
+    doc("u0", { displayName: "Lookahead", status: "active", createdAt: { seconds: 0, nanoseconds: 0 } })
+  ]);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"],
+    pageSize: 2, Timestamp, documentIdField
+  }), /createdAt timestamp/);
+});
+
 test("fails closed when a visible page boundary has a missing or invalid createdAt", async () => {
   for (const createdAt of [undefined, null, "2026-01-01", { seconds: 1, nanoseconds: 1e9 }]) {
     const db = makeFirestore([
