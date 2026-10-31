@@ -20,12 +20,17 @@ function contextFor(context) {
       typeof context.operation !== "string" || !context.operation) {
     throw new TypeError("Cursor context requires actorUid and operation.");
   }
+  const rawFilters = context.filters && typeof context.filters === "object" && !Array.isArray(context.filters) ? context.filters : {};
+  const filters = Object.fromEntries(Object.keys(rawFilters).sort().map(key => [key, rawFilters[key]]));
+  const pageSize = context.pageSize === undefined ? 25 : context.pageSize;
+  if (!Number.isInteger(pageSize) || pageSize < 1 || pageSize > 50) throw new TypeError("Cursor page size must be between 1 and 50.");
   return {
     actorUid: context.actorUid,
     operation: context.operation,
     query: typeof context.query === "string" ? context.query : "",
-    filters: context.filters && typeof context.filters === "object" ? context.filters : {},
-    order: typeof context.order === "string" ? context.order : "createdAt_desc"
+    filters,
+    order: typeof context.order === "string" ? context.order : "createdAt_desc",
+    pageSize
   };
 }
 function requireSecret(secret) {

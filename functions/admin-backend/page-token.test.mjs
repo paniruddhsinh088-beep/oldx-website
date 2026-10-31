@@ -48,3 +48,15 @@ test("requires a strong signing secret and valid TTL", () => {
   assert.throws(() => createAdminPageToken({ position: "doc_1", context, secret: "short" }));
   assert.throws(() => createAdminPageToken({ position: "doc_1", context, secret, ttlSeconds: 7200 }));
 });
+
+
+test("binds page size and canonicalizes filter key order", () => {
+  const token = createAdminPageToken({ position: "doc_1", context: { ...context, pageSize: 10, filters: { status: "active", targetType: "product" } }, secret });
+  assert.equal(verifyAdminPageToken({ token, context: { ...context, pageSize: 10, filters: { targetType: "product", status: "active" } }, secret }).ok, true);
+  assert.equal(verifyAdminPageToken({ token, context: { ...context, pageSize: 25, filters: { status: "active", targetType: "product" } }, secret }).code, "PAGE_TOKEN_SCOPE_MISMATCH");
+});
+
+test("rejects invalid page sizes in cursor context", () => {
+  assert.throws(() => createAdminPageToken({ position: "doc_1", context: { ...context, pageSize: 0 }, secret }));
+  assert.throws(() => createAdminPageToken({ position: "doc_1", context: { ...context, pageSize: 51 }, secret }));
+});

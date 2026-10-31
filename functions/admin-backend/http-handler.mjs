@@ -85,7 +85,8 @@ export async function handleAdminRequest({
     operation,
     query: listQuery.q,
     filters: listQuery.filters,
-    order: "createdAt_desc"
+    order: "createdAt_desc",
+    pageSize: listQuery.pageSize
   } : null;
 
   if (listQuery?.pageToken) {
