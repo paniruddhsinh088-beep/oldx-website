@@ -92,3 +92,35 @@ test("blank request ID is replaced with a generated UUID", async () => {
   assert.equal(result.status, 200);
   assert.match(result.body.requestId, /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i);
 });
+
+
+test("list handler passes only normalized bounded query to the operation", async () => {
+  let received;
+  const result = await handleAdminRequest({
+    ...common,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageSize: "10", q: "  shoes " } },
+    executeOperation: async value => { received = value; return { items: [] }; }
+  });
+  assert.equal(result.status, 200);
+  assert.deepEqual(received, { actorUid: "admin-a", operation: "users.list", query: { pageSize: 10, pageToken: null, q: "shoes", filters: {} } });
+});
+
+test("list handler rejects filters not allowed for that operation", async () => {
+  const result = await handleAdminRequest({
+    ...common,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { targetType: "user" } }
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "UNSUPPORTED_QUERY_PARAMETER");
+});
+
+test("list handler rejects oversized page requests before adapter execution", async () => {
+  let called = false;
+  const result = await handleAdminRequest({
+    ...common,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageSize: "500" } },
+    executeOperation: async () => { called = true; }
+  });
+  assert.equal(result.status, 400);
+  assert.equal(called, false);
+});
