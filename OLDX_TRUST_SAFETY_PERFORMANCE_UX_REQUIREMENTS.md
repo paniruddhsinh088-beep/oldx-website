@@ -158,3 +158,17 @@ These are static source observations from the current `security-hardening-review
 
 ### Implementation caution
 The current client-only keyword check should be treated as a temporary UX warning, not a security control. Until the trusted moderation backend is approved and implemented, do not claim that suspicious chat activity is comprehensively detected or prevented.
+
+
+### Product and Store image-upload path (additional source review)
+- New product ads accept multiple browser-selected `image/*` files; the inspected submit path does not show a file-count or per-file byte-size limit before each image is decoded, resized to at most 800 px and JPEG-encoded at quality 0.7. The resulting Base64 images are stored in the Firestore product document.
+- Browser-side compression is a bandwidth/storage optimization, not a moderation or validation boundary. Very large or malformed source files can still consume memory/CPU before compression; server-side byte limits, decoded-dimension limits, content-signature checks, and moderation before public visibility are required.
+- Store-photo selection currently applies a client-side 5 MB limit and checks only that the browser MIME string begins with `image/`; the upload then goes directly from the browser to a Cloudinary unsigned preset. This check can be bypassed and does not establish that the file is a safe raster image or free of explicit content.
+- Store image upload is a separate path from product-image upload. Any moderation design must cover both paths and ensure a new image is not publicly rendered until its server-side review state permits it.
+- Do not disable existing photo replacement or legacy product/store images as part of the moderation rollout. Introduce a compatibility path, clear seller feedback, and a replace/review flow before enforcing new upload restrictions.
+- Moderation integration with Cloudinary or another provider requires owner approval of data transfer, region, retention, pricing, credentials, and failure behavior. No external image moderation calls have been added.
+
+### Product detail image consistency fix (implemented on review branch)
+- Product detail previously filtered unsafe image URL schemes when rendering the slider, but the lightbox used the original unfiltered `currentProduct.images` array. This could make the lightbox index/count inconsistent with the visible slider and could attempt to use an invalid or absent image when some stored entries were rejected.
+- The detail slider and lightbox now share one validated image list. The image counter uses the validated count, handles an empty valid-image list, and uses text nodes rather than HTML interpolation. The lightbox index calculation also guards against a zero-width slider.
+- A source regression test was added for this shared validated list and empty-image behavior. This is a code-level change only; browser/device behavior and the test suite have not yet been executed in this session.
