@@ -109,6 +109,61 @@ Create deletion job and check hold/retention obligations before any destructive 
 ### POST /admin/roles and DELETE /admin/roles/{uid}
 Owner Admin only; require explicit approval, reauthentication/MFA, reason, and audit event. Role provisioning is a private trusted operation, never a normal user callable self-service action.
 
+## 3B. Implementation-ready role and permission policy (proposed)
+
+### Identity and role assignment
+
+- Resolve roles only on a trusted server from Firebase Auth UID plus a private owner-managed role registry / verified custom claims. Never accept role names, admin flags, email addresses, or actor UIDs from request payloads as authority.
+- Owner Admin is the sole role allowed to grant/revoke Admin roles and change role permissions. Require recent reauthentication (and MFA where enabled) for role changes; record actor, target, before/after role, reason, timestamp, and request ID.
+- Role changes take effect server-side immediately; use a short-lived token / revocation strategy so a removed Admin cannot continue using stale privileges.
+- Existing single authorized UID remains the only active Admin until the owner separately approves named additional Admin identities and their roles. Do not provision test accounts as Admin.
+
+### Permission matrix for initial implementation
+
+| Operation | Owner Admin | Operations Admin | Evidence Reviewer | Read-only Admin |
+|---|---|---|---|---|
+| View paginated user directory | Yes | If explicitly granted | No by default | Minimal fields only |
+| View user email | Yes | If explicitly granted | Assigned case only | No |
+| View last IP | Yes, if necessary | Explicit grant + audit | Assigned case only | No |
+| View lastSeen | Yes | If explicitly granted | Assigned case only | No |
+| View product listings | Yes | Yes | Case-limited | Yes, minimal |
+| Quarantine / restore listing | Yes | Yes, reason required | No | No |
+| Permanently delete listing | Separate Owner approval / retention check | No | No | No |
+| Create evidence case | Yes | Request only | No | No |
+| View assigned evidence | Yes | If explicitly granted | Assigned cases | No |
+| Request legal hold | Yes | Request only | Request only | No |
+| Approve / release legal hold | Owner approval | No | No | No |
+| Prepare evidence export | Yes | No by default | Prepare assigned case only | No |
+| Approve / deliver export | Owner or separately designated second approver | No | No | No |
+| Add / revoke Admin | Yes | No | No | No |
+| Change retention/security policy | Yes | No | No | No |
+
+### Data minimization and audit requirements
+
+- Return only fields required by the requested screen and role; never send full Firestore user documents to the browser.
+- Treat lastIp as sensitive security data, not a historical connection log. Record source and collection time for any future IP event; do not imply one current field is a complete log.
+- Every view of sensitive IP/evidence, every moderation action, role change, legal-hold action, and export must produce a server-side audit event.
+- Audit events must be append-only to application principals. Restrict read access to Owner Admin and assigned reviewers as policy permits.
+- Do not store passwords, access tokens, service-account keys, or OAuth secrets in audit events.
+- Retention must be purpose-based and legally reviewed. Apply scoped legal holds; on release, delete/anonymize when no other legal retention requirement applies. Do not promise indefinite retention.
+
+### API authorization decision points
+
+- Every endpoint must use a deny-by-default role/permission check and validate target resource access server-side.
+- Require idempotency keys for destructive/retryable actions and bounded pagination/search parameters.
+- Return generic authorization errors to unauthorized users; do not leak whether a private UID or case exists.
+- Log request correlation ID and actor UID server-side; do not accept these as trusted client values.
+- Export workflow must separate requester and approver where feasible; requester cannot approve their own high-risk export.
+
+### Open owner decisions before implementation
+
+- Confirm exact additional Admin identities (UIDs) and assign roles; until then no new Admin is activated.
+- Confirm whether Operations Admin needs access to email and IP separately.
+- Confirm whether Read-only Admin should see user names or only aggregate counts.
+- Confirm the legal reviewer / approval workflow for holds, exports, and permanent deletion.
+- Confirm whether MFA is enabled for the current Owner Admin and whether all future Admins must enroll before activation.
+
+This policy is a proposal for owner review, not an active permission grant or deployed authorization system.
 ## 4. Admin role matrix proposal
 
 | Capability | Owner Admin | Operations Admin | Evidence Reviewer | Read-only Admin |
