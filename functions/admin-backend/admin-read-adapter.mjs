@@ -41,10 +41,16 @@ function timestampParts(value) {
  */
 export async function executeAdminReadPage({
   firestore, operation, pageSize = 25, cursorPosition = null,
-  queryText = "", filters = {}, Timestamp, documentIdField
+  queryText = "", filters = {}, Timestamp, documentIdField, enabledOperations = []
 } = {}) {
+  if (!Array.isArray(enabledOperations) || enabledOperations.some(value => typeof value !== "string" || !Object.hasOwn(OPERATIONS, value))) {
+    throw new TypeError("Invalid Admin read readiness allowlist.");
+  }
   const definition = OPERATIONS[operation];
   if (!definition) throw new TypeError("Unsupported Admin read operation.");
+  if (!enabledOperations.includes(operation)) {
+    throw new TypeError("Admin read operation is not enabled.");
+  }
   if (!firestore || typeof firestore.collection !== "function" ||
       typeof Timestamp !== "function" || !documentIdField) {
     throw new TypeError("Firestore adapter dependencies are incomplete.");
