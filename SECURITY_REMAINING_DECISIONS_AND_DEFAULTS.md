@@ -74,3 +74,15 @@ The current Product write-contract inventory and source scan establish these con
 - Seller-side direct product deletion is still coupled to unresolved retention/account-cleanup policy; do not tighten it in a way that strands user listings or silently delete retained evidence.
 
 This is a static source contract, not a code change. No Product payload, Firestore Rules or user data has been modified.
+
+
+## Newly owner-requested roadmap items (2026-11-01)
+
+The owner has asked OldX to:
+- Warn users when suspicious activity is detected in Chat.
+- Detect pornographic/explicit product photos, warn the Seller and remove/hide prohibited photos from public display.
+- Improve app speed, smoothness and ease of use, especially on mobile and slow internet.
+
+Detailed requirements, safeguards, acceptance considerations and staged delivery are recorded in [OLDX_TRUST_SAFETY_PERFORMANCE_UX_REQUIREMENTS.md](OLDX_TRUST_SAFETY_PERFORMANCE_UX_REQUIREMENTS.md).
+
+**Status:** Requirements accepted into the roadmap; implementation has not started. Before external image moderation providers, paid services, private-chat content analysis, new schema/backend deployment, or Production enforcement, prepare a privacy/cost/false-positive review and obtain owner approval. Initial work should inventory current flows, define test cases and establish performance baselines.
