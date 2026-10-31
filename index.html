@@ -4292,11 +4292,17 @@
             const priceOf = p => {
                 const raw = p.finalPriceStr ?? p.finalPrice ?? p.basePrice ?? '';
                 const parsed = Number(String(raw).replace(/[^0-9.]/g, ''));
-                return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+                return raw !== '' && Number.isFinite(parsed) ? parsed : null;
+            };
+            const comparePrice = (a, b, descending = false) => {
+                const pa = priceOf(a), pb = priceOf(b);
+                if (pa == null) return pb == null ? 0 : 1;
+                if (pb == null) return -1;
+                return descending ? pb - pa : pa - pb;
             };
             if (sort === 'name') items.sort((a,b) => String(a.title || '').localeCompare(String(b.title || '')));
-            else if (sort === 'price-low') items.sort((a,b) => priceOf(a) - priceOf(b));
-            else if (sort === 'price-high') items.sort((a,b) => priceOf(b) - priceOf(a));
+            else if (sort === 'price-low') items.sort((a,b) => comparePrice(a, b));
+            else if (sort === 'price-high') items.sort((a,b) => comparePrice(a, b, true));
             else if (sort === 'available') items.sort((a,b) => Number(!!a.isSold) - Number(!!b.isSold));
             else items.sort((a,b) => {
                 const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0);
