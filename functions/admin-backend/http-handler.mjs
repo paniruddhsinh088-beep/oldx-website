@@ -133,14 +133,17 @@ export async function handleAdminRequest({
     let data;
     if (isMutation) {
       const validated = await validateMutationInput({ operation, body: request.body });
-      if (!validated || typeof validated !== "object" || Array.isArray(validated) || (Object.getPrototypeOf(validated) !== Object.prototype && Object.getPrototypeOf(validated) !== null) || validated.ok !== true || !Object.hasOwn(validated, "value") || validated.value === undefined) {
+      const valueDescriptor = validated && typeof validated === "object" && !Array.isArray(validated)
+        ? Object.getOwnPropertyDescriptor(validated, "value")
+        : undefined;
+      if (!validated || typeof validated !== "object" || Array.isArray(validated) || (Object.getPrototypeOf(validated) !== Object.prototype && Object.getPrototypeOf(validated) !== null) || validated.ok !== true || !valueDescriptor || !Object.hasOwn(valueDescriptor, "value") || valueDescriptor.value === undefined) {
         return response(400, {
           ok: false,
           error: { code: "INVALID_MUTATION_INPUT", message: "Invalid mutation input" },
           requestId: id
         });
       }
-      data = await commitMutation({ ...context, body: validated.value });
+      data = await commitMutation({ ...context, body: valueDescriptor.value });
     } else {
       data = await executeOperation({
           actorUid: auth.identity.uid,
