@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { authorizeAdminRequest } from "./authz.mjs";
 import { parseAdminListQuery } from "./list-query.mjs";
+import { createAdminPageToken, verifyAdminPageToken } from "./page-token.mjs";
 
 const LIST_OPERATION_FILTERS = Object.freeze({
   "users.list": [],
@@ -41,6 +42,7 @@ export async function handleAdminRequest({
   resolveActiveRole,
   executeOperation,
   commitMutation,
+  pageTokenSecret,
   isMutation = false,
   requestId
 }) {
@@ -77,6 +79,26 @@ export async function handleAdminRequest({
     return response(400, { ok: false, error: { code: "UNSUPPORTED_QUERY_PARAMETER", message: "Invalid query" }, requestId: id });
   }
 
+  let cursorPosition;
+  const pageContext = listQuery ? {
+    actorUid: auth.identity.uid,
+    operation,
+    query: listQuery.q,
+    filters: listQuery.filters,
+    order: "createdAt_desc"
+  } : null;
+
+  if (listQuery?.pageToken) {
+    if (!pageTokenSecret) {
+      return response(503, { ok: false, error: { code: "PAGINATION_NOT_CONFIGURED", message: "Operation is not configured" }, requestId: id });
+    }
+    const verified = verifyAdminPageToken({ token: listQuery.pageToken, context: pageContext, secret: pageTokenSecret });
+    if (!verified.ok) {
+      return response(400, { ok: false, error: { code: verified.code, message: "Invalid page token" }, requestId: id });
+    }
+    cursorPosition = verified.position;
+  }
+
   const handler = isMutation ? commitMutation : executeOperation;
   if (typeof handler !== "function") {
     return response(503, {
@@ -95,7 +117,25 @@ export async function handleAdminRequest({
     };
     const data = isMutation
       ? await commitMutation({ ...context, body: request.body })
-      : await executeOperation({ actorUid: auth.identity.uid, operation, ...(listQuery ? { query: listQuery } : {}) });
+      : await executeOperation({
+          actorUid: auth.identity.uid,
+          operation,
+          ...(listQuery ? {
+            query: { ...listQuery, pageToken: null },
+            ...(cursorPosition !== undefined ? { cursorPosition } : {})
+          } : {})
+        });
+
+    if (listQuery && data && typeof data === "object" && Object.hasOwn(data, "nextPosition")) {
+      if (!pageTokenSecret) {
+        return response(503, { ok: false, error: { code: "PAGINATION_NOT_CONFIGURED", message: "Operation is not configured" }, requestId: id });
+      }
+      const { nextPosition, ...publicData } = data;
+      const nextPageToken = nextPosition == null ? null : createAdminPageToken({
+        position: nextPosition, context: pageContext, secret: pageTokenSecret
+      });
+      return response(200, { ok: true, data: { ...publicData, nextPageToken }, requestId: id });
+    }
 
     return response(200, { ok: true, data, requestId: id });
   } catch {
