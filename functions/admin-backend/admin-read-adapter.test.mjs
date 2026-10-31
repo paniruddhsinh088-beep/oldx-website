@@ -75,6 +75,28 @@ test("validates cursor and applies it as timestamp plus document ID", async () =
   ]);
 });
 
+test("supports valid pre-epoch Firestore timestamps in signed cursor positions", async () => {
+  const db = makeFirestore([]);
+  await executeAdminReadPage({
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"],
+    cursorPosition: { createdAt: { seconds: -1, nanoseconds: 500000000 }, documentId: "legacy-u1" },
+    Timestamp, documentIdField
+  });
+  assert.deepEqual(db.calls.find(call => call[0] === "startAfter"), [
+    "startAfter", new Timestamp(-1, 500000000), "legacy-u1"
+  ]);
+});
+
+test("rejects timestamps outside Firestore's supported seconds range", async () => {
+  const db = makeFirestore([]);
+  await assert.rejects(() => executeAdminReadPage({
+    firestore: db, operation: "users.list", enabledOperations: ["users.list"],
+    cursorPosition: { createdAt: { seconds: 253402300800, nanoseconds: 0 }, documentId: "u1" },
+    Timestamp, documentIdField
+  }), /cursor/);
+  assert.equal(db.calls.length, 0);
+});
+
 test("rejects arbitrary operation, invalid page size, and malformed cursor before query", async () => {
   const db = makeFirestore([]);
   await assert.rejects(() => executeAdminReadPage({
