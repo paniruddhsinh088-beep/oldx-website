@@ -144,3 +144,5 @@ These are static source observations from the current `security-hardening-review
 3. Establish a repeatable baseline for Firestore reads, initial render, image bytes and interaction latency.
 4. Design bounded inbox/chat pagination and unread/read metadata that preserve correct counts and all existing message visibility rules.
 5. Only then implement isolated Staging changes with source tests and browser/device tests.
+
+- **Low-risk first performance improvement applied on the review branch:** Product Card images (including Recently Viewed cards that reuse the same card renderer) now use browser-native lazy loading and asynchronous image decoding. A source regression assertion was added. This reduces unnecessary off-screen image work, but its real-world impact still needs mobile/slow-network measurement.
