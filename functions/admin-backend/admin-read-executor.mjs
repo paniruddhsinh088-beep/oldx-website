@@ -1,4 +1,4 @@
-import { executeAdminReadPage } from "./admin-read-adapter.mjs";
+import { executeAdminReadPage, ADMIN_READ_OPERATIONS } from "./admin-read-adapter.mjs";
 
 /**
  * Bridges normalized HTTP list requests to the fixed Firestore adapter.
@@ -11,7 +11,7 @@ export function createAdminReadExecutor({
   if (!firestore || typeof firestore.collection !== "function" ||
       typeof Timestamp !== "function" || !documentIdField ||
       !Array.isArray(enabledOperations) ||
-      enabledOperations.some(operation => typeof operation !== "string")) {
+      enabledOperations.some(operation => typeof operation !== "string" || !ADMIN_READ_OPERATIONS.includes(operation))) {
     throw new TypeError("Admin read executor dependencies are incomplete.");
   }
 
