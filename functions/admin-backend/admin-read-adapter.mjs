@@ -84,6 +84,11 @@ export async function executeAdminReadPage({
       throw new TypeError("Invalid Firestore document snapshot.");
     }
     const raw = doc.data();
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new TypeError("Invalid Firestore document data.");
+    }
+    // Every visible row must have a valid cursor field, not only the final row.
+    timestampParts(raw.createdAt);
     const item = { id: doc.id };
     for (const field of definition.fields) {
       if (Object.hasOwn(raw, field)) item[field] = raw[field];
