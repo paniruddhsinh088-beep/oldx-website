@@ -51,6 +51,32 @@ Before selecting/creating backend:
 - Select a supported runtime/region and establish private Admin SDK credentials/service identity. Never put service-account credentials in the browser or Git.
 - Confirm whether Firebase Cloud Functions, Cloud Run, or another trusted backend is preferred and available under the project/billing setup.
 
+## 2A. Admin moderation action inventory
+
+Static inspection of the current Admin page confirms one privileged mutation:
+
+- `deleteAdminAd(docId)` asks for confirmation, then directly calls `db.collection('products').doc(docId).delete()`. On success it removes the item from the in-memory cache and refreshes the displayed count/table.
+- The current UI does not collect a reason, case/reference number, or evidence note before deletion.
+- The client-side confirmation dialog is not an authorization control. A user with direct Firestore access could attempt the same deletion outside this page.
+- Target replacement: a server-side moderation endpoint must verify the Firebase ID token, verify an active owner-approved moderation role, validate the product ID and action, require a reason, record an append-only moderation audit event, and then perform the deletion or (preferably) a reversible moderation/takedown state transition.
+- Prefer reversible quarantine/hidden status over immediate permanent deletion when legally and operationally appropriate. Preserve the original product snapshot and actor/action/time/reason in restricted evidence storage under an approved retention policy. Do not promise indefinite retention; apply legal holds and applicable retention requirements.
+- The browser should refresh its list from the authorized server response only after the server confirms success. Failure must leave the item visible and show a safe error.
+
+### Proposed minimum moderation audit event
+
+- `eventId`: server-generated immutable identifier
+- `targetType`: product
+- `targetId`: validated product document ID
+- `actorUid`: derived from verified Firebase token, never request body
+- `actorRole`: resolved server-side
+- `action`: quarantine / restore / delete (only when approved)
+- `reasonCode`: allowlisted value plus bounded explanation
+- `createdAt`: server timestamp
+- `caseId`: optional approved case reference
+- `beforeSnapshotRef`: restricted reference, not public product payload
+
+This is a design target only; no endpoint or schema has been implemented.
+
 ## 3. Proposed Admin API contract (design only)
 
 All endpoints require Firebase ID token verification on the server and an active owner-approved Admin UID/role allowlist check. Every request is denied by default. Sensitive responses are no-store and access-logged.
