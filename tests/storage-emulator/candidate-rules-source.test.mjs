@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 const rules = await readFile(new URL('./candidate.rules', import.meta.url), 'utf8');
 
 test('candidate product Storage rules are scoped to seller-owned product media paths', () => {
-  assert.match(rules, /match \/product-media\/{uid}\/{productId}\/{fileName}/);
+  assert.match(rules, /match \/product-media\/\{uid\}\/\{productId\}\/\{fileName\}/);
   assert.match(rules, /request\.auth\.uid == uid/);
   assert.match(rules, /productId\.matches/);
   assert.match(rules, /fileName\.matches/);
