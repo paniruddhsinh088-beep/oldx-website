@@ -20,9 +20,9 @@ Review scope: current `security-hardening-review` source only. No live environme
 6. **Legacy Admin page remains unsafe to connect:** source review previously found direct browser reads of complete Products and Users collections and a direct browser-side Product delete. Keep the old UI disconnected from privileged functionality until a replacement backed by verified endpoints is ready.
 7. **No staging runtime validation:** existing preview login network failure and missing Products remain unresolved. No deployed backend, staging Firestore Rules change, or runtime integration test has been completed.
 
-## Read-adapter allowlist note
+## Read-adapter allowlist
 
-The current `executeAdminReadPage` source accepts the fixed operation registry and injected Firestore dependencies, but does not itself take an `enabledOperations` readiness allowlist. Documentation that describes such a runtime gate must not be interpreted as an implemented guard in this module. Before real runtime composition, add and test a trusted server-side readiness gate, then separately approve each collection only after its staging audit.
+The read executor now requires a trusted `enabledOperations` allowlist and passes it to the adapter. The adapter independently rejects missing, malformed, unknown, or non-enabled operation entries before opening a Firestore query. This is a source-level fail-closed gate only: no production or staging operation is enabled by this change. Each collection still requires its own read-only staging timestamp/index audit and explicit trusted composition approval before enablement.
 
 ## Release decision
 
