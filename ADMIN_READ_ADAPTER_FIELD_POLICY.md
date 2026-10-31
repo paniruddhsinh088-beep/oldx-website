@@ -81,3 +81,22 @@ This is a source-code finding, not a claim that no individual user document happ
 ## 7. Non-goals
 
 This policy does not create an endpoint, Firestore adapter, role, index, Rules file, migration, cloud resource, or deployment. Production remains out of scope.
+
+
+## 6.3 Products and Stores pagination timestamp source review (2026-10-31)
+
+Static review of `index.html` confirms:
+
+- Product creation payload includes `createdAt: firebase.firestore.FieldValue.serverTimestamp()` (product create flow around lines 4690–4693).
+- Product seller edit flow updates title, price/display, phone, location, description and images; it does not rewrite `createdAt`.
+- Store creation writes `createdAt` as a server timestamp only when `currentStoreData` is absent. Existing Store updates write `updatedAt` but do not backfill or rewrite `createdAt` (around lines 4103–4104).
+
+Consequences:
+
+- Products have a verified server-timestamp write path for newly created records, but source review alone does not prove every legacy product document contains a valid timestamp. Before enabling Admin pagination, verify coverage and type across the collection in staging using a read-only, bounded audit. Do not substitute client time or another mutable field.
+- Stores have a verified timestamp on the new-store path, but existing records may predate that path or may lack the field. Keep `stores.list` disabled until staging coverage and timestamp types are verified, or until an approved trusted, resumable backfill is completed.
+- Users remain blocked as documented in section 6.1: no universal immutable creation timestamp is verified in the profile write paths.
+
+The adapter's fixed `createdAt` ordering is therefore not, by itself, sufficient proof that all three collections are pagination-ready. Do not wire these operations into the Admin UI or a live endpoint based only on this source review.
+
+No collection scan, data migration, Firestore Rules change, backend deployment, or Production operation was performed.
