@@ -16,7 +16,14 @@ test("accepts page sizes only from 1 through 50", () => {
   }
 });
 
-test("accepts only bounded signed cursor token structure", () => {\n  const token = "eyJwYWdlIjoyfQ.signature_part";\n  assert.equal(parseAdminListQuery({ pageToken: token }).value.pageToken, token);\n  for (const value of ["eyJwYWdlIjoyfQ", "bad/token.sig", "payload.", ".signature", "a.b.c"]) {\n    assert.equal(parseAdminListQuery({ pageToken: value }).code, "INVALID_PAGE_TOKEN");\n  }\n  assert.equal(parseAdminListQuery({ pageToken: "a".repeat(513) }).code, "INVALID_PAGE_TOKEN");\n});
+test("accepts only bounded signed cursor token structure", () => {
+  const token = "eyJwYWdlIjoyfQ.signature_part";
+  assert.equal(parseAdminListQuery({ pageToken: token }).value.pageToken, token);
+  for (const value of ["eyJwYWdlIjoyfQ", "bad/token.sig", "payload.", ".signature", "a.b.c"]) {
+    assert.equal(parseAdminListQuery({ pageToken: value }).code, "INVALID_PAGE_TOKEN");
+  }
+  assert.equal(parseAdminListQuery({ pageToken: "a".repeat(513) }).code, "INVALID_PAGE_TOKEN");
+});
 
 test("trims search and strips control characters", () => {
   assert.equal(parseAdminListQuery({ q: "  ab\u0000cd  " }).value.q, "abcd");
