@@ -30,6 +30,23 @@ for (const [name, value] of Object.entries(fields)) {
   }
 }
 
+// Vercel exposes the deployment target separately from the Firebase
+// selector. When present, require the two scopes to agree so a misconfigured
+// Preview/Production deployment fails closed. Local builds may omit VERCEL_ENV.
+const vercelEnvironment = process.env.VERCEL_ENV;
+const requiredFirebaseEnvironment = {
+  preview: "staging",
+  production: "production"
+}[vercelEnvironment];
+
+if (vercelEnvironment && !["development", "preview", "production"].includes(vercelEnvironment)) {
+  throw new Error("VERCEL_ENV must be development, preview, or production when provided.");
+}
+
+if (requiredFirebaseEnvironment && environment !== requiredFirebaseEnvironment) {
+  throw new Error("Firebase environment does not match VERCEL_ENV. Build refused.");
+}
+
 if (fields.projectId !== expectedProjects[environment]) {
   throw new Error("Firebase project ID does not match OLDX_FIREBASE_ENV. Build refused.");
 }
