@@ -49,7 +49,7 @@ test("forwards non-empty search and filters so adapter fails closed before Fires
 
 test("forwards verified cursor position unchanged to adapter", async () => {
   const firestore = makeFirestore([]);
-  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["products.list"] });
+  const execute = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["users.list"] });
   await execute({
     operation: "users.list",
     query: { pageSize: 10, q: "", filters: {} },
