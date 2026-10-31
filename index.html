@@ -1965,7 +1965,13 @@
 
                 const aiCard = document.createElement('div');
                 aiCard.className = "bg-white dark:bg-gray-800 p-3 rounded-2xl max-w-[85%] mr-auto text-xs shadow-sm border border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200";
-                aiCard.innerHTML = `<p class="font-semibold">${aiReply}</p><span class="text-[9px] text-gray-400 mt-1 block">${timeStr}</span>`;
+                const aiReplyText = document.createElement('p');
+                aiReplyText.className = "font-semibold";
+                aiReplyText.textContent = aiReply.replace('&#128075;', '👋');
+                const aiReplyTime = document.createElement('span');
+                aiReplyTime.className = "text-[9px] text-gray-400 mt-1 block";
+                aiReplyTime.textContent = timeStr;
+                aiCard.append(aiReplyText, aiReplyTime);
                 container.appendChild(aiCard);
                 container.scrollTop = container.scrollHeight;
             }, 600);
