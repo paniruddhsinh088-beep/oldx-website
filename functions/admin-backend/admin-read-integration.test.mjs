@@ -38,7 +38,7 @@ function fixtureFirestore() {
 
 test("Admin HTTP list flow signs next page and resumes with verified Firestore cursor", async () => {
   const firestore = fixtureFirestore();
-  const executeOperation = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  const executeOperation = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["users.list"] });
   const secret = "integration-test-secret-with-more-than-32-bytes";
   const common = {
     operation: "users.list",
@@ -76,7 +76,7 @@ test("Admin HTTP list flow signs next page and resumes with verified Firestore c
 
 test("Admin HTTP list flow rejects search and filters before any Firestore query", async () => {
   const firestore = fixtureFirestore();
-  const executeOperation = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  const executeOperation = createAdminReadExecutor({ firestore, Timestamp, documentIdField, enabledOperations: ["users.list"] });
   const common = {
     operation: "users.list",
     allowedOperations: ["users.list"],
@@ -90,5 +90,16 @@ test("Admin HTTP list flow rejects search and filters before any Firestore query
   });
   assert.equal(result.status, 400);
   assert.equal(result.body.error.code, "UNSUPPORTED_QUERY_FEATURE");
+  assert.equal(firestore.calls.length, 0);
+});
+
+
+test("Admin read executor denies operations until explicitly enabled", async () => {
+  const firestore = fixtureFirestore();
+  const executeOperation = createAdminReadExecutor({ firestore, Timestamp, documentIdField });
+  await assert.rejects(
+    executeOperation({ operation: "users.list", query: { pageSize: 2 } }),
+    /not enabled pending schema readiness/
+  );
   assert.equal(firestore.calls.length, 0);
 });
