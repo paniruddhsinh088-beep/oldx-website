@@ -26,3 +26,10 @@ Do not import service credentials into browser code or commit credentials to thi
 The HTTP adapter separates read handlers from mutation handlers. Mutations require a `commitMutation` adapter that must commit the domain change and append-only audit event atomically in one trusted database transaction/batch. A separate audit write after a successful mutation is deliberately not supported because it can leave an unlogged privileged change. If atomic commit support is absent or fails, the handler returns an error and does not report success.
 
 The adapter still does not provide transaction semantics itself. The eventual Firebase Admin/Firestore implementation must prove atomicity with Emulator integration tests before any staging rollout.
+
+
+## Collection readiness gate
+
+The Firestore read executor requires an explicit `enabledOperations` allowlist from trusted server composition. It defaults to an empty list and rejects a list operation before any Firestore query unless that exact operation is enabled. This is an additional fail-closed guard, not proof that an operation is safe to enable.
+
+Do not enable `users.list`, `products.list`, or `stores.list` in a real runtime until the matching staging collection has passed a read-only audit for complete, valid immutable `createdAt` timestamps and the required composite ordering/index behavior. Users currently has no verified universal creation timestamp; Products and Stores legacy coverage remains unproven. The integration test explicitly enables a synthetic Users fixture only to exercise cursor mechanics; it is not authorization to enable the real collection.
