@@ -46,20 +46,19 @@ export async function executeAdminReadPage({
   const definition = OPERATIONS[operation];
   if (!definition) throw new TypeError("Unsupported Admin read operation.");
   if (!firestore || typeof firestore.collection !== "function" ||
-      typeof Timestamp?.fromMillis !== "function" || !documentIdField) {
+      typeof Timestamp !== "function" || !documentIdField) {
     throw new TypeError("Firestore adapter dependencies are incomplete.");
   }
   if (!validPageSize(pageSize)) throw new TypeError("Invalid page size.");
 
   let query = firestore.collection(definition.collection)
-    .select(...definition.fields)
+    .select(...definition.fields, "createdAt")
     .orderBy("createdAt", "desc")
     .orderBy(documentIdField, "desc");
 
   if (cursorPosition !== null) {
     const cursor = parseCursor(cursorPosition);
-    const millis = cursor.seconds * 1000 + Math.floor(cursor.nanoseconds / 1e6);
-    const timestamp = Timestamp.fromMillis(millis);
+    const timestamp = new Timestamp(cursor.seconds, cursor.nanoseconds);
     query = query.startAfter(timestamp, cursor.documentId);
   }
 

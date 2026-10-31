@@ -13,7 +13,7 @@ function makeFirestore(docs) {
   };
   return { calls, collection(name) { calls.push(["collection", name]); return query; } };
 }
-const Timestamp = { fromMillis: value => ({ millis: value }) };
+class Timestamp { constructor(seconds, nanoseconds) { this.seconds = seconds; this.nanoseconds = nanoseconds; } }
 const documentIdField = { name: "__name__" };
 const doc = (id, data) => ({ id, data: () => data });
 
@@ -26,7 +26,7 @@ test("uses only the fixed products collection and approved projection", async ()
   const result = await executeAdminReadPage({ firestore: db, operation: "products.list", Timestamp, documentIdField });
   assert.deepEqual(db.calls.slice(0, 4), [
     ["collection", "products"],
-    ["select", "title", "category", "finalPriceStr", "location", "sellerUid"],
+    ["select", "title", "category", "finalPriceStr", "location", "sellerUid", "createdAt"],
     ["orderBy", "createdAt", "desc"],
     ["orderBy", documentIdField, "desc"]
   ]);
