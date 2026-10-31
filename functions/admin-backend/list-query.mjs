@@ -15,7 +15,7 @@ function scalar(value) {
  * Parse bounded list parameters. The cursor remains opaque: adapters must
  * validate its signature and bind it to the query/order before using it.
  */
-export function parseAdminListQuery(input = {}) {
+export function parseAdminListQuery(input = {}, { allowedFilters = Object.keys(ALLOWED_FILTERS) } = {}) {
   const rawPageSize = scalar(input.pageSize);
   let pageSize = DEFAULT_PAGE_SIZE;
   if (rawPageSize !== "") {
@@ -40,6 +40,7 @@ export function parseAdminListQuery(input = {}) {
 
   const filters = {};
   for (const [key, allowed] of Object.entries(ALLOWED_FILTERS)) {
+    if (!allowedFilters.includes(key)) continue;
     const value = scalar(input[key]).trim();
     if (value !== "") {
       if (!allowed.has(value)) return { ok: false, code: "INVALID_FILTER" };
@@ -48,7 +49,7 @@ export function parseAdminListQuery(input = {}) {
   }
 
   // Reject unknown keys so clients cannot smuggle arbitrary paths/order fields.
-  const allowedKeys = new Set(["pageSize", "pageToken", "q", ...Object.keys(ALLOWED_FILTERS)]);
+  const allowedKeys = new Set(["pageSize", "pageToken", "q", ...allowedFilters]);
   if (Object.keys(input).some(key => !allowedKeys.has(key))) {
     return { ok: false, code: "UNSUPPORTED_QUERY_PARAMETER" };
   }
