@@ -37,5 +37,7 @@ test('Product cards do not interpolate Firestore text, IDs or image URLs into HT
   assert.match(block, /\[data-card-category\]'\)\.textContent\s*=\s*String\(p\.category/);
   assert.match(block, /addEventListener\('click',[\s\S]*?toggleCartProduct\(p\.docId\)/);
   assert.match(block, /\^https\?:/);
+  assert.match(block, /image\.loading\s*=\s*'lazy'/);
+  assert.match(block, /image\.decoding\s*=\s*'async'/);
   assert.doesNotMatch(block, /\$\{p\.title\}|\$\{p\.location\}|\$\{p\.category\}|\$\{p\.docId\}|\$\{p\.images/);
 });
