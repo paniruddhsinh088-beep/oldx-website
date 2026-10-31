@@ -81,6 +81,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <!-- Environment-specific config is generated during the Vercel build. -->
+    <script src="firebase-env.js"></script>
+    <script src="firebase-config-guard.js"></script>
 
     <script>
         tailwind.config = {
@@ -1345,14 +1348,7 @@
 
     <!-- Main Logic Script -->
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyAqMBoXtfy5qblEAm44kgLURPK20LLid5c",
-            authDomain: "oldx-1c983.firebaseapp.com",
-            projectId: "oldx-1c983",
-            storageBucket: "oldx-1c983.firebasestorage.app",
-            messagingSenderId: "1036370611979",
-            appId: "1:1036370611979:web:5c3a6c754b3ad979f69c0e"
-        };
+        const firebaseConfig = window.OLDX_FIREBASE_CONFIG;
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
