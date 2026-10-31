@@ -4,7 +4,7 @@
   "private": true,
   "description": "Local safety checks for the OLDX security review branch",
   "scripts": {
-    "test:emulator:safety": "node --test tests/firestore-emulator/safety.test.mjs tests/firestore-emulator/fixtures.test.mjs tests/firestore-emulator/firebase-config-safety.test.mjs tests/firestore-emulator/rules-baseline.test.mjs tests/firestore-emulator/deployment-boundary.test.mjs tests/firestore-emulator/profile-migration-transform.test.mjs tests/firestore-emulator/profile-access-policy-model.test.mjs",
+    "test:emulator:safety": "node --test tests/firestore-emulator/safety.test.mjs tests/firestore-emulator/fixtures.test.mjs tests/firestore-emulator/firebase-config-safety.test.mjs tests/firestore-emulator/rules-baseline.test.mjs tests/firestore-emulator/deployment-boundary.test.mjs tests/firestore-emulator/profile-migration-transform.test.mjs tests/firestore-emulator/profile-access-policy-model.test.mjs tests/firestore-emulator/admin-authorization-model.test.mjs",
     "test:emulator:rules": "firebase emulators:exec --only firestore --project demo-oldx-emulator --config firebase.emulator.json \"node --test tests/firestore-emulator/rules-runtime.test.mjs\"",
     "test:profile-migration": "node --test tests/firestore-emulator/profile-migration-transform.test.mjs"
   },
