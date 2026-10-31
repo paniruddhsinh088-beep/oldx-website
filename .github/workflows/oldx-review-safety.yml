@@ -39,6 +39,9 @@ jobs:
       - name: Run dependency-free safety tests
         run: npm run test:emulator:safety
 
+      - name: Run local Admin backend starter tests
+        run: npm run test:admin-backend
+
       - name: Install test-only Firebase tooling
         run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
 
