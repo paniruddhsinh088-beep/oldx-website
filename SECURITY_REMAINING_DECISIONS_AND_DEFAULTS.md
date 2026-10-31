@@ -60,3 +60,17 @@ A repository client-source scan of `index.html` and `admin.html` found:
 - This scan is static and limited to the reviewed `index.html` and `admin.html`; it does not prove that no external integration, older app version or backend consumes these fields.
 
 These findings refine the recommendations above but do not authorize changing existing user records or removing fields.
+
+
+## Product write-path cross-check
+
+The current Product write-contract inventory and source scan establish these concrete requirements for a future Rules/client change:
+
+- Product creation currently sends client-controlled `isFeatured` and `isShopVerified` fields. The client payload must stop assigning privileged flags before Rules can safely reject them; server/Admin moderation owns those fields.
+- Product creation also sends `userIp` obtained in the browser. It is not a verified IP signal and should be omitted from new writes unless a separately approved trusted-server design establishes a legitimate purpose.
+- The seller edit form currently changes only `title`, `basePrice`, `discountPercent`, `finalPriceStr`, `phone`, `location`, `desc`, and `images`. This is the observed ordinary edit allowlist, subject to checking alternate flows.
+- The Sold/Available action changes only boolean `isSold`; preserve this as a direct, simple owner action with no Admin approval.
+- Dynamic `extraDetails` by category and compressed data-URL image count/size still need complete schemas/limits before Rules can be authored.
+- Seller-side direct product deletion is still coupled to unresolved retention/account-cleanup policy; do not tighten it in a way that strands user listings or silently delete retained evidence.
+
+This is a static source contract, not a code change. No Product payload, Firestore Rules or user data has been modified.
