@@ -3073,23 +3073,55 @@
             document.getElementById('editLocation').value = p.location || '';
             document.getElementById('editDesc').value = p.desc || '';
 
-            const imgPreview = document.getElementById('editImagesPreview');
-            if (imgPreview) {
-                imgPreview.replaceChildren();
-                const images = Array.isArray(p.images) ? p.images : [];
-                images.forEach(src => {
-                    if (typeof src !== 'string' || !/^(https?:\/\/|data:image\/)/i.test(src)) return;
-                    const img = document.createElement('img');
-                    img.src = src;
-                    img.alt = 'Current product image';
-                    img.loading = 'lazy';
-                    img.className = 'w-16 h-16 rounded-xl object-cover border shadow-sm flex-shrink-0';
-                    imgPreview.appendChild(img);
-                });
-            }
+            const newImgInput = document.getElementById('editNewImages');
+            if (newImgInput) newImgInput.value = '';
+            window.currentEditingImages = Array.isArray(p.images) ? [...p.images] : [];
+            renderEditImagesPreview();
         }
 
-        function closeEditAdPage() {
+        function renderEditImagesPreview() {
+            const imgPreview = document.getElementById('editImagesPreview');
+            if (!imgPreview) return;
+            imgPreview.replaceChildren();
+
+            const images = Array.isArray(window.currentEditingImages) ? window.currentEditingImages : [];
+            if (images.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'text-xs text-gray-500 py-2';
+                empty.textContent = 'No photos selected. You can upload new photos below.';
+                imgPreview.appendChild(empty);
+                return;
+            }
+
+            images.forEach((src, index) => {
+                if (typeof src !== 'string' || !/^(https?:\\/\\/|data:image\\/)/i.test(src)) return;
+                const item = document.createElement('div');
+                item.className = 'relative flex-shrink-0';
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = 'Current product image ' + (index + 1);
+                img.loading = 'lazy';
+                img.className = 'w-20 h-20 rounded-xl object-cover border shadow-sm';
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'absolute -top-1.5 -right-1.5 min-w-7 h-7 px-1 rounded-full bg-red-600 text-white text-xs font-bold shadow-md';
+                removeBtn.textContent = '×';
+                removeBtn.title = 'Remove this photo';
+                removeBtn.setAttribute('aria-label', 'Remove product photo ' + (index + 1));
+                removeBtn.addEventListener('click', () => removeCurrentEditImage(index));
+                item.append(img, removeBtn);
+                imgPreview.appendChild(item);
+            });
+        }
+
+        function removeCurrentEditImage(index) {
+            if (!Array.isArray(window.currentEditingImages)) return;
+            if (!Number.isInteger(index) || index < 0 || index >= window.currentEditingImages.length) return;
+            window.currentEditingImages.splice(index, 1);
+            renderEditImagesPreview();
+        }
+
+                function closeEditAdPage() {
             window.currentEditingProduct = null;
             window.location.hash = '';
             setTimeout(() => openMyAdsModal(), 100);
@@ -3134,8 +3166,11 @@
                     p = { docId: snap.id, ...snap.data() };
                 }
 
-                // Keep existing images unless the user explicitly selects replacement images.
-                let updatedImages = Array.isArray(p.images) ? [...p.images] : [];
+                // Photo removals are staged locally and saved only with the product update.
+                // Existing photos remain intact if the user cancels or the Firestore write fails.
+                let updatedImages = Array.isArray(window.currentEditingImages)
+                    ? [...window.currentEditingImages]
+                    : (Array.isArray(p.images) ? [...p.images] : []);
                 if (newImgInput.files && newImgInput.files.length > 0) {
                     const replacementImages = [];
                     for (let i = 0; i < newImgInput.files.length; i++) {
