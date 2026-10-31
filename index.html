@@ -1936,7 +1936,14 @@
 
             const userCard = document.createElement('div');
             userCard.className = "bg-primary text-white p-3 rounded-2xl max-w-[85%] ml-auto text-xs shadow-sm";
-            userCard.innerHTML = `<p class="font-medium">${msg}</p><span class="text-[9px] text-teal-200 mt-1 block text-right">${timeStr}</span>`;
+            const userMessageText = document.createElement('p');
+            userMessageText.className = "font-medium";
+            userMessageText.style.whiteSpace = "pre-wrap";
+            userMessageText.textContent = msg;
+            const userMessageTime = document.createElement('span');
+            userMessageTime.className = "text-[9px] text-teal-200 mt-1 block text-right";
+            userMessageTime.textContent = timeStr;
+            userCard.append(userMessageText, userMessageTime);
             container.appendChild(userCard);
             
             input.value = '';
