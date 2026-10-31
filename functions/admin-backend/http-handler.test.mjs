@@ -198,3 +198,37 @@ test("list handler rejects a signed cursor replayed with a different page size",
   assert.equal(result.body.error.code, "PAGE_TOKEN_SCOPE_MISMATCH");
   assert.equal(called, false);
 });
+
+
+test("unauthorized mutation never invokes atomic commit adapter", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer user-token" }, body: { uid: "user-b" } },
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 403);
+  assert.equal(commitCalled, false);
+});
+
+test("mutation with wrong HTTP method never invokes atomic commit adapter", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
+    commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+  });
+  assert.equal(result.status, 405);
+  assert.equal(commitCalled, false);
+});
+
+test("mutation operation not allowlisted never invokes atomic commit adapter", async () => {
+  let commitCalled = false;
+  const result = await handleAdminRequest({
+    ...common, operation: "roles.grant", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", role: "admin" } },
+    commitMutation: async () => { commitCalled = true; return { changed: true }; }
+  });
+  assert.equal(result.status, 403);
+  assert.equal(commitCalled, false);
+});
