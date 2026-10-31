@@ -1,0 +1,40 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Candidate policy only. Do not connect to a deployed bucket until reviewed.
+    // A trusted moderation backend (Admin SDK) must change pending -> approved.
+    match /product-media/{uid}/{productId}/{fileName} {
+      function isOwner() {
+        return request.auth != null && request.auth.uid == uid;
+      }
+
+      function isAllowedImage() {
+        return request.resource.contentType.matches('image/(jpeg|png|webp)');
+      }
+
+      // Only approved media is readable. Sellers should preview pending files
+      // locally; do not mint/share download tokens before moderation approval.
+      allow read: if resource.metadata.moderationStatus == 'approved';
+
+      // Uploads are immutable from clients and must enter quarantine as pending.
+      allow create: if isOwner()
+        && productId.matches('^[A-Za-z0-9_-]{1,128}$')
+        && fileName.matches('^[A-Za-z0-9._-]{1,120}$')
+        && request.resource.size < 10 * 1024 * 1024
+        && isAllowedImage()
+        && request.resource.metadata.moderationStatus == 'pending';
+
+      // No client-side overwrite or approval bypass.
+      allow update: if false;
+
+      // Seller may clean up only their own still-pending upload.
+      allow delete: if isOwner()
+        && resource.metadata.moderationStatus == 'pending';
+    }
+
+    // Default deny for every other object path.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
