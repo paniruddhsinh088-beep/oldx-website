@@ -136,14 +136,19 @@ export async function handleAdminRequest({
       const valueDescriptor = validated && typeof validated === "object" && !Array.isArray(validated)
         ? Object.getOwnPropertyDescriptor(validated, "value")
         : undefined;
-      if (!validated || typeof validated !== "object" || Array.isArray(validated) || (Object.getPrototypeOf(validated) !== Object.prototype && Object.getPrototypeOf(validated) !== null) || validated.ok !== true || !valueDescriptor || !Object.hasOwn(valueDescriptor, "value") || valueDescriptor.value === undefined) {
+      const normalizedValue = valueDescriptor?.value;
+      const normalizedValueIsRecord = normalizedValue !== null
+        && typeof normalizedValue === "object"
+        && !Array.isArray(normalizedValue)
+        && (Object.getPrototypeOf(normalizedValue) === Object.prototype || Object.getPrototypeOf(normalizedValue) === null);
+      if (!validated || typeof validated !== "object" || Array.isArray(validated) || (Object.getPrototypeOf(validated) !== Object.prototype && Object.getPrototypeOf(validated) !== null) || validated.ok !== true || !valueDescriptor || !Object.hasOwn(valueDescriptor, "value") || !normalizedValueIsRecord) {
         return response(400, {
           ok: false,
           error: { code: "INVALID_MUTATION_INPUT", message: "Invalid mutation input" },
           requestId: id
         });
       }
-      data = await commitMutation({ ...context, body: valueDescriptor.value });
+      data = await commitMutation({ ...context, body: normalizedValue });
     } else {
       data = await executeOperation({
           actorUid: auth.identity.uid,
