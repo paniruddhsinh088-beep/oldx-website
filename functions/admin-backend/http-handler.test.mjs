@@ -29,38 +29,39 @@ test("method mismatch is rejected", async () => {
   assert.equal(result.status, 405);
 });
 
-test("unconfigured operation fails closed", async () => {
+test("unconfigured read operation fails closed", async () => {
   const result = await handleAdminRequest({ ...common, executeOperation: undefined, request: { method: "GET", headers: { authorization: "Bearer admin-token" } } });
   assert.equal(result.status, 503);
 });
 
-test("mutation requires audit writer and does not report success without it", async () => {
+test("mutation fails closed if atomic commit adapter is missing", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", reason: "test" } }
   });
   assert.equal(result.status, 503);
-  assert.equal(result.body.error.code, "AUDIT_NOT_CONFIGURED");
+  assert.equal(result.body.error.code, "ATOMIC_COMMIT_NOT_CONFIGURED");
 });
 
-test("mutation writes audit event using server-derived actor", async () => {
-  let event;
+test("mutation delegates one atomic commit with server-derived actor and body", async () => {
+  let commit;
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b", role: "owner" } },
-    writeAuditEvent: async value => { event = value; }
+    commitMutation: async value => { commit = value; return { suspended: true }; }
   });
   assert.equal(result.status, 200);
-  assert.equal(event.actorUid, "admin-a");
-  assert.equal(event.actorRole, "admin");
-  assert.equal(event.operation, "users.suspend");
+  assert.equal(commit.actorUid, "admin-a");
+  assert.equal(commit.actorRole, "admin");
+  assert.equal(commit.operation, "users.suspend");
+  assert.deepEqual(commit.body, { uid: "user-b", role: "owner" });
 });
 
-test("audit write failure fails the request without leaking internals", async () => {
+test("atomic commit failure returns generic error without leaking internals", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
     request: { method: "POST", headers: { authorization: "Bearer admin-token" } },
-    writeAuditEvent: async () => { throw new Error("private db path"); }
+    commitMutation: async () => { throw new Error("private db path"); }
   });
   assert.equal(result.status, 500);
   assert.equal(JSON.stringify(result.body).includes("private db path"), false);
