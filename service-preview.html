@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="gu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f7f8fa">
+<title>OldX Services — UI Preview (Demo)</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Noto Sans Gujarati",sans-serif;color:#182230;background:#f5f7fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}button,input,select,textarea{font:inherit}button{cursor:pointer}
+.demo{background:#fff4d6;color:#684900;text-align:center;padding:9px 14px;font-size:13px;font-weight:700;border-bottom:1px solid #f0dfaa}
+header{background:#fff;border-bottom:1px solid #e7ebf0;position:sticky;top:0;z-index:5}
+.nav{max-width:1120px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font-size:22px;font-weight:850;letter-spacing:-.7px;color:#172b4d}.brand span{color:#e07828}
+.nav small{color:#657286}.nav-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid #d7dee8;border-radius:11px;background:#fff;padding:10px 14px;font-weight:650;color:#243247}
+.btn.primary{background:#1769aa;border-color:#1769aa;color:#fff}.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #9cccf2;outline-offset:2px}
+main{max-width:1120px;margin:28px auto;padding:0 20px 56px}
+.hero{border-radius:22px;background:linear-gradient(120deg,#173b61,#1769aa);color:white;padding:30px;display:grid;grid-template-columns:1.5fr .8fr;gap:24px;align-items:center}
+.eyebrow{font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.8;font-weight:750}
+h1{font-size:clamp(28px,4vw,42px);line-height:1.12;margin:9px 0 12px;letter-spacing:-1px}
+.hero p{max-width:580px;color:#e2edf8;line-height:1.65;margin:0}
+.hero-art{display:flex;justify-content:center;align-items:center;font-size:74px;min-height:130px}
+.search-panel{background:#fff;border:1px solid #e3e8ef;border-radius:16px;padding:17px;margin-top:-22px;position:relative;box-shadow:0 12px 32px #172b4d12}
+.search-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr auto;gap:10px;align-items:end}
+.field label{display:block;font-size:12px;font-weight:750;color:#5b687a;margin:0 0 6px}
+.field input,.field select{width:100%;border:1px solid #d9e0e9;border-radius:10px;padding:11px 12px;background:#fff;color:#1d2939;min-height:44px}
+.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:30px 0 14px}
+h2{font-size:22px;margin:0;letter-spacing:-.4px}.muted{color:#667085;font-size:13px}
+.categories{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 18px}
+.chip{border:1px solid #dce3ec;background:#fff;color:#344054;border-radius:999px;padding:8px 13px;font-size:13px;font-weight:650}
+.chip.active{background:#e8f3fc;border-color:#9bc9ec;color:#145b91}
+.results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.provider{background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.provider-top{display:flex;gap:12px;align-items:center}.avatar{width:54px;height:54px;border-radius:15px;background:#eaf2f9;display:grid;place-items:center;font-size:28px;flex:none}
+.provider h3{font-size:16px;margin:0 0 4px}.provider .meta{font-size:12px;color:#667085;line-height:1.5}
+.tags{display:flex;gap:6px;flex-wrap:wrap}.tag{background:#f1f4f7;color:#465467;padding:5px 8px;border-radius:7px;font-size:11px}
+.status{font-size:11px;font-weight:750;color:#167348;background:#e9f7ef;padding:5px 8px;border-radius:7px;width:max-content}
+.provider-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:auto;padding-top:4px}.provider-foot strong{font-size:13px}
+.empty{grid-column:1/-1;padding:32px;text-align:center;background:#fff;border:1px dashed #cbd5e1;border-radius:14px;color:#667085}
+.notice{font-size:12px;color:#7a5b19;background:#fff8e7;border:1px solid #f2e4bc;border-radius:10px;padding:11px 13px;margin-top:18px}
+.view{display:none}.view.active{display:block}
+.profile-layout{display:grid;grid-template-columns:1fr 300px;gap:16px;margin-top:22px}
+.panel{background:#fff;border:1px solid #e2e7ee;border-radius:16px;padding:20px}
+.profile-cover{height:125px;border-radius:12px;background:linear-gradient(120deg,#dcecf8,#f6e8d8);display:grid;place-items:center;font-size:48px;margin-bottom:16px}
+.profile-title{display:flex;justify-content:space-between;gap:12px;align-items:start}.profile-title h2{font-size:24px}.profile-section{border-top:1px solid #edf0f4;padding-top:16px;margin-top:16px}.profile-section h3{font-size:14px;margin:0 0 10px}
+.contact-demo{width:100%;margin-top:8px}.contact-demo[disabled]{opacity:.65;cursor:not-allowed}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.service-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.check{display:flex;gap:8px;align-items:center;border:1px solid #e0e6ee;border-radius:10px;padding:10px;font-size:13px}.check input{accent-color:#1769aa}
+.preview-card{background:#f7fafc;border:1px dashed #b8c8d8;border-radius:13px;padding:15px;margin-top:16px}
+.preview-card h3{margin:0 0 7px}.footer-note{text-align:center;color:#8490a0;font-size:12px;margin-top:26px}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding:24px}.hero-art{display:none}.search-grid{grid-template-columns:1fr 1fr}.search-grid .field:first-child{grid-column:1/-1}.results{grid-template-columns:repeat(2,minmax(0,1fr))}.profile-layout{grid-template-columns:1fr}}
+@media(max-width:520px){main{padding-left:14px;padding-right:14px;margin-top:18px}.nav{padding:12px 14px}.nav small{display:none}.nav-actions .btn{padding:8px 10px;font-size:12px}.search-grid{grid-template-columns:1fr}.search-grid .field:first-child{grid-column:auto}.results{grid-template-columns:1fr}.section-head{align-items:start;flex-direction:column}.form-grid{grid-template-columns:1fr}.service-options{grid-template-columns:1fr}.hero{border-radius:16px}}
+</style>
+</head>
+<body>
+<div class="demo">UI PREVIEW ONLY · આ ડેમો છે — કોઈ વાસ્તવિક પ્રોફાઇલ, ફોન નંબર, મેસેજ કે ડેટાબેઝ જોડાયેલ નથી.</div>
+<header><div class="nav"><div><div class="brand">Old<span>X</span> Services</div><small>તમારા વિસ્તારની સ્થાનિક સેવાઓ</small></div><div class="nav-actions"><button class="btn" id="browseTab">સેવાઓ શોધો</button><button class="btn primary" id="providerTab">સેવા આપનાર માટે</button></div></div></header>
+<main>
+<section id="browseView" class="view active">
+<div class="hero"><div><div class="eyebrow">તમારા શહેરમાં · તમારા વિસ્તારમાં</div><h1>યોગ્ય કામ માટે<br>યોગ્ય સ્થાનિક નિષ્ણાત</h1><p>સુથાર, પ્લમ્બર, ઇલેક્ટ્રિશિયન, મિસ્ત્રી અને બીજી સ્થાનિક સેવાઓ શોધો. પ્રોફાઇલ અને કામનો અનુભવ જોઈને પસંદગી કરો.</p></div><div class="hero-art" aria-hidden="true">🛠️ 🧰</div></div>
+<div class="search-panel"><div class="search-grid">
+<div class="field"><label for="q">કઈ સેવા જોઈએ છે?</label><input id="q" type="search" placeholder="દા.ત. પ્લમ્બર, ફર્નિચર રિપેર"></div>
+<div class="field"><label for="area">શહેર / વિસ્તાર</label><input id="area" placeholder="દા.ત. અમદાવાદ, મણિનગર"></div>
+<div class="field"><label for="sort">ક્રમ</label><select id="sort"><option value="relevance">સૌથી સંબંધિત</option><option value="experience">વધુ અનુભવ</option><option value="name">નામ પ્રમાણે</option></select></div>
+<button class="btn primary" id="searchBtn">શોધો</button>
+</div></div>
+<div class="section-head"><div><h2>સ્થાનિક સેવા નિષ્ણાતો</h2><div class="muted" id="resultCount">ડેમો પ્રોફાઇલ્સ</div></div><span class="muted">નમૂનાના ડેટા</span></div>
+<div class="categories" id="categories">
+<button class="chip active" data-cat="બધી સેવાઓ">બધી સેવાઓ</button><button class="chip" data-cat="સુથાર">સુથાર</button><button class="chip" data-cat="પ્લમ્બર">પ્લમ્બર</button><button class="chip" data-cat="ઇલેક્ટ્રિશિયન">ઇલેક્ટ્રિશિયન</button><button class="chip" data-cat="મિસ્ત્રી">મિસ્ત્રી</button><button class="chip" data-cat="પેઇન્ટર">પેઇન્ટર</button>
+</div>
+<div class="results" id="results" aria-live="polite"></div>
+<div class="notice">સુરક્ષા નોંધ: પ્રોફાઇલમાં દર્શાવેલો અનુભવ અને ભાવ સેવા આપનાર દ્વારા આપેલી માહિતી છે. OldX દ્વારા ચકાસણી દર્શાવતા નથી.</div>
+</section>
+<section id="profileView" class="view">
+<button class="btn" id="backBtn">← પાછા પરિણામો પર</button><div class="profile-layout">
+<div class="panel"><div class="profile-cover">🧑‍🔧</div><div class="profile-title"><div><h2 id="pName">નમૂનાની પ્રોફાઇલ</h2><div class="muted" id="pArea"></div></div><span class="status">ડેમો પ્રોફાઇલ</span></div>
+<div class="profile-section"><h3>આપતી સેવાઓ</h3><div class="tags" id="pServices"></div></div>
+<div class="profile-section"><h3>પરિચય</h3><p class="muted" id="pAbout"></p></div>
+<div class="profile-section"><h3>અનુભવ અને કામનો વિસ્તાર</h3><p class="muted" id="pExperience"></p></div>
+<div class="profile-section"><h3>કામના નમૂના</h3><div class="tags"><span class="tag">પોર્ટફોલિયો ફોટા — ડેમો માટે બાકી</span></div></div>
+</div>
+<aside class="panel"><h3 style="margin-top:0">સંપર્ક વિકલ્પો</h3><p class="muted">વાસ્તવિક સંપર્ક માહિતી જોડાયેલી નથી. આ બટનો ડેમોમાં બંધ છે.</p><button class="btn contact-demo" disabled>📞 કૉલ કરો</button><button class="btn contact-demo" disabled>WhatsApp</button><button class="btn contact-demo" disabled>OldX પર મેસેજ</button><div class="notice">રિવ્યૂ ફક્ત યોગ્ય રીતે પૂર્ણ થયેલી અને ગ્રાહક દ્વારા પુષ્ટિ થયેલી સર્વિસ વિનંતી પછી જ ગણાશે.</div></aside>
+</div></section>
+<section id="providerView" class="view">
+<div class="section-head"><div><h2>તમારી સેવા પ્રોફાઇલ બનાવો</h2><div class="muted">એક જ પ્રોફાઇલમાં એકથી વધુ સેવાઓ પસંદ કરી શકો છો.</div></div><span class="status">ફોર્મ પ્રિવ્યૂ</span></div>
+<div class="panel"><div class="form-grid">
+<div class="field"><label for="providerName">નામ / વ્યવસાયનું નામ</label><input id="providerName" placeholder="તમારું નામ"></div>
+<div class="field"><label for="providerArea">શહેર અને વિસ્તાર</label><input id="providerArea" placeholder="દા.ત. અમદાવાદ, વસ્ત્રાલ"></div>
+<div class="field"><label for="providerExp">અનુભવ (વર્ષ)</label><input id="providerExp" type="number" min="0" max="60" placeholder="દા.ત. 5"></div>
+<div class="field"><label for="providerDesc">ટૂંકો પરિચય</label><input id="providerDesc" placeholder="તમે કયા પ્રકારનું કામ કરો છો?"></div>
+</div>
+<div class="profile-section"><h3>તમે કઈ સેવાઓ આપો છો?</h3><div class="service-options" id="serviceOptions">
+<label class="check"><input type="checkbox" value="સુથાર"> સુથાર / ફર્નિચર</label><label class="check"><input type="checkbox" value="પ્લમ્બર"> પ્લમ્બિંગ</label><label class="check"><input type="checkbox" value="ઇલેક્ટ્રિશિયન"> ઇલેક્ટ્રિકલ</label><label class="check"><input type="checkbox" value="મિસ્ત્રી"> બાંધકામ / મિસ્ત્રી</label><label class="check"><input type="checkbox" value="પેઇન્ટર"> પેઇન્ટિંગ</label><label class="check"><input type="checkbox" value="AC સર્વિસ"> AC સર્વિસ</label><label class="check"><input type="checkbox" value="ઘર સફાઈ"> ઘર સફાઈ</label><label class="check"><input type="checkbox" value="અન્ય"> અન્ય</label>
+</div></div>
+<div class="profile-section"><h3>ગ્રાહકોને કઈ રીતે સંપર્ક કરવાની મંજૂરી આપશો?</h3><div class="service-options"><label class="check"><input id="allowPhone" type="checkbox"> ફોન નંબર જાહેર કરવાની મંજૂરી</label><label class="check"><input id="allowWhatsapp" type="checkbox"> WhatsApp જાહેર કરવાની મંજૂરી</label></div><p class="muted">બંને વિકલ્પો ડિફૉલ્ટથી બંધ છે. નંબર ઉમેરવાનો તબક્કો અલગથી આવશે.</p></div>
+<div class="preview-card" aria-live="polite"><h3 id="previewName">તમારી પ્રોફાઇલનો પ્રિવ્યૂ</h3><div class="muted" id="previewArea">શહેર / વિસ્તાર ઉમેરો</div><p class="muted" id="previewServices">હજુ કોઈ સેવા પસંદ કરી નથી.</p><p class="muted" id="previewConsent">ફોન અને WhatsApp જાહેર નથી.</p></div>
+<div class="notice">આ ફોર્મ હાલ માત્ર સ્થાનિક પ્રિવ્યૂ અપડેટ કરે છે. Save, જાહેર પ્રોફાઇલ, ફોટા અપલોડ અને ગ્રાહક સંપર્ક હજી સક્રિય નથી.</div>
+</div>
+</section>
+<div class="footer-note">OldX Services · Isolated UI prototype · No live Firestore reads/writes</div>
+</main>
+<script>
+const demoProviders=[
+{id:"p1",name:"રમેશભાઈ પટેલ",area:"અમદાવાદ · મણિનગર",services:["સુથાર","ફર્નિચર રિપેર"],experience:12,about:"ઘર અને ઓફિસ માટે ફર્નિચર રિપેર તથા કસ્ટમ લાકડાનું કામ. આ લખાણ માત્ર UI ડેમો માટે છે.",icon:"🪚"},
+{id:"p2",name:"ઇમરાન શેખ",area:"અમદાવાદ · જમાલપુર",services:["પ્લમ્બર","પાઇપ લીકેજ"],experience:8,about:"ઘરેલુ પ્લમ્બિંગ અને લીકેજ સંબંધિત કામનું નમૂનાનું વર્ણન.",icon:"🔧"},
+{id:"p3",name:"મહેશભાઈ ચૌહાણ",area:"અમદાવાદ · વસ્ત્રાલ",services:["ઇલેક્ટ્રિશિયન","ફેન / લાઇટ"],experience:10,about:"ઘરેલુ ઇલેક્ટ્રિકલ રિપેર માટેનું નમૂનાનું વર્ણન.",icon:"💡"},
+{id:"p4",name:"કિરણભાઈ મકવાણા",area:"અમદાવાદ · નિકોલ",services:["મિસ્ત્રી","ટાઇલ્સ"],experience:15,about:"નાના બાંધકામ અને ટાઇલ્સના કામ માટેનું નમૂનાનું વર્ણન.",icon:"🧱"},
+{id:"p5",name:"દીપકભાઈ રાઠોડ",area:"અમદાવાદ · બોપલ",services:["પેઇન્ટર","ઘર પેઇન્ટિંગ"],experience:6,about:"ઘરના આંતરિક અને બાહ્ય રંગકામ માટેનું નમૂનાનું વર્ણન.",icon:"🖌️"},
+{id:"p6",name:"સલીમભાઈ મલેક",area:"અમદાવાદ · નારણપુરા",services:["AC સર્વિસ","ઇલેક્ટ્રિશિયન"],experience:9,about:"AC સર્વિસ અને સંબંધિત ઇલેક્ટ્રિકલ કામ માટેનું નમૂનાનું વર્ણન.",icon:"❄️"}
+];
+let activeCategory="બધી સેવાઓ";
+const $=id=>document.getElementById(id);
+function render(){
+ const q=$("q").value.trim().toLocaleLowerCase("gu"), area=$("area").value.trim().toLocaleLowerCase("gu"), sort=$("sort").value;
+ let rows=demoProviders.filter(p=>(activeCategory==="બધી સેવાઓ"||p.services.some(s=>s.includes(activeCategory)))&&(!q||(p.name+" "+p.services.join(" ")+" "+p.about).toLocaleLowerCase("gu").includes(q))&&(!area||p.area.toLocaleLowerCase("gu").includes(area)));
+ if(sort==="experience")rows.sort((a,b)=>b.experience-a.experience);if(sort==="name")rows.sort((a,b)=>a.name.localeCompare(b.name,"gu"));
+ $("resultCount").textContent=rows.length+" ડેમો પ્રોફાઇલ્સ";
+ $("results").innerHTML=rows.length?rows.map(p=>'<article class="provider"><div class="provider-top"><div class="avatar" aria-hidden="true">'+p.icon+'</div><div><h3>'+p.name+'</h3><div class="meta">'+p.area+'</div></div></div><div class="tags">'+p.services.map(s=>'<span class="tag">'+s+'</span>').join("")+'</div><div class="meta">'+p.experience+' વર્ષનો અનુભવ · સેવા આપનારની આપેલી માહિતી</div><div class="provider-foot"><strong>ડેમો પ્રોફાઇલ</strong><button class="btn" data-open="'+p.id+'">પ્રોફાઇલ જુઓ</button></div></article>').join(""):'<div class="empty">આ શોધ માટે ડેમો પ્રોફાઇલ મળી નથી. શબ્દ અથવા વિસ્તાર બદલીને જુઓ.</div>';
+ document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openProfile(b.dataset.open)));
+}
+function show(id){["browseView","profileView","providerView"].forEach(v=>$(v).classList.toggle("active",v===id));window.scrollTo({top:0,behavior:"smooth"})}
+function openProfile(id){const p=demoProviders.find(x=>x.id===id);if(!p)return;$("pName").textContent=p.name;$("pArea").textContent=p.area;$("pServices").innerHTML=p.services.map(s=>'<span class="tag">'+s+'</span>').join("");$("pAbout").textContent=p.about;$("pExperience").textContent=p.experience+" વર્ષનો અનુભવ · "+p.area+" (ડેમો માહિતી)";show("profileView")}
+$("categories").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;activeCategory=b.dataset.cat;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));render()});
+$("searchBtn").addEventListener("click",render);$("q").addEventListener("input",render);$("area").addEventListener("input",render);$("sort").addEventListener("change",render);
+$("browseTab").addEventListener("click",()=>show("browseView"));$("providerTab").addEventListener("click",()=>show("providerView"));$("backBtn").addEventListener("click",()=>show("browseView"));
+function updatePreview(){const name=$("providerName").value.trim()||"તમારી પ્રોફાઇલ";const area=$("providerArea").value.trim()||"શહેર / વિસ્તાર ઉમેરો";const services=[...document.querySelectorAll('#serviceOptions input:checked')].map(x=>x.value);$("previewName").textContent=name;$("previewArea").textContent=area;$("previewServices").textContent=services.length?services.join(" · "):"હજુ કોઈ સેવા પસંદ કરી નથી.";$("previewConsent").textContent="ફોન: "+($("allowPhone").checked?"મંજૂરી આપેલી":"જાહેર નથી")+" · WhatsApp: "+($("allowWhatsapp").checked?"મંજૂરી આપેલી":"જાહેર નથી")}
+document.querySelectorAll("#providerView input").forEach(x=>x.addEventListener("input",updatePreview));render();updatePreview();
+</script>
+</body></html>
