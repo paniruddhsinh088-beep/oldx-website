@@ -27,6 +27,8 @@ The HTTP adapter separates read handlers from mutation handlers. Mutations requi
 
 The adapter still does not provide transaction semantics itself. The eventual Firebase Admin/Firestore implementation must prove atomicity with Emulator integration tests before any staging rollout.
 
+The HTTP handler passes mutation input as a nested `body` value alongside server-derived `actorUid`, `actorRole`, `operation`, and `requestId`. The nested body is untrusted and must never be spread into or merged over the server context or audit envelope. In particular, fields such as `uid`, `role`, `actorUid`, `actorRole`, `occurredAt`, `eventId`, and `outcome` are not authoritative when supplied by a client. Before implementation, each mutation operation needs a strict operation-specific schema that validates target identifiers, allowed fields, field types, lengths, and enumerated reason codes; unknown fields must be rejected. The current handler does not yet implement these per-operation schemas, so do not connect it to a runtime or Admin UI. See `ADMIN_MUTATION_AUDIT_EVENT_CONTRACT.md` for the proposed event envelope and required integration tests.
+
 
 ## Collection readiness gate
 
