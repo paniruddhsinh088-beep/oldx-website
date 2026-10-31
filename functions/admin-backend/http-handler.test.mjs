@@ -124,3 +124,57 @@ test("list handler rejects oversized page requests before adapter execution", as
   assert.equal(result.status, 400);
   assert.equal(called, false);
 });
+
+
+test("list handler verifies scoped signed cursors before adapter execution", async () => {
+  const { createAdminPageToken } = await import("./page-token.mjs");
+  const secret = "synthetic-handler-secret-with-32-bytes-minimum";
+  const context = {
+    actorUid: "admin-a", operation: "users.list", query: "shoes",
+    filters: {}, order: "createdAt_desc"
+  };
+  const token = createAdminPageToken({ position: { id: "user-25" }, context, secret });
+  let received;
+  const result = await handleAdminRequest({
+    ...common, pageTokenSecret: secret,
+    request: {
+      method: "GET", headers: { authorization: "Bearer admin-token" },
+      query: { q: "shoes", pageToken: token }
+    },
+    executeOperation: async value => { received = value; return { items: [] }; }
+  });
+  assert.equal(result.status, 200);
+  assert.deepEqual(received.cursorPosition, { id: "user-25" });
+  assert.equal(received.query.pageToken, null);
+});
+
+test("list handler rejects a cursor replayed by another Admin", async () => {
+  const { createAdminPageToken } = await import("./page-token.mjs");
+  const secret = "synthetic-handler-secret-with-32-bytes-minimum";
+  const token = createAdminPageToken({
+    position: "doc-1",
+    context: { actorUid: "someone-else", operation: "users.list", query: "", filters: {}, order: "createdAt_desc" },
+    secret
+  });
+  let called = false;
+  const result = await handleAdminRequest({
+    ...common, pageTokenSecret: secret,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" }, query: { pageToken: token } },
+    executeOperation: async () => { called = true; return { items: [] }; }
+  });
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "PAGE_TOKEN_SCOPE_MISMATCH");
+  assert.equal(called, false);
+});
+
+test("list handler signs adapter next positions and never exposes raw positions", async () => {
+  const secret = "synthetic-handler-secret-with-32-bytes-minimum";
+  const result = await handleAdminRequest({
+    ...common, pageTokenSecret: secret,
+    request: { method: "GET", headers: { authorization: "Bearer admin-token" } },
+    executeOperation: async () => ({ items: [{ id: "one" }], nextPosition: { id: "last-doc" } })
+  });
+  assert.equal(result.status, 200);
+  assert.equal(typeof result.body.data.nextPageToken, "string");
+  assert.equal(JSON.stringify(result.body).includes("last-doc"), false);
+});
