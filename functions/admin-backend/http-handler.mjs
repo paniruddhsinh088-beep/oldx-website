@@ -133,7 +133,7 @@ export async function handleAdminRequest({
     let data;
     if (isMutation) {
       const validated = await validateMutationInput({ operation, body: request.body });
-      if (!validated || typeof validated !== "object" || Array.isArray(validated) || validated.ok !== true || !Object.hasOwn(validated, "value") || validated.value === undefined) {
+      if (!validated || typeof validated !== "object" || Array.isArray(validated) || (Object.getPrototypeOf(validated) !== Object.prototype && Object.getPrototypeOf(validated) !== null) || validated.ok !== true || !Object.hasOwn(validated, "value") || validated.value === undefined) {
         return response(400, {
           ok: false,
           error: { code: "INVALID_MUTATION_INPUT", message: "Invalid mutation input" },
