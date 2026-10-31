@@ -146,3 +146,15 @@ These are static source observations from the current `security-hardening-review
 5. Only then implement isolated Staging changes with source tests and browser/device tests.
 
 - **Low-risk first performance improvement applied on the review branch:** Product Card images (including Recently Viewed cards that reuse the same card renderer) now use browser-native lazy loading and asynchronous image decoding. A source regression assertion was added. This reduces unnecessary off-screen image work, but its real-world impact still needs mobile/slow-network measurement.
+
+
+### Chat attachment and existing warning behavior (additional source review)
+- Chat attachment selection currently checks the browser-reported MIME type against an allowlist, but does not impose a visible file-size cap before reading the entire file into memory as a Base64 Data URL and storing it inside the Firestore message document.
+- The browser MIME type is user-controlled/untrusted metadata; server-side file signature/content validation and size enforcement are required. A migration to Firebase Storage or another approved object store should be evaluated so large binary content is not embedded in Firestore documents.
+- Current chat warning logic runs only in the browser. It blocks any message containing broad strings including `won`, `prize`, and any `http(s)` link. This can block harmless local marketplace messages and still be bypassed by a modified client. It is not a reliable scam detector.
+- **Do not simply expand the keyword list or treat this client-side check as security.** Replace it only after a trusted server-side policy and a user-friendly warning/appeal flow are designed. Detection should use contextual signals and graduated friction, not isolated words.
+- Current block checks also query another user's `blockedUsers` array from the client. This is private-data exposure and not an authorization boundary; it must be replaced with an authoritative private block check in Rules or a trusted backend before the chat enforcement model is considered complete.
+- Existing chat history UI subscribes to the latest 35 messages, while a separate read-receipt query retrieves all messages from other senders and updates each document individually. A bounded read-receipt design must preserve the existing "latest 35" display and owner-approved block/history semantics.
+
+### Implementation caution
+The current client-only keyword check should be treated as a temporary UX warning, not a security control. Until the trusted moderation backend is approved and implemented, do not claim that suspicious chat activity is comprehensively detected or prevented.
