@@ -51,13 +51,13 @@ export async function executeAdminReadPage({
   }
   if (!validPageSize(pageSize)) throw new TypeError("Invalid page size.");
 
+  const cursor = cursorPosition === null ? null : parseCursor(cursorPosition);
   let query = firestore.collection(definition.collection)
     .select(...definition.fields, "createdAt")
     .orderBy("createdAt", "desc")
     .orderBy(documentIdField, "desc");
 
-  if (cursorPosition !== null) {
-    const cursor = parseCursor(cursorPosition);
+  if (cursor !== null) {
     const timestamp = new Timestamp(cursor.seconds, cursor.nanoseconds);
     query = query.startAfter(timestamp, cursor.documentId);
   }
