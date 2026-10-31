@@ -56,6 +56,25 @@ test("mutation fails closed when operation-specific validation is not configured
   assert.equal(commitCalled, false);
 });
 
+test("atomic commit receives only the validator's normalized value", async () => {
+  let commit;
+  const rawBody = { uid: " user-b ", reason: " reviewed ", actorRole: "owner", extra: "discard-me" };
+  const result = await handleAdminRequest({
+    ...common, operation: "users.suspend", isMutation: true,
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: rawBody },
+    validateMutationInput: async ({ operation, body }) => {
+      assert.equal(operation, "users.suspend");
+      assert.equal(body, rawBody);
+      return { ok: true, value: { uid: body.uid.trim(), reason: body.reason.trim() } };
+    },
+    commitMutation: async value => { commit = value; return { suspended: true }; }
+  });
+  assert.equal(result.status, 200);
+  assert.deepEqual(commit.body, { uid: "user-b", reason: "reviewed" });
+  assert.equal(Object.hasOwn(commit.body, "actorRole"), false);
+  assert.equal(Object.hasOwn(commit.body, "extra"), false);
+});
+
 test("invalid mutation input never reaches atomic commit adapter", async () => {
   let commitCalled = false;
   const result = await handleAdminRequest({
