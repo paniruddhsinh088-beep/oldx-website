@@ -75,6 +75,30 @@ test("atomic commit receives only the validator's normalized value", async () =>
   assert.equal(Object.hasOwn(commit.body, "extra"), false);
 });
 
+test("incomplete successful validator results never reach atomic commit", async t => {
+  const invalidResults = [
+    null,
+    true,
+    { ok: true },
+    Object.create({ value: { uid: "user-b" }, ok: true }),
+    { ok: true, value: undefined }
+  ];
+  for (const invalidResult of invalidResults) {
+    await t.test(String(invalidResult), async () => {
+      let commitCalled = false;
+      const result = await handleAdminRequest({
+        ...common, operation: "users.suspend", isMutation: true,
+        request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
+        validateMutationInput: async () => invalidResult,
+        commitMutation: async () => { commitCalled = true; return { suspended: true }; }
+      });
+      assert.equal(result.status, 400);
+      assert.equal(result.body.error.code, "INVALID_MUTATION_INPUT");
+      assert.equal(commitCalled, false);
+    });
+  }
+});
+
 test("invalid mutation input never reaches atomic commit adapter", async () => {
   let commitCalled = false;
   const result = await handleAdminRequest({
