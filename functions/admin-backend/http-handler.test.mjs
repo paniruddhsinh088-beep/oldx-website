@@ -160,7 +160,7 @@ test("client-supplied audit identity and outcome fields remain nested untrusted 
 test("atomic commit failure returns generic error without leaking internals", async () => {
   const result = await handleAdminRequest({
     ...common, operation: "users.suspend", isMutation: true,
-    request: { method: "POST", headers: { authorization: "Bearer admin-token" } },
+    request: { method: "POST", headers: { authorization: "Bearer admin-token" }, body: { uid: "user-b" } },
     validateMutationInput: async ({ body }) => ({ ok: true, value: body }),
     commitMutation: async () => { throw new Error("private db path"); }
   });
