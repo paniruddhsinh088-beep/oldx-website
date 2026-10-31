@@ -1,11 +1,11 @@
 # OLDX Admin API and Backend Discovery — Phase 0 Deliverable
 
 **Branch:** security-hardening-review  
-**Status:** Discovery/design only; no runtime or production changes.
+**Status:** Discovery/design only; Admin timestamp display correction committed on review branch; no runtime or production changes.
 
 ## 1. Confirmed current Admin UI data requirements
 
-Static inspection of admin.html (branch blob SHA fe1de21c953d8107553a1eb31b976463a9449270):
+Static inspection of `admin.html` on `security-hardening-review` (rechecked after the forensic timestamp correction):
 
 ### Users table currently renders
 - displayName (fallback "Anonymous User")
@@ -24,9 +24,18 @@ Search currently filters the in-memory full list by displayName and email.
 - A field labelled "Last Activity Timestamp"
 - Count and title/price summary of listings where sellerUid equals userData.uid
 
-**Data correctness defect:** the modal currently populates "Last Activity Timestamp" with the current time when the modal opens. This is not the user's last activity. Replace it with a genuine server-recorded lastSeen/event timestamp after source and meaning are verified; otherwise show "Not available".
+**Data correctness correction (review branch):** the modal now displays the stored `userData.lastSeen` Firestore timestamp as "Last Recorded Activity (lastSeen)" when it is a Firestore Timestamp, and otherwise displays "Not available". The app writes `lastSeen` using `firebase.firestore.FieldValue.serverTimestamp()` in its presence update flow. This is a last-recorded presence timestamp, not a complete activity/authentication history. The correction is committed as `a8b02bbf5e71fa28c76cc38315592a291ea28fa8`; browser/emulator verification remains pending.
 
 **Evidence limitation:** the current modal is not a complete forensic audit. It does not prove historical edits/deletions, authentication history, or chat evidence. The UI must label data by source and availability, and must not imply missing history exists.
+
+
+## 1A. Current Admin page access and Firestore reads (static inspection)
+
+- `admin.html` contains a hard-coded `AUTHORIZED_ADMIN_UID` and checks the signed-in UID in `auth.onAuthStateChanged`. A non-matching account is signed out and redirected. This is a client-side page gate only; it is not a substitute for Firestore Rules or server-side authorization.
+- After that client-side check, `fetchAllAdminData()` reads `stats/traffic`, downloads the full `products` collection, and downloads the full `users` collection.
+- Consequence: the currently supplied Rules' broad read permissions are what make these direct client reads possible. Tightening `users` or `stats` access before moving Admin reads to a trusted backend will break the dashboard. A client-side UID constant must not be treated as authorization for private records.
+- Admin product moderation currently includes a direct client delete of a product document. This must move behind a verified Admin backend operation before Rules deny client admin deletes.
+- The current all-record downloads are unbounded and expose more user/product data to the browser than a paginated, role-scoped API should return. Backend migration must preserve required dashboard workflows while minimizing returned fields.
 
 ## 2. Existing repository/backend discovery
 
