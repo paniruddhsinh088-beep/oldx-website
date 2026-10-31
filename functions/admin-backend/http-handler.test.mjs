@@ -80,6 +80,7 @@ test("incomplete successful validator results never reach atomic commit", async 
     null,
     true,
     { ok: true },
+    Object.assign([], { ok: true, value: { uid: "user-b" } }),
     Object.create({ value: { uid: "user-b" }, ok: true }),
     { ok: true, value: undefined }
   ];
