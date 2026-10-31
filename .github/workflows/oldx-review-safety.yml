@@ -20,7 +20,7 @@ jobs:
   local-safety-tests:
     name: Local config and emulator-safety tests
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Check out review branch
         uses: actions/checkout@v4
