@@ -36,6 +36,9 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Run Firebase environment generation safety tests
+        run: npm run test:firebase-config
+
       - name: Run dependency-free safety tests
         run: npm run test:emulator:safety
 
