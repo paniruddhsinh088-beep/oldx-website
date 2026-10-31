@@ -29,7 +29,7 @@ export function parseAdminListQuery(input = {}, { allowedFilters = Object.keys(A
   }
 
   const pageToken = scalar(input.pageToken);
-  if (pageToken.length > MAX_CURSOR_LENGTH || (pageToken !== "" && !/^[A-Za-z0-9_-]+$/.test(pageToken))) {
+  if (pageToken.length > MAX_CURSOR_LENGTH || (pageToken !== "" && !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(pageToken))) {
     return { ok: false, code: "INVALID_PAGE_TOKEN" };
   }
 
