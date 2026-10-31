@@ -72,3 +72,25 @@ A repository-wide Git tree inspection confirmed the branch contains no storage.r
 3. Validate candidate rule syntax with the Emulator; static tests are not a substitute.
 4. Define and test the trusted server-side moderation metadata transition before any approved object can become public.
 5. Only then wire `uploadBytesResumable`/compat resumable task progress into product create/edit UI, while preserving legacy Base64 reads and failure recovery.
+
+
+## Storage Rules Emulator validation update (2026-11-01)
+
+This section supersedes the earlier statement above that no Storage Emulator is configured yet. The review branch now has an isolated Storage Emulator configuration and executable authorization tests.
+
+- Emulator config: `firebase.storage-emulator.json` (Storage Emulator bound to `127.0.0.1:9199`; rules loaded from `tests/storage-emulator/candidate.rules`).
+- Runtime suite: `tests/storage-emulator/rules-runtime.test.mjs`.
+- CI command: `npm run test:storage:rules`, executed through Firebase Emulator CI.
+- GitHub Actions run **41236897893** completed with conclusion **success** on commit `fc91c2cd97dc4b21b334a722dd5653e707e0415b`. The Storage Emulator authorization step and Firestore Emulator authorization step both completed successfully, as did the preceding source/config/Admin starter test steps.
+- Runtime scenarios exercised: anonymous upload denied; seller own-UID upload allowed and cross-seller upload denied; unsupported GIF and exactly-10-MiB upload denied; pending download URL denied; approved-object read allowed (approved fixture seeded with rules disabled); owner deletion of own pending object allowed; deletion of approved or another seller's pending object denied; client overwrite and client metadata approval attempt denied.
+
+### What this proves—and does not prove
+
+- The candidate rules were parsed and exercised by the Firebase Storage Rules Emulator in the isolated test project. This is stronger than static source assertions and confirms the listed emulator authorization scenarios.
+- The approved fixture is seeded using the test harness with security rules disabled. This tests the public-read condition after an approved metadata state exists; it does **not** implement or validate a trusted moderation service that safely transitions real uploads from pending to approved.
+- Emulator success does not prove the actual `oldx-staging` bucket exists, that its bucket name/configuration is correct, or that any rules are deployed there.
+- No Firebase Storage Rules have been published, no bucket configuration has been changed, and no live objects have been uploaded/deleted.
+- The 10 MiB limit and JPEG/PNG/WebP allowlist remain provisional and need product-owner confirmation before any Staging rollout.
+- Product create/edit still stores images as Base64 in Firestore. Resumable uploads and true byte-level progress remain unimplemented.
+
+**Next safe step:** verify the Staging project's Storage bucket identity and provisioning without changing it, then design the trusted moderation transition and product-upload migration for review. Do not publish candidate rules or switch product image writes to Storage until those blockers are resolved.
