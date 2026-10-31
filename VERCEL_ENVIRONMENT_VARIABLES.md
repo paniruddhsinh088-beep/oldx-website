@@ -26,13 +26,13 @@ Set `OLDX_FIREBASE_ENV=staging` and use only the Firebase web app config for pro
 The expected environment marker is `OLDX_FIREBASE_ENV=production` and expected project ID is `oldx-1c983`. Do not edit or replace current Production variables as part of staging setup.
 
 ## Build command
-After the six HTML/config integration changes are reviewed and committed, set the Vercel Build Command to:
+After the HTML/config integration changes are reviewed and Preview variables are configured, the intended Vercel Build Command is:
 
 ```sh
 node scripts/generate-firebase-env.js
 ```
 
-The build output directory and framework preset must remain consistent with the existing static-site deployment. Do not change them until the current Vercel project configuration has been confirmed.
+Do not change the Output Directory or framework preset until the current Vercel project configuration has been confirmed. This repository has root-level HTML files and no `package.json` or `public/` directory; do not select `npm run build` or `npm run vercel-build` because those scripts do not exist.
 
 ## Fail-closed checks
 The build helper:
@@ -43,4 +43,4 @@ The build helper:
 - generates `firebase-env.js`, which is excluded from Git.
 
 ## Current status
-This document and the build helper do not themselves alter Vercel settings or deploy anything. The HTML pages still need a separate reviewed change to load the generated config and the guard before Firebase initialization. No runtime tests have been run.
+This document and the build helper do not themselves alter Vercel settings or deploy anything. Both HTML pages now load the generated config and guard before Firebase initialization on `security-hardening-review`. The build helper has only been tested locally with synthetic values; no Vercel deployment or browser runtime tests have been run.
