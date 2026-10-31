@@ -4821,13 +4821,21 @@
                     dropdown.style.display = 'none';
                     openProductDetailPage(m.docId);
                 };
-                itemDiv.innerHTML = `
-                    <img src="${m.images && m.images.length > 0 ? m.images[0] : ''}" class="w-10 h-10 rounded-xl object-cover bg-gray-200 shrink-0">
-                    <div class="flex-1 overflow-hidden">
-                        <p class="font-bold text-gray-900 dark:text-white text-xs truncate whitespace-normal leading-snug">${m.title}</p>
-                        <p class="text-[11px] text-teal-600 dark:text-teal-400 font-extrabold mt-0.5">${m.finalPriceStr}</p>
-                    </div>
-                `;
+                const image = document.createElement('img');
+                image.className = "w-10 h-10 rounded-xl object-cover bg-gray-200 shrink-0";
+                image.alt = String(m.title || 'Product image');
+                const imageUrl = Array.isArray(m.images) && typeof m.images[0] === 'string' ? m.images[0].trim() : '';
+                if (/^https?:\/\//i.test(imageUrl) || /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(imageUrl)) image.src = imageUrl;
+                const details = document.createElement('div');
+                details.className = "flex-1 overflow-hidden";
+                const title = document.createElement('p');
+                title.className = "font-bold text-gray-900 dark:text-white text-xs truncate whitespace-normal leading-snug";
+                title.textContent = String(m.title || '');
+                const price = document.createElement('p');
+                price.className = "text-[11px] text-teal-600 dark:text-teal-400 font-extrabold mt-0.5";
+                price.textContent = String(m.finalPriceStr || '');
+                details.append(title, price);
+                itemDiv.append(image, details);
                 dropdown.appendChild(itemDiv);
             });
             dropdown.style.display = 'block';
