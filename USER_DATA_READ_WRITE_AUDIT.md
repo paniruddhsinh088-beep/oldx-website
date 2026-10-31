@@ -213,3 +213,43 @@ This audit changes documentation only. It does not:
 - authorize Production changes.
 
 All code, schema, Rules, migration, backend and deployment work remains staged and separately approval-gated.
+
+
+## 15. Expanded repository-wide access-path scan (follow-up)
+
+The complete tracked-file tree at audit commit `ebf7701e02a8618f28b18d167545797847efc6db` was reviewed. The only browser HTML entry points in this repository are `index.html` and `admin.html`. The `functions/admin-backend/` files are dependency-injected security primitives and tests; the README explicitly confirms there is no deployed Firebase Admin/HTTP runtime. No other tracked application page or backend runtime was found performing Firestore reads/writes. This does not cover code or services outside this repository.
+
+### Chat room and message access paths
+
+| Source | Operation | Required data / rule implication |
+|---|---|---|
+| `index.html:2182-2225` | Realtime query `chats` where `participants array-contains uid`; then queries each `messages` subcollection for messages with `senderUid != uid` | Room list must be participant-scoped. Message reads must be participant-scoped too. Current unread counter downloads all matching messages per room and counts `status != read`; this is unbounded and should be replaced by per-user unread counters or bounded query/index strategy after correctness tests. |
+| `index.html:2277-2310` | Inbox fetches all participant rooms and loads each room's messages ordered by `createdAt desc` | Must preserve Inbox ordering and unread sorting. Add pagination/limits; avoid loading entire conversation histories to build the Inbox. |
+| `index.html:2398-2415` | Creates/merges room with `participants` and `productId`; then opens messages, presence and typing | Room identity and participant list must be immutable after trusted creation. Validate buyer/seller are actual participants and product reference is legitimate. |
+| `index.html:2495-2505` | Writes dynamic `typing_<uid>` booleans on chat room | Only a room participant may change only their own typing key; strict allowed-key validation and bounded stale state. Consider presence/typing subcollection to avoid broad room update permissions. |
+| `index.html:2511-2533` | Realtime chat room read for other participant typing state | Must require participant membership; typing is not public. Ensure listener unsubscribes when chat changes/closes. |
+| `index.html:2535-2565` | Reads messages ordered by `createdAt asc`, limit 35; separately reads other-sender messages and updates each `status=read` | Participant-only message read. Read receipt must only allow recipient to make permitted transition; current per-document loop may produce many writes and needs bounded batch/transaction or trusted endpoint. |
+| `index.html:2641-2655` | Updates `hiddenFor` array for Delete for Me; clears `text/attachment` and sets `deletedForEveryone` for Delete for Everyone | Delete-for-me must add only caller UID and preserve other fields. Delete-for-everyone must verify original sender and server-side 15-minute window; UI's sender check alone is not security. |
+| `index.html:2763-2785` | Writes own typing false, room `lastUpdated`, then creates message with text, attachment, sender UID/name, status, client time and server timestamp | Sender UID must equal Auth UID; senderName/status/time cannot be trusted for authorization. Validate message length, attachment type/size and allowed field set. Enforce block direction at Rules/trusted boundary. |
+| `index.html:4468-4481` | Offer flow merges room participants/productId/lastUpdated then adds offer message and inline product image | Must share the same trusted room creation and message validation path; do not allow this secondary path to bypass block, participant or immutable-room constraints. |
+
+### Product access paths and seller experience
+
+- `index.html:2950-2955`: seller toggles own product `isSold`. Preserve this simple action with a field-level allowlist and immutable `sellerUid`.
+- `index.html:2958-2975`: seller delete path is a direct product delete; verify ownership and whether product deletion should be soft-delete/quarantine for recovery/retention.
+- `index.html:3017-3120`: product detail/edit paths read and update product documents; all editable fields and privileged fields must be fully enumerated before Rules allowlists are written.
+- `index.html:3685-3713`: product listing realtime query and Saved Ads cleanup logic; ensure listing query compatibility and do not let Saved Ads cleanup mutate other users' data.
+- `index.html:4693`: product creation uses client write. Current payload includes client-derived `userIp`, `isFeatured`, and `isShopVerified`; the latter two must not be client-controlled privilege flags. Keep `sellerUid` bound to Auth UID and `createdAt` server-generated.
+- Account cleanup's seller-products query at `index.html:1770` is unbounded; any replacement cleanup must page in bounded batches and be resumable.
+
+### Admin backend readiness cross-check
+
+- `admin-read-adapter.mjs` allowlists a narrow field set and enforces page size 1–50 with cursor ordering by `createdAt`.
+- `admin-read-executor.mjs` rejects operations unless explicitly enabled by trusted composition; default enabled list is empty.
+- `http-handler.mjs` requires verified authorization dependencies, no-store headers, and an injected strict mutation validator/atomic commit adapter; it is not itself a deployed backend.
+- The read adapter requires valid `createdAt` on every returned document. Repository readiness notes state Users lacks a verified universal `createdAt`; legacy Product/Store coverage is unproven. Therefore real collection operations must remain disabled until approved read-only Staging evidence is available.
+- The current adapter's Users allowlist is `displayName,status`, while the current Admin page expects `displayName,email,lastIp,uid,lastSeen`. This is an intentional security boundary mismatch to resolve through a redesigned Admin UI and exceptional audited investigative endpoint—not by broadening the normal Users list with email/IP.
+
+### Confirmed repository-scope boundary
+
+The scan covered all tracked files in the review branch and found browser Firestore collection access concentrated in `index.html` and `admin.html`; the backend folder contains testable primitives, not a live data plane. Before implementation, repeat the scan after any new page, worker, function, or integration is added. Do not treat this static scan as proof of live Firebase Rules or production data shape.
