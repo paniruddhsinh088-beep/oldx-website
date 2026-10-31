@@ -75,3 +75,34 @@ test("refuses missing required Firebase web config", () => {
     fs.rmSync(cwd, { recursive: true, force: true });
   }
 });
+
+
+test("refuses a Preview build configured for the production Firebase project", () => {
+  const { cwd, result, outputPath } = run({
+    VERCEL_ENV: "preview",
+    OLDX_FIREBASE_ENV: "production",
+    OLDX_FIREBASE_PROJECT_ID: "oldx-1c983"
+  });
+  try {
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /does not match VERCEL_ENV/);
+    assert.equal(fs.existsSync(outputPath), false);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
+
+test("refuses a Production build configured for the staging Firebase project", () => {
+  const { cwd, result, outputPath } = run({
+    VERCEL_ENV: "production",
+    OLDX_FIREBASE_ENV: "staging",
+    OLDX_FIREBASE_PROJECT_ID: "oldx-staging"
+  });
+  try {
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /does not match VERCEL_ENV/);
+    assert.equal(fs.existsSync(outputPath), false);
+  } finally {
+    fs.rmSync(cwd, { recursive: true, force: true });
+  }
+});
