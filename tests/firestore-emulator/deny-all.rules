@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Safe baseline only. This deliberately denies every client operation.
+    // It is NOT the OLDX application authorization policy.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
