@@ -85,3 +85,9 @@ This audit does not change `index.html`, Firestore Rules, Firebase data, externa
 **Verification level:** The updated source block was fetched back from GitHub and visually checked after the commits. This is source-level verification only. No browser execution, automated XSS regression test, Staging deployment, or mobile test has yet been completed.
 
 **Still open:** Inbox preview, Product cards, My Ads, Product detail highlights/images, Recently Viewed, cart, and remaining dynamic templates listed above. The chatbot fix does not make the entire website XSS-safe.
+
+
+**Additional review-branch fix:**
+- Inbox conversation previews, timestamps and unread-count badges now use DOM text nodes. The remaining `innerHTML` assignments in that inbox card are limited to fixed, developer-authored icon markup; chat preview text and time are no longer interpolated into HTML.
+- Added `tests/firestore-emulator/xss-rendering-source.test.mjs` and included it in `npm run test:emulator:safety`. It statically guards the chatbot and inbox source patterns against regression.
+- The test has been committed but has not yet been executed in GitHub Actions or a local Node runtime in this session. It is a source-pattern regression check, not a substitute for a browser-based XSS test.
