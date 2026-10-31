@@ -11,144 +11,68 @@ The browser must never use Firebase Admin SDK credentials. Server credentials be
 
 ## 2. Authentication and authorization
 
-Every endpoint must:
+Every endpoint must require `Authorization: Bearer <Firebase ID token>`, verify the token cryptographically, resolve the active role server-side, deny by default, rate-limit, use `Cache-Control: no-store` for sensitive responses and append audit events for sensitive reads and all mutations. Never trust request-body UID, role, isAdmin, actorUid or permissions. Keep the single existing owner-approved Admin identity as the only active Admin until owner-approved role provisioning exists. The hard-coded UID in `admin.html` is a navigation gate only, never API authorization.
 
-1. Require `Authorization: Bearer <Firebase ID token>`.
-2. Verify the token cryptographically with Firebase Admin SDK.
-3. Resolve the caller's active role from a private server-controlled role registry or verified custom claims.
-4. Deny by default. Never trust `uid`, `email`, `role`, `isAdmin`, `actorUid`, or permissions supplied in the request body.
-5. Keep the existing owner-approved Admin identity as the only active Admin until the owner explicitly approves additional identities.
-6. Apply rate limits and return `Cache-Control: no-store` on sensitive responses.
-7. Write append-only audit events for sensitive reads and every mutation.
+## 3. Response envelope
 
-The current hard-coded UID check in `admin.html` remains a display/navigation gate only. It must not be treated as API authorization.
+Success: `{ "ok": true, "data": {}, "requestId": "server-generated-id" }`  
+Failure: `{ "ok": false, "error": { "code": "FORBIDDEN", "message": "Request not permitted" }, "requestId": "server-generated-id" }`
 
-## 3. Common response envelope
+Never return stack traces, raw Firestore errors, private paths or secrets.
 
-Success:
-```json
-{ "ok": true, "data": {}, "requestId": "server-generated-id" }
-```
+## 4. Read endpoints
 
-Failure:
-```json
-{ "ok": false, "error": { "code": "FORBIDDEN", "message": "Request not permitted" }, "requestId": "server-generated-id" }
-```
+- `GET /api/admin/dashboard`: bounded aggregates only: totalViews, totalAds, featuredAds, totalUsers; unavailable values may be null. No full scans per page load.
+- `GET /api/admin/products?pageSize=&pageToken=&q=`: pageSize 1–50 (default 25); opaque cursor; bounded query; minimal Ads-table fields including sellerUid and moderation flags.
+- `GET /api/admin/users?pageSize=&pageToken=&q=`: pageSize 1–50; opaque cursor; UID, displayName and approved identity fields only. Email/IP are excluded unless separately approved for a documented purpose and authorized Owner Admin.
+- `GET /api/admin/users/{uid}/summary`: validated UID; minimal account/listing summary; activity has source label or is unavailable.
+- `GET /api/admin/stores?pageSize=&pageToken=&q=`: paginated store review queue and approved public/operational fields only.
+- `GET /api/admin/reports?pageSize=&pageToken=&status=`: paginated reports with case, target, status and reason metadata; no arbitrary collection paths.
+- `GET /api/admin/audit?pageSize=&pageToken=&targetType=&targetId=`: read-only, paginated, append-only audit history; field-minimized and access itself audited.
 
-Do not return stack traces, raw Firestore errors, private paths, or secrets to the browser.
+Firestore substring search is not native; document a prefix/token strategy before promising parity with browser includes() search. Never download all records to browser.
 
-## 4. Endpoints
+## 5. Mutation endpoints
 
-### GET /api/admin/dashboard
+All mutations require server-derived actor identity, active role, validated input, reason/case where appropriate, idempotency protection for retryable operations, and an append-only audit event.
 
-Purpose: replace direct `stats/traffic` read and full product/user collection scans for aggregate cards.
+- `POST /api/admin/products`: create an operational listing only with validated schema; client cannot set privileged flags directly.
+- `PATCH /api/admin/products/{id}`: allowlisted edits only.
+- `POST /api/admin/products/{id}/feature` and `/verify`: explicit feature/verification state transition.
+- `POST /api/admin/products/{id}/quarantine` and `/restore`: reason code, bounded reason, optional case ID, atomic state + audit event.
+- `POST /api/admin/users/{uid}/suspend` and `/restore`: reason required; no client-side direct document mutation.
+- `POST /api/admin/users/{uid}/deletion-request`: creates an idempotent deletion task only; actual cleanup is a separate resumable trusted workflow.
+- `POST /api/admin/stores/{uid}/review`, `/verify`, `/suspend`, `/restore`: validated state transitions and audit.
+- `POST /api/admin/reports/{id}/resolve` and `/escalate`: case-linked moderation workflow and audit.
+- `PATCH /api/admin/settings/{key}`: allowlisted business settings only; no Firebase/Vercel infrastructure or secret configuration.
+- `POST /api/admin/products/{id}/permanent-delete`: disabled until retention, legal hold, evidence preservation, approval and recovery controls exist.
 
-Response fields (only):
-- `totalViews`: aggregate count, or `null` if unavailable
-- `totalAds`: count if safely/efficiently available
-- `featuredAds`: count if safely/efficiently available
-- `totalUsers`: count if safely/efficiently available
+Private chat access is not a general list endpoint. It requires case-linked safety authorization and is separately audited.
 
-Do not run an unbounded scan on every page load. Use trusted aggregate counters or bounded/maintained statistics. Each field may be `null` until a trusted aggregation path exists.
+## 6. Role boundaries
 
-### GET /api/admin/products
+The active Admin can use all approved platform-management operations above. Admin cannot grant/revoke/promote Admin identities, change own role, edit the role registry, disable/erase audit records, read passwords/tokens/service credentials/API secrets, or manage Production infrastructure. Only the owner-controlled process can manage Admin identities.
 
-Query:
-- `pageSize`: integer 1–50; default 25
-- `pageToken`: opaque server-issued cursor, optional
-- `q`: optional bounded search string, max 80 characters
+## 7. Audit event minimum
 
-Response:
-- `items[]`: `id`, `title`, `category`, `finalPriceStr`, `location`, `sellerUid`, `isFeatured`, and only other fields proven necessary for the Ads table
-- `nextPageToken`: opaque cursor or `null`
+Server-generated immutable eventId; eventType; targetType/targetId; actorUid and actorRole derived server-side; server timestamp; allowlisted reasonCode and bounded reason; optional caseId; restricted beforeSnapshotRef; requestId. Clients cannot write/update audit events. Audit write failure must fail sensitive mutation safely.
 
-Never accept a Firestore collection/path or arbitrary sort field from the caller. Firestore substring search is not native; define and document a prefix/token search strategy before claiming parity with the current browser `includes()` search.
+## 8. Pagination and query safety
 
-### GET /api/admin/users
+Enforce page size server-side, stable ordering, opaque query-bound cursors, normalized bounded filters, deliberate indexes, rate limits and minimal non-cacheable sensitive responses. Never accept arbitrary collection paths or sort fields.
 
-Query:
-- `pageSize`: integer 1–50; default 25
-- `pageToken`: opaque server-issued cursor, optional
-- `q`: optional bounded search string, max 80 characters
+## 9. Migration and release gates
 
-Response:
-- `items[]`: `uid`, `displayName`, and only role-approved identity fields
-- `nextPageToken`: opaque cursor or `null`
+1. Confirm backend runtime, staging project binding, region, billing, service identity, IAM and secret storage.
+2. Implement token verification and role resolution in staging only.
+3. Implement read-only APIs and integration tests.
+4. Migrate Admin UI away from broad direct Firestore reads.
+5. Implement audited reversible moderation and safe account lifecycle workflows.
+6. Prepare candidate Firestore Rules only after schema inventory and client migration.
+7. Run Emulator and backend integration tests.
+8. Obtain explicit approval before staging deployment or Rules publication.
+9. Production is a separate project and needs separate explicit authorization.
 
-Email and IP are sensitive. Return them only to the Owner Admin if a documented task requires them. Never return entire `users/{uid}` documents.
+## 10. Explicit non-goals
 
-### GET /api/admin/users/{uid}/summary
-
-Return a minimal user summary and listing summary for the selected UID. Validate UID format; do not permit caller-supplied Firestore paths. Return last activity as a genuine timestamp with a clear source label, or `null`/Not available. Do not imply `lastSeen` is a full activity or authentication history.
-
-### POST /api/admin/products/{productId}/quarantine
-
-Request:
-```json
-{ "reasonCode": "POLICY_REVIEW", "reason": "Bounded explanation", "caseId": null }
-```
-
-- Require Owner Admin or explicitly granted moderation role.
-- Require an allowlisted reason code and bounded explanation.
-- Store a restricted before-snapshot reference and immutable audit event.
-- Prefer reversible quarantine over permanent deletion.
-- Return the confirmed moderation state only after the server transaction succeeds.
-
-### POST /api/admin/products/{productId}/restore
-
-Request requires reason and optional case reference. Verify the item is in a restorable state; append an audit event. Do not overwrite unrelated seller fields.
-
-### POST /api/admin/products/{productId}/permanent-delete
-
-Disabled in v1 until retention, legal hold, evidence snapshot, approval, and recovery requirements are implemented. No client-side Firestore delete fallback is permitted.
-
-## 5. Audit event minimum fields
-
-- server-generated immutable `eventId`
-- `eventType`, `targetType`, `targetId`
-- `actorUid` and `actorRole` derived server-side
-- `createdAt` server timestamp
-- allowlisted `reasonCode` and bounded `reason`
-- optional `caseId`
-- restricted `beforeSnapshotRef` for moderation changes
-- `requestId`
-
-Clients must not write or update audit events.
-
-## 6. Pagination and query safety
-
-- Enforce page size server-side regardless of client input.
-- Use stable ordering and opaque cursors.
-- Validate and normalize filters.
-- Apply indexes deliberately; avoid unbounded collection scans.
-- Rate-limit user search and dashboard refresh.
-- Do not implement substring search by downloading every user/product to the browser.
-- Keep sensitive response payloads minimal and non-cacheable.
-
-## 7. Migration order
-
-1. Confirm backend platform, staging project, region, billing and service identity.
-2. Implement and test token verification and role resolution in staging only.
-3. Implement read-only dashboard, products and users endpoints with pagination.
-4. Update Admin UI to use the API; verify existing Ads/Users workflows.
-5. Implement quarantine/restore with audit trail; test with synthetic records.
-6. Only after migration, prepare Firestore Rules that deny direct client Admin reads/deletes.
-7. Run Emulator Rules tests and backend integration tests.
-8. Obtain explicit owner approval before any staging Rules publication.
-9. Production migration is a separate project and requires separate explicit approval.
-
-## 8. Acceptance criteria
-
-- Non-admin token receives 403 for every Admin endpoint.
-- Missing/invalid/expired token receives 401.
-- A browser-only UID constant does not grant access.
-- User list is paginated and returns only allowed fields.
-- Product list is paginated and seller identity is not accidentally omitted from the Admin workflow.
-- Quarantine and restore require reason and create immutable audit events.
-- Permanent delete is unavailable until retention and hold checks exist.
-- No Admin endpoint can read or mutate Production during staging tests.
-- Failure leaves the Admin UI state unchanged and presents a safe message.
-
-## 9. Explicit non-goals
-
-This contract does not create endpoints, grant roles, define Firestore Rules, alter Firebase projects, migrate records, or authorize deployment. It is a reviewable API design draft.
+This contract does not create endpoints, grant roles, define Firestore Rules, alter Firebase projects, migrate records, or authorize deployment.
