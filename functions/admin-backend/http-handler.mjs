@@ -35,7 +35,7 @@ export async function handleAdminRequest({
   isMutation = false,
   requestId
 }) {
-  const id = typeof requestId === "string" && requestId.length <= 100
+  const id = typeof requestId === "string" && requestId.trim().length > 0 && requestId.length <= 100
     ? requestId
     : randomUUID();
 
