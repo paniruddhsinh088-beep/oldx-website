@@ -55,3 +55,20 @@ A repository-wide Git tree inspection confirmed the branch contains no storage.r
 7. Test in Staging on Android/mobile Chrome and slow connections; only then propose Production rollout.
 
 **Decision:** no product upload code or Firebase Storage Rules were changed in this follow-up. The lack of a reviewed Storage policy and unverified Staging bucket is a security blocker for implementing the new upload path now. Do not substitute a fake progress percentage or show compression progress as network upload progress.
+
+## Candidate Storage Rules drafted (not deployed)
+
+- Added `tests/storage-emulator/candidate.rules` as a review-only candidate. It limits writes to an authenticated seller's own `product-media/{uid}/{productId}/{fileName}` path, accepts JPEG/PNG/WebP only, caps each object at a provisional 10 MiB, and requires client uploads to enter with custom metadata `moderationStatus=pending`.
+- Candidate reads are allowed only after the trusted moderation backend changes the object metadata to `approved`. Pending objects are not readable through Storage Rules; the seller should preview locally. This avoids exposing a pending object's download URL/token before approval.
+- Client overwrites are denied. Seller deletion is allowed only for their own pending object. All other object paths are default-denied.
+- Added `tests/storage-emulator/candidate-rules-source.test.mjs` and included it in `npm run test:emulator:safety`. These are static source assertions only; they do not execute the Firebase Storage Rules engine and do not prove rule syntax/runtime correctness.
+- The 10 MiB ceiling and JPEG/PNG/WebP allowlist are provisional engineering defaults, not final owner-approved product limits. Confirm compatibility with current image compression and seller workflow before Staging rollout.
+- No Storage Emulator is configured in CI yet; no Storage bucket, Rules, upload task, or moderation backend has been deployed or exercised.
+
+### Remaining blockers
+
+1. Verify the actual `oldx-staging` Storage bucket and enable/configure the Storage Emulator in an isolated local test project.
+2. Add true Storage Rules Emulator tests for anonymous denial, cross-seller denial, invalid type/size denial, pending read denial, approved read allowance, and pending-only owner deletion.
+3. Validate candidate rule syntax with the Emulator; static tests are not a substitute.
+4. Define and test the trusted server-side moderation metadata transition before any approved object can become public.
+5. Only then wire `uploadBytesResumable`/compat resumable task progress into product create/edit UI, while preserving legacy Base64 reads and failure recovery.
