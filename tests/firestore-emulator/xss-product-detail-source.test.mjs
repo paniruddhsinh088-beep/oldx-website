@@ -22,7 +22,7 @@ test('Product detail image URLs reject non-http and non-raster data schemes', ()
   assert.notEqual(end, -1);
   const block = source.slice(start, end);
   assert.match(block, /\^https\?:/);
-  assert.match(block, /data:image\\\/(?:png|jpeg|webp|gif);base64/);
+  assert.match(block, /data:image\/(?:png|jpeg|webp|gif);base64/);
   assert.match(block, /image\.src\s*=\s*trimmedImage/);
 });
 
