@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { authorizeAdminRequest } from "./authz.mjs";
 
 const SAFE_HEADERS = Object.freeze({
@@ -36,7 +37,7 @@ export async function handleAdminRequest({
 }) {
   const id = typeof requestId === "string" && requestId.length <= 100
     ? requestId
-    : "request-id-unavailable";
+    : randomUUID();
 
   if (!request || typeof request.method !== "string") {
     return response(400, { ok: false, error: { code: "BAD_REQUEST", message: "Invalid request" }, requestId: id });
