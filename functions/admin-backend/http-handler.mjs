@@ -42,6 +42,7 @@ export async function handleAdminRequest({
   resolveActiveRole,
   executeOperation,
   commitMutation,
+  validateMutationInput,
   pageTokenSecret,
   isMutation = false,
   requestId
@@ -107,6 +108,13 @@ export async function handleAdminRequest({
   }
 
   const handler = isMutation ? commitMutation : executeOperation;
+  if (isMutation && typeof validateMutationInput !== "function") {
+    return response(503, {
+      ok: false,
+      error: { code: "MUTATION_VALIDATION_NOT_CONFIGURED", message: "Operation is not configured" },
+      requestId: id
+    });
+  }
   if (typeof handler !== "function") {
     return response(503, {
       ok: false,
@@ -122,9 +130,19 @@ export async function handleAdminRequest({
       operation,
       requestId: id
     };
-    const data = isMutation
-      ? await commitMutation({ ...context, body: request.body })
-      : await executeOperation({
+    let data;
+    if (isMutation) {
+      const validated = await validateMutationInput({ operation, body: request.body });
+      if (!validated || validated.ok !== true) {
+        return response(400, {
+          ok: false,
+          error: { code: "INVALID_MUTATION_INPUT", message: "Invalid mutation input" },
+          requestId: id
+        });
+      }
+      data = await commitMutation({ ...context, body: validated.value });
+    } else {
+      data = await executeOperation({
           actorUid: auth.identity.uid,
           operation,
           ...(listQuery ? {
@@ -132,6 +150,7 @@ export async function handleAdminRequest({
             ...(cursorPosition !== undefined ? { cursorPosition } : {})
           } : {})
         });
+    }
 
     if (listQuery && data && typeof data === "object" && Object.hasOwn(data, "nextPosition")) {
       if (!pageTokenSecret) {
