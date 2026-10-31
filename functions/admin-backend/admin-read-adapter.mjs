@@ -18,7 +18,7 @@ function parseCursor(position) {
   const timestamp = position.createdAt;
   if (!timestamp || typeof timestamp !== "object" || Array.isArray(timestamp) ||
       Object.keys(timestamp).sort().join(",") !== "nanoseconds,seconds" ||
-      !Number.isInteger(timestamp.seconds) || timestamp.seconds < 0 ||
+      !Number.isInteger(timestamp.seconds) || timestamp.seconds < -62135596800 || timestamp.seconds > 253402300799 ||
       !Number.isInteger(timestamp.nanoseconds) || timestamp.nanoseconds < 0 || timestamp.nanoseconds >= 1e9 ||
       typeof position.documentId !== "string" || position.documentId.length < 1 || position.documentId.length > 1500 ||
       position.documentId.includes("/")) {
@@ -28,7 +28,7 @@ function parseCursor(position) {
 }
 
 function timestampParts(value) {
-  if (!value || !Number.isInteger(value.seconds) || !Number.isInteger(value.nanoseconds) ||
+  if (!value || !Number.isInteger(value.seconds) || value.seconds < -62135596800 || value.seconds > 253402300799 || !Number.isInteger(value.nanoseconds) ||
       value.nanoseconds < 0 || value.nanoseconds >= 1e9) {
     throw new TypeError("Document has invalid createdAt timestamp.");
   }
