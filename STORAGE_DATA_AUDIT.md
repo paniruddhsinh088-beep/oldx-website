@@ -34,3 +34,24 @@ Scope: source-code inspection only; no data was uploaded, deleted, migrated, or 
 ## Safety boundary
 
 This is a documentation-only audit. No Firebase Rules, live data, Storage objects, Cloudinary assets, production configuration, or account-deletion code were changed. No deployment was performed.
+
+## Product upload-progress follow-up (2026-11-01)
+
+A repository-wide Git tree inspection confirmed the branch contains no storage.rules file and no obvious Storage-specific rules/emulator test configuration. A source inspection of index.html confirmed:
+
+- Firebase Storage compat SDK is loaded and storeStorage = firebase.storage() is initialized.
+- Product create and edit paths still call compressImage() and then write Base64 data URLs into the Firestore product document images array. No resumable Storage upload task or Storage download-URL flow is present in these paths.
+- The Store photo path uploads with ordinary fetch() to Cloudinary. The inspected call does not expose byte-level upload progress; it also remains a separate provider and upload path.
+- The Firebase environment template includes a storageBucket configuration value, but this does not establish that the Staging bucket exists, is enabled, or has secure rules.
+
+### Safe implementation sequence for true progress
+
+1. Confirm the Staging Firebase project's Storage bucket is provisioned and its bucket identity is correct; do not infer it from a placeholder config.
+2. Create and review restrictive Storage Rules for authenticated seller-owned product upload paths. Validate UID/path ownership, allowed content types, size ceilings, and read access separately for pending/quarantined versus approved images. Do not allow public reads of unreviewed media.
+3. Add Storage Emulator tests for unauthenticated denial, cross-user write denial, invalid type/oversize denial, allowed owner upload, and read visibility before/after moderation state. Keep the Firestore deny-all fixture separate; it is not a Storage policy.
+4. Implement a resumable upload task with progress events in the product create and edit flows. Keep form data intact on failure; do not replace old product images until every new upload and the Firestore metadata update succeed. Clean up only newly-created orphan objects using exact object paths.
+5. Preserve compatibility for existing Base64 image arrays while the new URL/object-path format is rolled out and verified.
+6. Ensure server-side image validation/moderation/quarantine controls public visibility before switching product reads to new Storage objects.
+7. Test in Staging on Android/mobile Chrome and slow connections; only then propose Production rollout.
+
+**Decision:** no product upload code or Firebase Storage Rules were changed in this follow-up. The lack of a reviewed Storage policy and unverified Staging bucket is a security blocker for implementing the new upload path now. Do not substitute a fake progress percentage or show compression progress as network upload progress.
