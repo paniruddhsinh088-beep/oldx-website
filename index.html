@@ -2953,24 +2953,29 @@
                         <div class="flex justify-between items-start gap-2">
                             <div>
                                 <h4 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
-                                    ${p.title}
+                                    <span data-ad-title></span>
                                     ${isSold ? '<span class="bg-red-500 text-white text-[9px] px-2 py-0.5 rounded-full uppercase font-black">OUT OF STOCK</span>' : ''}
                                 </h4>
-                                <p class="text-xs font-black text-teal-600 dark:text-teal-400">${p.finalPriceStr}</p>
+                                <p data-ad-price class="text-xs font-black text-teal-600 dark:text-teal-400"></p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2 pt-1 border-t">
-                            <button onclick="toggleAdStockStatus('${p.docId}', ${isSold})" class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1 cursor-pointer">
+                            <button data-stock-action class="${isSold ? 'bg-green-600 hover:bg-green-700' : 'bg-amber-500 hover:bg-amber-600'} text-white px-2.5 py-1.5 rounded-xl text-xs font-bold transition flex-1 cursor-pointer">
                                 <i class="fa-solid ${isSold ? 'fa-box-open' : 'fa-ban'} mr-1"></i> ${isSold ? 'In Stock' : 'Out of Stock'}
                             </button>
-                            <button onclick="openEditAdModal('${p.docId}')" class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                            <button data-edit-action class="bg-primary hover:bg-teal-900 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
                                 <i class="fa-solid fa-pen-to-square"></i> Edit
                             </button>
-                            <button onclick="confirmDeleteAd('${p.docId}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
+                            <button data-delete-action class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
                         </div>
                     `;
+                    div.querySelector('[data-ad-title]').textContent = String(p.title || '');
+                    div.querySelector('[data-ad-price]').textContent = String(p.finalPriceStr || '');
+                    div.querySelector('[data-stock-action]').addEventListener('click', () => toggleAdStockStatus(p.docId, isSold));
+                    div.querySelector('[data-edit-action]').addEventListener('click', () => openEditAdModal(p.docId));
+                    div.querySelector('[data-delete-action]').addEventListener('click', () => confirmDeleteAd(p.docId));
                     container.appendChild(div);
                 });
             }
