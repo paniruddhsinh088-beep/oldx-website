@@ -110,3 +110,23 @@ test("account switch while reading blocks fails closed",async()=>{
   assert.equal(result.allowed,false);
   assert.equal(called,0);
 });
+
+
+test("session switch after block-list parsing still prevents host action",async()=>{
+  const session={currentUser:{uid:"buyer"}};
+  const db={collection(){return {doc(uid){return {async get(){
+    return {exists:true,data:()=>{
+      if(uid==="provider") session.currentUser={uid:"other"};
+      return {blockedUsers:[]};
+    }};
+  }};}};}};
+  let calls=0;
+  await assert.rejects(
+    invokeServiceContact({
+      ...args,auth:session,db,action:"chat",
+      onAllowed:()=>{calls++;}
+    }),
+    /session changed/i
+  );
+  assert.equal(calls,0);
+});
