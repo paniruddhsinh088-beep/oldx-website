@@ -77,3 +77,31 @@ test("caller cannot force inactive provider to active",async()=>{
  assert.equal(result.allowed,false);
  assert.equal(called,false);
 });
+
+test("sign-out during provider lookup never opens chat",async()=>{
+ const session={currentUser:{uid:"buyer"}};
+ let called=false;
+ const db={collection(name){return {doc(uid){return {async get(){
+   if(name==="serviceProviders"){
+     session.currentUser=null;
+     return {exists:true,data:()=>({ownerUid:uid,status:"active"})};
+   }
+   return {exists:true,data:()=>({blockedUsers:[]})};
+ }};}};}};
+ const result=await openVerifiedServiceChat({
+   auth:session,db,providerUid:"provider",openExistingChat:()=>{called=true;}
+ });
+ assert.equal(result.allowed,false);
+ assert.equal(result.context,null);
+ assert.equal(called,false);
+});
+test("provider document read failure denies chat",async()=>{
+ let called=false;
+ const db={collection(){return {doc(){return {async get(){throw Error("denied");}};}};}};
+ const result=await openVerifiedServiceChat({
+   auth,db,providerUid:"provider",openExistingChat:()=>{called=true;}
+ });
+ assert.equal(result.allowed,false);
+ assert.equal(result.context,null);
+ assert.equal(called,false);
+});
