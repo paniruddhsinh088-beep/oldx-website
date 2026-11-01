@@ -27,9 +27,10 @@ export function buildServiceChatCreateData(context) {
       context.roomId !== buildServiceChatContext(context).roomId) {
     throw new TypeError("Invalid service chat context");
   }
+  const canonical = buildServiceChatContext(context);
   return {
-    participants: [...context.participants],
-    serviceProviderId: context.providerUid,
+    participants: [...canonical.participants],
+    serviceProviderId: canonical.providerUid,
     chatType: "service"
   };
 }
