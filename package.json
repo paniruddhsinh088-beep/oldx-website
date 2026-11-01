@@ -22,7 +22,8 @@
     "test:account-deletion": "node --test tests/firestore-emulator/account-deletion-policy.test.mjs",
     "test:privacy-policy": "node --test tests/firestore-emulator/privacy-preferences-policy.test.mjs",
     "test:data-requests": "node --test tests/firestore-emulator/data-request-policy.test.mjs",
-    "test:chat-privacy": "node --test tests/firestore-emulator/chat-privacy-policy.test.mjs"
+    "test:chat-privacy": "node --test tests/firestore-emulator/chat-privacy-policy.test.mjs",
+    "test:chat-block-policy": "node --test tests/firestore-emulator/chat-block-relationship-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"
