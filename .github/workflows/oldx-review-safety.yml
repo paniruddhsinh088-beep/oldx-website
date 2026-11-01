@@ -51,6 +51,9 @@ jobs:
       - name: Run synthetic product image reference classifier tests
         run: npm run test:product-image-classifier
 
+      - name: Run provider-neutral image upload contract policy tests
+        run: npm run test:image-upload-contract
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
