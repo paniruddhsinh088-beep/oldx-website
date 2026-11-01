@@ -51,11 +51,16 @@ test("inactive provider prevents opening chat",async()=>{
   assert.equal(result.allowed,false);
   assert.equal(called,false);
 });
-test("guest cannot start service chat",async()=>{
-  await assert.rejects(openVerifiedServiceChat({
+test("guest receives login-required result without opening chat",async()=>{
+  let called=false;
+  const result=await openVerifiedServiceChat({
     auth:{currentUser:null},db:dbWithBlocks(),providerUid:"provider",
-    openExistingChat:()=>{}
-  }),TypeError);
+    openExistingChat:()=>{called=true;}
+  });
+  assert.equal(result.allowed,false);
+  assert.match(result.reason,/sign in/i);
+  assert.equal(result.context,null);
+  assert.equal(called,false);
 });
 test("host chat opener must be supplied",async()=>{
   await assert.rejects(openVerifiedServiceChat({
