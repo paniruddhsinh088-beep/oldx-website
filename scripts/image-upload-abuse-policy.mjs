@@ -30,7 +30,8 @@ export function evaluateUploadRequest(request, history = [], now = Date.now()) {
     item.createdAt > now - HOUR_MS && item.createdAt <= now);
   if (recent.length >= policy.maxGrantsPerHour) return { allowed: false, reason: 'grant_rate_exceeded' };
   const usedBytes = recent.reduce((sum, item) => sum + (Number.isFinite(item.bytes) && item.bytes > 0 ? item.bytes : 0), 0);
-  if (usedBytes + request.bytes > policy.maxBytesPerWindow) return { allowed: false, reason: 'hourly_byte_quota_exceeded' };
+  const requestedBytes = request.bytes * request.fileCount;
+  if (!Number.isFinite(requestedBytes) || usedBytes + requestedBytes > policy.maxBytesPerWindow) return { allowed: false, reason: 'hourly_byte_quota_exceeded' };
   return { allowed: true, reason: 'policy_eligible', expiresInSeconds: 120 };
 }
 
@@ -45,7 +46,7 @@ export function selectCleanupCandidates(objects, now = Date.now()) {
     if (item.approved === true || item.referenced === true || item.published === true) return false;
     if (!Number.isFinite(item.createdAt) || item.createdAt > now - CLEANUP_GRACE_MS) return false;
     return true;
-  }).map(item => ({ objectId: item.objectId, reason: item.status }));
+  }).slice(0, CLEANUP_POLICY.batchLimit).map(item => ({ objectId: item.objectId, reason: item.status }));
 }
 
 export const CLEANUP_POLICY = Object.freeze({
