@@ -21,6 +21,17 @@ export function createModerationHttpHandler(moderate) {
       return res.status(413).json({ error: 'request_too_large' });
     }
     const body = req.body;
+    // Content-Length is client controlled and may be absent or incorrect.
+    // The hosting platform must also enforce a raw-body size limit.
+    let serializedBytes;
+    try {
+      serializedBytes = Buffer.byteLength(JSON.stringify(body), 'utf8');
+    } catch {
+      return res.status(400).json({ error: 'invalid_request' });
+    }
+    if (serializedBytes > 4096) {
+      return res.status(413).json({ error: 'request_too_large' });
+    }
     if (!body || typeof body !== 'object' || Array.isArray(body) ||
         Object.keys(body).some(k => !['providerId', 'nextStatus', 'reason'].includes(k)) ||
         typeof body.providerId !== 'string' ||
