@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import {strict as assert} from "node:assert";
-import {inspectLegacyBlocks,checkLegacyBlockPair} from "../legacy-block-preflight.js";
+import {inspectLegacyBlocks,checkLegacyBlockPair,canOpenServiceChatFromLegacy} from "../legacy-block-preflight.js";
 test("deduplicates legacy block edges without writing data",()=>{
  assert.deepEqual(inspectLegacyBlocks("buyer",["provider","provider","other"]),[
   {blockerUid:"buyer",blockedUid:"provider"},{blockerUid:"buyer",blockedUid:"other"}]);
@@ -21,4 +21,10 @@ test("mutual block is reported in both directions",()=>{
 });
 test("unrelated blocks do not prevent a clean pair",()=>{
  assert.deepEqual(checkLegacyBlockPair({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:["other"],providerBlockedUsers:["third"]}),{blockedByBuyer:false,blockedByProvider:false});
+});
+
+test("fail-closed preflight rejects missing legacy data",()=>{
+ assert.deepEqual(canOpenServiceChatFromLegacy({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:[]}),{allowed:false,reason:"unverified-legacy-blocks"});
+ assert.deepEqual(canOpenServiceChatFromLegacy({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:[],providerBlockedUsers:["buyer"]}),{allowed:false,reason:"blocked"});
+ assert.deepEqual(canOpenServiceChatFromLegacy({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:[],providerBlockedUsers:[]}),{allowed:true,reason:"clear"});
 });
