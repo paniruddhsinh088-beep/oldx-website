@@ -93,3 +93,39 @@ export function isConsentActiveForScope(consents, expected) {
     consent.policyVersion === expected.policyVersion
   );
 }
+
+export function canManageOwnResourceConsent(verifiedUid, resourceOwnerUid) {
+  return typeof verifiedUid === "string" && verifiedUid.length > 0 &&
+    typeof resourceOwnerUid === "string" && resourceOwnerUid.length > 0 &&
+    verifiedUid === resourceOwnerUid;
+}
+
+export function revokeConsent(consent, verifiedUid, resourceOwnerUid, serverTimestamp) {
+  if (!canManageOwnResourceConsent(verifiedUid, resourceOwnerUid)) {
+    return { ok: false, code: "FORBIDDEN" };
+  }
+  if (!consent || typeof consent !== "object" || Array.isArray(consent) ||
+      consent.status !== "active" || consent.revokedAt != null) {
+    return { ok: false, code: "CONFLICT" };
+  }
+  if (typeof serverTimestamp !== "string" || serverTimestamp.length === 0) {
+    return { ok: false, code: "UNAVAILABLE" };
+  }
+  return {
+    ok: true,
+    consent: { ...consent, status: "revoked", revokedAt: serverTimestamp },
+  };
+}
+
+export function canDisclosePrivateField({
+  verifiedUid,
+  resourceOwnerUid,
+  consents,
+  expectedConsent,
+  accountActive,
+  moderationAllows,
+}) {
+  if (!canManageOwnResourceConsent(verifiedUid, resourceOwnerUid)) return false;
+  if (accountActive !== true || moderationAllows !== true) return false;
+  return isConsentActiveForScope(consents, expectedConsent);
+}
