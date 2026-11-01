@@ -48,6 +48,9 @@ jobs:
       - name: Run product category schema tests
         run: npm run test:product-category
 
+      - name: Run synthetic product image reference classifier tests
+        run: npm run test:product-image-classifier
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
