@@ -1,0 +1,17 @@
+import {test} from "node:test";
+import {strict as assert} from "node:assert";
+import {inspectLegacyBlocks,checkLegacyBlockPair} from "../legacy-block-preflight.js";
+test("deduplicates legacy block edges without writing data",()=>{
+ assert.deepEqual(inspectLegacyBlocks("buyer",["provider","provider","other"]),[
+  {blockerUid:"buyer",blockedUid:"provider"},{blockerUid:"buyer",blockedUid:"other"}]);
+});
+test("detects either direction of an existing block",()=>{
+ assert.deepEqual(checkLegacyBlockPair({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:["provider"],providerBlockedUsers:[]}),{blockedByBuyer:true,blockedByProvider:false});
+ assert.deepEqual(checkLegacyBlockPair({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:[],providerBlockedUsers:["buyer"]}),{blockedByBuyer:false,blockedByProvider:true});
+});
+test("rejects malformed, self-block and missing legacy lists",()=>{
+ for(const list of [null,undefined,"provider",["buyer"],[42],["bad/id"]]){
+  assert.throws(()=>inspectLegacyBlocks("buyer",list));
+ }
+ assert.throws(()=>checkLegacyBlockPair({buyerUid:"buyer",providerUid:"buyer",buyerBlockedUsers:[],providerBlockedUsers:[]}));
+});
