@@ -1,0 +1,18 @@
+// Isolated Firestore rules proposal — NOT DEPLOYED or merged with OLDX rules.
+// Block edges are private: only the blocker may create/delete their own edge.
+// This fragment does NOT authorize any chat write.
+match /serviceChatBlocks/{blockerUid}/blocked/{blockedUid} {
+  function blocker() {
+    return request.auth != null && request.auth.uid == blockerUid;
+  }
+  allow get, list: if blocker();
+  allow create: if blocker()
+    && blockerUid != blockedUid
+    && request.resource.data.keys().hasOnly(['createdAt'])
+    && request.resource.data.keys().hasAll(['createdAt'])
+    && request.resource.data.createdAt == request.time;
+  allow update: if false;
+  allow delete: if blocker();
+}
+// Future service chat create checks must inspect both directions via exists().
+// Existing users/{uid}.blockedUsers must be reconciled before any migration.
