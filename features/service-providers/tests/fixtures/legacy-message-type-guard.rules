@@ -1,0 +1,10 @@
+// Emulator-only fixture. Explicit product chat allow; service messages denied.
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /chats/{chatId}/messages/{messageId} {
+   allow create: if request.auth != null && get(/databases/$(database)/documents/chats/$(chatId)).data.get('chatType','') == 'product' && request.resource.data.senderUid == request.auth.uid;
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
