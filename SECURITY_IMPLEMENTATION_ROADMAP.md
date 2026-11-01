@@ -149,8 +149,11 @@ The review branch now has a dependency lockfile, pinned test tooling,
 `npm ci` workflows, and a shared runner that refuses mismatched projects,
 non-loopback hosts and unexpected emulator configuration. Pure policy, real QR,
 static-package and isolated browser checks pass locally. Actual Firestore/Storage
-emulator execution is still blocked by official binary downloads returning
-`403 Domain forbidden`; Phase 1 is not complete. See
+emulator execution in this workspace is still blocked by official binary downloads
+returning `403 Domain forbidden`. GitHub CI at `b361544` has independently passed
+the Firestore, Storage, chat-state and 20-case Service emulator suites; these are
+isolated demo-project results, not live enforcement. Local execution remains a
+Phase 1 limitation. See
 `docs/review-progress-2026-11-02.md` for the latest execution record.
 
 The Service preview has modular local validation, independent contact opt-ins,

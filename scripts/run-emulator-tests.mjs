@@ -11,10 +11,16 @@ try {
   const plan = validateEmulatorTestPlan(name, config, process.env);
   const cli = fileURLToPath(new URL('../node_modules/firebase-tools/lib/bin/firebase.js', import.meta.url));
   const cache = fileURLToPath(new URL('../.firebase/emulators', import.meta.url));
+  const configHome = fileURLToPath(new URL('../.firebase/config', import.meta.url));
   await mkdir(cache, { recursive: true });
+  await mkdir(configHome, { recursive: true });
   const child = spawn(process.execPath, [cli, ...plan.args], {
     cwd: root, stdio: 'inherit',
-    env: { ...process.env, FIREBASE_EMULATORS_PATH: process.env.FIREBASE_EMULATORS_PATH || cache }
+    env: {
+      ...process.env, CI: 'true',
+      XDG_CONFIG_HOME: process.env.XDG_CONFIG_HOME || configHome,
+      FIREBASE_EMULATORS_PATH: process.env.FIREBASE_EMULATORS_PATH || cache
+    }
   });
   child.on('error', () => { console.error('Could not start the local Firebase CLI. Run npm ci first.'); process.exitCode = 1; });
   child.on('exit', (code, signal) => { process.exitCode = signal ? 1 : (code ?? 1); });

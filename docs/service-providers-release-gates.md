@@ -14,8 +14,10 @@ Status: **NOT READY FOR PRODUCTION**. This checklist applies to the isolated can
   are available. Local emulator binary downloads remain network-policy blocked.
 
 ## Required before integration
-- [ ] Confirm GitHub Actions run status and inspect logs (no passing CI run verified yet).
-- [ ] Execute all emulator tests against `firebase.service-providers-emulator.json`; fix failures.
+- [x] Confirmed CI at `b361544`: review safety run `41346766816` and Service
+  emulator run `41346766884` succeeded. Repeat for each later source/toolchain commit.
+- [x] Service candidate Emulator tests passed 20/20 at `b361544` after correcting
+  the fixture database initialization. Local binary-download restriction remains.
 - [ ] Validate category identifiers against trusted catalog, not only format.
 - [ ] Decide whether owner may edit approved profiles or must re-enter review.
 - [ ] Design server-side moderation and review eligibility; never trust client-supplied rating totals.

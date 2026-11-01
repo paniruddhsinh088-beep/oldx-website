@@ -28,10 +28,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Set up Node.js 20
+      - name: Set up Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
       - name: Install free Node dependencies (no scripts, no cloud access)
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Admin backend tests (synthetic, no Firebase)

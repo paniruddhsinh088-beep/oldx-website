@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { EMULATOR_TEST_PLANS, validateEmulatorTestPlan } from './emulator-test-plan.mjs';
 
 for (const [name, plan] of Object.entries(EMULATOR_TEST_PLANS)) {
@@ -32,4 +34,14 @@ test('unknown suites and prototype property names are rejected', () => {
   for (const name of ['production', '--project', 'toString', '__proto__']) {
     assert.throws(() => validateEmulatorTestPlan(name, {}));
   }
+});
+
+test('runner rejects project-override CLI arguments before invoking Firebase', () => {
+  const result = spawnSync(process.execPath, [
+    fileURLToPath(new URL('./run-emulator-tests.mjs', import.meta.url)),
+    'baseline', '--project', 'oldx-1c983'
+  ], { encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Specify one known emulator suite/);
+  assert.doesNotMatch(result.stdout + result.stderr, /Starting emulators/);
 });
