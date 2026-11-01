@@ -8,6 +8,7 @@ export function validateServiceChatMessage({ text, senderUid, context } = {}) {
   if (!context || context.kind !== "service" ||
       !validUid(context.providerUid) || !validUid(context.buyerUid) ||
       context.providerUid === context.buyerUid ||
+      context.roomId !== `service_${context.providerUid.length}_${context.providerUid}_${context.buyerUid.length}_${context.buyerUid}` ||
       ![context.providerUid,context.buyerUid].includes(senderUid)) {
     return { ok:false, error:"Invalid service chat participants." };
   }
