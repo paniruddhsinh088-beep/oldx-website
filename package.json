@@ -23,7 +23,8 @@
     "test:privacy-policy": "node --test tests/firestore-emulator/privacy-preferences-policy.test.mjs",
     "test:data-requests": "node --test tests/firestore-emulator/data-request-policy.test.mjs",
     "test:chat-privacy": "node --test tests/firestore-emulator/chat-privacy-policy.test.mjs",
-    "test:chat-block-policy": "node --test tests/firestore-emulator/chat-block-relationship-policy.test.mjs"
+    "test:chat-block-policy": "node --test tests/firestore-emulator/chat-block-relationship-policy.test.mjs",
+    "test:chat-private-user-state": "node --test tests/firestore-emulator/chat-private-user-state-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"
