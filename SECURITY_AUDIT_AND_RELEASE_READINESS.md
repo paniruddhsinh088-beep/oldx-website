@@ -35,6 +35,24 @@ Latest review-branch commit at this checklist creation: `827f37cdfd10623b43a9c46
 - [ ] Emulator tests are not a substitute for a full application integration test or an independent security assessment.
 - [ ] Repeat the full workflow after any subsequent source change; do not infer success from an earlier commit.
 
+### Development verification checkpoint — 2 November 2026
+
+Source commit `6c3de7ed2f5390fcf03bb58b302895bca64fab9e` passed all three
+review-branch workflows: `41347260054`, `41347260069`, `41347260171`. This includes
+real isolated Firestore/Storage/chat-state and 20-case Service Rules Emulator tests,
+136 Service model/QR checks and five offline browser flows. All 24 runnable local
+non-emulator scripts passed in the development batch; local emulator binaries
+remain network-policy blocked. See `docs/review-progress-2026-11-02.md` for commands,
+version changes, failure/fix history and exact CI links.
+
+The full development-tool audit has 0 critical, 0 high and 16 moderate advisories;
+the runtime-only audit reported 0. This is not a full security clearance. Automatic
+Git deployments for the review branch are disabled in source. No deployment was
+created by these pushes, and no live Firebase resources were accessed.
+
+All runtime/release approval gates below remain unchanged; the decision is still
+**HOLD / NO-GO**.
+
 ## 4. Blocking items before Staging runtime
 
 - [ ] Owner explicitly decides D1–D12 in `STAGING_BACKEND_OWNER_APPROVAL_REGISTER.md`.

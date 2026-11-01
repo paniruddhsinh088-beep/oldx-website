@@ -19,6 +19,22 @@ The emulator-specific config loads `tests/firestore-emulator/deny-all.rules`. Th
 
 The repository still needs an approved application Rules policy based on the completed schema and authorization decisions. No Rules have been published.
 
+## Locked and guarded test runner
+
+Use Node.js >=24.12.0 and install the pinned development toolchain with
+`npm ci --ignore-scripts --no-audit --no-fund`. Prefer `npm run test:emulator:rules`
+for the baseline one-shot suite. The runner validates the exact known demo-project
+configuration, loopback host/port and isolated Rules path before launching Firebase.
+It rejects extra CLI options, live/mismatched project variables and remote Emulator
+hosts. `npm run test:emulator:guard` checks these fail-closed boundaries.
+
+The runner uses ignored `.firebase/` CLI config/cache defaults and noninteractive
+mode. Explicit XDG_CONFIG_HOME and FIREBASE_EMULATORS_PATH values are preserved.
+Official binaries are downloaded from storage.googleapis.com; do not work around
+a destination-policy denial with another mirror. Local downloads are currently
+blocked in this managed workspace; passing GitHub CI Emulator evidence is recorded
+in `docs/review-progress-2026-11-02.md`. No login or live project is needed.
+
 ## Safe local command
 
 After installing Firebase CLI:

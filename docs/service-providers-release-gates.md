@@ -14,9 +14,9 @@ Status: **NOT READY FOR PRODUCTION**. This checklist applies to the isolated can
   are available. Local emulator binary downloads remain network-policy blocked.
 
 ## Required before integration
-- [x] Confirmed CI at `b361544`: review safety run `41346766816` and Service
-  emulator run `41346766884` succeeded. Repeat for each later source/toolchain commit.
-- [x] Service candidate Emulator tests passed 20/20 at `b361544` after correcting
+- [x] Confirmed CI at `6c3de7e`: review safety run `41347260171` and Service
+  emulator run `41347260069` succeeded. Repeat for each later source/toolchain commit.
+- [x] Service candidate Emulator tests passed 20/20 at `6c3de7e` after correcting
   the fixture database initialization. Local binary-download restriction remains.
 - [ ] Validate category identifiers against trusted catalog, not only format.
 - [ ] Decide whether owner may edit approved profiles or must re-enter review.

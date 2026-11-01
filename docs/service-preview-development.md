@@ -23,7 +23,7 @@ collect phone numbers, upload media or enable contact actions.
 
 ## Verification
 
-Install the locked dependencies with `npm ci --ignore-scripts --no-audit --no-fund`.
+Use Node.js >=24.12.0. Install the locked dependencies with `npm ci --ignore-scripts --no-audit --no-fund`.
 Run:
 
 ```sh

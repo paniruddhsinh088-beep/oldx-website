@@ -142,3 +142,25 @@ The current Firestore test SDK still pinned vulnerable grpc-js 1.9.16, so added 
 The emulator runner now defaults to a repository-local ignored CLI config/cache and noninteractive CI mode, while preserving explicitly supplied XDG_CONFIG_HOME and FIREBASE_EMULATORS_PATH. This avoids the read-only home/update-notifier failure observed when directly running the new CLI with --version. With CI=true and workspace XDG config, firebase --version reports 15.34.2 successfully. Added a process-boundary test rejecting attempted --project overrides before Firebase can start.
 
 Final local checks for this dependency batch: clean offline npm ci installed 689 packages; npm ls confirms every installed grpc-js is 1.14.7. The new process-boundary test initially encountered the executor's restricted subprocess permission (EPERM); rerunning with the already authorized executor permission passed all 10 guard tests without changing assertions. Targeted Service (136 tests) and static-build (3 tests) checks passed on the final locked tree. New exact-commit emulator CI remains the authoritative check for the changed development gRPC transport.
+
+## Verified source checkpoint: 6c3de7e
+
+All three exact-commit workflows succeeded for `6c3de7ed2f5390fcf03bb58b302895bca64fab9e`:
+
+| Workflow | Run | Result |
+| --- | --- | --- |
+| OLDX Branch Security Tests | [41347260054](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41347260054) | success |
+| Service Providers emulator security tests | [41347260069](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41347260069) | success; Service models/QR 136/136, candidate Rules 20/20, zero skips |
+| OLDX review-branch safety tests | [41347260171](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41347260171) | success; includes actual Firestore, Storage and chat-state Emulator suites, five browser flows, build and safety checks |
+
+This validates the upgraded test stack and scoped gRPC override against isolated demo-project emulators in CI. It does not demonstrate deployment, live Rules enforcement, backend readiness or production acceptance. Vercel listed zero deployments for each pushed source SHA: 07746c8, b361544 and 6c3de7e. Branch-only deployment suppression remains present.
+
+The normal fast-forward push preserved the original `37209fd` unchanged. No main ref, existing production application HTML, Firebase configuration or candidate/live Rules file was modified in this batch. No PR merge, provisioning, paid API/service, live Firebase data access, deployment or network-policy bypass was performed. The final documentation checkpoint changes only documentation; the last verified source commit remains 6c3de7e.
+
+### Remaining work / next safe batch
+
+1. Review the remaining 16 moderate CLI-only transitive advisories and assess compatible upstream fixes; keep runtime and development audit scopes distinct.
+2. Implement and test the gu/en/hi locale/catalog foundation in the isolated preview; human-reviewed complete translations and global account preference sync remain separate work. Do not translate user-generated content.
+3. Continue bounded Store catalogue and public-field projection work under the existing contracts.
+4. Local Emulator downloads remain blocked by environment policy despite the owner's narrow approval; the toolset cannot apply host-policy changes. CI Emulator evidence is available as recorded above.
+5. Live provider contact/enquiries/reviews, media processing/uploads, migrations, backend provisioning, data retention/deletion and any deployment remain under existing owner gates. Current release decision remains HOLD/NO-GO.
