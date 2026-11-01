@@ -14,6 +14,7 @@ match /chats/{chatId} {
     return request.auth != null
       && resource.data.participants is list
       && resource.data.participants.size() == 2
+      && resource.data.participants[0] != resource.data.participants[1]
       && resource.data.get('serviceProviderId', '') is string
       && resource.data.serviceProviderId in resource.data.participants
       && request.auth.uid in resource.data.participants;
@@ -32,6 +33,7 @@ match /chats/{chatId} {
         && room.data.get('chatType', '') == 'service'
         && room.data.participants is list
         && room.data.participants.size() == 2
+        && room.data.participants[0] != room.data.participants[1]
         && room.data.get('serviceProviderId', '') is string
         && room.data.serviceProviderId in room.data.participants
         && request.auth.uid in room.data.participants;
