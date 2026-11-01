@@ -117,3 +117,12 @@ test("typing rejects expired, overlong, and extra-field records", async () => {
 test("non-participants cannot read typing records", async () => {
   await assertFails(getDoc(doc(dbFor("mallory"), "chats/chatA/typing/alice")));
 });
+
+test("owner can list only their own private state and hidden markers", async () => {
+  const alice = dbFor("alice");
+  const bob = dbFor("bob");
+  await assertSucceeds(getDocs(collection(alice, "chats/chatA/userState/alice/hiddenMessages")));
+  await assertFails(getDocs(collection(bob, "chats/chatA/userState/alice/hiddenMessages")));
+  await assertSucceeds(getDocs(collection(alice, "chats/chatA/typing")));
+  await assertFails(getDocs(collection(dbFor("mallory"), "chats/chatA/typing")));
+});
