@@ -77,6 +77,7 @@ export async function listActiveServiceProfiles({ db, limit = 20 }) {
     const data = doc.data();
     return {
       id: doc.id,
+      status: "active", // Query restricts results to active profiles; required by directory filter.
       displayName: data.displayName ?? "",
       description: data.description ?? "",
       city: data.city ?? "",
