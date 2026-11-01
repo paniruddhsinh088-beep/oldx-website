@@ -24,7 +24,7 @@ export async function renderProviderQrSvg(profile, toString) {
       if (!root) return false;
       const attrs = root[1];
       if (!/\bxmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(attrs)) return false;
-      const allowedRoot = /\s+(?:xmlns|width|height|viewBox|shape-rendering)="[^"<>]*"/g;
+      const allowedRoot = /(?:^|\s)(?:xmlns|width|height|viewBox|shape-rendering)="[^"<>]*"/g;
       if (attrs.replace(allowedRoot, "").trim() !== "") return false;
       const paths = root[2].trim().replace(/<path\s+([^<>]*?)\s*\/>/g, (_tag, pathAttrs) => {
         const allowed = /\s*(?:fill|stroke|stroke-width|d)="[^"<>]*"/g;
