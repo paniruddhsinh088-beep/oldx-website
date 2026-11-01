@@ -42,3 +42,33 @@ Implement an adapter that **reads** both block lists, returns a permission
 decision, and invokes the existing chat opener via an injected callback.
 Test guest, block in either direction, missing docs, and read failures before
 wiring any UI buttons.
+
+
+## Verified entry-point findings (follow-up audit)
+- `openLiveChatModal()` currently requires `currentProduct`, takes
+  `currentProduct.sellerUid`, and creates a chat room ID of
+  \`\${currentProduct.docId}_\${buyerId}\`.
+- It writes `chats/{roomId}` with `participants: [buyerId, sellerId]` and
+  `productId: currentProduct.docId`. It therefore **cannot be reused as-is**
+  for service providers: it would use the wrong product context.
+- The same function uses `currentProduct.phone || '919876543210'` for its
+  call link. Never carry this placeholder number into service contacts.
+- `checkScamAndSendChatMessage()` checks only the recipient's block list in
+  the inspected branch, then calls `sendChatMessageNow()`.
+- `handleOldxWhatsApp(event, link)` checks HTTPS WhatsApp hosts, requires
+  login, and displays the existing third-party-app confirmation.
+
+### Required refactor before integration
+1. Introduce a typed chat context with `kind: 'product' | 'service'`,
+   `targetId`, `buyerUid`, and `sellerUid/providerUid`.
+2. Keep existing product room IDs unchanged to preserve message history.
+   Service rooms need their own deterministic namespace, but reuse
+   `chats/{roomId}/messages` and existing message UI.
+3. Validate chat participants and typed target metadata in Firestore rules
+   **before** enabling new room creation.
+4. Never invent phone numbers. Omit the call action until a provider explicitly
+   opts in to a verified public contact number.
+5. Check **both** block lists on every message send and enforce restrictions
+   in rules/backend; block-list reads alone are not authorization.
+6. Test existing product chats, unread sorting, typing, delete-for-me/everyone,
+   and blocking after refactor.
