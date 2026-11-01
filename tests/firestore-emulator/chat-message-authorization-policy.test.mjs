@@ -67,6 +67,7 @@ test("attachment metadata must satisfy trusted allowlist and size configuration"
   assert.equal(validateChatAttachmentMetadata({ name: "bad.exe", type: "application/octet-stream", byteLength: 50 }, policy).ok, false);
   assert.equal(validateChatAttachmentMetadata({ name: "large.pdf", type: "application/pdf", byteLength: 1001 }, policy).error, "invalid_size");
   assert.equal(validateChatAttachmentMetadata({ name: "../secret", type: "application/pdf", byteLength: 50 }, policy).error, "invalid_name");
+  assert.equal(validateChatAttachmentMetadata({ name: "bad\\u0001name.pdf", type: "application/pdf", byteLength: 50 }, policy).error, "invalid_name");
 });
 
 test("message identifiers are strictly bounded", () => {
