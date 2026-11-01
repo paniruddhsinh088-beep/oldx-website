@@ -92,3 +92,33 @@ test("message identifiers are strictly bounded", () => {
   assert.equal(validateMessageId("../msg"), false);
   assert.equal(validateMessageId(""), false);
 });
+
+
+test("recipient cannot tombstone a message they did not send", () => {
+  assert.deepEqual(authorizeChatMutation({
+    action: "delete_for_everyone", actorUid: "synthetic-b", senderUid: "synthetic-a", participants
+  }), { ok: false, error: "not_message_owner" });
+});
+
+test("original sender may tombstone a message only while it is not already tombstoned", () => {
+  assert.deepEqual(authorizeChatMutation({
+    action: "delete_for_everyone", actorUid: "synthetic-a", senderUid: "synthetic-a", participants, tombstoned: false
+  }), { ok: true });
+  assert.deepEqual(authorizeChatMutation({
+    action: "delete_for_everyone", actorUid: "synthetic-a", senderUid: "synthetic-a", participants, tombstoned: true
+  }), { ok: false, error: "already_tombstoned" });
+});
+
+test("tombstone restoration or rewriting actions are not supported", () => {
+  for (const action of ["restore_message", "edit_tombstone", "clear_deleted_at"]) {
+    assert.deepEqual(authorizeChatMutation({
+      action, actorUid: "synthetic-a", senderUid: "synthetic-a", participants, tombstoned: true
+    }), { ok: false, error: "unsupported_action" });
+  }
+});
+
+test("invalid sender identity cannot authorize tombstone mutation", () => {
+  assert.deepEqual(authorizeChatMutation({
+    action: "delete_for_everyone", actorUid: "synthetic-a", senderUid: "", participants
+  }), { ok: false, error: "invalid_sender" });
+});
