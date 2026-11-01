@@ -81,6 +81,9 @@ jobs:
       - name: Run chat privacy and block policy tests
         run: npm run test:chat-privacy
 
+      - name: Run Firestore Rules-verifiable chat block policy model tests
+        run: npm run test:chat-block-policy
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
