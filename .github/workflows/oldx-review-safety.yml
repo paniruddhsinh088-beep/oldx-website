@@ -84,6 +84,9 @@ jobs:
       - name: Run Firestore Rules-verifiable chat block policy model tests
         run: npm run test:chat-block-policy
 
+      - name: Run private chat user-state policy model tests
+        run: npm run test:chat-private-user-state
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
