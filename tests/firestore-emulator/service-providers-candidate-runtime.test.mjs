@@ -12,7 +12,7 @@ before(async () => {
     firestore: { rules }
   });
   await env.withSecurityRulesDisabled(async ({ firestore }) => {
-    await setDoc(doc(firestore, 'serviceProviders/active'), { status: 'active', displayName: 'Sample' });
+    await setDoc(doc(firestore, 'serviceProviders/active'), { status: 'active', displayName: 'Sample', cityId: 'ahmedabad', serviceIds: ['carpentry', 'repairs'] });
     await setDoc(doc(firestore, 'serviceProviders/pending'), { status: 'pending' });
     await setDoc(doc(firestore, 'serviceProviderReviews/published'), { status: 'published', rating: 5 });
     await setDoc(doc(firestore, 'serviceProviderReviews/hidden'), { status: 'hidden', rating: 1 });
@@ -161,4 +161,19 @@ test('public discovery permits only bounded active-provider queries', async () =
   await assertFails(getDocs(query(providers, where('status', '==', 'pending'), limit(20))));
   await assertFails(getDocs(query(providers, where('status', '==', 'active'), limit(21))));
   await assertFails(getDocs(query(providers, where('status', '==', 'active'))));
+});
+
+test('city and service filtering stays restricted to active providers', async () => {
+  const db = env.unauthenticatedContext().firestore();
+  const providers = collection(db, 'serviceProviders');
+  const city = await assertSucceeds(getDocs(query(providers,
+    where('status', '==', 'active'), where('cityId', '==', 'ahmedabad'), limit(20))));
+  assert.equal(city.size, 1);
+  const service = await assertSucceeds(getDocs(query(providers,
+    where('status', '==', 'active'), where('serviceIds', 'array-contains', 'carpentry'), limit(20))));
+  assert.equal(service.size, 1);
+  await assertFails(getDocs(query(providers,
+    where('cityId', '==', 'ahmedabad'), limit(20))));
+  await assertFails(getDocs(query(providers,
+    where('status', '==', 'pending'), where('cityId', '==', 'ahmedabad'), limit(20))));
 });
