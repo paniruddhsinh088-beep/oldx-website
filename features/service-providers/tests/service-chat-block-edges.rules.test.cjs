@@ -36,3 +36,15 @@ test("updates and self-blocks are denied",async()=>{
  await assertFails(updateDoc(doc(db("buyer"),path),{createdAt:serverTimestamp()}));
  await assertFails(setDoc(doc(db("buyer"),"serviceChatBlocks/buyer/blocked/buyer"),{createdAt:serverTimestamp()}));
 });
+
+test("block edge rejects extra fields and client-supplied timestamps",async()=>{
+ await assertFails(setDoc(doc(db("buyer"),path),{createdAt:serverTimestamp(),admin:true}));
+ await assertFails(setDoc(doc(db("buyer"),path),{createdAt:"yesterday"}));
+ await assertFails(setDoc(doc(db("buyer"),path),{}));
+});
+test("a user cannot delete another user's block edge",async()=>{
+ const reverse="serviceChatBlocks/provider/blocked/buyer";
+ await assertSucceeds(setDoc(doc(db("provider"),reverse),{createdAt:serverTimestamp()}));
+ await assertFails(deleteDoc(doc(db("buyer"),reverse)));
+ await assertSucceeds(getDoc(doc(db("provider"),reverse)));
+});
