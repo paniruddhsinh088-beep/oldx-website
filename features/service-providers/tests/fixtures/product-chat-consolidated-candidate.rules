@@ -4,6 +4,12 @@ service cloud.firestore {
  match /databases/{database}/documents {
   function signedIn() { return request.auth != null; }
   function productRoom(chatId) { return !chatId.matches('service_.*') && exists(/databases/$(database)/documents/chats/$(chatId)) && get(/databases/$(database)/documents/chats/$(chatId)).data.keys().hasAll(['participants','productId']); }
+  function recipientHasBlocked(chatId) {
+   let participants = get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+   let recipient = participants[0] == request.auth.uid ? participants[1] : participants[0];
+   return exists(/databases/$(database)/documents/users/$(recipient))
+    && request.auth.uid in get(/databases/$(database)/documents/users/$(recipient)).data.get('blockedUsers', []);
+  }
   function roomParticipant(chatId) { return signedIn() && productRoom(chatId) && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants; }
   match /chats/{chatId} {
    allow get, list: if signedIn() && !chatId.matches('service_.*') && request.auth.uid in resource.data.participants;
@@ -33,6 +39,7 @@ service cloud.firestore {
    match /messages/{msgId} {
     allow get, list: if roomParticipant(chatId);
     allow create: if roomParticipant(chatId)
+     && !recipientHasBlocked(chatId)
      && request.resource.data.keys().hasAll(['senderUid','text','createdAt','status'])
      && request.resource.data.keys().hasOnly(['senderUid','senderName','text','attachment','status','time','createdAt'])
      && (!('attachment' in request.resource.data) || request.resource.data.attachment == null || (request.resource.data.attachment is map
