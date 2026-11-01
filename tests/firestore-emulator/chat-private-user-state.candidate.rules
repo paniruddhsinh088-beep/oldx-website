@@ -1,0 +1,62 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function chatPath(chatId) {
+      return /databases/$(database)/documents/chats/$(chatId);
+    }
+    function messagePath(chatId, messageId) {
+      return /databases/$(database)/documents/chats/$(chatId)/messages/$(messageId);
+    }
+    function validParticipant(chatId) {
+      return signedIn()
+        && exists(chatPath(chatId))
+        && get(chatPath(chatId)).data.keys().hasAll(['participants'])
+        && get(chatPath(chatId)).data.participants is list
+        && get(chatPath(chatId)).data.participants.size() == 2
+        && get(chatPath(chatId)).data.participants[0] is string
+        && get(chatPath(chatId)).data.participants[1] is string
+        && get(chatPath(chatId)).data.participants[0].size() > 0
+        && get(chatPath(chatId)).data.participants[1].size() > 0
+        && get(chatPath(chatId)).data.participants[0] != get(chatPath(chatId)).data.participants[1]
+        && get(chatPath(chatId)).data.participants.hasAny([request.auth.uid]);
+    }
+
+    match /chats/{chatId}/userState/{uid} {
+      allow get, list: if signedIn() && request.auth.uid == uid && validParticipant(chatId);
+      allow create, update, delete: if false;
+
+      match /hiddenMessages/{messageId} {
+        allow get, list: if signedIn() && request.auth.uid == uid && validParticipant(chatId);
+        allow create: if signedIn()
+          && request.auth.uid == uid
+          && validParticipant(chatId)
+          && exists(messagePath(chatId, messageId))
+          && request.resource.data.keys().hasAll(['schemaVersion', 'hiddenAt'])
+          && request.resource.data.keys().hasOnly(['schemaVersion', 'hiddenAt'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.hiddenAt == request.time;
+        allow update: if false;
+        allow delete: if signedIn() && request.auth.uid == uid && validParticipant(chatId);
+      }
+    }
+
+    match /chats/{chatId}/typing/{uid} {
+      allow get, list: if signedIn() && validParticipant(chatId);
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && validParticipant(chatId)
+        && request.resource.data.keys().hasAll(['activeUntil', 'updatedAt'])
+        && request.resource.data.keys().hasOnly(['activeUntil', 'updatedAt'])
+        && request.resource.data.activeUntil is timestamp
+        && request.resource.data.activeUntil > request.time
+        && request.resource.data.activeUntil <= request.time + duration.value(2, 'm')
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid && validParticipant(chatId);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
