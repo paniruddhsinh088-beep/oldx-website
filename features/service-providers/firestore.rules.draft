@@ -1,0 +1,70 @@
+// STANDALONE DRAFT FOR EMULATOR TESTING ONLY.
+// DO NOT deploy this file as the project's complete ruleset: it intentionally
+// denies all existing OLDX collections. Merge into audited existing rules first.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function owner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+    function validProfile(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly([
+          'ownerUid', 'displayName', 'description', 'city', 'district',
+          'state', 'serviceCategories', 'status', 'createdAt', 'updatedAt'
+        ])
+        && d.keys().hasAll([
+          'ownerUid', 'displayName', 'description', 'city', 'district',
+          'state', 'serviceCategories', 'status', 'createdAt', 'updatedAt'
+        ])
+        && d.ownerUid is string && d.ownerUid == uid
+        && d.displayName is string && d.displayName.size() >= 2 && d.displayName.size() <= 80
+        && d.description is string && d.description.size() <= 1000
+        && d.city is string && d.city.size() >= 1 && d.city.size() <= 80
+        && d.district is string && d.district.size() >= 1 && d.district.size() <= 80
+        && d.state == 'Gujarat'
+        && d.serviceCategories is list
+        && d.serviceCategories.size() >= 1 && d.serviceCategories.size() <= 7
+        && d.serviceCategories.hasOnly([
+          'carpenter', 'mason', 'electrician', 'plumber', 'painter',
+          'cleaning', 'appliance-repair'
+        ])
+        && d.status in ['pending', 'active', 'suspended']
+        && d.createdAt is timestamp && d.updatedAt is timestamp;
+    }
+
+    match /serviceProviders/{uid} {
+      // Queries for public discovery must filter status == 'active'.
+      allow get, list: if resource.data.status == 'active' || owner(uid);
+      allow create: if owner(uid)
+        && validProfile(uid)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if owner(uid)
+        && validProfile(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'description', 'city', 'district',
+          'state', 'serviceCategories', 'updatedAt'
+        ])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.status == resource.data.status;
+      allow delete: if false;
+
+      // Reviews are disabled until verified-buyer eligibility is implemented.
+      match /reviews/{reviewerUid} {
+        allow read, write: if false;
+      }
+    }
+
+    // Existing OLDX collection rules must be preserved when merging.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
