@@ -14,11 +14,15 @@ export async function renderProviderQrSvg(profile, toString) {
     const svg = await toString(payload.value.text, {
       type: "svg", errorCorrectionLevel: "M", margin: 2, width: 256
     });
+    // Remove only the standard SVG namespace before looking for remote URLs.
     const svgWithoutNamespace = typeof svg === "string"
-      ? svg.replace(/xmlns="http:\\/\\/www\\.w3\\.org\\/2000\\/svg"/u, "") : "";
-    if (typeof svg !== "string" || svg.length > 200000 ||
-        !/^\s*<svg\b[^>]*\bxmlns="http:\/\/www\.w3\.org\/2000\/svg"/u.test(svg) ||
-        /<\s*(?:script|foreignObject|image|iframe|use)\b|\bon\w+\s*=|(?:javascript:|https?:\/\/)/iu.test(svgWithoutNamespace)) {
+      ? svg.replace('xmlns="http://www.w3.org/2000/svg"', "") : "";
+    const startsWithSvg = typeof svg === "string" &&
+      svg.trimStart().startsWith('<svg xmlns="http://www.w3.org/2000/svg"');
+    const forbidden = ["<script", "<foreignObject", "<image", "<iframe", "<use",
+      "javascript:", "http://", "https://", "onload=", "onclick=", "onerror="];
+    if (!startsWithSvg || svg.length > 200000 ||
+        forbidden.some(fragment => svgWithoutNamespace.toLowerCase().includes(fragment.toLowerCase()))) {
       return { ok: false, code: "UNSAFE_QR_SVG" };
     }
     return { ok: true, value: { svg, mimeType: "image/svg+xml", url: payload.value.text } };
