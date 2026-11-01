@@ -121,10 +121,12 @@ test("session switch after block-list parsing still prevents host action",async(
     }};
   }};}};}};
   let calls=0;
-  const result=await invokeServiceContact({
-    ...args,auth:session,db,action:"chat",
-    onAllowed:()=>{calls++;}
-  });
-  assert.equal(result.allowed,false);
+  await assert.rejects(
+    invokeServiceContact({
+      ...args,auth:session,db,action:"chat",
+      onAllowed:()=>{calls++;}
+    }),
+    /session changed/i
+  );
   assert.equal(calls,0);
 });
