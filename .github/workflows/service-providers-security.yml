@@ -67,6 +67,8 @@ jobs:
         run: node --test features/service-providers/tests/service-chat-deployment-guard.test.mjs
       - name: Check service chat isolation regressions
         run: node --test features/service-providers/tests/service-chat-isolation-regression.test.mjs
+      - name: Check service chat write deny guard
+        run: node --test features/service-providers/tests/service-chat-write-guard.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
