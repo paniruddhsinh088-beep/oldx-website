@@ -97,3 +97,12 @@ Added heading overflow-wrap and search-row flex wrapping. The full browser suite
 then passed **12/12**, zero skips, without weakening any assertions. This follow-up
 changes only the preview HTML/CSS, its browser test and this record; it triggers a
 separate review-safety CI run after push.
+
+The follow-up source was pushed as e112c383fdfbf689fd82e5fc3b2348ee81172dae.
+Review-safety run [41350834897](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41350834897)
+failed the expanded 200% browser case on the runner's font metrics: the English
+results heading/container extended to 341px at a 320px viewport. Added h2 word
+wrapping and a min-width/max-width constraint on section-heading content. No
+font sizes, test scales, assertions or privacy controls were reduced. The local
+full browser suite again passed 12/12; a new exact-commit CI run is required for
+the runner-specific correction. Vercel listed zero deployments for e112c38.
