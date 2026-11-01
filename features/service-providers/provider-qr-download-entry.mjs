@@ -8,6 +8,6 @@ import { handleProviderShareDownloadClick } from "./provider-download-click.mjs"
  *
  * Browser globals are passed explicitly to keep tests isolated.
  */
-export async function downloadProviderCardAndQr(profile, browser = {}) {
-  return handleProviderShareDownloadClick(profile, encodeProviderQrSvg, browser);
+export async function downloadProviderCardAndQr(profile, browser = {}, qrEncoder = encodeProviderQrSvg) {
+  return handleProviderShareDownloadClick(profile, qrEncoder, browser);
 }
