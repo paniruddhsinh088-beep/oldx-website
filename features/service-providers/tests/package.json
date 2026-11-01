@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node --test --test-concurrency=1 firestore.test.cjs booking-review.rules.test.cjs"
+    "test": "node --test --test-concurrency=1 firestore.test.cjs booking-review.rules.test.cjs service-chat.rules.test.cjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
