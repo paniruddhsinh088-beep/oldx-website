@@ -78,7 +78,7 @@ test("service fragment does not authorize legacy product rooms",async()=>{
 test("service room with mismatched provider metadata cannot be read",async()=>{
   for(const serviceProviderId of [undefined,"stranger",42]){
     await env.clearFirestore();
-    await seed(room,{chatType:"service",participants:["buyer","provider"],serviceProviderId});
+    await seed(room,{chatType:"service",participants:["buyer","provider"],...(serviceProviderId === undefined ? {} : {serviceProviderId})});
     await seed(message,{senderUid:"buyer",text:"private"});
     await assertFails(getDoc(doc(db("buyer"),room)));
     await assertFails(getDoc(doc(db("provider"),message)));
