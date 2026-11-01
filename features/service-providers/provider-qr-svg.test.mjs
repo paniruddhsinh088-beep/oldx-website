@@ -48,3 +48,21 @@ test("does not invoke encoder for invalid or foreign URLs", async () => {
   assert.equal(result.ok, false);
   assert.equal(called, false);
 });
+
+test("accepts standard QR encoder SVG with viewBox and path fills", async () => {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h33v33H0z"/><path stroke="#000000" d="M1 1h5v5H1z"/></svg>';
+  const result = await renderProviderQrSvg(profile, async () => svg);
+  assert.equal(result.ok, true);
+  assert.equal(result.value.svg, svg);
+});
+
+test("rejects SVG event handlers and embedded CSS on QR paths", async () => {
+  for (const svg of [
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h5" onload="alert(1)"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h5" fill="url(https://evil.example)"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h5" style="fill:red"/></svg>'
+  ]) {
+    const result = await renderProviderQrSvg(profile, async () => svg);
+    assert.equal(result.code, "UNSAFE_QR_SVG");
+  }
+});
