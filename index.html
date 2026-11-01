@@ -2378,9 +2378,14 @@
                               closeInboxModal();
                               activeChatRoomId = chat.chatRoomId;
                               const otherUid = (chat.participants || []).find(id => id !== currentUid && id !== 'guest');
-                              const otherUserId = otherUid || chat.productId;
+                              // Service rooms identify the provider explicitly; product chat
+                              // fallback remains unchanged for legacy conversations.
+                              const serviceRoom = chat.chatType === 'service' &&
+                                  typeof chat.serviceProviderId === 'string' &&
+                                  (chat.participants || []).includes(chat.serviceProviderId);
+                              const otherUserId = otherUid || (serviceRoom ? chat.serviceProviderId : chat.productId);
                               activeChatOtherUserId = otherUserId;
-                              document.getElementById('chatSellerName').innerText = "Conversation";
+                              document.getElementById('chatSellerName').innerText = serviceRoom ? "Service conversation" : "Conversation";
                               document.getElementById('fullChatPage').style.display = 'flex';
                               history.pushState({page: 'chat'}, "", "#chat");
                               loadChatMessages(chat.chatRoomId);
