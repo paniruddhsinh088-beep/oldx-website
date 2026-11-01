@@ -4,7 +4,7 @@ import { downloadProviderShareAssets } from "./provider-browser-download.mjs";
  * Bind this function to an explicit user click on a preview/review page.
  * Do not auto-run on page load. This does not touch production data.
  */
-export async function handleProviderShareDownloadClick(profile, qrEncoder, env = {}) {
+export async function handleProviderShareDownloadClick(profile, qrEncoder, env = {}, selection = "both") {
   const { Blob: BlobCtor, URL: UrlApi, document: doc } = env;
   if (typeof BlobCtor !== "function" || !UrlApi ||
       typeof UrlApi.createObjectURL !== "function" ||
@@ -33,5 +33,5 @@ export async function handleProviderShareDownloadClick(profile, qrEncoder, env =
         link.remove();
       }
     }
-  });
+  }, selection);
 }
