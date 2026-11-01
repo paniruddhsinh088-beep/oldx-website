@@ -1,0 +1,14 @@
+// Isolated emulator fixture only: never deploy.
+// Broad legacy recursive allow grants message writes despite a narrower deny.
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /chats/{chatId}/{nested=**} {
+   allow write: if request.auth != null;
+  }
+  match /chats/{chatId}/messages/{messageId} {
+   allow create, update, delete: if false;
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
