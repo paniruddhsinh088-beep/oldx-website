@@ -31,7 +31,7 @@ export function mountServiceModeration(container,{loadPending,onModerate}={}) {
       try{await onModerate(profile.id,nextStatus);status.textContent="Status updated.";}
       catch{status.textContent="Update failed. Check permissions and retry.";}
       finally{busy=false;button.disabled=false;}
-      if(status.textContent==="Status updated.")await refresh();
+      if(!disposed && status.textContent==="Status updated.")await refresh();
      });
      card.append(button);
     }
@@ -39,7 +39,7 @@ export function mountServiceModeration(container,{loadPending,onModerate}={}) {
    }
    status.textContent=list.children.length?`${list.children.length} pending profile(s).`:"No pending profiles.";
   }catch{if(!disposed)status.textContent="Unable to load pending profiles. Check admin permissions.";}
-  finally{busy=false;reload.disabled=false;}
+  finally{busy=false;if(!disposed)reload.disabled=false;}
  }
  reload.addEventListener("click",refresh);
  container.replaceChildren(root);
