@@ -137,3 +137,12 @@ test("service chat never exposes messages from a non-service room",async()=>{
     await assertFails(getDocs(collection(db("provider"),room+"/messages")));
   }
 });
+
+test("service room creation is denied regardless of provider profile status",async()=>{
+  const canonical={chatType:"service",serviceProviderId:"provider",participants:["buyer","provider"]};
+  for(const status of ["active","pending","suspended"]){
+    await env.clearFirestore();
+    await seed("serviceProviders/provider",{ownerUid:"provider",status});
+    await assertFails(setDoc(doc(db("buyer"),room),canonical));
+  }
+});
