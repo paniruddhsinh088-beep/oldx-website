@@ -47,17 +47,23 @@ export async function resolveServiceContactPermissions({ auth, db, providerUid, 
  * Existing OLDX chat/WhatsApp handlers must be passed as onAllowed.
  */
 export async function invokeServiceContact({ action, auth, db, providerUid, providerStatus, onAllowed }) {
+  if (!["chat", "whatsapp", "call"].includes(action)) {
+    throw new TypeError("Unsupported contact action");
+  }
+  if (typeof onAllowed !== "function") {
+    throw new TypeError("Contact action handler is required");
+  }
+  let permissions;
   try {
-    return await requestServiceContact({
-      action,
-      resolvePermissions: () => resolveServiceContactPermissions({auth,db,providerUid,providerStatus}),
-      onAllowed
-    });
-  } catch (error) {
-    // Never continue contact action on Firestore read/permission/network errors.
-    if (error instanceof TypeError && (typeof onAllowed !== "function" || !["chat","whatsapp","call"].includes(action))) {
-      throw error;
-    }
+    permissions = await resolveServiceContactPermissions({ auth, db, providerUid, providerStatus });
+  } catch {
+    // Fail closed only on permission lookup failures.
     return { allowed:false, reason:"Could not verify contact permissions. Please try again." };
   }
+  // Host callback failures must propagate instead of masquerading as auth failures.
+  return requestServiceContact({
+    action,
+    resolvePermissions: async () => permissions,
+    onAllowed
+  });
 }
