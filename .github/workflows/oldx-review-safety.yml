@@ -98,3 +98,6 @@ jobs:
 
       - name: Run Firebase Storage Emulator authorization tests
         run: npm run test:storage:rules
+
+      - name: Run isolated chat private user-state Firestore Rules tests
+        run: npm run test:chat-private-user-state:rules
