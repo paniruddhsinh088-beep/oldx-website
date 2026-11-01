@@ -104,3 +104,61 @@ test("malformed consent collections fail closed", () => {
     scopeId: "listing_A", policyVersion: "v1",
   }), false);
 });
+
+test("only the verified owner may revoke their own consent", async () => {
+  const { revokeConsent } = await import("../../scripts/privacy-preferences-policy.mjs");
+  const consent = {
+    purpose: "displayContact", field: "phone", scopeType: "listing",
+    scopeId: "listing_A", policyVersion: "v1", status: "active", revokedAt: null,
+  };
+  assert.equal(revokeConsent(consent, "user_A", "user_A", "server-time").ok, true);
+  assert.deepEqual(revokeConsent(consent, "user_B", "user_A", "server-time"), {
+    ok: false, code: "FORBIDDEN",
+  });
+  assert.deepEqual(revokeConsent(consent, "", "user_A", "server-time"), {
+    ok: false, code: "FORBIDDEN",
+  });
+});
+
+test("revocation is idempotently blocked after the first successful revoke", async () => {
+  const { revokeConsent, isConsentActiveForScope } = await import("../../scripts/privacy-preferences-policy.mjs");
+  const consent = {
+    purpose: "displayContact", field: "phone", scopeType: "listing",
+    scopeId: "listing_A", policyVersion: "v1", status: "active", revokedAt: null,
+  };
+  const revoked = revokeConsent(consent, "user_A", "user_A", "server-time");
+  assert.equal(revoked.ok, true);
+  assert.equal(revokeConsent(revoked.consent, "user_A", "user_A", "later-time").code, "CONFLICT");
+  assert.equal(isConsentActiveForScope([revoked.consent], consent), false);
+});
+
+test("missing authoritative server timestamp fails closed during revocation", async () => {
+  const { revokeConsent } = await import("../../scripts/privacy-preferences-policy.mjs");
+  const consent = { status: "active", revokedAt: null };
+  assert.deepEqual(revokeConsent(consent, "user_A", "user_A", null), {
+    ok: false, code: "UNAVAILABLE",
+  });
+});
+
+test("private-field disclosure requires owner, active account, moderation approval, and exact active consent", async () => {
+  const { canDisclosePrivateField } = await import("../../scripts/privacy-preferences-policy.mjs");
+  const expectedConsent = {
+    purpose: "displayContact", field: "phone", scopeType: "listing",
+    scopeId: "listing_A", policyVersion: "v1",
+  };
+  const consents = [{
+    ...expectedConsent, status: "active", revokedAt: null,
+  }];
+  const base = {
+    verifiedUid: "user_A", resourceOwnerUid: "user_A", consents,
+    expectedConsent, accountActive: true, moderationAllows: true,
+  };
+  assert.equal(canDisclosePrivateField(base), true);
+  assert.equal(canDisclosePrivateField({ ...base, verifiedUid: "user_B" }), false);
+  assert.equal(canDisclosePrivateField({ ...base, accountActive: false }), false);
+  assert.equal(canDisclosePrivateField({ ...base, moderationAllows: false }), false);
+  assert.equal(canDisclosePrivateField({ ...base, consents: [] }), false);
+  assert.equal(canDisclosePrivateField({ ...base, consents: [{
+    ...consents[0], status: "revoked", revokedAt: "server-time",
+  }] }), false);
+});
