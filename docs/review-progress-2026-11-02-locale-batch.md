@@ -113,3 +113,10 @@ exposed the next 200% runner-font case: Hindi result-card action buttons exceede
 the viewport because the label/action footer could not wrap. Enabled footer flex
 wrapping to preserve the complete action label and scale. No test was skipped or
 relaxed. This continues the font-independent accessibility correction.
+
+The large-text browser case now also opens the public profile, so every locale is
+checked across all three preview views. The profile-heading row uses the same
+responsive wrapping principle as navigation/card actions. This preserves complete
+labels and authored content at enlarged sizes. The focused large-text and profile
+navigation checks passed locally; the unchanged full browser suite runs again in
+CI for the combined font-independent follow-up.

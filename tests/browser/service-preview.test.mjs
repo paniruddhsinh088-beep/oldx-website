@@ -252,7 +252,7 @@ test('language changes preserve profile identity and restore focus to the same p
   assert.equal(await page.locator('[data-i18n] input').count(), 0);
 });
 
-test('each language supports actual 200 percent text in both discovery and onboarding', async () => {
+test('each language supports actual 200 percent text across all preview views', async () => {
   for (const locale of ['en', 'hi', 'gu']) {
     await page.goto(origin + '/service-preview.html');
     await page.waitForFunction(() => document.querySelectorAll('#results article').length === 6);
@@ -263,12 +263,17 @@ test('each language supports actual 200 percent text in both discovery and onboa
       const sizes = [...document.querySelectorAll('body *')].map(element => [element, parseFloat(getComputedStyle(element).fontSize)]);
       for (const [element, size] of sizes) element.style.fontSize = `${size * 2}px`;
     });
-    for (const tab of ['browseTab', 'providerTab']) {
-      await page.locator('#' + tab).click();
+    async function checkOverflow(view) {
       const diagnostics = await page.evaluate(() => [...document.querySelectorAll('body *')]
         .filter(element => !element.closest('[hidden]') && element.getBoundingClientRect().right > innerWidth + 1)
         .map(element => ({ tag: element.tagName, id: element.id, class: element.className, right: Math.round(element.getBoundingClientRect().right) })).slice(0, 12));
-      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} large text ${tab}: ${JSON.stringify(diagnostics)}`);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} large text ${view}: ${JSON.stringify(diagnostics)}`);
     }
+    await page.locator('#browseTab').click();
+    await checkOverflow('discovery');
+    await page.locator('#results article button').first().click();
+    await checkOverflow('profile');
+    await page.locator('#providerTab').click();
+    await checkOverflow('onboarding');
   }
 });
