@@ -6,7 +6,7 @@ function response() {
     status(n) { this.code = n; return this; }, json(data) { this.body = data; return this; } };
 }
 const request = (body = { providerId: 'provider-1', nextStatus: 'active', reason: 'Verified details' }) =>
-  ({ method: 'POST', headers: { authorization: 'Bearer signed-token' }, body });
+  ({ method: 'POST', headers: { authorization: 'Bearer signed-token', 'content-type': 'application/json' }, body });
 test('accepts authenticated POST and returns limited result', async () => {
   const handler = createModerationHttpHandler(async data => {
     assert.equal(data.idToken, 'signed-token');
@@ -34,5 +34,18 @@ test('maps authorization failures and hides unexpected errors', async () => {
     await createModerationHttpHandler(async () => { throw Error(message); })(request(), res);
     assert.equal(res.code, code);
     assert.equal(JSON.stringify(res.body).includes('password'), false);
+  }
+});
+
+test('requires JSON and rejects oversized requests', async () => {
+  const handler = createModerationHttpHandler(async () => { throw Error('should_not_run'); });
+  for (const [req, code] of [
+    [{ ...request(), headers: { authorization: 'Bearer signed-token', 'content-type': 'text/plain' } }, 415],
+    [{ ...request(), headers: { ...request().headers, 'content-length': '5000' } }, 413],
+    [request({ providerId: 'p1', nextStatus: 'active', reason: 'x'.repeat(501) }), 400]
+  ]) {
+    const res = response();
+    await handler(req, res);
+    assert.equal(res.code, code);
   }
 });
