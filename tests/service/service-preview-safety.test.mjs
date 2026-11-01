@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { BROWSER_ASSETS } from '../../scripts/build-static-assets.mjs';
 
 const html = await readFile(new URL('../../service-preview.html', import.meta.url), 'utf8');
-const modules = await Promise.all(['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections']
-  .map(name => readFile(new URL('../../features/service-providers/' + name + '.mjs', import.meta.url), 'utf8')));
+const modules = await Promise.all(BROWSER_ASSETS.filter(path => path.startsWith('features/'))
+  .map(path => readFile(new URL('../../' + path, import.meta.url), 'utf8')));
+const controller = modules[0];
 const source = [html, ...modules].join('\n');
 
 test('Service preview is prominently identified as demo-only', () => {
@@ -19,9 +21,9 @@ test('Service preview does not connect to Firebase or remote APIs', () => {
 });
 
 test('Contact actions remain disabled in the demo', () => {
-  assert.match(html, /<button class="btn contact-demo" disabled>📞 કૉલ કરો<\/button>/);
-  assert.match(html, /<button class="btn contact-demo" disabled>WhatsApp<\/button>/);
-  assert.match(html, /<button class="btn contact-demo" disabled>OldX પર મેસેજ<\/button>/);
+  for (const key of ['callAction', 'whatsappAction', 'messageAction']) {
+    assert.match(html, new RegExp('<button class="btn contact-demo" disabled[^>]*data-i18n="' + key + '"'));
+  }
 });
 
 test('Public phone and WhatsApp consent default to off', () => {
@@ -35,10 +37,12 @@ test('Dynamic profile text and service labels use safe DOM text APIs', () => {
   assert.doesNotMatch(source, /\.innerHTML\s*=/);
 });
 
-test('Local form validation is modular and has no persistence or publication path', () => {
+test('Local form has no persistence/publication path; only the separate locale preference is stored', () => {
   assert.match(html, /type="module" src="\.\/features\/service-providers\/service-preview\.mjs"/);
   assert.match(source, /inspectProviderPreviewDraft/);
-  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB|sendBeacon|\.submit\s*\(/);
+  assert.doesNotMatch(source, /sessionStorage|indexedDB|sendBeacon|\.submit\s*\(/);
+  assert.doesNotMatch(controller, /\.setItem\s*\(/);
+  assert.match(controller, /writeLocalePreference\(preferenceStorage\(\), translator\.locale\)/);
   assert.match(html, /id="providerForm" novalidate/);
   assert.match(html, /id="validationStatus" role="status"/);
 });

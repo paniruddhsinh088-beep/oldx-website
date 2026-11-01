@@ -3,6 +3,22 @@
 Status: **Approved product direction for planning only**. No UI, database, account, or runtime change is activated by this document.
 Branch: `security-hardening-review`.
 
+## Review-branch implementation checkpoint — 2 November 2026
+
+The isolated Service preview now has Gujarati/Hindi/English catalogs (103 keys per
+language), a visible native-script language selector, safe fallback/interpolation,
+plural/number/INR/date helpers and a local allowlisted locale preference. The
+selected catalog is lazy-loaded alongside the English fallback. Browser checks
+cover language switches, data preservation, unavailable storage/catalogs, load
+races, focus and large-text mobile layouts. See `features/i18n/README.md` and
+`docs/review-progress-2026-11-02-locale-batch.md` for implementation/evidence.
+
+This is a preview-only slice under the current development request. It does not
+activate localization in the main marketplace/authentication UI, write private
+account preferences, enable backend access or imply native-speaker review. All
+whole-application release gates below remain outstanding. Provider/authored text
+and canonical service selections are not translated or rewritten.
+
 ## Product goal
 
 OLDX is a local-first Indian marketplace. A user should be able to use the complete application interface in a familiar Indian language, choose the language on first launch, and change it later from Profile / Settings without reinstalling or losing data.

@@ -4,7 +4,8 @@
  * is not an access-control boundary and never reads Firebase.
  */
 function folded(value) {
-  return typeof value === "string" ? value.trim().toLocaleLowerCase("en") : "";
+  // Compare normalized text only; never rewrite the original public record.
+  return typeof value === "string" ? value.trim().normalize("NFC").toLocaleLowerCase("en") : "";
 }
 function publicProvider(record) {
   return record && typeof record === "object" && !Array.isArray(record) &&

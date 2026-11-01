@@ -1,13 +1,41 @@
 import { demoProviders } from "./preview-fixtures.mjs";
 import { inspectProviderPreviewDraft } from "./preview-draft.mjs";
+import {
+  createTranslator,
+  loadTranslator,
+  SUPPORTED_LOCALES,
+} from "../i18n/i18n.mjs";
+import { applyCatalog } from "../i18n/dom.mjs";
+import {
+  readLocalePreference,
+  writeLocalePreference,
+} from "../i18n/preference.mjs";
+
+let translator = createTranslator("en");
+const t = (key, params) => translator.t(key, params);
+let currentProfile = null;
+let localeRequest = 0;
+function preferenceStorage() {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+}
 
 let activeCategory = "બધી સેવાઓ";
 let validated = false;
 let returnToResult = null;
 const $ = (id) => document.getElementById(id);
 function render() {
-  const q = $("q").value.trim().normalize("NFC").toLocaleLowerCase("gu"),
-    area = $("area").value.trim().normalize("NFC").toLocaleLowerCase("gu"),
+  const q = $("q")
+      .value.trim()
+      .normalize("NFC")
+      .toLocaleLowerCase(translator.locale),
+    area = $("area")
+      .value.trim()
+      .normalize("NFC")
+      .toLocaleLowerCase(translator.locale),
     sort = $("sort").value;
   let rows = demoProviders.filter(
     (p) =>
@@ -16,20 +44,25 @@ function render() {
         p.services.some((s) => s.includes(activeCategory))) &&
       (!q ||
         (p.name + " " + p.services.join(" ") + " " + p.about)
-          .toLocaleLowerCase("gu")
+          .normalize("NFC")
+          .toLocaleLowerCase(translator.locale)
           .includes(q)) &&
-      (!area || p.area.toLocaleLowerCase("gu").includes(area)),
+      (!area ||
+        p.area
+          .normalize("NFC")
+          .toLocaleLowerCase(translator.locale)
+          .includes(area)),
   );
   if (sort === "experience") rows.sort((a, b) => b.experience - a.experience);
-  if (sort === "name") rows.sort((a, b) => a.name.localeCompare(b.name, "gu"));
-  $("resultCount").textContent = rows.length + " ડેમો પ્રોફાઇલ્સ";
+  if (sort === "name")
+    rows.sort((a, b) => a.name.localeCompare(b.name, translator.locale));
+  $("resultCount").textContent = t("resultCount", { count: rows.length });
   const results = $("results");
   results.replaceChildren();
   if (!rows.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent =
-      "આ શોધ માટે ડેમો પ્રોફાઇલ મળી નથી. શબ્દ અથવા વિસ્તાર બદલીને જુઓ.";
+    empty.textContent = t("emptyResults");
     results.append(empty);
   } else {
     rows.forEach((p) => {
@@ -59,19 +92,20 @@ function render() {
       });
       const meta = document.createElement("div");
       meta.className = "meta";
-      meta.textContent =
-        p.experience + " વર્ષનો અનુભવ · સેવા આપનારની આપેલી માહિતી";
+      meta.textContent = t("experienceByProvider", { count: p.experience });
       const availability = document.createElement("div");
       availability.className = "status";
-      availability.textContent =
-        p.available === false ? "હાલ વ્યસ્ત (ડેમો)" : "ઉપલબ્ધ (ડેમો)";
+      availability.textContent = t(
+        p.available === false ? "busyDemo" : "availableDemo",
+      );
       const foot = document.createElement("div");
       foot.className = "provider-foot";
       const label = document.createElement("strong");
-      label.textContent = "ડેમો પ્રોફાઇલ";
+      label.textContent = t("demoProfile");
       const button = document.createElement("button");
       button.className = "btn";
-      button.textContent = "પ્રોફાઇલ જુઓ";
+      button.dataset.providerId = p.id;
+      button.textContent = t("viewProfile");
       button.addEventListener("click", () => {
         returnToResult = button;
         openProfile(p.id);
@@ -111,6 +145,7 @@ function show(id, restoreResult = false) {
 function openProfile(id) {
   const p = demoProviders.find((x) => x.id === id);
   if (!p) return;
+  currentProfile = p;
   $("pName").textContent = p.name;
   $("pArea").textContent = p.area;
   const serviceTags = p.services.map((service) => {
@@ -121,8 +156,10 @@ function openProfile(id) {
   });
   $("pServices").replaceChildren(...serviceTags);
   $("pAbout").textContent = p.about;
-  $("pExperience").textContent =
-    p.experience + " વર્ષનો અનુભવ · " + p.area + " (ડેમો માહિતી)";
+  $("pExperience").textContent = t("profileExperienceSummary", {
+    count: p.experience,
+    area: p.area,
+  });
   show("profileView");
 }
 $("categories").addEventListener("click", (e) => {
@@ -151,16 +188,6 @@ const fieldIds = {
   experienceYears: "providerExp",
   description: "providerDesc",
 };
-const errorMessages = {
-  displayName:
-    "નામ ઉમેરો (મહત્તમ 80 અક્ષર); HTML અથવા નિયંત્રણ અક્ષરો માન્ય નથી.",
-  city: "શહેર ઉમેરો (મહત્તમ 80 અક્ષર).",
-  serviceArea: "સેવાનો વિસ્તાર ઉમેરો (મહત્તમ 120 અક્ષર).",
-  services: "ઓછામાં ઓછી એક અલગ સેવા પસંદ કરો.",
-  experienceYears: "અનુભવ 0 થી 80 વચ્ચે પૂર્ણ વર્ષોમાં ઉમેરો અથવા ખાલી રાખો.",
-  description:
-    "પરિચય મહત્તમ 1200 અક્ષરનો હોવો જોઈએ; HTML અથવા નિયંત્રણ અક્ષરો માન્ય નથી.",
-};
 function readDraft() {
   return {
     displayName: $("providerName").value,
@@ -181,39 +208,39 @@ function readDraft() {
 function updatePreview() {
   const draft = readDraft();
   const result = inspectProviderPreviewDraft(draft);
-  $("previewName").textContent =
-    draft.displayName.trim() || "તમારી પ્રોફાઇલનો પ્રિવ્યૂ";
+  $("previewName").textContent = draft.displayName.trim() || t("previewTitle");
   $("previewArea").textContent =
     [draft.city.trim(), draft.serviceArea.trim()].filter(Boolean).join(" · ") ||
-    "શહેર / વિસ્તાર ઉમેરો";
+    t("previewAreaEmpty");
   $("previewServices").textContent = draft.services.length
     ? draft.services.join(" · ")
-    : "હજુ કોઈ સેવા પસંદ કરી નથી.";
-  $("previewConsent").textContent =
-    "ફોન: " +
-    (draft.phoneConsent ? "સ્થાનિક પસંદગી ચાલુ" : "જાહેર નથી") +
-    " · WhatsApp: " +
-    (draft.whatsappConsent ? "સ્થાનિક પસંદગી ચાલુ" : "જાહેર નથી");
+    : t("previewServicesEmpty");
+  $("previewConsent").textContent = t("previewConsent", {
+    phone: t(draft.phoneConsent ? "consentOn" : "consentOff"),
+    whatsapp: t(draft.whatsappConsent ? "consentOn" : "consentOff"),
+  });
   $("previewDescription").textContent = draft.description;
   $("previewExperience").textContent = Number.isNaN(draft.experienceYears)
-    ? "અનુભવ માન્ય નથી."
+    ? t("experienceInvalid")
     : draft.experienceYears === ""
-      ? "અનુભવ ઉમેરેલો નથી."
-      : draft.experienceYears + " વર્ષ";
-  $("previewAvailability").textContent = draft.available
-    ? "ઉપલબ્ધ (સ્થાનિક પ્રિવ્યૂ)"
-    : "હાલ વ્યસ્ત (સ્થાનિક પ્રિવ્યૂ)";
-  $("completionText").textContent =
-    result.completed + " / " + result.required + " જરૂરી વિગતો તૈયાર";
+      ? t("experienceEmpty")
+      : t("experienceYears", { count: Number(draft.experienceYears) });
+  $("previewAvailability").textContent = t(
+    draft.available ? "availablePreview" : "busyPreview",
+  );
+  $("completionText").textContent = t("completion", {
+    completed: result.completed,
+    required: result.required,
+  });
   for (const [field, id] of Object.entries(fieldIds)) {
     const invalid = validated && Object.hasOwn(result.errors, field);
     $(id).setAttribute("aria-invalid", String(invalid));
-    $(id + "Error").textContent = invalid ? errorMessages[field] : "";
+    $(id + "Error").textContent = invalid ? t("error." + field) : "";
   }
   if (validated)
     $("validationStatus").textContent = result.ok
-      ? "સ્થાનિક પ્રિવ્યૂ માન્ય છે. કંઈ સેવ કે પ્રકાશિત થયું નથી."
-      : "નીચે દર્શાવેલી વિગતો સુધારો. કંઈ સેવ કે પ્રકાશિત થયું નથી.";
+      ? t("validationValid")
+      : t("validationInvalid");
   return result;
 }
 $("providerForm").addEventListener("submit", (event) => {
@@ -244,5 +271,46 @@ $("resetSearch").addEventListener("click", () => {
   render();
   $("q").focus();
 });
-render();
-updatePreview();
+
+async function selectLocale(requested, persist = false) {
+  const request = ++localeRequest;
+  let next,
+    failed = false;
+  try {
+    next = await loadTranslator(requested);
+  } catch {
+    next = createTranslator("en");
+    failed = true;
+  }
+  // A slower earlier catalog must never replace a later language selection.
+  if (request !== localeRequest) return;
+  translator = next;
+  applyCatalog(document, translator);
+  $("localeSelect").value = translator.locale;
+  $("localeStatus").textContent = failed
+    ? t("languageUnavailable")
+    : t("languageChanged", {
+        language: SUPPORTED_LOCALES.find(
+          (item) => item.code === translator.locale,
+        ).name,
+      });
+  if (persist && !failed)
+    writeLocalePreference(preferenceStorage(), translator.locale);
+  const previousProviderId = returnToResult?.dataset.providerId;
+  render();
+  returnToResult =
+    [...document.querySelectorAll("#results article button")].find(
+      (button) => button.dataset.providerId === previousProviderId,
+    ) || null;
+  if (currentProfile) {
+    $("pExperience").textContent = t("profileExperienceSummary", {
+      count: currentProfile.experience,
+      area: currentProfile.area,
+    });
+  }
+  updatePreview();
+}
+$("localeSelect").addEventListener("change", (event) =>
+  selectLocale(event.target.value, true),
+);
+await selectLocale(readLocalePreference(preferenceStorage(), "gu"));

@@ -11,6 +11,8 @@ on:
       - '.github/workflows/oldx-branch-security-tests.yml'
       - 'functions/admin-backend/**'
       - 'features/service-providers/**'
+      - 'features/i18n/**'
+      - 'scripts/toolchain-compat.test.mjs'
       - 'scripts/chat-message-authorization-policy.mjs'
       - 'tests/firestore-emulator/chat-message-authorization-policy.test.mjs'
   workflow_dispatch:
@@ -40,3 +42,5 @@ jobs:
         run: npm run test:chat-message-authorization
       - name: Service provider module and offline QR integration tests (no Firebase)
         run: npm run test:service-providers
+      - name: Locale catalogs and dependency API compatibility
+        run: npm run test:i18n && npm run test:toolchain

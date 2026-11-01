@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
+import { BROWSER_ASSETS } from '../../scripts/build-static-assets.mjs';
 
 // This server deliberately exposes only the isolated preview and its pure
 // modules, never index.html, Firebase config, credentials or live integrations.
-const allowed = new Set(['/service-preview.html', ...[
-  'service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections'
-].map(name => `/features/service-providers/${name}.mjs`)]);
+const allowed = new Set(['/service-preview.html', ...BROWSER_ASSETS
+  .filter(path => path.startsWith('features/')).map(path => '/' + path)]);
 let server, browser, context, page, origin;
-let errors, remoteRequests;
+let errors, remoteRequests, requestedPaths;
 
 before(async () => {
   server = createServer(async (req, res) => {
@@ -31,7 +31,7 @@ after(async () => {
   if (server) await new Promise(resolve => server.close(resolve));
 });
 beforeEach(async () => {
-  errors = []; remoteRequests = [];
+  errors = []; remoteRequests = []; requestedPaths = [];
   context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   await context.route('**/*', route => {
     if (new URL(route.request().url()).origin !== origin) {
@@ -40,6 +40,7 @@ beforeEach(async () => {
     return route.continue();
   });
   page = await context.newPage();
+  page.on('request', request => requestedPaths.push(new URL(request.url()).pathname));
   page.on('pageerror', error => errors.push(error.message));
   await page.goto(origin + '/service-preview.html');
   await page.waitForFunction(() => document.querySelectorAll('#results article').length === 6);
@@ -128,4 +129,125 @@ test('320px mobile and desktop views have no horizontal overflow or inaccessible
     }
   }
   assert.equal(await page.locator('#providerForm input').evaluateAll(inputs => inputs.every(el => el.labels.length > 0)), true);
+});
+
+test('all three interface catalogs switch without changing provider data, drafts or consent', async () => {
+  assert.deepEqual(await page.locator('#localeSelect option').evaluateAll(options => options.map(option => option.value)), ['gu', 'en', 'hi']);
+  await page.locator('#results article button').first().click();
+  const providerName = await page.locator('#pName').textContent();
+  const providerAbout = await page.locator('#pAbout').textContent();
+  await page.locator('#providerTab').click();
+  await page.locator('#providerForm button[type="submit"]').click();
+  await page.locator('#providerName').fill('કિરણ / किरण / Kiran');
+  await page.locator('#providerDesc').fill('મારા શબ્દો — मेरे शब्द — my words');
+  await page.locator('#serviceOptions input[value="સુથાર"]').check();
+  await page.locator('#allowPhone').check();
+  for (const [locale, expected] of [['en', 'Create your service profile'], ['hi', 'अपनी सेवा प्रोफ़ाइल बनाएँ'], ['gu', 'તમારી સેવા પ્રોફાઇલ બનાવો']]) {
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code => document.documentElement.lang === code, locale);
+    assert.equal(await page.locator('#providerHeading').textContent(), expected);
+    assert.equal(await page.locator('#providerName').inputValue(), 'કિરણ / किरण / Kiran');
+    assert.equal(await page.locator('#providerDesc').inputValue(), 'મારા શબ્દો — मेरे शब्द — my words');
+    assert.equal(await page.locator('#previewDescription').textContent(), 'મારા શબ્દો — मेरे शब्द — my words');
+    assert.equal(await page.locator('#pName').textContent(), providerName);
+    assert.equal(await page.locator('#pAbout').textContent(), providerAbout);
+    assert.equal(await page.locator('#allowPhone').isChecked(), true);
+    assert.equal(await page.locator('#allowWhatsapp').isChecked(), false);
+    assert.equal(await page.locator('#serviceOptions input[value="સુથાર"]').isChecked(), true);
+    assert.equal(await page.locator('#providerCityError').textContent() !== '', true);
+    assert.equal(await page.locator('#providerView').isVisible(), true);
+    const stored = await page.evaluate(() => Object.fromEntries(Object.entries(localStorage)));
+    assert.deepEqual(stored, { 'oldx.preview.locale.v1': locale });
+  }
+});
+
+test('only selected catalogs load lazily and the allowlisted preference survives reload', async () => {
+  assert.equal(requestedPaths.includes('/features/i18n/catalogs/en.mjs'), true);
+  assert.equal(requestedPaths.includes('/features/i18n/catalogs/gu.mjs'), true);
+  assert.equal(requestedPaths.includes('/features/i18n/catalogs/hi.mjs'), false);
+  await page.locator('#localeSelect').selectOption('hi');
+  await page.waitForFunction(() => document.documentElement.lang === 'hi');
+  assert.equal(requestedPaths.includes('/features/i18n/catalogs/hi.mjs'), true);
+  assert.equal(await page.locator('#browseTab').textContent(), 'सेवाएँ खोजें');
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.lang === 'hi' && document.querySelectorAll('#results article').length === 6);
+  assert.equal(await page.locator('#localeSelect').inputValue(), 'hi');
+  await page.evaluate(() => localStorage.setItem('oldx.preview.locale.v1', '../../private'));
+  await page.reload();
+  await page.waitForFunction(() => document.documentElement.lang === 'gu' && document.querySelectorAll('#results article').length === 6);
+});
+
+test('a missing catalog falls back safely and blocked preference storage does not break the UI', async () => {
+  await page.route('**/catalogs/hi.mjs', route => route.abort());
+  await page.locator('#localeSelect').selectOption('hi');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  assert.match(await page.locator('#localeStatus').textContent(), /could not load/);
+  assert.equal(await page.locator('#results article').count(), 6);
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Blocked', 'SecurityError'); } });
+  });
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('#results article').length === 6);
+  await page.locator('#localeSelect').selectOption('en');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  await page.locator('#providerTab').click();
+  await page.locator('#providerName').fill('Test provider');
+  assert.equal(await page.locator('#previewName').textContent(), 'Test provider');
+});
+
+test('Gujarati, Hindi and English stay within narrow screens and large-text layouts', async () => {
+  for (const locale of ['en', 'hi', 'gu']) {
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code => document.documentElement.lang === code, locale);
+    for (const width of [320, 390, 768, 1280]) {
+      await page.setViewportSize({ width, height: 844 });
+      for (const tab of ['browseTab', 'providerTab']) {
+        await page.locator('#' + tab).click();
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} ${width}px ${tab}`);
+      }
+    }
+  }
+  await page.evaluate(() => {
+    const sizes = [...document.querySelectorAll('body *')].map(element => [element, parseFloat(getComputedStyle(element).fontSize)]);
+    for (const [element, size] of sizes) element.style.fontSize = `${size * 2}px`;
+  });
+  await page.setViewportSize({ width: 320, height: 844 });
+  const overflow = await page.evaluate(() => [...document.querySelectorAll('body *')]
+    .filter(element => !element.closest('[hidden]') && element.getBoundingClientRect().right > innerWidth + 1)
+    .map(element => ({ tag: element.tagName, id: element.id, right: Math.round(element.getBoundingClientRect().right) })).slice(0, 12));
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, JSON.stringify(overflow));
+});
+
+test('a slow earlier catalog cannot replace the latest language or its stored preference', async () => {
+  let release, started;
+  const wait = new Promise(resolve => { release = resolve; });
+  const requestStarted = new Promise(resolve => { started = resolve; });
+  await page.route('**/catalogs/hi.mjs', async route => { started(); await wait; await route.continue(); });
+  await page.locator('#localeSelect').selectOption('hi');
+  await requestStarted;
+  await page.locator('#localeSelect').selectOption('en');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  const response = page.waitForResponse('**/catalogs/hi.mjs');
+  release();
+  await response;
+  await page.evaluate(async () => {
+    await import('/features/i18n/catalogs/hi.mjs');
+    await new Promise(requestAnimationFrame);
+  });
+  assert.equal(await page.locator('html').getAttribute('lang'), 'en');
+  assert.equal(await page.locator('#localeSelect').inputValue(), 'en');
+  assert.equal(await page.evaluate(() => localStorage.getItem('oldx.preview.locale.v1')), 'en');
+});
+
+test('language changes preserve profile identity and restore focus to the same provider', async () => {
+  await page.locator('#sort').selectOption('name');
+  const providerId = await page.locator('#results article button').first().getAttribute('data-provider-id');
+  await page.locator('#results article button').first().click();
+  const name = await page.locator('#pName').textContent();
+  await page.locator('#localeSelect').selectOption('en');
+  await page.waitForFunction(() => document.documentElement.lang === 'en');
+  assert.equal(await page.locator('#pName').textContent(), name);
+  await page.locator('#backBtn').click();
+  assert.equal(await page.evaluate(() => document.activeElement.dataset.providerId), providerId);
+  assert.equal(await page.locator('[data-i18n] input').count(), 0);
 });

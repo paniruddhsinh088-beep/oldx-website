@@ -29,3 +29,13 @@ test("rejects malformed filters and excludes incomplete public records", () => {
   }
   assert.deepEqual(searchServiceProviders([{ id: "x", displayName: "Missing fields" }]).ids, []);
 });
+
+test('matches canonically equivalent Hindi and Latin text without rewriting provider data', () => {
+  const record = { id: 'unicode', displayName: 'क़ासिम', city: 'Café',
+    services: ['Réparation'], available: true, experienceYears: 4 };
+  const original = structuredClone(record);
+  for (const filters of [{ query: 'क़ासिम' }, { city: 'Cafe\u0301' }, { service: 'Re\u0301paration' }]) {
+    assert.deepEqual(searchServiceProviders([record], filters).ids, ['unicode']);
+  }
+  assert.deepEqual(record, original);
+});

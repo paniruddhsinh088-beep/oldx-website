@@ -30,8 +30,8 @@ test('homepage preview link and all transitive module imports exist in the stati
     assert.match(await readFile(join(output, 'index.html'), 'utf8'), /href="\.\/service-preview\.html"/);
     for (const asset of packaged.filter(name => name.endsWith('.mjs'))) {
       const source = await readFile(join(output, asset), 'utf8');
-      for (const [, imported] of source.matchAll(/from\s+['"](.+?)['"]/g)) {
-        assert.equal(imported.startsWith('./'), true, 'preview modules must not import remote packages');
+      for (const [, imported] of source.matchAll(/(?:from\s+|import\s*\(\s*)['"]([^'"]+)['"]/g)) {
+        assert.match(imported, /^\.{1,2}\//, 'preview modules must not import remote packages');
         assert.equal(packaged.includes(posix.normalize(posix.join(posix.dirname(asset), imported))), true, imported);
       }
     }

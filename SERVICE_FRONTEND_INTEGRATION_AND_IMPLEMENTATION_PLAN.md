@@ -9,9 +9,8 @@ now uses modular synthetic fixtures, the shared profile validator, accessible
 local validation, independent consent controls, availability filters and focus
 restoration. This implements part of the UI-only slice below. No backend-connected
 slice is enabled. See `docs/service-preview-development.md` and the review progress
-record for current behavior and browser evidence. Gujarati is the preview UI
-language; full English/Hindi locale coverage and human translation review remain
-outstanding.
+record for current behavior and browser evidence. The preview now has gu/en/hi catalogs and a local language selector;
+whole-application coverage and native-speaker translation review remain outstanding.
 
 ## 1. Confirmed frontend integration points
 

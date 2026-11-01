@@ -164,3 +164,11 @@ The normal fast-forward push preserved the original `37209fd` unchanged. No main
 3. Continue bounded Store catalogue and public-field projection work under the existing contracts.
 4. Local Emulator downloads remain blocked by environment policy despite the owner's narrow approval; the toolset cannot apply host-policy changes. CI Emulator evidence is available as recorded above.
 5. Live provider contact/enquiries/reviews, media processing/uploads, migrations, backend provisioning, data retention/deletion and any deployment remain under existing owner gates. Current release decision remains HOLD/NO-GO.
+
+## Locale and dependency continuation batch
+
+The next substantial batch implements review-only gu/hi/en catalogs and language
+switching, canonical Unicode search comparisons, large-text navigation recovery,
+and scoped development-tool dependency fixes. See
+`docs/review-progress-2026-11-02-locale-batch.md` for the latest exact test/audit/CI
+evidence. Earlier checkpoints above remain historical results for their named SHAs.

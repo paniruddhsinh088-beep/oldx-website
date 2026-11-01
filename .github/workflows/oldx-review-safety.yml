@@ -95,6 +95,12 @@ jobs:
       - name: Install test-only Firebase tooling
         run: npm ci --ignore-scripts --no-audit --no-fund
 
+      - name: Validate locale catalogs and fallback boundaries
+        run: npm run test:i18n
+
+      - name: Verify scoped CLI dependency compatibility (no cloud access)
+        run: npm run test:toolchain
+
       - name: Validate static browser asset package
         run: npm run test:static-build
 

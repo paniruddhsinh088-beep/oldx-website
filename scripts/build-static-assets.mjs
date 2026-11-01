@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 export const BROWSER_ASSETS = Object.freeze([
   'index.html', 'admin.html', 'service-preview.html', 'firebase-config-guard.js', 'firebase-env.js',
   ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections']
-    .map(name => `features/service-providers/${name}.mjs`)
+    .map(name => `features/service-providers/${name}.mjs`),
+  ...['i18n', 'dom', 'preference', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
+    .map(name => `features/i18n/${name}.mjs`)
 ]);
 
 export async function buildStaticAssets(root = fileURLToPath(new URL('../', import.meta.url))) {
