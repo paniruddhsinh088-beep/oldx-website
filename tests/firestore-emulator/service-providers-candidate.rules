@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Candidate service-provider isolation rules for emulator evaluation ONLY.
+// Do not deploy as the project's production rules; this file intentionally
+// denies all legacy collections and all service writes pending backend review.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /serviceProviders/{providerId} {
+      allow get: if resource.data.status == 'active';
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+    match /serviceProviderPrivate/{providerId} {
+      allow read, write: if false;
+    }
+    match /serviceProviderReviews/{reviewId} {
+      allow get: if resource.data.status == 'published';
+      allow list: if false;
+      allow create, update, delete: if false;
+    }
+    match /serviceProviderAudit/{eventId} {
+      allow read, write: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
