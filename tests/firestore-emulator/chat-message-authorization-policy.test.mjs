@@ -15,6 +15,14 @@ test("non-participant cannot mutate a chat", () => {
   }), { ok: false, error: "not_participant" });
 });
 
+test("malformed chat membership fails closed for every mutation", () => {
+  for (const malformed of [undefined, [], ["synthetic-a"], ["synthetic-a", "synthetic-a"], ["synthetic-a", "synthetic-b", "synthetic-c"], ["synthetic-a", null]]) {
+    assert.equal(authorizeChatMutation({
+      action: "send", actorUid: "synthetic-a", senderUid: "synthetic-a", participants: malformed
+    }).ok, false);
+  }
+});
+
 test("sender UID spoofing is rejected before message send", () => {
   assert.equal(authorizeChatMutation({
     action: "send", actorUid: "synthetic-a", senderUid: "synthetic-b", participants
