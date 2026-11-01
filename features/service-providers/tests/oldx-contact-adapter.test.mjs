@@ -95,3 +95,18 @@ test("invalid action is rejected before reading private data",async()=>{
   );
   assert.equal(db.calls.length,0);
 });
+
+
+test("account switch while reading blocks fails closed",async()=>{
+  const session={currentUser:{uid:"buyer"}};
+  const db={collection(){return {doc(){return {async get(){
+    session.currentUser={uid:"other"};
+    return {exists:true,data:()=>({blockedUsers:[]})};
+  }};}};}};
+  let called=0;
+  const result=await invokeServiceContact({
+    ...args,auth:session,db,action:"chat",onAllowed:()=>{called++;}
+  });
+  assert.equal(result.allowed,false);
+  assert.equal(called,0);
+});
