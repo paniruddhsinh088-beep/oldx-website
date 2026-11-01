@@ -71,3 +71,27 @@ test("allowed contact invokes existing host callback",async()=>{
   assert.equal(result.allowed,true);
   assert.equal(count,1);
 });
+
+
+test("host action errors propagate instead of appearing as permission failures",async()=>{
+  const db=fakeDb({buyer:{blockedUsers:[]},provider:{blockedUsers:[]}});
+  await assert.rejects(
+    invokeServiceContact({...args,db,action:"chat",onAllowed:async()=>{throw new Error("Chat unavailable");}}),
+    /Chat unavailable/
+  );
+});
+test("missing contact handler is a programming error",async()=>{
+  const db=fakeDb({buyer:{blockedUsers:[]},provider:{blockedUsers:[]}});
+  await assert.rejects(
+    invokeServiceContact({...args,db,action:"chat"}),
+    TypeError
+  );
+});
+test("invalid action is rejected before reading private data",async()=>{
+  const db=fakeDb();
+  await assert.rejects(
+    invokeServiceContact({...args,db,action:"delete",onAllowed:()=>{}}),
+    TypeError
+  );
+  assert.equal(db.calls.length,0);
+});
