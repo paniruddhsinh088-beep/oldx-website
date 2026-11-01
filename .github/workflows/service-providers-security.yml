@@ -39,6 +39,8 @@ jobs:
         run: node --test features/service-providers/tests/validation.test.mjs
       - name: Validate review rules at UI level (no Firebase required)
         run: node --test features/service-providers/tests/reviews.test.mjs
+      - name: Validate service contact restrictions (no Firebase required)
+        run: node --test features/service-providers/tests/contact-policy.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
