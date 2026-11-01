@@ -39,6 +39,8 @@ jobs:
           java-version: "21"
       - name: Validate service profile inputs (no Firebase required)
         run: node --test features/service-providers/tests/validation.test.mjs
+      - name: Validate approved-only public service profile lookup
+        run: node --test features/service-providers/tests/service-profile-public-adapter.test.mjs
       - name: Validate review rules at UI level (no Firebase required)
         run: node --test features/service-providers/tests/reviews.test.mjs
       - name: Validate service contact restrictions (no Firebase required)
