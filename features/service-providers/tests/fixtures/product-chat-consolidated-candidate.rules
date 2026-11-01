@@ -34,6 +34,13 @@ service cloud.firestore {
     allow get, list: if roomParticipant(chatId);
     allow create: if roomParticipant(chatId)
      && request.resource.data.keys().hasAll(['senderUid','text','createdAt','status'])
+     && request.resource.data.keys().hasOnly(['senderUid','senderName','text','attachment','status','time','createdAt'])
+     && (!('attachment' in request.resource.data) || request.resource.data.attachment == null || (request.resource.data.attachment is map
+      && request.resource.data.attachment.keys().hasAll(['type','name','data'])
+      && request.resource.data.attachment.keys().hasOnly(['type','name','data'])
+      && request.resource.data.attachment.type is string
+      && request.resource.data.attachment.name is string
+      && request.resource.data.attachment.data is string))
      && request.resource.data.senderUid == request.auth.uid
      && request.resource.data.text is string
      && request.resource.data.text.size() <= 10000
