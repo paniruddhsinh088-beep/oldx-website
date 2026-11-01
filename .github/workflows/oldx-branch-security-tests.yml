@@ -1,0 +1,35 @@
+name: OLDX Branch Security Tests
+
+on:
+  push:
+    branches:
+      - security-hardening-review
+    paths:
+      - '.github/workflows/oldx-branch-security-tests.yml'
+      - 'functions/admin-backend/**'
+      - 'scripts/chat-message-authorization-policy.mjs'
+      - 'tests/firestore-emulator/chat-message-authorization-policy.test.mjs'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  security-policy-tests:
+    name: Admin and chat policy checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout reviewed branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Admin backend tests (synthetic, no Firebase)
+        run: npm run test:admin-backend
+      - name: Chat message authorization tests (synthetic)
+        run: npm run test:chat-message-authorization
