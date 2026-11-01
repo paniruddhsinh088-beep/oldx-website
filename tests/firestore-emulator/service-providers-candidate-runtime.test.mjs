@@ -192,3 +192,17 @@ test('profile rejects non-text service IDs', async () => {
     ...base, serviceIds: [{ category: 'painting' }]
   }));
 });
+
+test('provider profile rejects invalid service and city identifiers', async () => {
+  const db = env.authenticatedContext('identifier-check').firestore();
+  const base = {
+    ownerUid: 'identifier-check', displayName: 'Repair Shop',
+    status: 'pending', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  };
+  await assertFails(setDoc(doc(db, 'serviceProviders/identifier-check'), {
+    ...base, cityId: 'ahmedabad', serviceIds: ['Invalid Service']
+  }));
+  await assertFails(setDoc(doc(db, 'serviceProviders/identifier-check'), {
+    ...base, cityId: 'Ahmedabad City', serviceIds: ['repairs']
+  }));
+});
