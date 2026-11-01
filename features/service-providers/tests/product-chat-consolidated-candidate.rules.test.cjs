@@ -31,3 +31,16 @@ test("outsider and forgery blocked across room and messages",async()=>{
  await assertFails(setDoc(doc(buyer,"chats/existing/messages/forged"),{senderUid:"seller",text:"hi",status:"sent",createdAt:1}));
  await assertFails(setDoc(doc(buyer,"chats/existing"),{participants:["buyer","stranger"]},{merge:true}));
 });
+
+test("service-prefixed rooms cannot inherit product chat permissions",async()=>{
+ await env.withSecurityRulesDisabled(async c=>{
+  await setDoc(doc(c.firestore(),"chats/service_fake"),{participants:["buyer","seller"],productId:"p1"});
+  await setDoc(doc(c.firestore(),"chats/service_fake/messages/old"),{senderUid:"buyer",text:"hi",status:"sent",createdAt:1});
+ });
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertFails(getDoc(doc(buyer,"chats/service_fake")));
+ await assertFails(getDoc(doc(buyer,"chats/service_fake/messages/old")));
+ await assertFails(setDoc(doc(buyer,"chats/service_fake/messages/new"),{senderUid:"buyer",text:"hi",status:"sent",createdAt:1}));
+ await assertFails(setDoc(doc(buyer,"chats/service_fake"),{typing_buyer:true},{merge:true}));
+ await assertFails(setDoc(doc(buyer,"chats/service_new"),{participants:["buyer","seller"],productId:"p1"}));
+});
