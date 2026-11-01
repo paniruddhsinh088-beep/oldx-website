@@ -41,3 +41,53 @@ test("fails safely without browser support", async () => {
   const result = await downloadProviderCardAndQr(profile, {}, async () => svg);
   assert.equal(result.code, "BROWSER_APIS_UNAVAILABLE");
 });
+
+test("mobile QR-only action triggers exactly one download", async () => {
+  const names = [];
+  const browser = {
+    Blob: class { constructor(parts, options) { this.parts = parts; this.type = options.type; } },
+    URL: { createObjectURL: () => "blob:test", revokeObjectURL: () => {} },
+    document: {
+      body: { appendChild: () => {} },
+      createElement: () => ({
+        style: {},
+        set download(name) { names.push(name); },
+        click: () => {},
+        remove: () => {}
+      })
+    }
+  };
+  const result = await downloadProviderCardAndQr(profile, browser, async () => svg, "qr");
+  assert.equal(result.ok, true);
+  assert.equal(result.downloaded, 1);
+  assert.deepEqual(names, ["oldx-provider-worker_42-qr.svg"]);
+});
+
+test("mobile card-only action triggers exactly one download", async () => {
+  const names = [];
+  const browser = {
+    Blob: class { constructor(parts, options) { this.parts = parts; this.type = options.type; } },
+    URL: { createObjectURL: () => "blob:test", revokeObjectURL: () => {} },
+    document: {
+      body: { appendChild: () => {} },
+      createElement: () => ({
+        style: {},
+        set download(name) { names.push(name); },
+        click: () => {},
+        remove: () => {}
+      })
+    }
+  };
+  const result = await downloadProviderCardAndQr(profile, browser, async () => svg, "card");
+  assert.equal(result.ok, true);
+  assert.equal(result.downloaded, 1);
+  assert.deepEqual(names, ["oldx-provider-worker_42-card.svg"]);
+});
+
+test("invalid selection is rejected without downloading", async () => {
+  const result = await downloadProviderCardAndQr(profile, {
+    Blob: class {}, URL: { createObjectURL() {}, revokeObjectURL() {} },
+    document: { createElement() {} }
+  }, async () => svg, "admin");
+  assert.equal(result.code, "INVALID_DOWNLOAD_SELECTION");
+});
