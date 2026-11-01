@@ -64,3 +64,8 @@ test("legacy attachment shape accepted; malformed and unexpected fields rejected
  await assertFails(setDoc(doc(buyer,"chats/existing/messages/attachment-bad"),{...base,attachment:{type:"image/jpeg",data:123}}));
  await assertFails(setDoc(doc(buyer,"chats/existing/messages/unexpected"),{...base,adminApproved:true}));
 });
+
+test("oversized inline attachments cannot be written to Firestore",async()=>{
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/huge-attachment"),{senderUid:"buyer",text:"",status:"sent",createdAt:serverTimestamp(),attachment:{type:"image/jpeg",name:"huge.jpg",data:"x".repeat(750001)}}));
+});
