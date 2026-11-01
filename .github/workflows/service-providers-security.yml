@@ -57,6 +57,8 @@ jobs:
         run: node --test features/service-providers/tests/legacy-block-preflight.test.mjs
       - name: Validate legacy block reconciliation planner
         run: node --test features/service-providers/tests/legacy-block-reconciliation.test.mjs
+      - name: Validate legacy block parity audit
+        run: node --test features/service-providers/tests/legacy-block-parity.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
