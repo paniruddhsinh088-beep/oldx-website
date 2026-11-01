@@ -39,9 +39,9 @@ import { mountPublicServiceProfile } from "./public-profile.js";
 
 mountServiceProviderForm(document.getElementById("profile-form"), {onSubmit: async profile => {
   const summary = document.getElementById("form-result");
-  summary.textContent = `Validated: ${profile.displayName} — ${profile.serviceCategories.join(", ")} (${profile.city}, ${profile.district}). Added to this demo only; not saved.`;
+  summary.textContent = `Validated: ${profile.displayName} — ${profile.serviceCategories.join(", ")} (${profile.city}, ${profile.district}). Shown as active in this demo only; real profiles require admin approval. Not saved.`;
   profiles.unshift({ ...profile, id: "demo-new-" + (++demoCounter), status: "active" });
-  refreshDirectory();
+  directory.setProfiles(profiles);
 }});
 let demoCounter = 0;
 const profiles = [
@@ -74,20 +74,15 @@ function showProfile(id) {
   profileSection.hidden = false;
   document.title = item.displayName + " — OLDX Demo";
 }
-let directory;
-function refreshDirectory() {
-  directory?.destroy?.();
-  directory = mountPublicServiceDirectory(document.getElementById("directory"), {
-    profiles,
-    onProfileOpen(id) {
-      const url = new URL(location.href);
-      url.searchParams.set("serviceProvider", id);
-      history.pushState({ serviceProvider: id }, "", url);
-      showProfile(id);
-    }
-  });
-}
-refreshDirectory();
+const directory = mountPublicServiceDirectory(document.getElementById("directory"), {
+  profiles,
+  onProfileOpen(id) {
+    const url = new URL(location.href);
+    url.searchParams.set("serviceProvider", id);
+    history.pushState({ serviceProvider: id }, "", url);
+    showProfile(id);
+  }
+});
 function syncFromUrl() {
   const id = new URL(location.href).searchParams.get("serviceProvider");
   if (id) showProfile(id);
