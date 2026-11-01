@@ -40,7 +40,8 @@ service cloud.firestore {
       && request.resource.data.attachment.keys().hasOnly(['type','name','data'])
       && request.resource.data.attachment.type is string
       && request.resource.data.attachment.name is string
-      && request.resource.data.attachment.data is string))
+      && request.resource.data.attachment.data is string
+      && request.resource.data.attachment.data.size() <= 750000))
      && request.resource.data.senderUid == request.auth.uid
      && request.resource.data.text is string
      && request.resource.data.text.size() <= 10000
