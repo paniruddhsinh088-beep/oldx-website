@@ -61,3 +61,62 @@ No deployment, rules publication, live data access, migration, billing, credenti
 Next safe task: restore dependency installation through the managed proxy, rerun the complete Service suite with the real qrcode library, then run the isolated demo-project Rules Emulator suites. Continue the existing security roadmap with source-only review while runtime/owner approval gates remain unresolved.
 
 This is a local review batch; no PR, remote push, merge, or CI run is claimed.
+
+## Continued development batch — 2 November 2026
+
+Preserved `37209fdc874de321445b9be37647128003614a72` unchanged as an ancestor. Branch verified as `security-hardening-review`; remote was fetched and verified at `15824c632d21adeab3bcd311be242640d098c84c` before new work. No rebase, amend, reset or force push was used.
+
+### Completed work
+
+1. Restored dependency access using the executor network permission, without changing proxy/network policy. All original QR integration tests now pass with qrcode@1.5.4. Added exact development test dependencies, package-lock.json, reproducible npm ci workflows and ignored generated local artifacts. An offline clean npm ci installed 736 packages successfully. Firebase CLI 13.35.1 emits a superstatic Node-24 engine/deprecation warning; local CLI startup succeeds, but emulator behavior remains unverified until binaries can be downloaded.
+2. Added a fixed-suite emulator runner that validates known demo projects, expected rule files, exact loopback hosts/ports and absence of Hosting/Functions. Unexpected project environment variables, remote emulator hosts, extra config and unknown CLI arguments fail closed before startup. Root Firebase configuration and candidate rules were not changed.
+3. Fixed a verified consent defect: WhatsApp inherited phone-call consent. It now requires separate whatsappConsent and hasPublicWhatsapp flags, defaulting off when absent. Phone-only, WhatsApp-only, blocked, own-profile and guest gates remain covered. This is a pure policy model, not live enforcement.
+4. Completed the next safe Service UI slice: modular synthetic fixtures and DOM behavior, shared profile validation, required-field completion, readable field errors, independent contact-choice preview, experience/availability/description preview, availability discovery filter, search reset and keyboard focus restoration. Invalid partial numeric input is rejected even when the browser exposes an empty value. No local draft persistence or live save is added.
+5. Fixed a verified packaging defect: the homepage linked to service-preview.html but the old static build omitted it. Added an explicit browser-asset allowlist and tests for its transitive imports, private/server artifact exclusion, stale-output removal, missing config and symlink refusal. This changes build source only; no build was deployed.
+6. Added five isolated Chromium browser tests covering the synthetic discovery/profile/onboarding flow, XSS-safe text, phone/WhatsApp choice independence, no persistence, no remote requests, labels/focus and layouts at 320/390/768/1280px. Existing Chromium is used; playwright-core downloads no browser.
+7. Inspected existing Vercel Git deployment evidence read-only. Deployment dpl_XwnA35L6zSeZJJCjh6S8bzrCeHkL was a Git-source preview for this review branch at older commit 171024988fe20aeddd73f757621d2b50a9178beb. To honor the no-deploy instruction when pushing, vercel.json now explicitly disables automatic Git deployments only for security-hardening-review. The supported git.deploymentEnabled branch mapping was checked in the published Vercel documentation. No provider account setting was written.
+
+### Latest complete local test batch
+
+All 24 runnable non-emulator scripts passed, zero failures/skips. Totals below are the actual latest runner output; suites overlap (for example, profile migration and preview source tests also run inside safety). Do not sum these as distinct coverage. Earlier history in this document reported file-level summaries from the initial runner; the network-enabled final run reports individual tests.
+
+| Command | Exit | Latest result |
+| --- | --- | --- |
+| `npm run test:emulator:safety` | 0 | tests 78; pass 78; fail 0; skipped 0 |
+| `npm run test:profile-migration` | 0 | tests 11; pass 11; fail 0; skipped 0 |
+| `npm run test:admin-backend` | 0 | tests 108; pass 108; fail 0; skipped 0 |
+| `npm run test:firebase-config` | 0 | tests 6; pass 6; fail 0; skipped 0 |
+| `npm run test:product-migration` | 0 | tests 11; pass 11; fail 0; skipped 0 |
+| `npm run test:product-category` | 0 | tests 8; pass 8; fail 0; skipped 0 |
+| `npm run test:product-image-classifier` | 0 | tests 9; pass 9; fail 0; skipped 0 |
+| `npm run test:image-upload-contract` | 0 | tests 7; pass 7; fail 0; skipped 0 |
+| `npm run test:image-lifecycle` | 0 | tests 8; pass 8; fail 0; skipped 0 |
+| `npm run test:image-upload-abuse` | 0 | tests 12; pass 12; fail 0; skipped 0 |
+| `npm run test:inbox-summary` | 0 | tests 5; pass 5; fail 0; skipped 0 |
+| `npm run test:chat-read-receipt` | 0 | tests 5; pass 5; fail 0; skipped 0 |
+| `npm run test:chat-message-authorization` | 0 | tests 15; pass 15; fail 0; skipped 0 |
+| `npm run test:account-deletion` | 0 | tests 7; pass 7; fail 0; skipped 0 |
+| `npm run test:privacy-policy` | 0 | tests 12; pass 12; fail 0; skipped 0 |
+| `npm run test:data-requests` | 0 | tests 7; pass 7; fail 0; skipped 0 |
+| `npm run test:chat-privacy` | 0 | tests 9; pass 9; fail 0; skipped 0 |
+| `npm run test:chat-block-policy` | 0 | tests 12; pass 12; fail 0; skipped 0 |
+| `npm run test:chat-private-user-state` | 0 | tests 9; pass 9; fail 0; skipped 0 |
+| `npm run test:service-providers` | 0 | tests 136; pass 136; fail 0; skipped 0 |
+| `npm run test:emulator:guard` | 0 | tests 9; pass 9; fail 0; skipped 0 |
+| `npm run test:service-preview` | 0 | tests 8; pass 8; fail 0; skipped 0 |
+| `npm run test:service-preview:browser` | 0 | tests 5; pass 5; fail 0; skipped 0 |
+| `npm run test:static-build` | 0 | tests 3; pass 3; fail 0; skipped 0 |
+
+Further targeted safety and static-build checks passed after formatting/source-test updates. All 149 tracked/new JavaScript files passed node --check; all three workflow YAML files parsed successfully; git diff --check passed. npm audit --omit=dev reported zero runtime dependency vulnerabilities. This audit excludes the development toolchain and is not a full dependency/security clearance.
+
+### Remaining external blocker
+
+Firestore startup used demo-oldx-emulator and Storage startup used demo-oldx-storage; both attempted only official Firebase emulator binaries and exited with 403 Domain forbidden from storage.googleapis.com. The baseline command was repeated through the new guarded runner and hit the same policy boundary. Chat and Service Rules suites were not rerun against an unavailable Firestore binary; no runtime Rules success is claimed.
+
+The owner approved HTTPS downloads from storage.googleapis.com only for official Firebase Emulator binaries in this isolated environment. Available cloud-environment tools expose status/diagnostics, not host-policy mutation, so the approval could not be applied here. No network bypass, policy-file edits, alternate mirror, live Firebase read, login, billing or deployment was attempted.
+
+### Review and continuation
+
+The source batch is ready for a normal fast-forward push to security-hardening-review after final diff/branch checks. Preserve 37209fd and never push main. Remote/CI observations will be recorded separately after the push. No PR or merge is needed for this branch-only batch.
+
+Next safe tasks: inspect the exact-commit branch CI results and fix any verified source failures; complete offline language-catalog architecture for gu/en/hi without claiming translation review or changing user content; continue bounded Store/Service public-view work. Trusted runtime, media uploads, live enquiry/review writes, migrations and actual deployments remain under the existing owner approval gates. Release status remains HOLD/NO-GO.

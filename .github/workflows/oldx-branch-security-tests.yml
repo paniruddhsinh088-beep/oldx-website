@@ -5,12 +5,14 @@ on:
     branches:
       - security-hardening-review
     paths:
+      - 'package-lock.json'
+      - 'package.json'
+      - 'scripts/*emulator*.mjs'
       - '.github/workflows/oldx-branch-security-tests.yml'
       - 'functions/admin-backend/**'
       - 'features/service-providers/**'
       - 'scripts/chat-message-authorization-policy.mjs'
       - 'tests/firestore-emulator/chat-message-authorization-policy.test.mjs'
-      - 'package.json'
   workflow_dispatch:
 
 permissions:
@@ -31,7 +33,7 @@ jobs:
         with:
           node-version: '20'
       - name: Install free Node dependencies (no scripts, no cloud access)
-        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Admin backend tests (synthetic, no Firebase)
         run: npm run test:admin-backend
       - name: Chat message authorization tests (synthetic)

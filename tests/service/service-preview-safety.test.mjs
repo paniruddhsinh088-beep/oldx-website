@@ -3,6 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const html = await readFile(new URL('../../service-preview.html', import.meta.url), 'utf8');
+const modules = await Promise.all(['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections']
+  .map(name => readFile(new URL('../../features/service-providers/' + name + '.mjs', import.meta.url), 'utf8')));
+const source = [html, ...modules].join('\n');
 
 test('Service preview is prominently identified as demo-only', () => {
   assert.match(html, /UI PREVIEW ONLY/);
@@ -11,8 +14,8 @@ test('Service preview is prominently identified as demo-only', () => {
 });
 
 test('Service preview does not connect to Firebase or remote APIs', () => {
-  assert.doesNotMatch(html, /firebase-app|firebase-firestore|firebase-storage|getFirestore\s*\(|getStorage\s*\(|initializeApp\s*\(/i);
-  assert.doesNotMatch(html, /\bfetch\s*\(|XMLHttpRequest|WebSocket\s*\(/);
+  assert.doesNotMatch(source, /firebase-app|firebase-firestore|firebase-storage|getFirestore\s*\(|getStorage\s*\(|initializeApp\s*\(/i);
+  assert.doesNotMatch(source, /\bfetch\s*\(|XMLHttpRequest|WebSocket\s*\(/);
 });
 
 test('Contact actions remain disabled in the demo', () => {
@@ -27,7 +30,15 @@ test('Public phone and WhatsApp consent default to off', () => {
 });
 
 test('Dynamic profile text and service labels use safe DOM text APIs', () => {
-  assert.match(html, /tag\.textContent=service/);
-  assert.match(html, /\$\("pServices"\)\.replaceChildren\(\.\.\.serviceTags\)/);
-  assert.doesNotMatch(html, /\.innerHTML\s*=/);
+  assert.match(source, /tag\.textContent\s*=\s*service/);
+  assert.match(source, /\$\("pServices"\)\.replaceChildren\(\.\.\.serviceTags\)/);
+  assert.doesNotMatch(source, /\.innerHTML\s*=/);
+});
+
+test('Local form validation is modular and has no persistence or publication path', () => {
+  assert.match(html, /type="module" src="\.\/features\/service-providers\/service-preview\.mjs"/);
+  assert.match(source, /inspectProviderPreviewDraft/);
+  assert.doesNotMatch(source, /localStorage|sessionStorage|indexedDB|sendBeacon|\.submit\s*\(/);
+  assert.match(html, /id="providerForm" novalidate/);
+  assert.match(html, /id="validationStatus" role="status"/);
 });

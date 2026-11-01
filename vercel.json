@@ -1,4 +1,9 @@
 {
-  "buildCommand": "node scripts/generate-firebase-env.js && mkdir -p public && cp index.html admin.html firebase-config-guard.js firebase-env.js public/",
-  "outputDirectory": "public"
+  "buildCommand": "node scripts/generate-firebase-env.js && node scripts/build-static-assets.mjs",
+  "outputDirectory": "public",
+  "git": {
+    "deploymentEnabled": {
+      "security-hardening-review": false
+    }
+  }
 }

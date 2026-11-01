@@ -1,6 +1,13 @@
 # Vercel Staging and Firebase Environment Separation
 
 ## Scope and safety
+
+**Current development boundary (2 November 2026):** `vercel.json` disables automatic
+Git deployments for `security-hardening-review` using `git.deploymentEnabled`.
+Pushing reviewed commits is not approval to publish a preview. Any future
+reactivation of branch deployments requires explicit owner approval. No provider
+account settings or other branch deployment policies are changed by this guard.
+
 This plan applies to the `security-hardening-review` branch only. It does not authorize a Production deployment, changes to Production Firebase, or changes to the Vercel Production environment. Do not merge to `main` or deploy to the Production domain without separate owner approval.
 
 ## Current repository facts

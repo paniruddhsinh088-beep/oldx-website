@@ -5,11 +5,11 @@
   "description": "Local safety checks for the OLDX security review branch",
   "scripts": {
     "test:emulator:safety": "node --test tests/firestore-emulator/safety.test.mjs tests/firestore-emulator/fixtures.test.mjs tests/firestore-emulator/firebase-config-safety.test.mjs tests/firestore-emulator/rules-baseline.test.mjs tests/firestore-emulator/deployment-boundary.test.mjs tests/firestore-emulator/profile-migration-transform.test.mjs tests/firestore-emulator/profile-access-policy-model.test.mjs tests/firestore-emulator/admin-authorization-model.test.mjs tests/firestore-emulator/xss-rendering-source.test.mjs tests/firestore-emulator/xss-product-detail-source.test.mjs tests/firestore-emulator/xss-product-card-cart-myads.test.mjs tests/firestore-emulator/xss-search-store-source.test.mjs tests/firestore-emulator/product-photo-removal-source.test.mjs tests/firestore-emulator/product-image-processing-source.test.mjs tests/storage-emulator/candidate-rules-source.test.mjs tests/service/service-preview-safety.test.mjs tests/service/home-service-preview-entry.test.mjs",
-    "test:emulator:rules": "firebase emulators:exec --only firestore --project demo-oldx-emulator --config firebase.emulator.json \"node --test tests/firestore-emulator/rules-runtime.test.mjs tests/firestore-emulator/admin-atomic-audit.test.mjs\"",
+    "test:emulator:rules": "node scripts/run-emulator-tests.mjs baseline",
     "test:profile-migration": "node --test tests/firestore-emulator/profile-migration-transform.test.mjs",
     "test:admin-backend": "node --test functions/admin-backend/*.test.mjs",
     "test:firebase-config": "node --test scripts/generate-firebase-env.test.js",
-    "test:storage:rules": "firebase emulators:exec --only storage --project demo-oldx-storage --config firebase.storage-emulator.json \"node --test tests/storage-emulator/rules-runtime.test.mjs\"",
+    "test:storage:rules": "node scripts/run-emulator-tests.mjs storage",
     "test:product-migration": "node --test tests/firestore-emulator/product-public-private-transform.test.mjs",
     "test:product-category": "node --test tests/firestore-emulator/product-category-schema.test.mjs",
     "test:product-image-classifier": "node --test tests/firestore-emulator/product-image-reference-classifier.test.mjs",
@@ -25,14 +25,24 @@
     "test:chat-privacy": "node --test tests/firestore-emulator/chat-privacy-policy.test.mjs",
     "test:chat-block-policy": "node --test tests/firestore-emulator/chat-block-relationship-policy.test.mjs",
     "test:chat-private-user-state": "node --test tests/firestore-emulator/chat-private-user-state-policy.test.mjs",
-    "test:chat-private-user-state:rules": "firebase emulators:exec --only firestore --project demo-oldx-chat-private-state --config firebase.chat-private-user-state-emulator.json \"node --test tests/firestore-emulator/chat-private-user-state-runtime.test.mjs\"",
+    "test:chat-private-user-state:rules": "node scripts/run-emulator-tests.mjs chat-private-state",
     "test:service-providers": "node --test features/service-providers/*.test.mjs",
-    "test:service-providers:rules": "firebase emulators:exec --only firestore --project demo-oldx-service-providers --config firebase.service-providers-emulator.json \"node --test tests/firestore-emulator/service-providers-candidate-runtime.test.mjs\""
+    "test:service-providers:rules": "node scripts/run-emulator-tests.mjs service-providers",
+    "test:emulator:guard": "node --test scripts/emulator-test-plan.test.mjs",
+    "test:service-preview": "node --test tests/service/*.test.mjs",
+    "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs",
+    "test:static-build": "node --test scripts/build-static-assets.test.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "qrcode": "1.5.4"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "3.0.4",
+    "firebase": "10.14.1",
+    "firebase-tools": "13.35.1",
+    "playwright-core": "1.56.1"
   }
 }

@@ -12,6 +12,7 @@ const workflow = await readFile(
   new URL("../../.github/workflows/oldx-review-safety.yml", import.meta.url),
   "utf8"
 );
+const vercelConfig = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8'));
 
 test("root Firebase config does not load candidate Firestore Rules", () => {
   assert.equal(rootConfig.firestore, undefined);
@@ -26,4 +27,10 @@ test("review CI runs tests only and has read-only repository permissions", () =>
   assert.match(workflow, /permissions:\s*\n\s+contents:\s*read/);
   assert.match(workflow, /npm run test:emulator:safety/);
   assert.doesNotMatch(workflow, /firebase\s+deploy|vercel\s+deploy|gcloud\s+deploy/i);
+});
+
+test('review branch Git pushes cannot initiate Vercel deployments', () => {
+  assert.deepEqual(vercelConfig.git?.deploymentEnabled, { 'security-hardening-review': false });
+  // Other branch policies must not be changed through this review-only guard.
+  assert.equal(Object.hasOwn(vercelConfig.git.deploymentEnabled, 'main'), false);
 });

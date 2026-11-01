@@ -1,2 +1,8 @@
 # Generated locally/by Vercel build; never commit environment-specific config
 /firebase-env.js
+
+# Local dependencies, generated build output and emulator diagnostics
+/node_modules/
+/public/
+/.firebase/
+/*-debug.log

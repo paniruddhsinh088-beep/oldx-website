@@ -4,6 +4,15 @@
 **Status:** Source-grounded implementation plan. No Service UI, schema, Rules, backend, live data or deployment changed.  
 **Source reviewed:** `index.html`, `package.json`, chat/store contract inventory, Service UX and technical readiness documents.
 
+**Implementation checkpoint (2 November 2026):** The isolated `service-preview.html`
+now uses modular synthetic fixtures, the shared profile validator, accessible
+local validation, independent consent controls, availability filters and focus
+restoration. This implements part of the UI-only slice below. No backend-connected
+slice is enabled. See `docs/service-preview-development.md` and the review progress
+record for current behavior and browser evidence. Gujarati is the preview UI
+language; full English/Hindi locale coverage and human translation review remain
+outstanding.
+
 ## 1. Confirmed frontend integration points
 
 ### Navigation and route handling

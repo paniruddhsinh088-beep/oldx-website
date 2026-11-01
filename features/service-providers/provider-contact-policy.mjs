@@ -9,9 +9,11 @@ export function getProviderContactOptions({
   isOwnProfile,
   providerActive,
   phoneConsent,
-  hasPublicPhone
+  hasPublicPhone,
+  whatsappConsent = false,
+  hasPublicWhatsapp = false
 } = {}) {
-  if ([signedIn, blocked, isOwnProfile, providerActive, phoneConsent, hasPublicPhone]
+  if ([signedIn, blocked, isOwnProfile, providerActive, phoneConsent, hasPublicPhone, whatsappConsent, hasPublicWhatsapp]
       .some(value => typeof value !== "boolean")) {
     return { ok: false, code: "INVALID_CONTACT_CONTEXT" };
   }
@@ -22,10 +24,11 @@ export function getProviderContactOptions({
     return { ok: true, call: false, whatsapp: false, chat: false, reason: "SIGN_IN_REQUIRED" };
   }
   const phoneAllowed = phoneConsent && hasPublicPhone;
+  const whatsappAllowed = whatsappConsent && hasPublicWhatsapp;
   return {
     ok: true,
     call: phoneAllowed,
-    whatsapp: phoneAllowed,
+    whatsapp: whatsappAllowed,
     chat: true,
     reason: phoneAllowed ? null : "PHONE_NOT_SHARED"
   };

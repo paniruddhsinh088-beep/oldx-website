@@ -6,7 +6,7 @@ on:
       - security-hardening-review
   pull_request:
     branches:
-      - main
+      - security-hardening-review
   workflow_dispatch:
 
 permissions:
@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Check out review branch
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -91,7 +93,19 @@ jobs:
         run: npm run test:admin-backend
 
       - name: Install test-only Firebase tooling
-        run: npm install --no-save --package-lock=false firebase-tools @firebase/rules-unit-testing firebase
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Validate static browser asset package
+        run: npm run test:static-build
+
+      - name: Validate isolated Service preview source
+        run: npm run test:service-preview
+
+      - name: Check isolated Service preview in a local browser
+        run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-preview:browser
+
+      - name: Verify loopback-only emulator test plans
+        run: npm run test:emulator:guard
 
       - name: Run Firestore Emulator authorization tests
         run: npm run test:emulator:rules

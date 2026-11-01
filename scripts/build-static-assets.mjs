@@ -1,0 +1,40 @@
+import { copyFile, mkdir, rm, lstat } from 'node:fs/promises';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// Deliberate browser allowlist: never copy functions/, test fixtures, environment
+// files other than the generated browser config, or server moderation modules.
+export const BROWSER_ASSETS = Object.freeze([
+  'index.html', 'admin.html', 'service-preview.html', 'firebase-config-guard.js', 'firebase-env.js',
+  ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections']
+    .map(name => `features/service-providers/${name}.mjs`)
+]);
+
+export async function buildStaticAssets(root = fileURLToPath(new URL('../', import.meta.url))) {
+  const source = resolve(root);
+  const output = resolve(source, 'public');
+  // Refuse source symlinks; a static package must not follow private file links.
+  for (const asset of BROWSER_ASSETS) {
+    const parts = asset.split('/');
+    for (let i = 1; i <= parts.length; i++) {
+      const stat = await lstat(resolve(source, ...parts.slice(0, i)));
+      if (stat.isSymbolicLink() || (i === parts.length ? !stat.isFile() : !stat.isDirectory())) {
+        throw new Error(`Expected regular browser asset: ${asset}`);
+      }
+    }
+  }
+  // public/ is exclusively generated output, ignored by Git. Clear stale output
+  // so a previous build cannot accidentally publish unallowlisted artifacts.
+  await rm(output, { recursive: true, force: true });
+  for (const asset of BROWSER_ASSETS) {
+    const target = resolve(output, asset);
+    await mkdir(dirname(target), { recursive: true });
+    await copyFile(resolve(source, asset), target);
+  }
+  return output;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await buildStaticAssets();
+  console.log(`[OLDX] Packaged ${BROWSER_ASSETS.length} allowlisted browser assets.`);
+}

@@ -4,7 +4,8 @@ import { getProviderContactOptions } from "./provider-contact-policy.mjs";
 
 const base = {
   signedIn: true, blocked: false, isOwnProfile: false,
-  providerActive: true, phoneConsent: true, hasPublicPhone: true
+  providerActive: true, phoneConsent: true, hasPublicPhone: true,
+  whatsappConsent: true, hasPublicWhatsapp: true
 };
 
 test("signed-in buyer can contact a consenting active provider", () => {
@@ -16,9 +17,21 @@ test("signed-in buyer can contact a consenting active provider", () => {
 test("phone remains private when consent or a public phone is missing", () => {
   for (const patch of [{ phoneConsent: false }, { hasPublicPhone: false }]) {
     assert.deepEqual(getProviderContactOptions({ ...base, ...patch }), {
-      ok: true, call: false, whatsapp: false, chat: true, reason: "PHONE_NOT_SHARED"
+      ok: true, call: false, whatsapp: true, chat: true, reason: "PHONE_NOT_SHARED"
     });
   }
+});
+
+test("WhatsApp requires its own consent and public number, independently of calls", () => {
+  for (const patch of [{ whatsappConsent: false }, { hasPublicWhatsapp: false }]) {
+    assert.deepEqual(getProviderContactOptions({ ...base, ...patch }), {
+      ok: true, call: true, whatsapp: false, chat: true, reason: null
+    });
+  }
+  const { whatsappConsent, hasPublicWhatsapp, ...legacy } = base;
+  assert.equal(getProviderContactOptions(legacy).whatsapp, false);
+  assert.equal(getProviderContactOptions({ ...base, whatsappConsent: "true" }).ok, false);
+  assert.equal(getProviderContactOptions({ ...base, hasPublicWhatsapp: null }).ok, false);
 });
 
 test("guests cannot access contact actions", () => {

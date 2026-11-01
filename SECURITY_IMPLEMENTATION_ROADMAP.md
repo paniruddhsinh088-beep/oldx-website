@@ -143,6 +143,21 @@ Production remains a separate project, requiring a new migration plan, separate 
 
 ## Work sequence for the next engineering pass
 
+### Execution checkpoint — 2 November 2026
+
+The review branch now has a dependency lockfile, pinned test tooling,
+`npm ci` workflows, and a shared runner that refuses mismatched projects,
+non-loopback hosts and unexpected emulator configuration. Pure policy, real QR,
+static-package and isolated browser checks pass locally. Actual Firestore/Storage
+emulator execution is still blocked by official binary downloads returning
+`403 Domain forbidden`; Phase 1 is not complete. See
+`docs/review-progress-2026-11-02.md` for the latest execution record.
+
+The Service preview has modular local validation, independent contact opt-ins,
+availability filtering and keyboard/focus checks. It remains synthetic and has no
+Firebase connection, persistence or active contact actions. Review-branch Git
+deployments are explicitly disabled in `vercel.json`; publishing remains gated.
+
 Start with Phase 1: verify the dependency-free Node tests and CI workflow, correct any failures, then add the Firebase Emulator test dependencies and an isolated local Rules test harness. Do not create deployable Rules until the Phase 2 schemas are complete.
 
 **No production resources, Firebase Rules, Cloudinary settings, user records, or deployed application code are changed by this roadmap.**

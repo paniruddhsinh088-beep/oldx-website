@@ -1,0 +1,53 @@
+// Fixed local test plans. Never accept arbitrary CLI options or project names.
+export const EMULATOR_TEST_PLANS = Object.freeze({
+  baseline: Object.freeze({
+    service: 'firestore', project: 'demo-oldx-emulator', config: 'firebase.emulator.json',
+    rules: 'tests/firestore-emulator/deny-all.rules', port: 8080,
+    tests: ['tests/firestore-emulator/rules-runtime.test.mjs', 'tests/firestore-emulator/admin-atomic-audit.test.mjs']
+  }),
+  storage: Object.freeze({
+    service: 'storage', project: 'demo-oldx-storage', config: 'firebase.storage-emulator.json',
+    rules: 'tests/storage-emulator/candidate.rules', port: 9199,
+    tests: ['tests/storage-emulator/rules-runtime.test.mjs']
+  }),
+  'chat-private-state': Object.freeze({
+    service: 'firestore', project: 'demo-oldx-chat-private-state', config: 'firebase.chat-private-user-state-emulator.json',
+    rules: 'tests/firestore-emulator/chat-private-user-state.candidate.rules', port: 8080,
+    tests: ['tests/firestore-emulator/chat-private-user-state-runtime.test.mjs']
+  }),
+  'service-providers': Object.freeze({
+    service: 'firestore', project: 'demo-oldx-service-providers', config: 'firebase.service-providers-emulator.json',
+    rules: 'tests/firestore-emulator/service-providers-candidate.rules', port: 8084,
+    tests: ['tests/firestore-emulator/service-providers-candidate-runtime.test.mjs']
+  })
+});
+
+export function validateEmulatorTestPlan(name, config, env = {}) {
+  if (!Object.hasOwn(EMULATOR_TEST_PLANS, name)) throw new Error('Unknown emulator test suite.');
+  const plan = EMULATOR_TEST_PLANS[name];
+  const sameKeys = (record, keys) => record && typeof record === 'object' && !Array.isArray(record)
+    && Object.keys(record).sort().join(',') === [...keys].sort().join(',');
+  if (!sameKeys(config, [plan.service, 'emulators']) ||
+      !sameKeys(config[plan.service], ['rules']) || config[plan.service].rules !== plan.rules ||
+      !sameKeys(config.emulators, [plan.service, 'ui', 'singleProjectMode']) ||
+      !sameKeys(config.emulators[plan.service], ['host', 'port']) ||
+      config.emulators[plan.service].host !== '127.0.0.1' ||
+      config.emulators[plan.service].port !== plan.port ||
+      !sameKeys(config.emulators.ui, ['enabled']) || config.emulators.ui.enabled !== false ||
+      config.emulators.singleProjectMode !== true) {
+    throw new Error('Emulator config must match the isolated loopback-only test plan.');
+  }
+  for (const key of ['GCLOUD_PROJECT', 'GOOGLE_CLOUD_PROJECT']) {
+    if (env[key] && env[key] !== plan.project) throw new Error('Live or mismatched project environment refused.');
+  }
+  for (const [key, service] of [['FIRESTORE_EMULATOR_HOST', 'firestore'], ['FIREBASE_STORAGE_EMULATOR_HOST', 'storage']]) {
+    if (env[key] && (service !== plan.service || env[key] !== `127.0.0.1:${plan.port}`)) {
+      throw new Error('Non-loopback or mismatched emulator host refused.');
+    }
+  }
+  return {
+    ...plan,
+    args: ['emulators:exec', '--only', plan.service, '--project', plan.project,
+      '--config', plan.config, `node --test ${plan.tests.join(' ')}`]
+  };
+}

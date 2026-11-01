@@ -4,6 +4,9 @@ on:
   push:
     branches: [security-hardening-review]
     paths:
+      - 'package-lock.json'
+      - 'package.json'
+      - 'scripts/*emulator*.mjs'
       - '.github/workflows/service-providers-emulator.yml'
       - 'tests/firestore-emulator/service-providers-candidate.rules'
       - 'tests/firestore-emulator/service-providers-candidate-runtime.test.mjs'
@@ -20,6 +23,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -28,8 +33,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - name: Install emulator test dependencies
-        run: npm install --no-save --package-lock=false firebase@10.14.1 @firebase/rules-unit-testing@3.0.4 firebase-tools@13.35.1
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Validate service provider draft input
         run: node --test features/service-providers/*.test.mjs
       - name: Run isolated Firestore emulator tests
-        run: npx firebase emulators:exec --only firestore --project demo-oldx-service-providers --config firebase.service-providers-emulator.json "node --test tests/firestore-emulator/service-providers-candidate-runtime.test.mjs"
+        run: npm run test:service-providers:rules
