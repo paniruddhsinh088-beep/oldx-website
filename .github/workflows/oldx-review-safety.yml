@@ -72,6 +72,9 @@ jobs:
       - name: Run account deletion policy tests
         run: npm run test:account-deletion
 
+      - name: Run privacy preferences and scoped consent policy tests
+        run: npm run test:privacy-policy
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
