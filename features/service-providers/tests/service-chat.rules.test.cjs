@@ -94,3 +94,10 @@ test("service room reads reject duplicate or non-string participants",async()=>{
     await assertFails(getDoc(doc(db("buyer"),message)));
   }
 });
+
+test("client room creation remains disabled even with canonical participants",async()=>{
+  const canonical={chatType:"service",serviceProviderId:"provider",participants:["buyer","provider"]};
+  await assertFails(setDoc(doc(db("buyer"),room),canonical));
+  await assertFails(setDoc(doc(db("provider"),room),canonical));
+  await assertFails(setDoc(doc(db("stranger"),room),canonical));
+});
