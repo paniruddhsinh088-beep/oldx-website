@@ -105,3 +105,27 @@ test("provider document read failure denies chat",async()=>{
  assert.equal(result.context,null);
  assert.equal(called,false);
 });
+
+test("provider document owned by a different user denies chat",async()=>{
+ let called=false;
+ const db={collection(name){return {doc(uid){return {async get(){
+   if(name==="serviceProviders") return {
+     exists:true,data:()=>({ownerUid:"someone_else",status:"active"})
+   };
+   return {exists:true,data:()=>({blockedUsers:[]})};
+ }};}};}};
+ const result=await openVerifiedServiceChat({
+   auth,db,providerUid:"provider",openExistingChat:()=>{called=true;}
+ });
+ assert.equal(result.allowed,false);
+ assert.equal(called,false);
+});
+test("buyer blocking provider denies chat",async()=>{
+ let called=false;
+ const result=await openVerifiedServiceChat({
+   auth,db:dbWithBlocks(["provider"]),providerUid:"provider",
+   openExistingChat:()=>{called=true;}
+ });
+ assert.equal(result.allowed,false);
+ assert.equal(called,false);
+});
