@@ -26,7 +26,8 @@
     "test:chat-block-policy": "node --test tests/firestore-emulator/chat-block-relationship-policy.test.mjs",
     "test:chat-private-user-state": "node --test tests/firestore-emulator/chat-private-user-state-policy.test.mjs",
     "test:chat-private-user-state:rules": "firebase emulators:exec --only firestore --project demo-oldx-chat-private-state --config firebase.chat-private-user-state-emulator.json \"node --test tests/firestore-emulator/chat-private-user-state-runtime.test.mjs\"",
-    "test:service-providers": "node --test features/service-providers/*.test.mjs"
+    "test:service-providers": "node --test features/service-providers/*.test.mjs",
+    "test:service-providers:rules": "firebase emulators:exec --only firestore --project demo-oldx-service-providers --config firebase.service-providers-emulator.json \"node --test tests/firestore-emulator/service-providers-candidate-runtime.test.mjs\""
   },
   "engines": {
     "node": ">=20"
