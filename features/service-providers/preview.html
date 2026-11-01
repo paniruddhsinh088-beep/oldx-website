@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OLDX | Service Provider Form Preview</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#173b3e;background:#f3f7f6}
+    *{box-sizing:border-box}
+    body{margin:0;padding:20px}
+    main{max-width:650px;margin:24px auto;background:white;border-radius:20px;padding:clamp(18px,4vw,36px);box-shadow:0 8px 30px #002f3414}
+    header{margin-bottom:24px}
+    h1{margin:0 0 8px;font-size:1.7rem}
+    p{line-height:1.5}
+    .muted{color:#557073}
+    form{display:grid;gap:16px}
+    h2{font-size:1.25rem;margin:0}
+    label{display:grid;gap:7px;font-weight:600}
+    input:not([type=checkbox]),textarea{width:100%;border:1px solid #b7c9c8;border-radius:10px;padding:12px;font:inherit}
+    textarea{min-height:110px;resize:vertical}
+    fieldset{border:1px solid #b7c9c8;border-radius:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:12px}
+    legend{font-weight:700;padding:0 6px}
+    fieldset label{display:flex;align-items:center;gap:8px;font-weight:500}
+    input[type=checkbox]{width:18px;height:18px;accent-color:#006b67}
+    button{border:0;background:#006b67;color:white;border-radius:12px;padding:14px;font:inherit;font-weight:700;cursor:pointer}
+    button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #54bcb6;outline-offset:2px}
+    [role=status]{color:#805400;margin:0}
+    .notice{padding:12px;background:#e7f5f3;border-radius:10px}
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>OLDX Service Providers</h1>
+      <p class="muted">Registration form preview — Gujarat</p>
+      <p class="notice">Preview only. No account is created and no information is sent to Firebase.</p>
+    </header>
+    <div id="service-provider-form"></div>
+  </main>
+  <script type="module">
+    import { mountServiceProviderForm } from "./profile-form.js";
+    mountServiceProviderForm(document.getElementById("service-provider-form"));
+  </script>
+</body>
+</html>
