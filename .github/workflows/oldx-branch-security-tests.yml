@@ -30,9 +30,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+      - name: Install free Node dependencies (no scripts, no cloud access)
+        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - name: Admin backend tests (synthetic, no Firebase)
         run: npm run test:admin-backend
       - name: Chat message authorization tests (synthetic)
         run: npm run test:chat-message-authorization
-      - name: Service provider module tests (synthetic, no Firebase)
+      - name: Service provider module and offline QR integration tests (no Firebase)
         run: npm run test:service-providers
