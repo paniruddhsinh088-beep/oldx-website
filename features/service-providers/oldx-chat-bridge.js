@@ -14,6 +14,9 @@ export async function openVerifiedServiceChat({
     throw new TypeError("Audited OLDX chat opener required");
   }
   const buyerUid=auth?.currentUser?.uid;
+  if (!buyerUid) {
+    return {allowed:false,reason:"Sign in to chat with a service provider.",context:null};
+  }
   // Reject bad context before reading user documents.
   const context=buildServiceChatContext({providerUid,buyerUid});
   // Never trust an "active" status supplied by a card or URL.
