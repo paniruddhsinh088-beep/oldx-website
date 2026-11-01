@@ -33,6 +33,10 @@ export async function resolveServiceContactPermissions({ auth, db, providerUid, 
     db.collection("users").doc(viewerUid).get(),
     db.collection("users").doc(providerUid).get()
   ]);
+  // A sign-out or account switch during the async reads invalidates this decision.
+  if (uidOf(auth?.currentUser) !== viewerUid) {
+    throw new Error("User session changed while checking contact permissions.");
+  }
   const viewerBlocks = blockedList(viewer);
   const providerBlocks = blockedList(provider);
   return {
