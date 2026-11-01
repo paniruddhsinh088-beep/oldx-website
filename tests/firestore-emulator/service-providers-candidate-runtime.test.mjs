@@ -177,3 +177,18 @@ test('city and service filtering stays restricted to active providers', async ()
   await assertFails(getDocs(query(providers,
     where('status', '==', 'pending'), where('cityId', '==', 'ahmedabad'), limit(20))));
 });
+
+test('profile rejects non-text service IDs', async () => {
+  const db = env.authenticatedContext('typed-service-check').firestore();
+  const base = {
+    ownerUid: 'typed-service-check', displayName: 'Local Service',
+    cityId: 'ahmedabad', status: 'pending',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  };
+  await assertFails(setDoc(doc(db, 'serviceProviders/typed-service-check'), {
+    ...base, serviceIds: ['painting', 123]
+  }));
+  await assertFails(setDoc(doc(db, 'serviceProviders/typed-service-check'), {
+    ...base, serviceIds: [{ category: 'painting' }]
+  }));
+});
