@@ -2,7 +2,7 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, updateDoc, query, where, limit } from 'firebase/firestore';
 
 let env;
 before(async () => {
@@ -46,7 +46,7 @@ test('legacy product access remains denied in isolated candidate', async () => {
   await assertFails(getDoc(doc(db, 'products/old')));
 });
 
-test('collection enumeration is denied to unauthenticated and authenticated clients', async () => {
+test('unfiltered collection enumeration is denied to unauthenticated and authenticated clients', async () => {
   for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext('active').firestore()]) {
     await assertFails(getDocs(collection(db, 'serviceProviders')));
     await assertFails(getDocs(collection(db, 'serviceProviderReviews')));
@@ -151,4 +151,14 @@ test('provider cannot alter creation timestamp or delete their profile', async (
     createdAt: serverTimestamp(), updatedAt: serverTimestamp()
   }));
   await assertFails(deleteDoc(doc(db, 'serviceProviders/new-provider')));
+});
+
+test('public discovery permits only bounded active-provider queries', async () => {
+  const db = env.unauthenticatedContext().firestore();
+  const providers = collection(db, 'serviceProviders');
+  const active = await assertSucceeds(getDocs(query(providers, where('status', '==', 'active'), limit(20))));
+  assert.equal(active.size, 1);
+  await assertFails(getDocs(query(providers, where('status', '==', 'pending'), limit(20))));
+  await assertFails(getDocs(query(providers, where('status', '==', 'active'), limit(21))));
+  await assertFails(getDocs(query(providers, where('status', '==', 'active'))));
 });
