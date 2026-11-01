@@ -12,12 +12,21 @@ export function createModerationHttpHandler(moderate) {
     const header = req.headers?.authorization;
     const match = typeof header === 'string' ? /^Bearer ([^\s]+)$/.exec(header) : null;
     if (!match) return res.status(401).json({ error: 'authentication_required' });
+    const contentType = req.headers?.['content-type'];
+    if (typeof contentType !== 'string' || !/^application\/json(?:\s*;|\s*$)/i.test(contentType)) {
+      return res.status(415).json({ error: 'unsupported_media_type' });
+    }
+    const contentLength = req.headers?.['content-length'];
+    if (contentLength !== undefined && (!/^\d+$/.test(String(contentLength)) || Number(contentLength) > 4096)) {
+      return res.status(413).json({ error: 'request_too_large' });
+    }
     const body = req.body;
     if (!body || typeof body !== 'object' || Array.isArray(body) ||
         Object.keys(body).some(k => !['providerId', 'nextStatus', 'reason'].includes(k)) ||
         typeof body.providerId !== 'string' ||
         typeof body.nextStatus !== 'string' ||
-        typeof body.reason !== 'string') {
+        typeof body.reason !== 'string' ||
+        body.providerId.length > 128 || body.nextStatus.length > 32 || body.reason.length > 500) {
       return res.status(400).json({ error: 'invalid_request' });
     }
     try {
