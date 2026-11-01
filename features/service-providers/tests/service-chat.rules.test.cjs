@@ -57,3 +57,20 @@ test("clients cannot create, change or delete service messages",async()=>{
   await assertFails(updateDoc(doc(db("buyer"),message),{text:"changed"}));
   await assertFails(deleteDoc(doc(db("provider"),message)));
 });
+
+
+test("malformed participant arrays never grant room or message access",async()=>{
+  for(const participants of [[],["buyer"],["buyer","provider","stranger"],"buyer"]){
+    await env.clearFirestore();
+    await seed(room,{chatType:"service",participants});
+    await seed(message,{senderUid:"buyer",text:"private"});
+    await assertFails(getDoc(doc(db("buyer"),room)));
+    await assertFails(getDoc(doc(db("buyer"),message)));
+  }
+});
+test("service fragment does not authorize legacy product rooms",async()=>{
+  await seed(room,{chatType:"product",participants:["buyer","provider"]});
+  await seed(message,{senderUid:"buyer",text:"legacy"});
+  await assertFails(getDoc(doc(db("buyer"),room)));
+  await assertFails(getDoc(doc(db("buyer"),message)));
+});
