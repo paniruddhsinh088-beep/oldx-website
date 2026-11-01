@@ -127,3 +127,13 @@ test("service message reads require authenticated participant even if message se
   await assertFails(getDoc(doc(db("stranger"),message)));
   await assertFails(getDoc(doc(db(),message)));
 });
+
+test("service chat never exposes messages from a non-service room",async()=>{
+  for(const chatType of ["product","store",null]){
+    await env.clearFirestore();
+    await seed(room,{...roomData,chatType});
+    await seed(message,{senderUid:"buyer",text:"private"});
+    await assertFails(getDoc(doc(db("buyer"),message)));
+    await assertFails(getDocs(collection(db("provider"),room+"/messages")));
+  }
+});
