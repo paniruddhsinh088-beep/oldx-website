@@ -56,3 +56,11 @@ test("unauthenticated client cannot read product room or messages",async()=>{
  await assertFails(getDoc(doc(guest,"chats/existing")));
  await assertFails(getDoc(doc(guest,"chats/existing/messages/old")));
 });
+
+test("legacy attachment shape accepted; malformed and unexpected fields rejected",async()=>{
+ const buyer=env.authenticatedContext("buyer").firestore();
+ const base={senderUid:"buyer",text:"",status:"sent",createdAt:serverTimestamp()};
+ await assertSucceeds(setDoc(doc(buyer,"chats/existing/messages/attachment-ok"),{...base,attachment:{type:"image/jpeg",name:"photo.jpg",data:"data:image/jpeg;base64,AA=="}}));
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/attachment-bad"),{...base,attachment:{type:"image/jpeg",data:123}}));
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/unexpected"),{...base,adminApproved:true}));
+});
