@@ -84,3 +84,13 @@ test("service room with mismatched provider metadata cannot be read",async()=>{
     await assertFails(getDoc(doc(db("provider"),message)));
   }
 });
+
+test("service room reads reject duplicate or non-string participants",async()=>{
+  for(const participants of [["buyer","buyer"],["provider","provider"],["buyer",42],["buyer",null]]){
+    await env.clearFirestore();
+    await seed(room,{...roomData,participants});
+    await seed(message,{senderUid:"buyer",text:"private"});
+    await assertFails(getDoc(doc(db("buyer"),room)));
+    await assertFails(getDoc(doc(db("buyer"),message)));
+  }
+});
