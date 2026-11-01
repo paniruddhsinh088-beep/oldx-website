@@ -96,3 +96,23 @@ test("existing unrelated collections remain denied in this isolated draft", asyn
   await env.clearFirestore();
   await assertFails(getDoc(doc(guestDb(), "products/example")));
 });
+
+test("trusted admin may approve or suspend provider without editing owner data", async () => {
+ await env.clearFirestore();
+ await seed(seeded());
+ await env.withSecurityRulesDisabled(async context => {
+  await setDoc(doc(context.firestore(), "admins/moderator"), { role: "admin" });
+ });
+ const admin = userDb("moderator");
+ await assertSucceeds(getDoc(ref(admin)));
+ await assertSucceeds(updateDoc(ref(admin), { status: "active", updatedAt: serverTimestamp() }));
+ await assertSucceeds(updateDoc(ref(admin), { status: "suspended", updatedAt: serverTimestamp() }));
+ await assertFails(updateDoc(ref(admin), { ownerUid: "moderator", updatedAt: serverTimestamp() }));
+ await assertFails(updateDoc(ref(admin), { displayName: "Impersonated", updatedAt: serverTimestamp() }));
+});
+test("non-admin cannot approve another provider or read pending profile", async () => {
+ await env.clearFirestore();
+ await seed(seeded());
+ await assertFails(getDoc(ref(userDb("attacker"))));
+ await assertFails(updateDoc(ref(userDb("attacker")), { status: "active", updatedAt: serverTimestamp() }));
+});
