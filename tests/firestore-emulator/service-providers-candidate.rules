@@ -23,6 +23,14 @@ service cloud.firestore {
       && request.resource.data.serviceIds.size() >= 1
       && request.resource.data.serviceIds.size() <= 8
       && request.resource.data.serviceIds.toSet().size() == request.resource.data.serviceIds.size()
+      && (request.resource.data.serviceIds.size() <= 0 || request.resource.data.serviceIds[0] is string)
+      && (request.resource.data.serviceIds.size() <= 1 || request.resource.data.serviceIds[1] is string)
+      && (request.resource.data.serviceIds.size() <= 2 || request.resource.data.serviceIds[2] is string)
+      && (request.resource.data.serviceIds.size() <= 3 || request.resource.data.serviceIds[3] is string)
+      && (request.resource.data.serviceIds.size() <= 4 || request.resource.data.serviceIds[4] is string)
+      && (request.resource.data.serviceIds.size() <= 5 || request.resource.data.serviceIds[5] is string)
+      && (request.resource.data.serviceIds.size() <= 6 || request.resource.data.serviceIds[6] is string)
+      && (request.resource.data.serviceIds.size() <= 7 || request.resource.data.serviceIds[7] is string)
       && request.resource.data.cityId is string
       && request.resource.data.cityId.size() >= 2
       && request.resource.data.cityId.size() <= 40
