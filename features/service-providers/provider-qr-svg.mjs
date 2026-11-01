@@ -26,9 +26,14 @@ export async function renderProviderQrSvg(profile, toString) {
       if (!/\bxmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(attrs)) return false;
       const allowedRoot = /(?:^|\s)(?:xmlns|width|height|viewBox|shape-rendering)="[^"<>]*"/g;
       if (attrs.replace(allowedRoot, "").trim() !== "") return false;
+      const rootNames = [...attrs.matchAll(/(?:^|\s)(xmlns|width|height|viewBox|shape-rendering)="/g)].map(m => m[1]);
+      if (new Set(rootNames).size !== rootNames.length) return false;
+      if (!/^http:\/\/www\.w3\.org\/2000\/svg$/.test(attrs.match(/(?:^|\s)xmlns="([^"]*)"/)?.[1] ?? "")) return false;
       const paths = root[2].trim().replace(/<path\s+([^<>]*?)\s*\/>/g, (_tag, pathAttrs) => {
         const allowed = /\s*(?:fill|stroke|stroke-width|d)="[^"<>]*"/g;
         if (pathAttrs.replace(allowed, "").trim() !== "") return "INVALID";
+        const pathNames = [...pathAttrs.matchAll(/(?:^|\s)(fill|stroke|stroke-width|d)="/g)].map(m => m[1]);
+        if (new Set(pathNames).size !== pathNames.length) return "INVALID";
         const d = pathAttrs.match(/(?:^|\s)d="([^"]+)"/);
         if (!d || !/^[MmLlHhVvZzCcSsQqTtAa0-9.,+\-\s]+$/.test(d[1])) return "INVALID";
         const paint = [...pathAttrs.matchAll(/(?:fill|stroke)="([^"]+)"/g)];
