@@ -66,3 +66,20 @@ test("rejects SVG event handlers and embedded CSS on QR paths", async () => {
     assert.equal(result.code, "UNSAFE_QR_SVG");
   }
 });
+
+test("rejects duplicate SVG namespace and path attributes", async () => {
+  const profile = {
+    origin: "https://oldxbazar.in",
+    providerId: "worker_42",
+    displayName: "Worker",
+    city: "Ahmedabad",
+    services: ["Carpenter"]
+  };
+  for (const svg of [
+    '<svg xmlns="http://www.w3.org/2000/svg" xmlns="http://attacker.invalid"><path d="M0 0h5"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0h5" d="M9 9h9"/></svg>'
+  ]) {
+    const result = await renderProviderQrSvg(profile, async () => svg);
+    assert.equal(result.code, "UNSAFE_QR_SVG");
+  }
+});
