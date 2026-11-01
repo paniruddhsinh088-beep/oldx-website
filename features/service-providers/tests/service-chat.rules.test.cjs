@@ -16,7 +16,7 @@ let env;
 const db=uid=>uid?env.authenticatedContext(uid).firestore():env.unauthenticatedContext().firestore();
 const seed=(path,value)=>env.withSecurityRulesDisabled(async ctx=>setDoc(doc(ctx.firestore(),path),value));
 before(async()=>{env=await initializeTestEnvironment({
-  projectId:"demo-oldx-service-chat",
+  projectId:"demo-oldx-service",
   firestore:{host:"127.0.0.1",port:8080,rules}
 });});
 after(async()=>{if(env)await env.cleanup();});
