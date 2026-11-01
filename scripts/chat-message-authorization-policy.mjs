@@ -23,7 +23,7 @@ export function authorizeChatMutation({ action, actorUid, senderUid, participant
 
 export function validateChatAttachmentMetadata({ name, type, byteLength }, { allowedTypes, maxBytes }) {
   if (typeof name !== "string" || !name.trim() || name.length > 180 ||
-      /[\\/\\u0000-\\u001f]/.test(name)) return { ok: false, error: "invalid_name" };
+      /[\\/\u0000-\u001f]/.test(name)) return { ok: false, error: "invalid_name" };
   if (typeof type !== "string" || !Array.isArray(allowedTypes) || !allowedTypes.includes(type.toLowerCase())) {
     return { ok: false, error: "unsupported_type" };
   }
