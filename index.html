@@ -2849,6 +2849,9 @@
         }
 
         function sendChatMessageNow(msg, input) {
+            // Defense in depth: do not let another caller bypass the composer guard.
+            // Service room writes remain disabled until server-side rules are ready.
+            if (!activeChatRoomId || !window.currentUser || activeChatRoomId.startsWith('service_')) return;
             if (activeChatRoomId && window.currentUser) {
                 db.collection('chats').doc(activeChatRoomId).set({
                     [`typing_${window.currentUser.uid}`]: false
