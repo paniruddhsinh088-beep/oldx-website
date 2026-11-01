@@ -101,3 +101,10 @@ The current `index.html` source was inspected after the initial design was writt
 The repository's Firebase emulator configuration intentionally loads only `tests/firestore-emulator/deny-all.rules`. The current runtime rules test proves that unauthenticated users, authenticated users, and admin-like claims are denied. It does not test a proposed application chat policy. The new block-policy tests are pure synthetic JavaScript tests, not Firestore Rules Emulator enforcement tests.
 
 Therefore this source audit does not authorize replacing deny-all rules, nor does it establish that blocking is active or secure in the running app.
+
+
+## Additional product-to-chat creation constraint
+
+The source audit also confirms the buyer opens a chat from a product and writes `productId` plus `participants: [buyerId, sellerId]`. A Rules candidate must not trust the submitted seller UID or participant array by itself. It must read the referenced canonical `products/{productId}` document, obtain its stored `sellerUid`, require the authenticated caller to be the buyer, require the other participant to equal that stored seller UID, and reject missing products, missing seller UIDs, and self-chat. This remains a design requirement: the pure JavaScript helper validates input shape and caller binding only; it cannot prove a seller UID is canonical. The actual proof belongs in Firestore Rules Emulator tests using synthetic product documents.
+
+The current legacy product collection is not safe to make publicly readable (it contains private fields such as `phone` and `userIp`). This means a chat-creation rule that performs a product lookup must be designed without granting public reads to legacy product documents. A trusted creation flow or a sanitized public product representation may be needed. Do not relax product read access as a shortcut.
