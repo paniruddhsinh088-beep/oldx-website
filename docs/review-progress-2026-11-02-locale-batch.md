@@ -106,3 +106,10 @@ wrapping and a min-width/max-width constraint on section-heading content. No
 font sizes, test scales, assertions or privacy controls were reduced. The local
 full browser suite again passed 12/12; a new exact-commit CI run is required for
 the runner-specific correction. Vercel listed zero deployments for e112c38.
+
+The cc0d372 follow-up passed locally but review-safety run
+[41351078646](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41351078646)
+exposed the next 200% runner-font case: Hindi result-card action buttons exceeded
+the viewport because the label/action footer could not wrap. Enabled footer flex
+wrapping to preserve the complete action label and scale. No test was skipped or
+relaxed. This continues the font-independent accessibility correction.
