@@ -19,11 +19,13 @@ OLDX is a local-first Indian marketplace. A user should be able to use the compl
 
 ## Language coverage
 
-Target the 22 languages in the Eighth Schedule of the Constitution of India, plus English as a practical fallback:
+Initial supported languages are limited to:
 
-Assamese, Bengali, Bodo, Dogri, Gujarati, Hindi, Kannada, Kashmiri, Konkani, Maithili, Malayalam, Manipuri (Meitei), Marathi, Nepali, Odia, Punjabi, Sanskrit, Santali, Sindhi, Tamil, Telugu, Urdu, and English.
+- Gujarati (`gu`)
+- English (`en`)
+- Hindi (`hi`)
 
-Suggested first rollout for translation QA: Gujarati, Hindi, Marathi, Bengali, Punjabi, Tamil, Telugu, Kannada, Malayalam, Odia, Assamese, Urdu, and English. Keep architecture locale-extensible so the remaining scheduled languages can be added without changing product logic. This rollout sequence is a proposal, not a limitation or a claim that translations already exist.
+Do not expose other language choices in the initial language picker or settings. Keep the locale architecture extensible so additional Indian languages can be added later without changing product logic. This three-language scope is the current product decision; translations are not yet claimed to be implemented.
 
 ## What is translated
 
@@ -35,7 +37,7 @@ All first-party interface text must use translation keys, including:
 - Privacy, consent, blocking/reporting, export/deletion, help and support.
 - Admin interface only for authorized staff, separately reviewed.
 
-Use locale-aware date, time, number and currency formatting. Use Unicode fonts/fallbacks that correctly render every supported script. Support right-to-left layout for Urdu and Kashmiri where appropriate; test mixed-script text, numbers, icons, forms, chat bubbles, and navigation.
+Use locale-aware date, time, number and currency formatting. Use Unicode fonts/fallbacks that correctly render every supported script. Test Gujarati, English, and Hindi script rendering, mixed-script text, numbers, icons, forms, chat bubbles, and navigation. RTL support is not required for this initial three-language release; add it if a future supported language requires it.
 
 ## Important distinction: interface language vs user-generated content
 
@@ -59,7 +61,7 @@ Translating the app interface does not automatically translate marketplace listi
 - [ ] Native-speaker review of marketplace, safety, privacy, consent, blocking, and deletion terminology.
 - [ ] No missing keys or accidental mixed-language UI in automated locale coverage tests.
 - [ ] Layout tests for long strings, small Android screens, large text, and low-end devices.
-- [ ] Script/font tests for all enabled languages; RTL tests for Urdu/Kashmiri.
+- [ ] Script/font tests for Gujarati, English, and Hindi; verify mixed-script content and fallback fonts.
 - [ ] Language selection works before authentication, offline, and after reinstall/login on another device.
 - [ ] Profile language change updates all screens immediately and persists correctly.
 - [ ] Search and user-generated listing/chat text are not silently translated or modified.
@@ -70,10 +72,10 @@ Translating the app interface does not automatically translate marketplace listi
 
 1. Inventory all visible interface strings and centralize them behind translation keys.
 2. Build the first-launch language picker and private preference persistence with a safe local fallback.
-3. Translate and QA Gujarati, Hindi, and English end-to-end first.
-4. Add the next rollout languages in reviewed locale bundles, then the remaining scheduled languages.
-5. Complete script/RTL/accessibility/performance tests before enabling each locale.
-6. Release behind a reversible feature flag; retain English fallback and allow users to switch language at any time.
+3. Translate and QA Gujarati, Hindi, and English end-to-end.
+4. Complete script/accessibility/performance tests for these three locales before enabling them.
+5. Release behind a reversible feature flag; retain English fallback and allow users to switch language at any time.
+6. Consider additional languages only as a separately prioritized future enhancement.
 
 ## Current authorization boundary
 
