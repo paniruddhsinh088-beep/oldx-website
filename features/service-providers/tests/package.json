@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node --test --test-concurrency=1 firestore.test.cjs booking-review.rules.test.cjs service-chat.rules.test.cjs service-chat-block-edges.rules.test.cjs legacy-chat-rule-overlap.rules.test.cjs legacy-message-rule-overlap.rules.test.cjs legacy-chat-type-guard.rules.test.cjs legacy-message-type-guard.rules.test.cjs production-chat-privacy-candidate.rules.test.cjs product-chat-receipts-candidate.rules.test.cjs product-chat-delete-candidate.rules.test.cjs product-chat-typing-candidate.rules.test.cjs product-chat-last-updated-candidate.rules.test.cjs product-chat-room-create-candidate.rules.test.cjs"
+    "test": "node --test --test-concurrency=1 firestore.test.cjs booking-review.rules.test.cjs service-chat.rules.test.cjs service-chat-block-edges.rules.test.cjs legacy-chat-rule-overlap.rules.test.cjs legacy-message-rule-overlap.rules.test.cjs legacy-chat-type-guard.rules.test.cjs legacy-message-type-guard.rules.test.cjs production-chat-privacy-candidate.rules.test.cjs product-chat-receipts-candidate.rules.test.cjs product-chat-delete-candidate.rules.test.cjs product-chat-typing-candidate.rules.test.cjs product-chat-last-updated-candidate.rules.test.cjs product-chat-room-create-candidate.rules.test.cjs product-chat-merge-update-candidate.rules.test.cjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
