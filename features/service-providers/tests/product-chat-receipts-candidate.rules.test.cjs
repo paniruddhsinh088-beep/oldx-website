@@ -21,3 +21,16 @@ test("strangers, sender forgery and unauthorized edits fail",async()=>{
  await assertFails(updateDoc(doc(buyer,"chats/room/messages/old"),{status:"read"}));
  await assertFails(updateDoc(doc(env.authenticatedContext("seller").firestore(),"chats/room/messages/old"),{text:"tampered"}));
 });
+
+test("receipt update cannot alter sender, timestamp, or message body",async()=>{
+ const seller=env.authenticatedContext("seller").firestore();
+ await assertFails(updateDoc(doc(seller,"chats/room/messages/old"),{status:"read",senderUid:"seller"}));
+ await assertFails(updateDoc(doc(seller,"chats/room/messages/old"),{status:"read",createdAt:999}));
+ await assertFails(updateDoc(doc(seller,"chats/room/messages/old"),{status:"read",text:"edited"}));
+ await assertFails(updateDoc(doc(seller,"chats/room/messages/old"),{status:"sent"}));
+});
+test("message creation requires a sender and valid initial status",async()=>{
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertFails(setDoc(doc(buyer,"chats/room/messages/no-sender"),{text:"hi",status:"sent",createdAt:2}));
+ await assertFails(setDoc(doc(buyer,"chats/room/messages/read-on-create"),{senderUid:"buyer",text:"hi",status:"read",createdAt:2}));
+});
