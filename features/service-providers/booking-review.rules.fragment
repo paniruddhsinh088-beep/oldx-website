@@ -1,0 +1,27 @@
+// OLDX service booking/review rules FRAGMENT — NOT DEPLOYABLE ALONE.
+// Insert these match blocks inside the existing
+// match /databases/{database}/documents { ... } in the complete OLDX rules.
+// Requires a trusted backend for booking completion and review publication.
+// Until then, all client booking/review writes are intentionally disabled.
+//
+// Do not add a permissive parent rule: Firestore overlapping allow rules are ORed.
+// A broad allow in another matching rule can override these denials.
+
+match /serviceBookings/{bookingId} {
+  // Bookings contain private buyer/provider information.
+  allow get: if request.auth != null &&
+    (resource.data.buyerUid == request.auth.uid ||
+     resource.data.providerUid == request.auth.uid);
+  // Collection listing is denied until participant-scoped queries are designed.
+  allow list: if false;
+  // No client can forge a completed booking or mark review eligibility.
+  allow create, update, delete: if false;
+}
+
+match /serviceProviders/{providerUid}/reviews/{bookingId} {
+  // Only published reviews may be fetched or listed publicly.
+  // Public listing queries MUST constrain status == 'published'.
+  allow get, list: if resource.data.status == 'published';
+  // Reviews must be created and moderated by a trusted backend transaction.
+  allow create, update, delete: if false;
+}
