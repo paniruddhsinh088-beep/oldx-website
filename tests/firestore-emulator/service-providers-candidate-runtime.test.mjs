@@ -129,3 +129,26 @@ test('profile creation rejects excessive and duplicate service selections', asyn
     ...base, serviceIds: Array.from({ length: 9 }, (_, i) => 'service' + i)
   }));
 });
+
+test('new profile must use server timestamps and pending status', async () => {
+  const db = env.authenticatedContext('timestamp-check').firestore();
+  const base = {
+    ownerUid: 'timestamp-check', displayName: 'Repair Service',
+    serviceIds: ['repairs'], cityId: 'ahmedabad'
+  };
+  await assertFails(setDoc(doc(db, 'serviceProviders/timestamp-check'), {
+    ...base, status: 'active',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(db, 'serviceProviders/timestamp-check'), {
+    ...base, status: 'pending',
+    createdAt: new Date('2020-01-01'), updatedAt: serverTimestamp()
+  }));
+});
+test('provider cannot alter creation timestamp or delete their profile', async () => {
+  const db = env.authenticatedContext('new-provider').firestore();
+  await assertFails(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  }));
+  await assertFails(deleteDoc(doc(db, 'serviceProviders/new-provider')));
+});
