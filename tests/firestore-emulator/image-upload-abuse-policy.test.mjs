@@ -27,6 +27,11 @@ test('enforces per-user per-surface grant rate', () => {
   }));
   assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'chat', bytes: 100, fileCount: 1 }, history, now).reason, 'grant_rate_exceeded');
 });
+test('counts every file in a multi-image request against the byte quota', () => {
+  const result = evaluateUploadRequest({ uid: 'u1', surface: 'product', bytes: 5 * 1024 * 1024, fileCount: 6 }, [], now);
+  assert.equal(result.allowed, true);
+  assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'product', bytes: 5 * 1024 * 1024, fileCount: 7 }, [], now).reason, 'file_count_exceeded');
+});
 test('enforces hourly byte quota without mixing users or surfaces', () => {
   const history = [{ uid: 'u1', surface: 'profile', bytes: UPLOAD_GUARDS.profile.maxBytesPerWindow, createdAt: now - 1000 },
     { uid: 'u2', surface: 'profile', bytes: 999999, createdAt: now - 1000 }];
@@ -55,6 +60,10 @@ test('cleanup selects only old unreferenced quarantine, orphan and rejected obje
     { objectId: 'o1', reason: 'orphaned' },
     { objectId: 'r1', reason: 'rejected' }
   ]);
+});
+test('cleanup selection never exceeds the bounded batch size', () => {
+  const items = Array.from({ length: 150 }, (_, i) => ({ objectId: 'old-' + i, status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000 }));
+  assert.equal(selectCleanupCandidates(items, now).length, CLEANUP_POLICY.batchLimit);
 });
 test('cleanup selection is deterministic and safe on malformed input', () => {
   const items = [{ objectId: 'x', status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000 }];
