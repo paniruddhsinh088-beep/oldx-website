@@ -87,3 +87,24 @@ export async function listActiveServiceProfiles({ db, limit = 20 }) {
     };
   });
 }
+
+/** Read an approved public profile by ID. Pending and suspended profiles are hidden. */
+export async function getActiveServiceProfile({ db, providerId }) {
+  requireFirestore(db);
+  if (typeof providerId !== "string" || !/^[a-zA-Z0-9_-]{1,128}$/.test(providerId)) {
+    throw new TypeError("Invalid service provider ID.");
+  }
+  const snapshot = await db.collection(COLLECTION).doc(providerId).get();
+  if (!snapshot.exists || snapshot.data()?.status !== "active") return null;
+  const data = snapshot.data();
+  return {
+    id: snapshot.id,
+    status: "active",
+    displayName: data.displayName ?? "",
+    description: data.description ?? "",
+    city: data.city ?? "",
+    district: data.district ?? "",
+    state: data.state ?? "",
+    serviceCategories: Array.isArray(data.serviceCategories) ? data.serviceCategories : []
+  };
+}
