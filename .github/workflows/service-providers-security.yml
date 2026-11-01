@@ -43,6 +43,8 @@ jobs:
         run: node --test features/service-providers/tests/contact-policy.test.mjs
       - name: Validate OLDX contact adapter (no Firebase required)
         run: node --test features/service-providers/tests/oldx-contact-adapter.test.mjs
+      - name: Validate service chat context (no Firebase required)
+        run: node --test features/service-providers/tests/chat-context.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
