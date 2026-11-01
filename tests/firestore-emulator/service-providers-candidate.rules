@@ -1,22 +1,64 @@
 rules_version = '2';
 
-// Candidate service-provider isolation rules for emulator evaluation ONLY.
-// Do not deploy as the project's production rules; this file intentionally
-// denies all legacy collections and all service writes pending backend review.
+// ISOLATED EMULATOR CANDIDATE ONLY — never deploy over production rules.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedInOwner(providerId) {
+      return request.auth != null && request.auth.uid == providerId;
+    }
+    function validDraft() {
+      return request.resource.data.keys().hasOnly([
+        'ownerUid', 'displayName', 'serviceIds', 'cityId',
+        'areaLabel', 'description', 'status', 'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.keys().hasAll([
+        'ownerUid', 'displayName', 'serviceIds', 'cityId',
+        'status', 'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.ownerUid is string
+      && request.resource.data.displayName is string
+      && request.resource.data.displayName.size() >= 1
+      && request.resource.data.displayName.size() <= 80
+      && request.resource.data.serviceIds is list
+      && request.resource.data.serviceIds.size() >= 1
+      && request.resource.data.serviceIds.size() <= 8
+      && request.resource.data.serviceIds.toSet().size() == request.resource.data.serviceIds.size()
+      && request.resource.data.cityId is string
+      && request.resource.data.cityId.size() >= 2
+      && request.resource.data.cityId.size() <= 40
+      && (!('areaLabel' in request.resource.data) ||
+          (request.resource.data.areaLabel is string && request.resource.data.areaLabel.size() <= 100))
+      && (!('description' in request.resource.data) ||
+          (request.resource.data.description is string && request.resource.data.description.size() <= 1000));
+    }
     match /serviceProviders/{providerId} {
-      allow get: if resource.data.status == 'active';
+      allow get: if resource.data.status == 'active' || signedInOwner(providerId);
       allow list: if false;
-      allow create, update, delete: if false;
+      allow create: if signedInOwner(providerId)
+        && validDraft()
+        && request.resource.data.ownerUid == providerId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      allow update: if signedInOwner(providerId)
+        && resource.data.ownerUid == providerId
+        && validDraft()
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'displayName', 'serviceIds', 'cityId', 'areaLabel',
+          'description', 'updatedAt'
+        ]);
+      allow delete: if false;
     }
     match /serviceProviderPrivate/{providerId} {
       allow read, write: if false;
     }
     match /serviceProviderReviews/{reviewId} {
       allow get: if resource.data.status == 'published';
-      allow list: if false;
-      allow create, update, delete: if false;
+      allow list, create, update, delete: if false;
     }
     match /serviceProviderAudit/{eventId} {
       allow read, write: if false;
