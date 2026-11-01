@@ -8,6 +8,7 @@ export function authorizeChatMutation({ action, actorUid, senderUid, participant
   if (typeof senderUid !== "string" || !senderUid) return { ok: false, error: "invalid_sender" };
 
   if (action === "send") {
+    if (senderUid !== actorUid) return { ok: false, error: "sender_mismatch" };
     return blocked ? { ok: false, error: "blocked" } : { ok: true };
   }
   if (action === "delete_for_everyone") {
