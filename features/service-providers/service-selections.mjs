@@ -11,8 +11,10 @@ export function normalizeServiceSelections(values, { maxServices = 12 } = {}) {
   const seen = new Set();
   for (const value of values) {
     if (typeof value !== "string") return { ok: false, code: "INVALID_SERVICES" };
-    const service = value.trim();
-    if (!service || service.length > 64 || !/^[\p{L}\p{N}][\p{L}\p{N} .&/()+-]*$/u.test(service)) {
+    const service = value.trim().normalize("NFC");
+    // Indian scripts use combining marks for vowels and conjuncts. Require a
+    // letter/number first while allowing those marks within a service name.
+    if (!service || service.length > 64 || !/^[\p{L}\p{N}][\p{L}\p{M}\p{N} .&/()+-]*$/u.test(service)) {
       return { ok: false, code: "INVALID_SERVICES" };
     }
     const key = service.toLocaleLowerCase("en");

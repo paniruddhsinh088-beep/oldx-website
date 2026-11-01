@@ -25,3 +25,15 @@ test("rejects invalid entries and markup-like input", () => {
     assert.deepEqual(normalizeServiceSelections(input), { ok: false, code: "INVALID_SERVICES" });
   }
 });
+
+test("accepts Gujarati and Hindi combining marks and normalizes Unicode duplicates", () => {
+  assert.deepEqual(normalizeServiceSelections(["ફર્નિચર રિપેર", "बिजली मिस्त्री"]), {
+    ok: true, services: ["ફર્નિચર રિપેર", "बिजली मिस्त्री"]
+  });
+  assert.deepEqual(normalizeServiceSelections(["Caf\u00e9", "Cafe\u0301"]), {
+    ok: false, code: "DUPLICATE_SERVICE"
+  });
+  for (const value of ["\u093fPlumber", "Plumber<script>", "Plumber\nElectrician"]) {
+    assert.equal(normalizeServiceSelections([value]).ok, false);
+  }
+});

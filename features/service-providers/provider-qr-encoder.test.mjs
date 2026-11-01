@@ -46,3 +46,12 @@ test("caller cannot override safe QR options", async () => {
   assert.equal(options.type, "svg");
   assert.equal(options.margin, 2);
 });
+
+test("uses an explicit default encoder without mistaking inherited toString for one", async () => {
+  assert.equal(await encodeProviderQrSvg(url, {}, async () => ({
+    default: { toString: async () => "<svg/>" }
+  })), "<svg/>");
+  for (const exports of [{ default: {} }, { toString: "invalid" }, Object.create({ toString: () => "forged" })]) {
+    await assert.rejects(() => encodeProviderQrSvg(url, {}, async () => exports), TypeError);
+  }
+});

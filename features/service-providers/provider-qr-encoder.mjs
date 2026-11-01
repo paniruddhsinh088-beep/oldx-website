@@ -8,7 +8,11 @@ export async function encodeProviderQrSvg(url, options, load = () => import("qrc
     throw new TypeError("Invalid OLDX provider URL");
   }
   const qr = await load();
-  const toString = qr?.toString ?? qr?.default?.toString;
+  // Plain objects inherit Object.prototype.toString; that is not an encoder.
+  // Accept only an explicit export, including CommonJS default interop.
+  const toString = qr && Object.hasOwn(qr, "toString") && typeof qr.toString === "function"
+    ? qr.toString
+    : qr?.default && Object.hasOwn(qr.default, "toString") ? qr.default.toString : undefined;
   if (typeof toString !== "function") throw new TypeError("QR encoder unavailable");
   return toString(url, {
     type: "svg",
