@@ -2800,6 +2800,15 @@
             if (!msg && !currentChatAttachment) return;
             if (!activeChatRoomId || !window.currentUser) return;
 
+            // Service chat writes are disabled until the service-specific
+            // Firestore create/message rules and block enforcement are deployed.
+            // This guard prevents the legacy product sender from bypassing that
+            // rollout merely because a service room appears in the inbox.
+            if (activeChatRoomId.startsWith('service_')) {
+                showCustomAlert("Service Chat", "Service messaging is not available yet. Please try again after launch.", "error");
+                return;
+            }
+
             const lowerMsg = msg.toLowerCase();
             const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
             const isSuspicious = scamKeywords.some(keyword => lowerMsg.includes(keyword));
