@@ -65,9 +65,16 @@ export async function invokeServiceContact({ action, auth, db, providerUid, prov
     return { allowed:false, reason:"Could not verify contact permissions. Please try again." };
   }
   // Host callback failures must propagate instead of masquerading as auth failures.
+  // Recheck the active session at the last possible point before the action.
+  // A sign-out/account switch between lookup and callback must not open chat.
   return requestServiceContact({
     action,
     resolvePermissions: async () => permissions,
-    onAllowed
+    onAllowed: async () => {
+      if (uidOf(auth?.currentUser) !== permissions.viewerUid) {
+        throw new Error("Your session changed. Please try again.");
+      }
+      return onAllowed();
+    }
   });
 }
