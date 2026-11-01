@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { authorizeBlockRelationship, authorizeMessageAgainstBlock, deriveOtherChatParticipant } from "../../scripts/chat-block-relationship-policy.mjs";
+import { authorizeBlockRelationship, authorizeMessageAgainstBlock, deriveOtherChatParticipant, authorizeChatCreation } from "../../scripts/chat-block-relationship-policy.mjs";
 
 test("only the blocker can create or remove their own relationship", () => {
   assert.deepEqual(authorizeBlockRelationship({ actorUid: "a", blockerUid: "a", blockedUid: "b", action: "block" }), { ok: true });
@@ -50,4 +50,21 @@ test("malformed or spoofed chat membership cannot derive a recipient", () => {
 test("blocking in either direction denies the corresponding sender", () => {
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "a", recipientUid: "b", chatParticipants: ["a", "b"], blockedByRecipient: true }).error, "blocked_by_recipient");
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "b", recipientUid: "a", chatParticipants: ["a", "b"], blockedByRecipient: true }).error, "blocked_by_recipient");
+});
+
+test("chat creation requires authenticated buyer and canonical product seller", () => {
+  assert.deepEqual(authorizeChatCreation({ actorUid: "buyer", buyerUid: "buyer", sellerUid: "seller", productId: "p1", participants: ["buyer", "seller"] }), { ok: true });
+  assert.equal(authorizeChatCreation({ actorUid: "seller", buyerUid: "buyer", sellerUid: "seller", productId: "p1", participants: ["buyer", "seller"] }).error, "invalid_chat_creation");
+  assert.equal(authorizeChatCreation({ actorUid: "buyer", buyerUid: "buyer", sellerUid: "attacker", productId: "p1", participants: ["buyer", "attacker"] }).ok, true);
+});
+
+test("chat creation rejects self-chat, malformed members and missing product identity", () => {
+  const base = { actorUid: "buyer", buyerUid: "buyer", sellerUid: "seller", productId: "p1", participants: ["buyer", "seller"] };
+  for (const patch of [
+    { sellerUid: "buyer", participants: ["buyer", "buyer"] },
+    { participants: ["buyer"] },
+    { participants: ["buyer", "seller", "third"] },
+    { productId: "" },
+    { buyerUid: "someone-else" }
+  ]) assert.equal(authorizeChatCreation({ ...base, ...patch }).ok, false);
 });
