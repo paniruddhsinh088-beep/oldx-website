@@ -45,6 +45,9 @@ jobs:
       - name: Run synthetic product privacy migration tests
         run: npm run test:product-migration
 
+      - name: Run product category schema tests
+        run: npm run test:product-category
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
