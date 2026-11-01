@@ -27,7 +27,7 @@ export async function authorizeAdminRequest({
     return { ok: false, status: 401, code: "INVALID_TOKEN" };
   }
 
-  if (!identity || typeof identity.uid !== "string" || !identity.uid) {
+  if (!identity || typeof identity.uid !== "string" || !identity.uid.trim()) {
     return { ok: false, status: 401, code: "INVALID_TOKEN" };
   }
 
