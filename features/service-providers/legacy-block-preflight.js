@@ -19,3 +19,13 @@ export function checkLegacyBlockPair({buyerUid,providerUid,buyerBlockedUsers,pro
   const provider = inspectLegacyBlocks(providerUid,providerBlockedUsers);
   return Object.freeze({blockedByBuyer:buyer.some(x=>x.blockedUid===providerUid),blockedByProvider:provider.some(x=>x.blockedUid===buyerUid)});
 }
+
+/** Authorization preflight only. Never substitutes for server-side Firestore rules. */
+export function canOpenServiceChatFromLegacy(input) {
+  try {
+    const pair = checkLegacyBlockPair(input);
+    return Object.freeze({allowed:!pair.blockedByBuyer&&!pair.blockedByProvider,reason:pair.blockedByBuyer||pair.blockedByProvider?"blocked":"clear"});
+  } catch {
+    return Object.freeze({allowed:false,reason:"unverified-legacy-blocks"});
+  }
+}
