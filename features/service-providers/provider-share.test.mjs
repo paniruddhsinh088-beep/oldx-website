@@ -26,7 +26,8 @@ test("rejects insecure and injected share origins", () => {
   for (const origin of [
     "http://oldxbazar.in", "javascript:alert(1)",
     "https://user:pass@oldxbazar.in", "https://oldxbazar.in/other",
-    "https://oldxbazar.in?x=1", "https://oldxbazar.in:444"
+    "https://oldxbazar.in?x=1", "https://oldxbazar.in:444",
+    "https://fake-oldx.example", "https://oldxbazar.in.evil.example"
   ]) {
     assert.equal(buildProviderShareMetadata({ ...valid, origin }).ok, false);
   }
