@@ -23,7 +23,7 @@ Prefer a locally bundled web build over a thin remote-URL-only WebView. The app 
 
 ## Multilingual readiness
 
-OLDX is planned as an Indian local-marketplace app with first-launch language selection and a Profile / Settings language switch. The complete language architecture, proposed rollout, private preference handling, translation QA, script/RTL and performance gates are documented in `MULTILINGUAL_INDIAN_LANGUAGE_SUPPORT_PLAN.md`. Treat this as a planned feature, not an implemented capability; complete translation and locale tests before Play Store release.
+OLDX is planned as an Indian local-marketplace app with first-launch language selection and a Profile / Settings language switch. The initial release is limited to Gujarati, English, and Hindi. First-launch selection, the Profile / Settings language switch, private preference handling, translation QA, script rendering, accessibility, and performance gates are documented in `MULTILINGUAL_INDIAN_LANGUAGE_SUPPORT_PLAN.md`. Additional languages are a future enhancement, not part of the initial release. Treat this as a planned feature, not an implemented capability; complete translation and locale tests before Play Store release.
 
 ## Cost controls
 
