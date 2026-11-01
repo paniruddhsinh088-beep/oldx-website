@@ -14,7 +14,8 @@
     "test:product-category": "node --test tests/firestore-emulator/product-category-schema.test.mjs",
     "test:product-image-classifier": "node --test tests/firestore-emulator/product-image-reference-classifier.test.mjs",
     "test:image-upload-contract": "node --test tests/firestore-emulator/image-upload-contract-policy.test.mjs",
-    "test:image-lifecycle": "node --test tests/firestore-emulator/image-lifecycle-policy.test.mjs"
+    "test:image-lifecycle": "node --test tests/firestore-emulator/image-lifecycle-policy.test.mjs",
+    "test:image-upload-abuse": "node --test tests/firestore-emulator/image-upload-abuse-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"
