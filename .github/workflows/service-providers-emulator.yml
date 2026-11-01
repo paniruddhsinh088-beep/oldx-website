@@ -10,6 +10,8 @@ on:
       - 'firebase.service-providers-emulator.json'
       - 'features/service-providers/profile-draft-validation.mjs'
       - 'features/service-providers/profile-draft-validation.test.mjs'
+      - 'features/service-providers/moderation-policy.mjs'
+      - 'features/service-providers/moderation-policy.test.mjs'
   workflow_dispatch:
 
 permissions:
@@ -31,6 +33,6 @@ jobs:
       - name: Install emulator test dependencies
         run: npm install --no-save --package-lock=false firebase@10.14.1 @firebase/rules-unit-testing@3.0.4 firebase-tools@13.35.1
       - name: Validate service provider draft input
-        run: node --test features/service-providers/profile-draft-validation.test.mjs
+        run: node --test features/service-providers/profile-draft-validation.test.mjs features/service-providers/moderation-policy.test.mjs
       - name: Run isolated Firestore emulator tests
         run: npx firebase emulators:exec --only firestore --project demo-oldx-service-providers --config firebase.service-providers-emulator.json "node --test tests/firestore-emulator/service-providers-candidate-runtime.test.mjs"
