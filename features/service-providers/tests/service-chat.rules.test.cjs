@@ -101,3 +101,11 @@ test("client room creation remains disabled even with canonical participants",as
   await assertFails(setDoc(doc(db("provider"),room),canonical));
   await assertFails(setDoc(doc(db("stranger"),room),canonical));
 });
+
+test("service room updates and deletes stay denied for every role",async()=>{
+  await seed(room,roomData);
+  for(const uid of ["buyer","provider","stranger"]){
+    await assertFails(updateDoc(doc(db(uid),room),{chatType:"service"}));
+    await assertFails(deleteDoc(doc(db(uid),room)));
+  }
+});
