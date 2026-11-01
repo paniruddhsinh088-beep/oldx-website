@@ -31,6 +31,10 @@ export async function openVerifiedServiceChat({
   } catch {
     return {allowed:false,reason:"Could not verify service provider.",context:null};
   }
+  // The account can change while the provider document is being fetched.
+  if (auth?.currentUser?.uid !== buyerUid) {
+    return {allowed:false,reason:"Your session changed. Please try again.",context:null};
+  }
   const result=await invokeServiceContact({
     action:"chat",auth,db,providerUid,providerStatus,
     onAllowed:()=>openExistingChat(context)
