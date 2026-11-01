@@ -15,6 +15,10 @@ test("legacy message sender does not write service messages",()=>{
  assert.ok(sender.indexOf("activeChatRoomId.startsWith('service_')") <
    sender.indexOf("sendChatMessageNow("));
 });
+test("direct message sender has its own service guard",()=>{
+ const sender=between("function sendChatMessageNow(msg, input)","function ");
+ assert.ok(sender.includes("activeChatRoomId.startsWith('service_')"));
+});
 test("service read receipts are not written",()=>{
  const reader=between("function loadChatMessages(chatRoomId)","function ");
  assert.match(reader,/if \(!chatRoomId\.startsWith\('service_'\)\) setTimeout/);
