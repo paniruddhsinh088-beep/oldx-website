@@ -1605,6 +1605,7 @@
         let activeChatRoomId = null;
         let activeChatOtherUserId = null;
         let activeChatUnsubscribe = null;
+        let activeTypingUnsubscribe = null;
         let activeStatusUnsubscribe = null;
         let inboxListenerUnsubscribe = null;
         let userSavedAdsUnsubscribe = null;
@@ -2486,6 +2487,8 @@
         }
 
         function closeFullChatPage() {
+            clearTimeout(window.typingTimer);
+            if (activeTypingUnsubscribe) { activeTypingUnsubscribe(); activeTypingUnsubscribe = null; }
             if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
@@ -2561,15 +2564,18 @@
             ['input', 'keyup', 'keydown'].forEach(eventType => {
                 chatInputEl.addEventListener(eventType, () => {
                     if(!activeChatRoomId || !window.currentUser) return;
-                    
-                    db.collection('chats').doc(activeChatRoomId).set({
+                    // Service typing writes are not authorized by the draft rules.
+                    if (activeChatRoomId.startsWith('service_')) return;
+                    const typingRoomId = activeChatRoomId;
+                    const typingUserId = window.currentUser.uid;
+                    db.collection('chats').doc(typingRoomId).set({
                         [`typing_${window.currentUser.uid}`]: true
                     }, { merge: true });
 
                     clearTimeout(window.typingTimer);
                     window.typingTimer = setTimeout(() => {
-                        if(activeChatRoomId && window.currentUser) {
-                            db.collection('chats').doc(activeChatRoomId).set({
+                        if(activeChatRoomId === typingRoomId && window.currentUser?.uid === typingUserId) {
+                            db.collection('chats').doc(typingRoomId).set({
                                 [`typing_${window.currentUser.uid}`]: false
                             }, { merge: true });
                         }
@@ -2579,9 +2585,10 @@
         }
 
         function watchTypingStatus(chatRoomId, otherUserId) {
+            if (activeTypingUnsubscribe) { activeTypingUnsubscribe(); activeTypingUnsubscribe = null; }
             if(!chatRoomId || !otherUserId) return;
 
-            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+            activeTypingUnsubscribe = db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
                 const statusEl = document.getElementById('chatUserStatus');
                 if (!statusEl) return;
 
