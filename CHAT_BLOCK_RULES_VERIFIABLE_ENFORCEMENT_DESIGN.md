@@ -72,3 +72,32 @@ If the existing chat data cannot safely support canonical two-party fields or Ru
 ## Release gate
 
 Do not claim blocking is securely enforced until collection-specific Rules or an approved trusted backend are implemented, emulator tests prove both directions, migration is reconciled, and the client no longer relies on reading another user's private block list. Staging Firestore remains deny-all; Production and live data remain untouched.
+
+
+## Verified current-client source audit (branch snapshot)
+
+The current `index.html` source was inspected after the initial design was written:
+
+- Chat documents are created/merged with `participants: [buyerId, sellerId]` and `productId`. The primary chat ID is `${productId}_${buyerId}`; the ID alone is not an authorization proof.
+- Inbox navigation derives the other participant from the stored `participants` array, excluding the current UID and a legacy `guest` marker.
+- Message creation writes `text`, `attachment`, `senderUid`, `senderName`, `status`, `time`, and `createdAt`. Offer creation uses the same chat/message collections and a similar but not identical message payload.
+- The browser currently writes chat parent fields `typing_<uid>` and `lastUpdated` using merge writes. These are mutable operational fields and must not allow changing `participants` or `productId`.
+- The current block UI reads/writes the caller's `users/{uid}.blockedUsers` array. The send path separately reads the recipient's `users/{recipientUid}.blockedUsers` array from the browser. Neither is a secure server-side enforcement boundary.
+- `delete for me` currently writes the caller UID into a shared message's `hiddenFor` array. `delete for everyone` client-side checks `senderUid`, then updates `deletedForEveryone`, `text`, and `attachment`.
+- Read receipts are currently written by updating each incoming message's shared `status` field to `read`.
+
+### Consequences for the proposed Rules design
+
+1. A `participants` array is present, so a Rules proof can potentially require exactly two distinct string UIDs, require the caller to be one of them, and derive the other UID from that array. The parent chat's participant array and `productId` must be immutable after trusted/validated creation; ordinary client merge writes must not be allowed to rewrite them.
+2. The chat-create rule must prove that the caller is the buyer and the other participant is the actual seller for the referenced product using the canonical product record. A client-provided `participants` array is not proof. The precise product collection/schema and legacy chat creation patterns must be fully audited before writing deployable rules.
+3. The message-create rule must compare `senderUid` with `request.auth.uid`, check parent membership, and check whether the other participant has a block record for the sender. Do not trust the browser's recipient lookup or its pre-send check.
+4. Parent updates must be split into strict field-specific permissions: at most the caller's own typing marker and a controlled timestamp update, while forbidding participant/product ID mutation. Consider moving typing state to a per-user subdocument to avoid dynamic top-level field authorization.
+5. Shared `hiddenFor` and `status: read` are privacy leaks/consistency hazards. A later migration should move hide state and read cursors to participant-private documents. Until then, do not claim per-user deletion or read receipt privacy is guaranteed.
+6. Delete-for-everyone needs a transition-only rule: only the original sender may set the tombstone once, and only approved tombstone fields may change. A client must not clear or reverse a tombstone or arbitrarily edit content/attachment.
+7. Offer messages must pass the same block and membership checks as ordinary messages. A separate UI path must not become a policy bypass.
+
+## Current rules-test boundary
+
+The repository's Firebase emulator configuration intentionally loads only `tests/firestore-emulator/deny-all.rules`. The current runtime rules test proves that unauthenticated users, authenticated users, and admin-like claims are denied. It does not test a proposed application chat policy. The new block-policy tests are pure synthetic JavaScript tests, not Firestore Rules Emulator enforcement tests.
+
+Therefore this source audit does not authorize replacing deny-all rules, nor does it establish that blocking is active or secure in the running app.
