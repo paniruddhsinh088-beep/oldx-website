@@ -42,6 +42,7 @@ test("only owner participant can read own private state", async () => {
 test("clients cannot create, update, or delete private state cursor documents", async () => {
   const db = dbFor("alice");
   await assertFails(setDoc(doc(db, "chats/chatA/userState/alice"), { unreadCount: 99 }));
+  await assertFails(setDoc(doc(db, "chats/chatA/userState/alice"), { unreadCount: 99 }, { merge: true }));
   await assertFails(deleteDoc(doc(db, "chats/chatA/userState/alice")));
 });
 
