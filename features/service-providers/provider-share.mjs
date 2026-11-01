@@ -20,7 +20,8 @@ export function buildProviderShareMetadata({ origin, providerId, displayName, ci
   // queries, fragments, nonstandard ports or insecure HTTP links.
   if (base.protocol !== "https:" || base.username || base.password ||
       base.pathname !== "/" || base.search || base.hash || base.port ||
-      !base.hostname.includes(".") || origin !== base.origin) {
+      !["oldxbazar.in", "www.oldxbazar.in"].includes(base.hostname) ||
+      origin !== base.origin) {
     return { ok: false, code: "INVALID_SHARE_ORIGIN" };
   }
   const id = providerId.trim();
