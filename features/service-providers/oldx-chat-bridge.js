@@ -8,7 +8,7 @@ import {buildServiceChatContext} from "./chat-context.js";
 import {invokeServiceContact} from "./oldx-contact-adapter.js";
 
 export async function openVerifiedServiceChat({
-  auth, db, providerUid, providerStatus, openExistingChat
+  auth, db, providerUid, openExistingChat
 } = {}) {
   if (typeof openExistingChat !== "function") {
     throw new TypeError("Audited OLDX chat opener required");
@@ -16,6 +16,18 @@ export async function openVerifiedServiceChat({
   const buyerUid=auth?.currentUser?.uid;
   // Reject bad context before reading user documents.
   const context=buildServiceChatContext({providerUid,buyerUid});
+  // Never trust an "active" status supplied by a card or URL.
+  // Fetch the provider document immediately before the contact permission check.
+  let providerStatus="unavailable";
+  try {
+    const snap=await db.collection("serviceProviders").doc(providerUid).get();
+    const profile=snap.exists ? snap.data() : null;
+    if (profile?.ownerUid === providerUid && profile?.status === "active") {
+      providerStatus="active";
+    }
+  } catch {
+    return {allowed:false,reason:"Could not verify service provider.",context:null};
+  }
   const result=await invokeServiceContact({
     action:"chat",auth,db,providerUid,providerStatus,
     onAllowed:()=>openExistingChat(context)
