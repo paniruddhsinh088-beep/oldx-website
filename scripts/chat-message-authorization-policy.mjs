@@ -2,7 +2,9 @@ const MESSAGE_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
 export function authorizeChatMutation({ action, actorUid, senderUid, participants, targetUid, blocked = false, tombstoned = false }) {
   if (typeof actorUid !== "string" || !actorUid ||
-      !Array.isArray(participants) || !participants.includes(actorUid)) {
+      !Array.isArray(participants) || participants.length !== 2 ||
+      participants.some(uid => typeof uid !== "string" || !uid) ||
+      participants[0] === participants[1] || !participants.includes(actorUid)) {
     return { ok: false, error: "not_participant" };
   }
   if (typeof senderUid !== "string" || !senderUid) return { ok: false, error: "invalid_sender" };
