@@ -23,9 +23,11 @@ No provider can guarantee zero cost, zero downtime or unlimited free capacity. F
 - Confirm the current Vercel account plan and commercial-use eligibility before treating it as a production assumption. Vercel's published pricing describes Hobby as for personal, non-commercial use; Pro is currently listed at USD $20/month before taxes. Do not upgrade without owner approval.
 - Do not add Vercel Blob for images in this phase; R2 is the lower-cost candidate for large public image delivery.
 
-### B. Future lightweight API: Cloudflare Workers Free as the first pilot candidate
+### B. Future lightweight API: Cloudflare Workers Free as a narrow pilot candidate — not the privileged Admin backend
 
-Why it is the best initial cost candidate:
+The follow-up compatibility review in `CLOUDFLARE_WORKERS_FIREBASE_COMPATIBILITY_REVIEW.md` narrows this recommendation. Workers Free may be evaluated for small user-scoped API requests, but it is not approved as the privileged Admin backend. A Worker forwarding a verified Firebase ID token to Firestore REST remains subject to Firestore Security Rules; a service-account OAuth token bypasses Rules and relies on IAM. Do not add a service-account private key as a shortcut.
+
+Why it is a promising initial cost candidate:
 - Published Free plan: 100,000 requests/day across Workers, 10 ms CPU per invocation, with no duration charge.
 - Global execution network and no general cold-start delay, useful for short authentication/authorization and upload-grant requests.
 - Static assets are free and unlimited under the Workers pricing documentation.
@@ -35,9 +37,10 @@ Important limits:
 - Free Worker CPU is only 10 ms per request. It is suitable for short control-plane tasks, not decoding/re-encoding large images.
 - Free plan limits are hard limits; over-limit requests can fail. User-facing errors should be clear and retryable.
 - Keep heavy image processing outside the request path; use an approved managed image transformation service or a separately costed asynchronous processor only after testing and approval.
-- Worker must verify Firebase ID tokens, derive UID from verified claims, enforce ownership/participant rules and use a narrowly scoped server credential for Firestore REST access. Never trust a browser-supplied UID.
-- Any service-account key must be stored only in Cloudflare's encrypted secret store, never in GitHub, source files, browser bundles or chat. Use a dedicated staging-only identity and least privilege.
-- Confirm Firestore REST transaction behavior, token verification, region/latency, secret rotation and emulator/integration coverage before implementation. If this complexity cannot be safely met, do not force this architecture.
+- Worker must verify Firebase ID tokens (including RS256 signature, exp, iat, aud, iss, sub and auth_time), derive UID only from verified claims, and forward the user's original ID token for user-scoped Firestore REST calls so Rules remain in force. Never trust a browser-supplied UID.
+- Keep the current deny-all Staging Rules in place until a separate collection-specific rules plan is approved. The Worker must not bypass them.
+- Do not put a service-account private key in the Worker as a shortcut. Privileged Admin operations requiring IAM/Admin SDK access need a separate managed-runtime or workload-identity design, dedicated staging identity and explicit owner approval.
+- Benchmark JWT verification CPU time, Firestore REST transaction behavior, region/latency and emulator/integration coverage before implementation. If the design cannot be safely proven within Free limits, do not force this architecture.
 
 ### C. Image storage: Cloudflare R2 Standard as the leading pilot candidate
 
@@ -104,12 +107,13 @@ Use client-side resize/compression for speed and reduced mobile data, but repeat
 | Area | Recommended option | Why | Gate |
 |---|---|---|---|
 | Existing frontend | Keep current Vercel hosting | Avoid disruptive migration; use CDN/static optimization already in place | Verify plan and commercial eligibility |
-| New lightweight API | Cloudflare Workers Free pilot | Low entry cost, global, suitable for short auth/upload-grant calls | Verify integration and free CPU limit; owner approval to provision |
+| New lightweight API | Cloudflare Workers Free, narrow user-scoped pilot only | Low entry cost; short requests may fit free limits | Verify Firebase token claims, Rules-preserving REST access and CPU budget; not privileged Admin backend |
 | Image object storage | Cloudflare R2 Standard | 10 GB free allowance and free internet egress | Private bucket, processing, quotas, cost controls; owner approval |
-| Identity | Existing Firebase Auth | Avoid user migration | Verify ID tokens server-side |
+| Identity | Existing Firebase Auth | Avoid user migration | Verify ID tokens server-side; never trust client UID/role |
 | Marketplace data | Existing Firestore | Avoid duplicate database and migration | Keep deny-all until rules/audit ready |
 | Heavy image processing | Defer; evaluate managed transformations separately | Avoid CPU-heavy work in 10 ms Worker | Measure costs and approve |
-| Firebase Storage/Cloud Functions Blaze | Not first choice | Billing-enabled plan creates cost risk | Revisit only if Workers integration proves too complex |
+| Privileged Admin backend | Defer; later compare Cloud Functions/Cloud Run with a safe Worker federation design | Service-account access bypasses Firestore Rules and needs IAM | Do not implement until platform, billing, identity and owner approval are explicit |
+| Firebase Storage/Cloud Functions Blaze | Not first choice for image storage; managed Google runtime may be appropriate for privileged Admin work | Billing-enabled plan creates cost risk | Revisit only after security and cost comparison |
 
 ## Official pricing and limits reviewed
 
