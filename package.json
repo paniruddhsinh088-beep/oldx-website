@@ -21,7 +21,8 @@
     "test:chat-message-authorization": "node --test tests/firestore-emulator/chat-message-authorization-policy.test.mjs",
     "test:account-deletion": "node --test tests/firestore-emulator/account-deletion-policy.test.mjs",
     "test:privacy-policy": "node --test tests/firestore-emulator/privacy-preferences-policy.test.mjs",
-    "test:data-requests": "node --test tests/firestore-emulator/data-request-policy.test.mjs"
+    "test:data-requests": "node --test tests/firestore-emulator/data-request-policy.test.mjs",
+    "test:chat-privacy": "node --test tests/firestore-emulator/chat-privacy-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"
