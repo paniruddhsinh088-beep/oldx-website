@@ -57,3 +57,18 @@ test('client cannot delete public profile or review', async () => {
   await assertFails(deleteDoc(doc(db, 'serviceProviders/active')));
   await assertFails(deleteDoc(doc(db, 'serviceProviderReviews/published')));
 });
+
+test('client cannot create or overwrite private contact and audit records', async () => {
+  for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext('active').firestore()]) {
+    await assertFails(setDoc(doc(db, 'serviceProviderPrivate/active'), {
+      phoneE164: '+911234567890', allowPublicPhone: true
+    }));
+    await assertFails(setDoc(doc(db, 'serviceProviderAudit/new'), { action: 'forged' }));
+  }
+});
+test('client cannot change moderation state on existing review', async () => {
+  const db = env.authenticatedContext('active', { admin: true }).firestore();
+  await assertFails(setDoc(doc(db, 'serviceProviderReviews/hidden'), {
+    status: 'published', rating: 5
+  }));
+});
