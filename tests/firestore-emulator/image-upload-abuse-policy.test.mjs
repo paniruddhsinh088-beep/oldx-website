@@ -12,6 +12,8 @@ test('requires trusted authenticated owner identity', () => {
 test('rejects unknown surfaces and invalid sizes', () => {
   assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'other', bytes: 10, fileCount: 1 }, [], now).reason, 'unknown_surface');
   assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'product', bytes: 0, fileCount: 1 }, [], now).reason, 'invalid_request');
+  assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'product', bytes: 1.5, fileCount: 1 }, [], now).reason, 'invalid_request');
+  assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'product', bytes: 100, fileCount: 1 }, null, now).reason, 'invalid_request');
 });
 test('enforces per-file size and per-surface file-count caps', () => {
   assert.equal(evaluateUploadRequest({ uid: 'u1', surface: 'profile', bytes: 2 * 1024 * 1024 + 1, fileCount: 1 }, [], now).reason, 'file_size_exceeded');
@@ -47,10 +49,11 @@ test('ignores expired and future-dated grant history', () => {
 test('cleanup selects only old unreferenced quarantine, orphan and rejected objects', () => {
   const old = now - 25 * 60 * 60 * 1000;
   const items = [
-    { objectId: 'q1', status: 'quarantined', createdAt: old },
-    { objectId: 'o1', status: 'orphaned', createdAt: old },
-    { objectId: 'r1', status: 'rejected', createdAt: old },
-    { objectId: 'a1', status: 'approved', createdAt: old },
+    { objectId: 'q1', status: 'quarantined', createdAt: old, approved: false, referenced: false, published: false },
+    { objectId: 'o1', status: 'orphaned', createdAt: old, approved: false, referenced: false, published: false },
+    { objectId: 'r1', status: 'rejected', createdAt: old, approved: false, referenced: false, published: false },
+    { objectId: 'a1', status: 'approved', createdAt: old, approved: false, referenced: false, published: false },
+    { objectId: 'unknown1', status: 'orphaned', createdAt: old },
     { objectId: 'p1', status: 'quarantined', createdAt: old, published: true },
     { objectId: 'ref1', status: 'orphaned', createdAt: old, referenced: true },
     { objectId: 'new1', status: 'quarantined', createdAt: now - 1000 }
@@ -62,13 +65,17 @@ test('cleanup selects only old unreferenced quarantine, orphan and rejected obje
   ]);
 });
 test('cleanup selection never exceeds the bounded batch size', () => {
-  const items = Array.from({ length: 150 }, (_, i) => ({ objectId: 'old-' + i, status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000 }));
+  const items = Array.from({ length: 150 }, (_, i) => ({ objectId: 'old-' + i, status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000, approved: false, referenced: false, published: false }));
   assert.equal(selectCleanupCandidates(items, now).length, CLEANUP_POLICY.batchLimit);
 });
 test('cleanup selection is deterministic and safe on malformed input', () => {
-  const items = [{ objectId: 'x', status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000 }];
+  const items = [{ objectId: 'x', status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000, approved: false, referenced: false, published: false }];
   assert.deepEqual(selectCleanupCandidates(items, now), selectCleanupCandidates(items, now));
   assert.deepEqual(selectCleanupCandidates(null, now), []);
+  assert.deepEqual(selectCleanupCandidates([
+    { objectId: 'same', status: 'orphaned', createdAt: now - 30 * 60 * 60 * 1000, approved: false, referenced: false, published: false },
+    { objectId: 'same', status: 'rejected', createdAt: now - 30 * 60 * 60 * 1000, approved: false, referenced: false, published: false }
+  ], now), [{ objectId: 'same', reason: 'orphaned' }]);
 });
 test('cleanup policy requires a grace period, bounded batches and pre-delete recheck', () => {
   assert.equal(CLEANUP_POLICY.gracePeriodHours, 24);
