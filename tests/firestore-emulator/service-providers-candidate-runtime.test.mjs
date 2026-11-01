@@ -2,7 +2,7 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs, serverTimestamp, updateDoc } from 'firebase/firestore';
 
 let env;
 before(async () => {
@@ -70,5 +70,28 @@ test('client cannot change moderation state on existing review', async () => {
   const db = env.authenticatedContext('active', { admin: true }).firestore();
   await assertFails(setDoc(doc(db, 'serviceProviderReviews/hidden'), {
     status: 'published', rating: 5
+  }));
+});
+
+test('authenticated provider may create only their own pending profile', async () => {
+  const db = env.authenticatedContext('new-provider').firestore();
+  await assertSucceeds(setDoc(doc(db, 'serviceProviders/new-provider'), {
+    ownerUid: 'new-provider', displayName: 'Local Painter',
+    serviceIds: ['painting', 'repairs'], cityId: 'ahmedabad',
+    status: 'pending', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  }));
+  await assertFails(setDoc(doc(db, 'serviceProviders/someone-else'), {
+    ownerUid: 'someone-else', displayName: 'Imposter',
+    serviceIds: ['painting'], cityId: 'ahmedabad',
+    status: 'pending', createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  }));
+});
+test('provider may edit own public draft but not approval status', async () => {
+  const db = env.authenticatedContext('new-provider').firestore();
+  await assertSucceeds(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    displayName: 'Local Painter Updated', updatedAt: serverTimestamp()
+  }));
+  await assertFails(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    status: 'active', updatedAt: serverTimestamp()
   }));
 });
