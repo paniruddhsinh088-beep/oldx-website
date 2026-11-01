@@ -1,0 +1,38 @@
+// REVIEW-ONLY Firestore rules fragment — NOT deployed.
+// Insert inside match /databases/{database}/documents in the complete audited
+// ruleset. DO NOT copy into production without checking overlapping /chats rules:
+// Firestore ORs matching allow expressions; a broad legacy allow may bypass these.
+//
+// This is a safe first phase: server-created service rooms can be read only by
+// participants, but client writes are disabled until the full chat data model,
+// blocking enforcement, and legacy rules have been audited.
+match /chats/{chatId} {
+  function serviceRoom() {
+    return resource.data.get('chatType', '') == 'service';
+  }
+  function serviceParticipant() {
+    return request.auth != null
+      && resource.data.participants is list
+      && resource.data.participants.size() == 2
+      && request.auth.uid in resource.data.participants;
+  }
+
+  // This fragment is intentionally for SERVICE rooms only. Do not deploy as
+  // a replacement for legacy product-chat permissions.
+  allow get: if serviceRoom() && serviceParticipant();
+  allow list: if false;
+  allow create, update, delete: if false;
+
+  match /messages/{messageId} {
+    function canReadServiceMessages() {
+      let room = get(/databases/$(database)/documents/chats/$(chatId));
+      return request.auth != null
+        && room.data.get('chatType', '') == 'service'
+        && room.data.participants is list
+        && room.data.participants.size() == 2
+        && request.auth.uid in room.data.participants;
+    }
+    allow get, list: if canReadServiceMessages();
+    allow create, update, delete: if false;
+  }
+}
