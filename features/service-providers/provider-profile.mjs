@@ -30,7 +30,7 @@ export function normalizeProviderProfile(input) {
   const displayName = cleanText(input.displayName, 80);
   const city = cleanText(input.city, 80);
   const serviceArea = cleanText(input.serviceArea, 120);
-  const description = input.description === undefined || input.description === "" ? "" : cleanText(input.description, 1200);
+  const description = input.description === undefined || (typeof input.description === "string" && input.description.trim() === "") ? "" : cleanText(input.description, 1200);
   const services = normalizeServiceSelections(input.services);
   if (!displayName || !city || !serviceArea || description === null || !services.ok) {
     return { ok: false, code: "INVALID_PROFILE" };
