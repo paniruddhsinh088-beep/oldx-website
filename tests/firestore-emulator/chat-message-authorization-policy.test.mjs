@@ -15,6 +15,15 @@ test("non-participant cannot mutate a chat", () => {
   }), { ok: false, error: "not_participant" });
 });
 
+test("sender UID spoofing is rejected before message send", () => {
+  assert.equal(authorizeChatMutation({
+    action: "send", actorUid: "synthetic-a", senderUid: "synthetic-b", participants
+  }).error, "sender_mismatch");
+  assert.deepEqual(authorizeChatMutation({
+    action: "send", actorUid: "synthetic-a", senderUid: "synthetic-a", participants
+  }), { ok: true });
+});
+
 test("blocked participant cannot send", () => {
   assert.equal(authorizeChatMutation({
     action: "send", actorUid: "synthetic-a", senderUid: "synthetic-a", participants, blocked: true
