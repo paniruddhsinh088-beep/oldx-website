@@ -44,3 +44,15 @@ test("service-prefixed rooms cannot inherit product chat permissions",async()=>{
  await assertFails(setDoc(doc(buyer,"chats/service_fake"),{typing_buyer:true},{merge:true}));
  await assertFails(setDoc(doc(buyer,"chats/service_new"),{participants:["buyer","seller"],productId:"p1"}));
 });
+
+test("message creation rejects forged timestamps, non-text payloads, and oversized text",async()=>{
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/forged-time"),{senderUid:"buyer",text:"hello",status:"sent",createdAt:1}));
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/not-text"),{senderUid:"buyer",text:42,status:"sent",createdAt:serverTimestamp()}));
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/oversized"),{senderUid:"buyer",text:"x".repeat(10001),status:"sent",createdAt:serverTimestamp()}));
+});
+test("unauthenticated client cannot read product room or messages",async()=>{
+ const guest=env.unauthenticatedContext().firestore();
+ await assertFails(getDoc(doc(guest,"chats/existing")));
+ await assertFails(getDoc(doc(guest,"chats/existing/messages/old")));
+});
