@@ -39,8 +39,11 @@ import { mountPublicServiceProfile } from "./public-profile.js";
 
 mountServiceProviderForm(document.getElementById("profile-form"), {onSubmit: async profile => {
   const summary = document.getElementById("form-result");
-  summary.textContent = `Validated: ${profile.displayName} — ${profile.serviceCategories.join(", ")} (${profile.city}, ${profile.district}). Demo only; not saved.`;
+  summary.textContent = `Validated: ${profile.displayName} — ${profile.serviceCategories.join(", ")} (${profile.city}, ${profile.district}). Added to this demo only; not saved.`;
+  profiles.unshift({ ...profile, id: "demo-new-" + (++demoCounter), status: "active" });
+  refreshDirectory();
 }});
+let demoCounter = 0;
 const profiles = [
  {id:"demo-carpenter",status:"active",displayName:"Sample Carpenter",description:"Furniture repair and woodwork",city:"Ahmedabad",district:"Ahmedabad",serviceCategories:["carpenter"]},
  {id:"demo-electrician",status:"active",displayName:"Sample Electrician",description:"Electrical wiring and appliance repairs",city:"Surat",district:"Surat",serviceCategories:["electrician","appliance-repair"]},
@@ -71,7 +74,21 @@ function showProfile(id) {
   profileSection.hidden = false;
   document.title = item.displayName + " — OLDX Demo";
 }
-const directory = mountPublicServiceDirectory(document.getElementById("directory"), {
+let directory;
+function refreshDirectory() {
+  directory?.destroy?.();
+  directory = mountPublicServiceDirectory(document.getElementById("directory"), {
+    profiles,
+    onProfileOpen(id) {
+      const url = new URL(location.href);
+      url.searchParams.set("serviceProvider", id);
+      history.pushState({ serviceProvider: id }, "", url);
+      showProfile(id);
+    }
+  });
+}
+/* Original directory initialization kept below until refresh handler is validated. */
+/* const directory = mountPublicServiceDirectory(document.getElementById("directory"), {
   profiles,
   onProfileOpen(id) {
     const url = new URL(location.href);
@@ -80,6 +97,8 @@ const directory = mountPublicServiceDirectory(document.getElementById("directory
     showProfile(id);
   }
 });
+*/
+refreshDirectory();
 function syncFromUrl() {
   const id = new URL(location.href).searchParams.get("serviceProvider");
   if (id) showProfile(id);
