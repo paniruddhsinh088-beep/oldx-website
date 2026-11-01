@@ -21,7 +21,7 @@ test("rejects unsupported content types including SVG", () => {
 });
 
 test("enforces per-surface byte, dimension and pixel ceilings", () => {
-  const result = validateProcessedImage({ surface: "profile", contentType: "image/jpeg", byteSize: 3 * 1024 * 1024, width: 2000, height: 2000 });
+  const result = validateProcessedImage({ surface: "profile", contentType: "image/jpeg", byteSize: 3 * 1024 * 1024, width: 2100, height: 2000 });
   assert.ok(result.errors.includes("invalid_byte_size"));
   assert.ok(result.errors.includes("invalid_width"));
   assert.ok(result.errors.includes("invalid_height"));
