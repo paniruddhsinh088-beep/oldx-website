@@ -14,9 +14,11 @@ export async function renderProviderQrSvg(profile, toString) {
     const svg = await toString(payload.value.text, {
       type: "svg", errorCorrectionLevel: "M", margin: 2, width: 256
     });
+    const svgWithoutNamespace = typeof svg === "string"
+      ? svg.replace(/xmlns="http:\\/\\/www\\.w3\\.org\\/2000\\/svg"/u, "") : "";
     if (typeof svg !== "string" || svg.length > 200000 ||
         !/^\s*<svg\b[^>]*\bxmlns="http:\/\/www\.w3\.org\/2000\/svg"/u.test(svg) ||
-        /<\s*(?:script|foreignObject|image|iframe|use)\b|\bon\w+\s*=|(?:javascript:|https?:\/\/)/iu.test(svg)) {
+        /<\s*(?:script|foreignObject|image|iframe|use)\b|\bon\w+\s*=|(?:javascript:|https?:\/\/)/iu.test(svgWithoutNamespace)) {
       return { ok: false, code: "UNSAFE_QR_SVG" };
     }
     return { ok: true, value: { svg, mimeType: "image/svg+xml", url: payload.value.text } };
