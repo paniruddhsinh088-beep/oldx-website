@@ -20,6 +20,11 @@ Prefer a locally bundled web build over a thin remote-URL-only WebView. The app 
 6. **Play Console preparation:** Confirm the current Google Play developer account requirements, identity verification, testing-track requirements, target API level, Data safety declarations, privacy policy, content rating, app access instructions, screenshots, icon, and store listing at release time. Google Play policies and target API deadlines change; re-check official requirements immediately before submission rather than hard-coding today's values in this plan.
 7. **Release candidate:** Produce a signed Android App Bundle (AAB), keep signing material outside Git and chat, test an internal/closed track, fix review findings, then obtain explicit owner approval before production release.
 
+
+## Multilingual readiness
+
+OLDX is planned as an Indian local-marketplace app with first-launch language selection and a Profile / Settings language switch. The complete language architecture, proposed rollout, private preference handling, translation QA, script/RTL and performance gates are documented in `MULTILINGUAL_INDIAN_LANGUAGE_SUPPORT_PLAN.md`. Treat this as a planned feature, not an implemented capability; complete translation and locale tests before Play Store release.
+
 ## Cost controls
 
 - Capacitor: free/open source; no subscription required.
