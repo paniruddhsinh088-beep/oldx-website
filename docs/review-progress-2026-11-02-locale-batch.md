@@ -72,3 +72,28 @@ Translations are preview copy pending native-speaker terminology/shaping review.
 Inspect exact-commit CI for this source batch, fix verified failures if any, and record run IDs. Continue the remaining moderate CLI dependency migrations only with consumer API tests. Follow up with native-language review and a main-screen string inventory before broadening localization. Trusted contact/enquiry/review writes, media, migrations, deployment and live runtime remain gated by the existing roadmap.
 
 Runtime-only `npm audit --omit=dev --json --fetch-retries=0 --fetch-timeout=20000 --cache /workspace/work/npm-cache` exited 0 and reported zero vulnerabilities. No full-audit success is claimed while the 13 moderate development findings remain.
+
+## Verified locale source checkpoint: 57bbe99
+
+`57bbe9991fd9f48db96a883e1ced5b57ec80ca0b` was fast-forward pushed only to
+security-hardening-review. All three exact-commit workflows succeeded:
+
+| Workflow | Run | Result |
+| --- | --- | --- |
+| Branch Security Tests | [41350267660](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41350267660) | success, including locale and scoped toolchain tests |
+| Service Providers Emulator | [41350267754](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41350267754) | success; 137 Service model/QR tests and 20 actual candidate Rules Emulator tests |
+| Review Safety | [41350267738](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41350267738) | success; locale/toolchain/static/browser checks plus actual Firestore baseline (8), Storage (7) and private chat state (10) Emulator tests |
+
+Vercel listed zero deployments for this SHA. This is isolated CI test evidence,
+not live Firebase or deployment evidence. The original 37209fd commit remains an
+unchanged ancestor; no main ref was pushed.
+
+### Large-text follow-up
+
+A further browser case now checks both discovery and onboarding at 200% actual
+computed text size for each of en/hi/gu at 320px. It found two additional English
+discovery overflows: the hero grid's unbreakable heading and the search reset row.
+Added heading overflow-wrap and search-row flex wrapping. The full browser suite
+then passed **12/12**, zero skips, without weakening any assertions. This follow-up
+changes only the preview HTML/CSS, its browser test and this record; it triggers a
+separate review-safety CI run after push.

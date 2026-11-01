@@ -251,3 +251,24 @@ test('language changes preserve profile identity and restore focus to the same p
   assert.equal(await page.evaluate(() => document.activeElement.dataset.providerId), providerId);
   assert.equal(await page.locator('[data-i18n] input').count(), 0);
 });
+
+test('each language supports actual 200 percent text in both discovery and onboarding', async () => {
+  for (const locale of ['en', 'hi', 'gu']) {
+    await page.goto(origin + '/service-preview.html');
+    await page.waitForFunction(() => document.querySelectorAll('#results article').length === 6);
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code => document.documentElement.lang === code, locale);
+    await page.setViewportSize({ width: 320, height: 844 });
+    await page.evaluate(() => {
+      const sizes = [...document.querySelectorAll('body *')].map(element => [element, parseFloat(getComputedStyle(element).fontSize)]);
+      for (const [element, size] of sizes) element.style.fontSize = `${size * 2}px`;
+    });
+    for (const tab of ['browseTab', 'providerTab']) {
+      await page.locator('#' + tab).click();
+      const diagnostics = await page.evaluate(() => [...document.querySelectorAll('body *')]
+        .filter(element => !element.closest('[hidden]') && element.getBoundingClientRect().right > innerWidth + 1)
+        .map(element => ({ tag: element.tagName, id: element.id, class: element.className, right: Math.round(element.getBoundingClientRect().right) })).slice(0, 12));
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${locale} large text ${tab}: ${JSON.stringify(diagnostics)}`);
+    }
+  }
+});
