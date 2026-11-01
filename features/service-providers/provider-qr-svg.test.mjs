@@ -30,6 +30,10 @@ test("rejects malicious SVG returned by encoder", async () => {
     '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>',
     '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>',
     '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://evil.example/a"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><a href="https://evil.example">link</a></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><style>@import url(https://evil.example)</style></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><animate attributeName="x" values="0;1"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0" style="fill:url(https://evil.example)"/></svg>',
     "not an svg"
   ]) {
     assert.equal((await renderProviderQrSvg(profile, async () => svg)).code, "UNSAFE_QR_SVG");
