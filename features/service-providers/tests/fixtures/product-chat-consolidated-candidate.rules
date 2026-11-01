@@ -35,6 +35,9 @@ service cloud.firestore {
     allow create: if roomParticipant(chatId)
      && request.resource.data.keys().hasAll(['senderUid','text','createdAt','status'])
      && request.resource.data.senderUid == request.auth.uid
+     && request.resource.data.text is string
+     && request.resource.data.text.size() <= 10000
+     && request.resource.data.createdAt == request.time
      && request.resource.data.status == 'sent';
     allow update: if roomParticipant(chatId) && (
      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
