@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OLDX Service Provider Form Smoke Tests</title>
+  <style>
+    body{font:16px system-ui,sans-serif;max-width:700px;margin:2rem auto;padding:1rem}
+    .pass{color:#12653b}.fail{color:#a31313}
+    #fixture{position:absolute;left:-9999px;top:0}
+  </style>
+</head>
+<body>
+  <h1>Service Provider Form Smoke Tests</h1>
+  <p>Local development only. No Firebase connection or writes.</p>
+  <ol id="results" aria-live="polite"></ol>
+  <div id="fixture"></div>
+  <script type="module">
+    import { mountServiceProviderForm, validateServiceProviderProfile } from "../profile-form.js";
+    const results = document.getElementById("results");
+    let passed = 0, failed = 0;
+    function check(name, predicate) {
+      const li = document.createElement("li");
+      try {
+        if (!predicate()) throw Error("Assertion failed");
+        li.className = "pass"; li.textContent = "PASS: " + name; passed++;
+      } catch (error) {
+        li.className = "fail"; li.textContent = "FAIL: " + name + " — " + error.message; failed++;
+      }
+      results.append(li);
+    }
+    const valid = {
+      displayName: "Sample Provider",
+      description: "Carpentry and plumbing",
+      city: "Ahmedabad",
+      district: "Ahmedabad",
+      serviceCategories: ["carpenter", "plumber"]
+    };
+    check("Accepts multiple services", () => validateServiceProviderProfile(valid).valid);
+    check("Removes duplicate category IDs", () =>
+      validateServiceProviderProfile({...valid, serviceCategories: ["carpenter", "carpenter"]}).value.serviceCategories.length === 1);
+    check("Rejects no selected services", () =>
+      !validateServiceProviderProfile({...valid, serviceCategories: []}).valid);
+    check("Rejects unknown service ID", () =>
+      !validateServiceProviderProfile({...valid, serviceCategories: ["unknown"]}).valid);
+    check("Rejects missing city", () =>
+      !validateServiceProviderProfile({...valid, city: ""}).valid);
+    check("Rejects overlong name", () =>
+      !validateServiceProviderProfile({...valid, displayName: "x".repeat(81)}).valid);
+    check("Rejects overlong description", () =>
+      !validateServiceProviderProfile({...valid, description: "x".repeat(1001)}).valid);
+    check("Trims input text", () =>
+      validateServiceProviderProfile({...valid, city: " Ahmedabad "}).value.city === "Ahmedabad");
+    const fixture = document.getElementById("fixture");
+    const { form, destroy } = mountServiceProviderForm(fixture);
+    check("Renders four profile fields", () =>
+      form.querySelectorAll('input:not([type="checkbox"]),textarea').length === 4);
+    check("Renders multi-select checkboxes", () =>
+      form.querySelectorAll('input[type="checkbox"]').length >= 2);
+    check("Provides accessible feedback status", () =>
+      form.querySelector('[role="status"][aria-live="polite"]') !== null);
+    check("No Firebase script or write is needed for preview", () =>
+      !document.querySelector('script[src*="firebase"]'));
+    destroy();
+    const summary = document.createElement("p");
+    summary.textContent = passed + " passed, " + failed + " failed.";
+    summary.className = failed ? "fail" : "pass";
+    document.body.append(summary);
+    document.title = (failed ? "FAIL" : "PASS") + " — OLDX Provider Form Smoke Tests";
+  </script>
+</body>
+</html>
