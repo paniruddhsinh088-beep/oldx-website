@@ -18,3 +18,19 @@ Status: design review; no client create permission enabled, no production deploy
 ## Integration constraint
 
 The current production/staging rules must be obtained and audited before any merge. This file is a checklist, not deployable rules. Do not enable service send UI or deploy standalone firestore.rules.draft.
+
+## Emulator test matrix for a future isolated create-rule candidate
+
+| Scenario | Expected create result |
+| --- | --- |
+| Authenticated buyer, active provider, canonical ID, correct participants | Allow only after trusted block enforcement exists |
+| Guest or provider creating as buyer | Deny |
+| Buyer equals provider, duplicate participants, or reversed participants | Deny |
+| Missing, pending, or suspended provider | Deny |
+| Profile ownerUid differs from provider UID | Deny |
+| Forged provider UID, wrong room ID, or extra fields | Deny |
+| Either party has blocked the other | Deny |
+| Existing room overwrite, room update, room delete | Deny |
+| Message create, update, delete | Deny until independently audited |
+
+Do not treat a green read-only emulator suite as proof that client room creation is authorized or safe. Keep creation disabled in the current fragment until a candidate rule and the entire negative test matrix pass.
