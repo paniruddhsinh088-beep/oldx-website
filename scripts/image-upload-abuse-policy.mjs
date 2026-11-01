@@ -18,7 +18,7 @@ export function evaluateUploadRequest(request, history = [], now = Date.now()) {
   }
   const policy = UPLOAD_GUARDS[request.surface];
   if (!policy) return { allowed: false, reason: 'unknown_surface' };
-  if (!Number.isFinite(now) || !Number.isFinite(request.bytes) || request.bytes <= 0) {
+  if (!Number.isSafeInteger(now) || !Number.isSafeInteger(request.bytes) || request.bytes <= 0 || !Array.isArray(history)) {
     return { allowed: false, reason: 'invalid_request' };
   }
   if (request.bytes > policy.maxBytesPerFile) return { allowed: false, reason: 'file_size_exceeded' };
@@ -29,9 +29,9 @@ export function evaluateUploadRequest(request, history = [], now = Date.now()) {
     item.surface === request.surface && Number.isFinite(item.createdAt) &&
     item.createdAt > now - HOUR_MS && item.createdAt <= now);
   if (recent.length >= policy.maxGrantsPerHour) return { allowed: false, reason: 'grant_rate_exceeded' };
-  const usedBytes = recent.reduce((sum, item) => sum + (Number.isFinite(item.bytes) && item.bytes > 0 ? item.bytes : 0), 0);
+  const usedBytes = recent.reduce((sum, item) => sum + (Number.isSafeInteger(item.bytes) && item.bytes > 0 ? item.bytes : 0), 0);
   const requestedBytes = request.bytes * request.fileCount;
-  if (!Number.isFinite(requestedBytes) || usedBytes + requestedBytes > policy.maxBytesPerWindow) return { allowed: false, reason: 'hourly_byte_quota_exceeded' };
+  if (!Number.isSafeInteger(usedBytes) || !Number.isSafeInteger(requestedBytes) || usedBytes + requestedBytes > policy.maxBytesPerWindow) return { allowed: false, reason: 'hourly_byte_quota_exceeded' };
   return { allowed: true, reason: 'policy_eligible', expiresInSeconds: 120 };
 }
 
@@ -43,10 +43,11 @@ export function selectCleanupCandidates(objects, now = Date.now()) {
   return objects.filter(item => {
     if (!item || typeof item.objectId !== 'string' || !item.objectId.trim()) return false;
     if (!['quarantined', 'orphaned', 'rejected'].includes(item.status)) return false;
-    if (item.approved === true || item.referenced === true || item.published === true) return false;
+    if (item.approved !== false || item.referenced !== false || item.published !== false) return false;
     if (!Number.isFinite(item.createdAt) || item.createdAt > now - CLEANUP_GRACE_MS) return false;
     return true;
-  }).slice(0, CLEANUP_POLICY.batchLimit).map(item => ({ objectId: item.objectId, reason: item.status }));
+  }).filter((item, index, all) => all.findIndex(candidate => candidate.objectId === item.objectId) === index)
+    .slice(0, CLEANUP_POLICY.batchLimit).map(item => ({ objectId: item.objectId, reason: item.status }));
 }
 
 export const CLEANUP_POLICY = Object.freeze({
