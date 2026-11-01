@@ -1,0 +1,16 @@
+// Emulator-only candidate: limit legacy product chat lastUpdated writes.
+// This is NOT a production-ready combined ruleset.
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /chats/{chatId} {
+   allow update: if request.auth != null
+    && resource.data.participants is list
+    && request.auth.uid in resource.data.participants
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastUpdated'])
+    && request.resource.data.lastUpdated == request.time;
+   allow read, create, delete: if false;
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
