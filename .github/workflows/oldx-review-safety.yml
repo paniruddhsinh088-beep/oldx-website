@@ -66,6 +66,9 @@ jobs:
       - name: Run chat read receipt policy tests
         run: npm run test:chat-read-receipt
 
+      - name: Run chat message authorization policy tests
+        run: npm run test:chat-message-authorization
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
