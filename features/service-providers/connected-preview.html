@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OLDX Service Provider Directory and Profile Demo</title>
+<style>
+:root{font:16px system-ui,sans-serif;color:#18363b;background:#f3f7f7}
+*{box-sizing:border-box}body{margin:0;padding:18px}
+main{max-width:940px;margin:auto}
+.notice{background:#e0f4ed;padding:12px 16px;border-radius:12px;line-height:1.5}
+.oldx-service-filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:20px 0}
+input,select{width:100%;padding:12px;border:1px solid #a5bbbc;border-radius:10px;background:white;font:inherit}
+.oldx-service-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:16px}
+.oldx-service-card,.oldx-service-profile{background:white;border:1px solid #d7e3e3;border-radius:16px;padding:20px;box-shadow:0 4px 16px #173c3c0b}
+.oldx-service-card h3{margin:0 0 8px}
+.oldx-service-card p,.oldx-service-profile p{line-height:1.5;overflow-wrap:anywhere}
+button{border:0;border-radius:10px;padding:11px 16px;background:#006e68;color:white;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #3ab9b1;outline-offset:2px}
+.oldx-service-profile-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+#back{margin:18px 0;background:#365d60}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<h1>OLDX Service Providers</h1>
+<p class="notice">Demo only — these are fictional sample providers. No Firebase, real calls, WhatsApp, chat or booking actions are enabled.</p>
+<section id="directory-section"><div id="directory"></div></section>
+<section id="profile-section" hidden>
+<button type="button" id="back">Back to directory</button>
+<div id="profile"></div>
+</section>
+</main>
+<script type="module">
+import { mountPublicServiceDirectory } from "./public-directory.js";
+import { mountPublicServiceProfile } from "./public-profile.js";
+
+const profiles = [
+ {id:"demo-carpenter",status:"active",displayName:"Sample Carpenter",description:"Furniture repair and woodwork",city:"Ahmedabad",district:"Ahmedabad",serviceCategories:["carpenter"]},
+ {id:"demo-electrician",status:"active",displayName:"Sample Electrician",description:"Electrical wiring and appliance repairs",city:"Surat",district:"Surat",serviceCategories:["electrician","appliance-repair"]},
+ {id:"demo-plumber",status:"active",displayName:"Sample Plumbing Service",description:"Pipe and water tap repairs",city:"Rajkot",district:"Rajkot",serviceCategories:["plumber"]},
+ {id:"demo-pending",status:"pending",displayName:"Hidden Pending Profile",description:"Must remain hidden",city:"Ahmedabad",district:"Ahmedabad",serviceCategories:["painter"]}
+];
+const directorySection = document.getElementById("directory-section");
+const profileSection = document.getElementById("profile-section");
+const profileContainer = document.getElementById("profile");
+const back = document.getElementById("back");
+let mountedProfile = null;
+function showDirectory() {
+  mountedProfile?.destroy();
+  mountedProfile = null;
+  directorySection.hidden = false;
+  profileSection.hidden = true;
+  document.title = "OLDX Service Provider Directory Demo";
+}
+function showProfile(id) {
+  const item = profiles.find(profile => profile.id === id && profile.status === "active");
+  if (!item) { showDirectory(); return; }
+  mountedProfile?.destroy();
+  mountedProfile = mountPublicServiceProfile(profileContainer, {
+    profile: item,
+    baseUrl: location.href
+  });
+  directorySection.hidden = true;
+  profileSection.hidden = false;
+  document.title = item.displayName + " — OLDX Demo";
+}
+const directory = mountPublicServiceDirectory(document.getElementById("directory"), {
+  profiles,
+  onProfileOpen(id) {
+    const url = new URL(location.href);
+    url.searchParams.set("serviceProvider", id);
+    history.pushState({ serviceProvider: id }, "", url);
+    showProfile(id);
+  }
+});
+function syncFromUrl() {
+  const id = new URL(location.href).searchParams.get("serviceProvider");
+  if (id) showProfile(id);
+  else showDirectory();
+}
+back.addEventListener("click", () => {
+  const url = new URL(location.href);
+  url.searchParams.delete("serviceProvider");
+  history.pushState({}, "", url);
+  showDirectory();
+});
+window.addEventListener("popstate", syncFromUrl);
+syncFromUrl();
+</script>
+</body>
+</html>
