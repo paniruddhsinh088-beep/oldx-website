@@ -69,6 +69,9 @@ jobs:
       - name: Run chat message authorization policy tests
         run: npm run test:chat-message-authorization
 
+      - name: Run account deletion policy tests
+        run: npm run test:account-deletion
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
