@@ -10,7 +10,8 @@
     "test:admin-backend": "node --test functions/admin-backend/*.test.mjs",
     "test:firebase-config": "node --test scripts/generate-firebase-env.test.js",
     "test:storage:rules": "firebase emulators:exec --only storage --project demo-oldx-storage --config firebase.storage-emulator.json \"node --test tests/storage-emulator/rules-runtime.test.mjs\"",
-    "test:product-migration": "node --test tests/firestore-emulator/product-public-private-transform.test.mjs"
+    "test:product-migration": "node --test tests/firestore-emulator/product-public-private-transform.test.mjs",
+    "test:product-category": "node --test tests/firestore-emulator/product-category-schema.test.mjs"
   },
   "engines": {
     "node": ">=20"
