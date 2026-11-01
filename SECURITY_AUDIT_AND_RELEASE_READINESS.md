@@ -53,6 +53,20 @@ created by these pushes, and no live Firebase resources were accessed.
 All runtime/release approval gates below remain unchanged; the decision is still
 **HOLD / NO-GO**.
 
+### Locale and dependency continuation checkpoint
+
+The review-only Service locale foundation has gu/hi/en catalogs and an allowlisted
+local preference. Source 57bbe99 passed all three branch workflows; the subsequent
+font-independent accessibility source d00f7a2 passed review-safety run 41351576208,
+including 12 browser flows and actual isolated Emulator steps. See
+`docs/review-progress-2026-11-02-locale-batch.md` for the exact SHAs, failure/fix
+history and run links. All translations remain pending native-speaker review.
+
+The refreshed full audit reports 13 moderate development findings, 0 high and
+0 critical; runtime-only findings remain 0. Remaining glob/minimatch consumer
+migrations are documented in `docs/dependency-advisory-review-2026-11-02.md`.
+These improvements do not activate any runtime or change the HOLD/NO-GO decision.
+
 ## 4. Blocking items before Staging runtime
 
 - [ ] Owner explicitly decides D1–D12 in `STAGING_BACKEND_OWNER_APPROVAL_REGISTER.md`.

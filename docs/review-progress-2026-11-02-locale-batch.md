@@ -120,3 +120,27 @@ responsive wrapping principle as navigation/card actions. This preserves complet
 labels and authored content at enlarged sizes. The focused large-text and profile
 navigation checks passed locally; the unchanged full browser suite runs again in
 CI for the combined font-independent follow-up.
+
+## Final verified source checkpoint: d00f7a2
+
+The combined accessibility follow-up, including 36636f6 and d00f7a2, was pushed
+only to security-hardening-review. Exact source
+`d00f7a21e21fcf894d467cae3317489db550eca1` passed review-safety run
+[41351576208](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41351576208).
+This includes all **12 browser flows**, locale/toolchain/static checks and actual
+Firestore baseline, Storage and private-chat-state Emulator steps. The Service
+model (137) and Service Rules Emulator (20) source verification remains the
+unchanged-code checkpoint at 57bbe99 above. No tests or font scales were weakened.
+
+Vercel listed zero deployments for d00f7a2. Existing 37209fd and all prior review
+commits remain unchanged ancestors, and the working tree was clean after each
+source commit. The final documentation checkpoint changes only documentation.
+Main, live Firebase, production application HTML/configuration, candidate/live
+Rules, deployments, billing and provider credentials remain untouched.
+
+Current limits: translations are preview copy awaiting native-speaker review;
+whole-application/auth localization and private account sync are future work.
+The full audit still has 13 moderate development-tool advisories (0 high/critical),
+while the runtime-only audit is clear. Local emulator downloads retain the
+previous network-policy block; CI supplies isolated emulator evidence. Release
+status remains HOLD/NO-GO, not a production acceptance claim.
