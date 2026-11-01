@@ -19,7 +19,8 @@
     "test:inbox-summary": "node --test tests/firestore-emulator/inbox-summary-policy.test.mjs",
     "test:chat-read-receipt": "node --test tests/firestore-emulator/chat-read-receipt-policy.test.mjs",
     "test:chat-message-authorization": "node --test tests/firestore-emulator/chat-message-authorization-policy.test.mjs",
-    "test:account-deletion": "node --test tests/firestore-emulator/account-deletion-policy.test.mjs"
+    "test:account-deletion": "node --test tests/firestore-emulator/account-deletion-policy.test.mjs",
+    "test:privacy-policy": "node --test tests/firestore-emulator/privacy-preferences-policy.test.mjs"
   },
   "engines": {
     "node": ">=20"
