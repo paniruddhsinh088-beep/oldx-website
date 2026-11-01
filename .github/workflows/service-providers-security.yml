@@ -35,6 +35,8 @@ jobs:
         with:
           distribution: temurin
           java-version: "21"
+      - name: Validate service profile inputs (no Firebase required)
+        run: node --test features/service-providers/tests/validation.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
