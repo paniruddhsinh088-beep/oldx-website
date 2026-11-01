@@ -3,11 +3,11 @@ rules_version = '2';
 service cloud.firestore {
  match /databases/{database}/documents {
   function signedIn() { return request.auth != null; }
-  function productRoom(chatId) { return exists(/databases/$(database)/documents/chats/$(chatId)) && get(/databases/$(database)/documents/chats/$(chatId)).data.keys().hasAll(['participants','productId']); }
+  function productRoom(chatId) { return !chatId.matches('service_.*') && exists(/databases/$(database)/documents/chats/$(chatId)) && get(/databases/$(database)/documents/chats/$(chatId)).data.keys().hasAll(['participants','productId']); }
   function roomParticipant(chatId) { return signedIn() && productRoom(chatId) && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants; }
   match /chats/{chatId} {
-   allow get, list: if signedIn() && request.auth.uid in resource.data.participants;
-   allow create: if signedIn()
+   allow get, list: if signedIn() && !chatId.matches('service_.*') && request.auth.uid in resource.data.participants;
+   allow create: if signedIn() && !chatId.matches('service_.*')
     && request.resource.data.keys().hasAll(['participants','productId'])
     && request.resource.data.keys().hasOnly(['participants','productId','lastUpdated'])
     && request.resource.data.participants is list
@@ -21,7 +21,7 @@ service cloud.firestore {
     && get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sellerUid in request.resource.data.participants
     && request.auth.uid != get(/databases/$(database)/documents/products/$(request.resource.data.productId)).data.sellerUid
     && (!('lastUpdated' in request.resource.data) || request.resource.data.lastUpdated == request.time);
-   allow update: if signedIn()
+   allow update: if signedIn() && !chatId.matches('service_.*')
     && resource.data.participants is list
     && request.auth.uid in resource.data.participants
     && request.resource.data.participants == resource.data.participants
