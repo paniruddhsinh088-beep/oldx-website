@@ -2605,7 +2605,9 @@
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
 
-            setTimeout(() => {
+            // Service chat message updates are server-only until audited rules
+            // permit receipts. Product chat read receipts remain unchanged.
+            if (!chatRoomId.startsWith('service_')) setTimeout(() => {
                 db.collection('chats').doc(chatRoomId).collection('messages')
                   .where('senderUid', '!=', window.currentUser.uid)
                   .get().then(snapshot => {
