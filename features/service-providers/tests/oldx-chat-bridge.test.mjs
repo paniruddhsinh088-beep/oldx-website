@@ -13,8 +13,11 @@ const bridge=source("oldx-chat-bridge.js")
   .replace('from "./chat-context.js"','from "'+contextUrl+'"')
   .replace('from "./oldx-contact-adapter.js"','from "'+adapterUrl+'"');
 const {openVerifiedServiceChat}=await import(asUrl(bridge));
-function dbWithBlocks(buyerBlocks=[],providerBlocks=[]){
-  return {collection(){return {doc(uid){return {async get(){
+function dbWithBlocks(buyerBlocks=[],providerBlocks=[],status="active"){
+  return {collection(name){return {doc(uid){return {async get(){
+    if(name==="serviceProviders") return {
+      exists:true,data:()=>({ownerUid:uid,status})
+    };
     return {exists:true,data:()=>({blockedUsers:uid==="buyer"?buyerBlocks:providerBlocks})};
   }};}};}};
 }
@@ -22,7 +25,7 @@ const auth={currentUser:{uid:"buyer"}};
 test("approved buyer receives canonical service chat context",async()=>{
   let opened;
   const result=await openVerifiedServiceChat({
-    auth,db:dbWithBlocks(),providerUid:"provider",providerStatus:"active",
+    auth,db:dbWithBlocks(),providerUid:"provider",
     openExistingChat:context=>{opened=context;}
   });
   assert.equal(result.allowed,true);
@@ -32,7 +35,7 @@ test("approved buyer receives canonical service chat context",async()=>{
 test("provider block prevents opening chat",async()=>{
   let called=false;
   const result=await openVerifiedServiceChat({
-    auth,db:dbWithBlocks([],["buyer"]),providerUid:"provider",providerStatus:"active",
+    auth,db:dbWithBlocks([],["buyer"]),providerUid:"provider",
     openExistingChat:()=>{called=true;}
   });
   assert.equal(result.allowed,false);
@@ -42,7 +45,7 @@ test("provider block prevents opening chat",async()=>{
 test("inactive provider prevents opening chat",async()=>{
   let called=false;
   const result=await openVerifiedServiceChat({
-    auth,db:dbWithBlocks(),providerUid:"provider",providerStatus:"pending",
+    auth,db:dbWithBlocks([],[],"pending"),providerUid:"provider",
     openExistingChat:()=>{called=true;}
   });
   assert.equal(result.allowed,false);
@@ -50,7 +53,7 @@ test("inactive provider prevents opening chat",async()=>{
 });
 test("guest cannot start service chat",async()=>{
   await assert.rejects(openVerifiedServiceChat({
-    auth:{currentUser:null},db:dbWithBlocks(),providerUid:"provider",providerStatus:"active",
+    auth:{currentUser:null},db:dbWithBlocks(),providerUid:"provider",
     openExistingChat:()=>{}
   }),TypeError);
 });
@@ -58,4 +61,14 @@ test("host chat opener must be supplied",async()=>{
   await assert.rejects(openVerifiedServiceChat({
     auth,db:dbWithBlocks(),providerUid:"provider",providerStatus:"active"
   }),TypeError);
+});
+
+test("caller cannot force inactive provider to active",async()=>{
+ let called=false;
+ const result=await openVerifiedServiceChat({
+   auth,db:dbWithBlocks([],[],"suspended"),providerUid:"provider",
+   providerStatus:"active",openExistingChat:()=>{called=true;}
+ });
+ assert.equal(result.allowed,false);
+ assert.equal(called,false);
 });
