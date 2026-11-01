@@ -119,3 +119,11 @@ test("service messages remain immutable for buyer provider and outsider",async()
     await assertFails(deleteDoc(doc(db(uid),message)));
   }
 });
+
+test("service message reads require authenticated participant even if message sender is forged",async()=>{
+  await seed(room,roomData);
+  await seed(message,{senderUid:"stranger",text:"Forged sender"});
+  await assertSucceeds(getDoc(doc(db("buyer"),message)));
+  await assertFails(getDoc(doc(db("stranger"),message)));
+  await assertFails(getDoc(doc(db(),message)));
+});
