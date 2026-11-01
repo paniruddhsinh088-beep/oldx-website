@@ -39,6 +39,8 @@ jobs:
           java-version: "21"
       - name: Validate service profile inputs (no Firebase required)
         run: node --test features/service-providers/tests/validation.test.mjs
+      - name: Validate moderation integration remains opt-in
+        run: node --test features/service-providers/tests/service-moderation-integration.test.mjs
       - name: Validate service profile moderation adapter
         run: node --test features/service-providers/tests/service-moderation-adapter.test.mjs
       - name: Validate approved-only public service profile lookup
