@@ -14,17 +14,11 @@ export async function renderProviderQrSvg(profile, toString) {
     const svg = await toString(payload.value.text, {
       type: "svg", errorCorrectionLevel: "M", margin: 2, width: 256
     });
-    // Remove only the standard SVG namespace before looking for remote URLs.
-    const svgWithoutNamespace = typeof svg === "string"
-      ? svg.replace('xmlns="http://www.w3.org/2000/svg"', "") : "";
-    const startsWithSvg = typeof svg === "string" &&
-      svg.trimStart().startsWith('<svg xmlns="http://www.w3.org/2000/svg"');
-    const forbidden = ["<script", "<foreignObject", "<image", "<iframe", "<use",
-      "javascript:", "http://", "https://", "onload=", "onclick=", "onerror="];
-    if (!startsWithSvg || svg.length > 200000 ||
-        forbidden.some(fragment => svgWithoutNamespace.toLowerCase().includes(fragment.toLowerCase()))) {
-      return { ok: false, code: "UNSAFE_QR_SVG" };
-    }
+    // Restrict QR markup to the simple vector geometry emitted by the
+    // approved encoder. Arbitrary SVG can contain scripts, links or CSS.
+    const validSvg = typeof svg === "string" && svg.length <= 200000 &&
+      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"(?: width="[0-9]+" height="[0-9]+")?(?: viewBox="[0-9 .]+")?>(?:<path d="[MmLlHhVvZz0-9., +\\-]+"(?: fill="#[0-9a-fA-F]{3,8}")?\/>)+<\/svg>$/.test(svg);
+    if (!validSvg) return { ok: false, code: "UNSAFE_QR_SVG" };
     return { ok: true, value: { svg, mimeType: "image/svg+xml", url: payload.value.text } };
   } catch {
     return { ok: false, code: "QR_ENCODING_FAILED" };
