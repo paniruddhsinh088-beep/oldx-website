@@ -15,3 +15,10 @@ test("rejects malformed, self-block and missing legacy lists",()=>{
  }
  assert.throws(()=>checkLegacyBlockPair({buyerUid:"buyer",providerUid:"buyer",buyerBlockedUsers:[],providerBlockedUsers:[]}));
 });
+
+test("mutual block is reported in both directions",()=>{
+ assert.deepEqual(checkLegacyBlockPair({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:["provider"],providerBlockedUsers:["buyer"]}),{blockedByBuyer:true,blockedByProvider:true});
+});
+test("unrelated blocks do not prevent a clean pair",()=>{
+ assert.deepEqual(checkLegacyBlockPair({buyerUid:"buyer",providerUid:"provider",buyerBlockedUsers:["other"],providerBlockedUsers:["third"]}),{blockedByBuyer:false,blockedByProvider:false});
+});
