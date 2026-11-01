@@ -1,0 +1,12 @@
+// Development-only authorization candidate; NOT deployed or included in emulator suite.
+// This is a design reference, not a production-ready allow rule.
+// Preconditions for any future client create:
+// 1. Authenticated buyer distinct from provider; exact canonical room ID.
+// 2. Exactly two participants [buyer, provider]; service metadata only.
+// 3. Active provider profile with ownerUid matching provider.
+// 4. Trusted, rules-readable mutual block checks (not yet available).
+// 5. Full audit of legacy chats rules (overlapping allows are ORed).
+// Until all conditions are implemented and tested, keep create denied.
+match /chats/{chatId} {
+  allow create: if false;
+}
