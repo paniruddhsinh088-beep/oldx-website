@@ -2,7 +2,7 @@ import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore';
 
 let env;
 before(async () => {
@@ -44,4 +44,16 @@ test('no client can self-approve profiles or publish reviews', async () => {
 test('legacy product access remains denied in isolated candidate', async () => {
   const db = env.authenticatedContext('seller').firestore();
   await assertFails(getDoc(doc(db, 'products/old')));
+});
+
+test('collection enumeration is denied to unauthenticated and authenticated clients', async () => {
+  for (const db of [env.unauthenticatedContext().firestore(), env.authenticatedContext('active').firestore()]) {
+    await assertFails(getDocs(collection(db, 'serviceProviders')));
+    await assertFails(getDocs(collection(db, 'serviceProviderReviews')));
+  }
+});
+test('client cannot delete public profile or review', async () => {
+  const db = env.authenticatedContext('active').firestore();
+  await assertFails(deleteDoc(doc(db, 'serviceProviders/active')));
+  await assertFails(deleteDoc(doc(db, 'serviceProviderReviews/published')));
 });
