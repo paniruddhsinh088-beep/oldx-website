@@ -109,3 +109,13 @@ test("service room updates and deletes stay denied for every role",async()=>{
     await assertFails(deleteDoc(doc(db(uid),room)));
   }
 });
+
+test("service messages remain immutable for buyer provider and outsider",async()=>{
+  await seed(room,roomData);
+  await seed(message,{senderUid:"buyer",text:"Original"});
+  for(const uid of ["buyer","provider","stranger"]){
+    await assertFails(setDoc(doc(db(uid),room+"/messages/new-"+uid),{senderUid:uid,text:"Hello"}));
+    await assertFails(updateDoc(doc(db(uid),message),{text:"Tampered"}));
+    await assertFails(deleteDoc(doc(db(uid),message)));
+  }
+});
