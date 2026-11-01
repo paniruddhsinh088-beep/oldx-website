@@ -95,3 +95,37 @@ test('provider may edit own public draft but not approval status', async () => {
     status: 'active', updatedAt: serverTimestamp()
   }));
 });
+
+test('pending profile is visible to owner but not to other authenticated users', async () => {
+  await assertSucceeds(getDoc(doc(env.authenticatedContext('new-provider').firestore(), 'serviceProviders/new-provider')));
+  await assertFails(getDoc(doc(env.authenticatedContext('stranger').firestore(), 'serviceProviders/new-provider')));
+});
+test('other users cannot edit provider draft', async () => {
+  const db = env.authenticatedContext('stranger').firestore();
+  await assertFails(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    displayName: 'Tampered', updatedAt: serverTimestamp()
+  }));
+});
+test('provider cannot change ownership or add privileged fields', async () => {
+  const db = env.authenticatedContext('new-provider').firestore();
+  await assertFails(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    ownerUid: 'stranger', updatedAt: serverTimestamp()
+  }));
+  await assertFails(updateDoc(doc(db, 'serviceProviders/new-provider'), {
+    ratingCount: 500, updatedAt: serverTimestamp()
+  }));
+});
+test('profile creation rejects excessive and duplicate service selections', async () => {
+  const db = env.authenticatedContext('invalid-provider').firestore();
+  const base = {
+    ownerUid: 'invalid-provider', displayName: 'Invalid Services',
+    cityId: 'ahmedabad', status: 'pending',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+  };
+  await assertFails(setDoc(doc(db, 'serviceProviders/invalid-provider'), {
+    ...base, serviceIds: ['painting', 'painting']
+  }));
+  await assertFails(setDoc(doc(db, 'serviceProviders/invalid-provider'), {
+    ...base, serviceIds: Array.from({ length: 9 }, (_, i) => 'service' + i)
+  }));
+});
