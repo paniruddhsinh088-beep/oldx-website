@@ -62,6 +62,7 @@ test("owner can hide an existing message with exact server timestamp schema", as
   await assertFails(setDoc(doc(db, "chats/chatA/userState/alice/hiddenMessages/message1"), {
     schemaVersion: 1, hiddenAt: serverTimestamp(), extra: true
   }));
+  await assertSucceeds(deleteDoc(doc(db, "chats/chatA/userState/alice/hiddenMessages/message1")));
 });
 
 test("another participant cannot read or delete owner's hide marker", async () => {
@@ -75,6 +76,7 @@ test("another participant cannot read or delete owner's hide marker", async () =
   await assertFails(setDoc(doc(alice, "chats/chatA/userState/alice/hiddenMessages/message1"), {
     schemaVersion: 1, hiddenAt: serverTimestamp()
   }));
+  await assertSucceeds(deleteDoc(doc(alice, "chats/chatA/userState/alice/hiddenMessages/message1")));
 });
 
 test("owner can unhide only own marker; cannot update it", async () => {
