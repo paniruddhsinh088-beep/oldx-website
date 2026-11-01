@@ -57,6 +57,9 @@ jobs:
       - name: Run image lifecycle authorization policy tests
         run: npm run test:image-lifecycle
 
+      - name: Run upload abuse and cleanup policy tests
+        run: npm run test:image-upload-abuse
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
