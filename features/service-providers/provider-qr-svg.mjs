@@ -14,11 +14,30 @@ export async function renderProviderQrSvg(profile, toString) {
     const svg = await toString(payload.value.text, {
       type: "svg", errorCorrectionLevel: "M", margin: 2, width: 256
     });
-    // Restrict QR markup to the simple vector geometry emitted by the
-    // approved encoder. Arbitrary SVG can contain scripts, links or CSS.
-    const validSvg = typeof svg === "string" && svg.length <= 200000 &&
-      /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"(?: width="[0-9]+" height="[0-9]+")?(?: viewBox="[0-9 .]+")?>(?:<path d="[MmLlHhVvZz0-9., +\\-]+"(?: fill="#[0-9a-fA-F]{3,8}")?\/>)+<\/svg>$/.test(svg);
-    if (!validSvg) return { ok: false, code: "UNSAFE_QR_SVG" };
+    // Accept the simple geometry emitted by common offline QR encoders.
+    // Reject all XML elements and attributes outside this allowlist.
+    const safeSvg = value => {
+      if (typeof value !== "string" || value.length > 200000 ||
+          /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(value)) return false;
+      const source = value.trim();
+      const root = source.match(/^<svg\s+([^<>]+)>([\s\S]*)<\/svg>$/);
+      if (!root) return false;
+      const attrs = root[1];
+      if (!/\bxmlns="http:\/\/www\.w3\.org\/2000\/svg"/.test(attrs)) return false;
+      const allowedRoot = /\s+(?:xmlns|width|height|viewBox|shape-rendering)="[^"<>]*"/g;
+      if (attrs.replace(allowedRoot, "").trim() !== "") return false;
+      const paths = root[2].trim().replace(/<path\s+([^<>]*?)\s*\/>/g, (_tag, pathAttrs) => {
+        const allowed = /\s*(?:fill|stroke|stroke-width|d)="[^"<>]*"/g;
+        if (pathAttrs.replace(allowed, "").trim() !== "") return "INVALID";
+        const d = pathAttrs.match(/(?:^|\s)d="([^"]+)"/);
+        if (!d || !/^[MmLlHhVvZzCcSsQqTtAa0-9.,+\-\s]+$/.test(d[1])) return "INVALID";
+        const paint = [...pathAttrs.matchAll(/(?:fill|stroke)="([^"]+)"/g)];
+        if (paint.some(m => !/^(?:#[0-9a-fA-F]{3,8}|none)$/.test(m[1]))) return "INVALID";
+        return "";
+      });
+      return paths === "" && /<path\s/.test(root[2]);
+    };
+    if (!safeSvg(svg)) return { ok: false, code: "UNSAFE_QR_SVG" };
     return { ok: true, value: { svg, mimeType: "image/svg+xml", url: payload.value.text } };
   } catch {
     return { ok: false, code: "QR_ENCODING_FAILED" };
