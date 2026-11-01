@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OLDX Admin Service Moderation Demo</title>
+<style>body{font:16px system-ui,sans-serif;background:#f5f8f8;color:#203d3d;max-width:700px;margin:24px auto;padding:16px}article{background:white;border:1px solid #ddd;border-radius:12px;margin:12px 0;padding:16px}button{padding:10px 14px;margin:5px;border:1px solid #567;border-radius:8px;cursor:pointer}button:focus-visible{outline:3px solid teal}</style></head>
+<body><h1>OLDX Service Providers — Admin Demo</h1><p>This is a local-only fictional demonstration. No Firebase writes, real approval, or production admin access.</p><div id="moderation"></div>
+<script type="module">
+import {mountServiceModeration} from "./service-moderation-ui.js";
+let records=[{id:"sample1",displayName:"Sample Electrician",city:"Ahmedabad",status:"pending"},{id:"sample2",displayName:"Sample Plumber",city:"Surat",status:"pending"}];
+const ui=mountServiceModeration(document.getElementById("moderation"),{
+ loadPending:async()=>records.filter(item=>item.status==="pending"),
+ onModerate:async(id,status)=>{const record=records.find(item=>item.id===id);if(!record)throw new Error("Not found");record.status=status;}
+});
+ui.refresh();
+</script></body></html>
