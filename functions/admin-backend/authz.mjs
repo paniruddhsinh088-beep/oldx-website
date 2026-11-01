@@ -39,7 +39,7 @@ export async function authorizeAdminRequest({
   }
 
   if (role !== "admin") return { ok: false, status: 403, code: "FORBIDDEN" };
-  if (!Array.isArray(allowedOperations) || !allowedOperations.includes(requiredOperation)) {
+  if (typeof requiredOperation !== "string" || requiredOperation.trim() === "" || !Array.isArray(allowedOperations) || !allowedOperations.includes(requiredOperation)) {
     return { ok: false, status: 403, code: "OPERATION_NOT_ALLOWED" };
   }
 
