@@ -37,3 +37,20 @@ export function deriveOtherChatParticipant({ actorUid, participants }) {
   }
   return { ok: true, otherUid: participants[0] === actorUid ? participants[1] : participants[0] };
 }
+
+export function authorizeChatCreation({ actorUid, buyerUid, sellerUid, productId, participants }) {
+  if (typeof actorUid !== "string" || !actorUid ||
+      typeof buyerUid !== "string" || !buyerUid ||
+      typeof sellerUid !== "string" || !sellerUid ||
+      typeof productId !== "string" || !productId ||
+      buyerUid === sellerUid ||
+      actorUid !== buyerUid ||
+      !Array.isArray(participants) ||
+      participants.length !== 2 ||
+      new Set(participants).size !== 2 ||
+      !participants.includes(buyerUid) ||
+      !participants.includes(sellerUid)) {
+    return { ok: false, error: "invalid_chat_creation" };
+  }
+  return { ok: true };
+}
