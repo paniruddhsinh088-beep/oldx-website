@@ -87,17 +87,6 @@ function refreshDirectory() {
     }
   });
 }
-/* Original directory initialization kept below until refresh handler is validated. */
-/* const directory = mountPublicServiceDirectory(document.getElementById("directory"), {
-  profiles,
-  onProfileOpen(id) {
-    const url = new URL(location.href);
-    url.searchParams.set("serviceProvider", id);
-    history.pushState({ serviceProvider: id }, "", url);
-    showProfile(id);
-  }
-});
-*/
 refreshDirectory();
 function syncFromUrl() {
   const id = new URL(location.href).searchParams.get("serviceProvider");
