@@ -13,3 +13,13 @@ test("launch preflight only passes with all explicit proofs",()=>{
  assert.deepEqual(gate({migration,deployedRulesSourceVerified:true,legacyChatRulesAudited:true,serverBlockRulesVerified:true,clientWriteRulesVerified:true}),{enabled:true,reason:"preflight-passed"});
  assert.equal(gate({migration:{...migration,observedEdgePaths:[]},legacyChatRulesAudited:true,serverBlockRulesVerified:true,clientWriteRulesVerified:true}).enabled,false);
 });
+
+test("launch gate rejects truthy strings and incomplete evidence",()=>{
+ const proofs={migration,deployedRulesSourceVerified:true,legacyChatRulesAudited:true,serverBlockRulesVerified:true,clientWriteRulesVerified:true};
+ for(const flag of ["deployedRulesSourceVerified","legacyChatRulesAudited","serverBlockRulesVerified","clientWriteRulesVerified"]){
+  assert.equal(gate({...proofs,[flag]:"true"}).enabled,false,flag);
+  assert.equal(gate({...proofs,[flag]:1}).enabled,false,flag);
+ }
+ assert.equal(gate({...proofs,migration:{...migration,legacySnapshotComplete:false}}).enabled,false);
+ assert.equal(gate({...proofs,migration:{...migration,edgeSnapshotComplete:false}}).enabled,false);
+});
