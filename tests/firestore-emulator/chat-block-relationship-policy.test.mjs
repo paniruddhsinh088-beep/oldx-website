@@ -52,10 +52,10 @@ test("blocking in either direction denies the corresponding sender", () => {
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "b", recipientUid: "a", chatParticipants: ["a", "b"], blockedByRecipient: true }).error, "blocked_by_recipient");
 });
 
-test("chat creation requires authenticated buyer and canonical product seller", () => {
+test("chat creation shape requires authenticated buyer and two distinct participants", () => {
   assert.deepEqual(authorizeChatCreation({ actorUid: "buyer", buyerUid: "buyer", sellerUid: "seller", productId: "p1", participants: ["buyer", "seller"] }), { ok: true });
   assert.equal(authorizeChatCreation({ actorUid: "seller", buyerUid: "buyer", sellerUid: "seller", productId: "p1", participants: ["buyer", "seller"] }).error, "invalid_chat_creation");
-  assert.equal(authorizeChatCreation({ actorUid: "buyer", buyerUid: "buyer", sellerUid: "attacker", productId: "p1", participants: ["buyer", "attacker"] }).ok, true);
+  // The pure helper validates shape/actor binding only; Rules must obtain sellerUid from products/{productId}, never from client input.
 });
 
 test("chat creation rejects self-chat, malformed members and missing product identity", () => {
