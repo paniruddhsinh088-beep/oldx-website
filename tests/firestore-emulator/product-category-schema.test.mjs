@@ -26,7 +26,7 @@ test("cars accept only UI-listed brand and bounded model", () => {
 
 test("non-car categories accept only bounded generic type", () => {
   assert.deepEqual(projectPublicAttributes("mobiles", { type: "Android phone" }), { type: "Android phone" });
-  assert.equal(projectPublicAttributes("jobs", { type: "Driver" }), null); // category-specific subcategory still validated separately
+  assert.deepEqual(projectPublicAttributes("jobs", { type: "Driver" }), { type: "Driver" }); // subcategory is validated separately
   assert.equal(projectPublicAttributes("properties", { type: "x".repeat(121) }), null);
 });
 
