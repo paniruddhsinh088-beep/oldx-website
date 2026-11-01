@@ -11,7 +11,8 @@ before(async () => {
     projectId: 'demo-oldx-service-providers',
     firestore: { rules }
   });
-  await env.withSecurityRulesDisabled(async ({ firestore }) => {
+  await env.withSecurityRulesDisabled(async context => {
+    const firestore = context.firestore();
     await setDoc(doc(firestore, 'serviceProviders/active'), { status: 'active', displayName: 'Sample', cityId: 'ahmedabad', serviceIds: ['carpentry', 'repairs'] });
     await setDoc(doc(firestore, 'serviceProviders/pending'), { status: 'pending' });
     await setDoc(doc(firestore, 'serviceProviderReviews/published'), { status: 'published', rating: 5 });

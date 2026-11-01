@@ -120,3 +120,11 @@ The owner approved HTTPS downloads from storage.googleapis.com only for official
 The source batch is ready for a normal fast-forward push to security-hardening-review after final diff/branch checks. Preserve 37209fd and never push main. Remote/CI observations will be recorded separately after the push. No PR or merge is needed for this branch-only batch.
 
 Next safe tasks: inspect the exact-commit branch CI results and fix any verified source failures; complete offline language-catalog architecture for gu/en/hi without claiming translation review or changing user content; continue bounded Store/Service public-view work. Trusted runtime, media uploads, live enquiry/review writes, migrations and actual deployments remain under the existing owner approval gates. Release status remains HOLD/NO-GO.
+
+### Push and exact-commit CI follow-up
+
+`37209fd` and source batch `07746c874cc7285e8417b4f2be5d79671fc6f8c7` were pushed by a normal fast-forward to `security-hardening-review`. Remote SHA was verified after the push. Vercel listed zero deployments for that exact commit; the repository-only branch guard is in the pushed tree. No provider settings were changed.
+
+- [Branch Security run 41346585782](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41346585782): success.
+- [Review safety run 41346585815](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41346585815): success, including the isolated browser, static build and actual demo-project Firestore, Storage and chat-private-state Emulator steps. This is CI emulator evidence, not deployment evidence.
+- [Service emulator run 41346585777](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41346585777): failed before rule assertions. Its fixture callback destructured the firestore method and passed that function to doc(), rather than calling context.firestore(). All 20 tests reported hookFailed with invalid-argument. Corrected the callback without changing or weakening any assertions or candidate rules. A new exact-commit CI run is required to validate this correction.
