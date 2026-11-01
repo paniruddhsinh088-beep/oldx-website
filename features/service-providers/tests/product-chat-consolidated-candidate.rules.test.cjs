@@ -69,3 +69,17 @@ test("oversized inline attachments cannot be written to Firestore",async()=>{
  const buyer=env.authenticatedContext("buyer").firestore();
  await assertFails(setDoc(doc(buyer,"chats/existing/messages/huge-attachment"),{senderUid:"buyer",text:"",status:"sent",createdAt:serverTimestamp(),attachment:{type:"image/jpeg",name:"huge.jpg",data:"x".repeat(750001)}}));
 });
+
+test("recipient's legacy blockedUsers list denies new messages but keeps history readable",async()=>{
+ await env.withSecurityRulesDisabled(async c=>{
+  await setDoc(doc(c.firestore(),"users/seller"),{blockedUsers:["buyer"]});
+ });
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertFails(setDoc(doc(buyer,"chats/existing/messages/blocked"),{senderUid:"buyer",text:"hi",status:"sent",createdAt:serverTimestamp()}));
+ await assertSucceeds(getDoc(doc(buyer,"chats/existing/messages/old")));
+});
+test("sender may send when recipient has not blocked them",async()=>{
+ await env.withSecurityRulesDisabled(async c=>{await setDoc(doc(c.firestore(),"users/seller"),{blockedUsers:["other"]});});
+ const buyer=env.authenticatedContext("buyer").firestore();
+ await assertSucceeds(setDoc(doc(buyer,"chats/existing/messages/unblocked"),{senderUid:"buyer",text:"hi",status:"sent",createdAt:serverTimestamp()}));
+});
