@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 const source=readFileSync(new URL("../message-validation.js",import.meta.url),"utf8");
 const {validateServiceChatMessage}=await import("data:text/javascript;base64,"+Buffer.from(source).toString("base64"));
-const context={kind:"service",providerUid:"provider",buyerUid:"buyer"};
+const context={kind:"service",providerUid:"provider",buyerUid:"buyer",roomId:"service_8_provider_5_buyer"};
 test("buyer can prepare a trimmed text draft",()=>{
  const result=validateServiceChatMessage({text:"  Hello  ",senderUid:"buyer",context});
  assert.deepEqual(result,{ok:true,text:"Hello",senderUid:"buyer"});
@@ -29,4 +29,14 @@ test("invalid context is rejected",()=>{
 });
 test("control characters are rejected",()=>{
  assert.equal(validateServiceChatMessage({text:"Hi\u0000there",senderUid:"buyer",context}).ok,false);
+});
+
+test("forged room IDs are rejected before sending",()=>{
+  assert.equal(validateServiceChatMessage({
+    text:"Hello",senderUid:"buyer",context:{...context,roomId:"service_8_provider_5_other"}
+  }).ok,false);
+});
+test("missing room ID is rejected before sending",()=>{
+  const {roomId,...missing}=context;
+  assert.equal(validateServiceChatMessage({text:"Hello",senderUid:"buyer",context:missing}).ok,false);
 });
