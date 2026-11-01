@@ -47,6 +47,8 @@ jobs:
         run: node --test features/service-providers/tests/chat-context.test.mjs
       - name: Validate service chat message drafts
         run: node --test features/service-providers/tests/message-validation.test.mjs
+      - name: Validate service chat integration bridge
+        run: node --test features/service-providers/tests/oldx-chat-bridge.test.mjs
       - name: Install test dependencies
         run: npm --prefix features/service-providers/tests install --no-audit --no-fund
       - name: Run emulator security tests
