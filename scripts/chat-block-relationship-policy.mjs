@@ -25,3 +25,15 @@ export function authorizeMessageAgainstBlock({ senderUid, recipientUid, chatPart
   if (blockedByRecipient !== false) return { ok: false, error: "block_state_unverified" };
   return { ok: true };
 }
+
+export function deriveOtherChatParticipant({ actorUid, participants }) {
+  if (typeof actorUid !== "string" || !actorUid ||
+      !Array.isArray(participants) ||
+      participants.length !== 2 ||
+      participants.some(uid => typeof uid !== "string" || !uid) ||
+      participants[0] === participants[1] ||
+      !participants.includes(actorUid)) {
+    return { ok: false, error: "invalid_chat_membership" };
+  }
+  return { ok: true, otherUid: participants[0] === actorUid ? participants[1] : participants[0] };
+}
