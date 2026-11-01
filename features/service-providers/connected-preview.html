@@ -25,6 +25,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 <main>
 <h1>OLDX Service Providers</h1>
 <p class="notice">Demo only — these are fictional sample providers. No Firebase, real calls, WhatsApp, chat or booking actions are enabled.</p>
+<section id="form-section"><h2>Try creating a service profile</h2><p>Local demo only. Nothing is saved or submitted.</p><div id="profile-form"></div><div id="form-result" role="status" aria-live="polite"></div></section>
 <section id="directory-section"><div id="directory"></div></section>
 <section id="profile-section" hidden>
 <button type="button" id="back">Back to directory</button>
@@ -33,8 +34,13 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 </main>
 <script type="module">
 import { mountPublicServiceDirectory } from "./public-directory.js";
+import { mountServiceProviderForm } from "./profile-form.js";
 import { mountPublicServiceProfile } from "./public-profile.js";
 
+mountServiceProviderForm(document.getElementById("profile-form"), {onSubmit: async profile => {
+  const summary = document.getElementById("form-result");
+  summary.textContent = `Validated: ${profile.displayName} — ${profile.serviceCategories.join(", ")} (${profile.city}, ${profile.district}). Demo only; not saved.`;
+}});
 const profiles = [
  {id:"demo-carpenter",status:"active",displayName:"Sample Carpenter",description:"Furniture repair and woodwork",city:"Ahmedabad",district:"Ahmedabad",serviceCategories:["carpenter"]},
  {id:"demo-electrician",status:"active",displayName:"Sample Electrician",description:"Electrical wiring and appliance repairs",city:"Surat",district:"Surat",serviceCategories:["electrician","appliance-repair"]},
