@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { authorizeBlockRelationship, authorizeMessageAgainstBlock } from "../../scripts/chat-block-relationship-policy.mjs";
+import { authorizeBlockRelationship, authorizeMessageAgainstBlock, deriveOtherChatParticipant } from "../../scripts/chat-block-relationship-policy.mjs";
 
 test("only the blocker can create or remove their own relationship", () => {
   assert.deepEqual(authorizeBlockRelationship({ actorUid: "a", blockerUid: "a", blockedUid: "b", action: "block" }), { ok: true });
@@ -33,4 +33,21 @@ test("spoofed recipient and malformed membership fail closed", () => {
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "a", recipientUid: "c", chatParticipants: ["a", "b"], blockedByRecipient: false }).error, "invalid_chat_membership");
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "a", recipientUid: "b", chatParticipants: ["a", "b", "c"], blockedByRecipient: false }).error, "invalid_chat_membership");
   assert.equal(authorizeMessageAgainstBlock({ senderUid: "a", recipientUid: "a", chatParticipants: ["a", "b"], blockedByRecipient: false }).error, "invalid_chat_membership");
+});
+
+test("derive recipient from canonical two-party chat membership in either participant order", () => {
+  assert.deepEqual(deriveOtherChatParticipant({ actorUid: "a", participants: ["a", "b"] }), { ok: true, otherUid: "b" });
+  assert.deepEqual(deriveOtherChatParticipant({ actorUid: "b", participants: ["a", "b"] }), { ok: true, otherUid: "a" });
+});
+
+test("malformed or spoofed chat membership cannot derive a recipient", () => {
+  for (const participants of [undefined, [], ["a"], ["a", "a"], ["a", "b", "c"], ["a", null]]) {
+    assert.equal(deriveOtherChatParticipant({ actorUid: "a", participants }).ok, false);
+  }
+  assert.equal(deriveOtherChatParticipant({ actorUid: "outsider", participants: ["a", "b"] }).error, "invalid_chat_membership");
+});
+
+test("blocking in either direction denies the corresponding sender", () => {
+  assert.equal(authorizeMessageAgainstBlock({ senderUid: "a", recipientUid: "b", chatParticipants: ["a", "b"], blockedByRecipient: true }).error, "blocked_by_recipient");
+  assert.equal(authorizeMessageAgainstBlock({ senderUid: "b", recipientUid: "a", chatParticipants: ["a", "b"], blockedByRecipient: true }).error, "blocked_by_recipient");
 });
