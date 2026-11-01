@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/oldx-branch-security-tests.yml'
       - 'functions/admin-backend/**'
+      - 'features/service-providers/**'
       - 'scripts/chat-message-authorization-policy.mjs'
       - 'tests/firestore-emulator/chat-message-authorization-policy.test.mjs'
       - 'package.json'
@@ -33,3 +34,5 @@ jobs:
         run: npm run test:admin-backend
       - name: Chat message authorization tests (synthetic)
         run: npm run test:chat-message-authorization
+      - name: Service provider module tests (synthetic, no Firebase)
+        run: npm run test:service-providers
