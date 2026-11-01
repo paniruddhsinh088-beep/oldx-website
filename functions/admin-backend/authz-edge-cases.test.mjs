@@ -28,7 +28,7 @@ test("missing trusted token verifier or role resolver fails closed", async () =>
 
 test("token verification failures and invalid identities are denied", async () => {
   await expectDenied({ verifyIdToken: async () => { throw new Error("synthetic failure"); } }, 401, "INVALID_TOKEN");
-  for (const identity of [null, {}, { uid: "" }, { uid: 123 }]) {
+  for (const identity of [null, {}, { uid: "" }, { uid: "   " }, { uid: "\\t" }, { uid: 123 }]) {
     await expectDenied({ verifyIdToken: async () => identity }, 401, "INVALID_TOKEN");
   }
 });
