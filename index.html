@@ -2569,14 +2569,14 @@
                     const typingRoomId = activeChatRoomId;
                     const typingUserId = window.currentUser.uid;
                     db.collection('chats').doc(typingRoomId).set({
-                        [`typing_${window.currentUser.uid}`]: true
+                        [`typing_${typingUserId}`]: true
                     }, { merge: true });
 
                     clearTimeout(window.typingTimer);
                     window.typingTimer = setTimeout(() => {
                         if(activeChatRoomId === typingRoomId && window.currentUser?.uid === typingUserId) {
                             db.collection('chats').doc(typingRoomId).set({
-                                [`typing_${window.currentUser.uid}`]: false
+                                [`typing_${typingUserId}`]: false
                             }, { merge: true });
                         }
                     }, 1500);
