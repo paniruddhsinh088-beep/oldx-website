@@ -25,7 +25,7 @@ These are draft engineering limits aligned with the existing upload-policy propo
 
 ## Quarantine cleanup
 
-The local selector considers only objects in `quarantined`, `orphaned` or `rejected` states older than a 24-hour grace period. It excludes approved, referenced and published objects and emits at most 100 candidates per batch.
+The local selector considers only objects in `quarantined`, `orphaned` or `rejected` states older than a 24-hour grace period. It requires explicit metadata confirming `approved=false`, `referenced=false` and `published=false`; missing or unknown flags fail closed. It de-duplicates object IDs and emits at most 100 candidates per batch.
 
 A real cleanup worker must, immediately before deletion:
 1. Re-read authoritative metadata and storage object state.
