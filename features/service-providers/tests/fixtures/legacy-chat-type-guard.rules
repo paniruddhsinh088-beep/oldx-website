@@ -1,0 +1,14 @@
+// Emulator-only negative control. A deny in the SAME matching legacy rule
+// can protect service rooms while preserving product room creation.
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  match /chats/{chatId} {
+   allow create: if request.auth != null && request.resource.data.get('chatType','') != 'service';
+  }
+  match /chats/{chatId} {
+   allow create: if false;
+  }
+  match /{document=**} { allow read, write: if false; }
+ }
+}
