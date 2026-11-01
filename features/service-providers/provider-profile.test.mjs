@@ -53,3 +53,12 @@ test("does not mutate caller data and uses safe optional defaults", () => {
   assert.deepEqual(result.value.languages, []);
   assert.deepEqual(source, { displayName: "Provider", services: ["Plumber"], city: "Surat", serviceArea: "Surat" });
 });
+
+test("optional description accepts blank input but rejects non-string data", () => {
+  for (const description of ["", "   "]) {
+    const result = normalizeProviderProfile({ ...valid, description });
+    assert.equal(result.ok, true);
+    assert.equal(result.value.description, "");
+  }
+  assert.equal(normalizeProviderProfile({ ...valid, description: 42 }).ok, false);
+});
