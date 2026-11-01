@@ -60,6 +60,9 @@ jobs:
       - name: Run upload abuse and cleanup policy tests
         run: npm run test:image-upload-abuse
 
+      - name: Run inbox summary policy tests
+        run: npm run test:inbox-summary
+
       - name: Run local Admin backend starter tests
         run: npm run test:admin-backend
 
