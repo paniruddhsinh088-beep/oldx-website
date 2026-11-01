@@ -142,7 +142,7 @@ function render(){
  }
 }
 function show(id){["browseView","profileView","providerView"].forEach(v=>$(v).classList.toggle("active",v===id));window.scrollTo({top:0,behavior:"smooth"})}
-function openProfile(id){const p=demoProviders.find(x=>x.id===id);if(!p)return;$("pName").textContent=p.name;$("pArea").textContent=p.area;$("pServices").innerHTML=p.services.map(s=>'<span class="tag">'+s+'</span>').join("");$("pAbout").textContent=p.about;$("pExperience").textContent=p.experience+" વર્ષનો અનુભવ · "+p.area+" (ડેમો માહિતી)";show("profileView")}
+function openProfile(id){const p=demoProviders.find(x=>x.id===id);if(!p)return;$("pName").textContent=p.name;$("pArea").textContent=p.area;const serviceTags=p.services.map(service=>{const tag=document.createElement("span");tag.className="tag";tag.textContent=service;return tag});$("pServices").replaceChildren(...serviceTags);$("pAbout").textContent=p.about;$("pExperience").textContent=p.experience+" વર્ષનો અનુભવ · "+p.area+" (ડેમો માહિતી)";show("profileView")}
 $("categories").addEventListener("click",e=>{const b=e.target.closest("[data-cat]");if(!b)return;activeCategory=b.dataset.cat;document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));render()});
 $("searchBtn").addEventListener("click",render);$("q").addEventListener("input",render);$("area").addEventListener("input",render);$("sort").addEventListener("change",render);
 $("browseTab").addEventListener("click",()=>show("browseView"));$("providerTab").addEventListener("click",()=>show("providerView"));$("backBtn").addEventListener("click",()=>show("browseView"));
