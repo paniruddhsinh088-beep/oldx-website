@@ -95,3 +95,38 @@ trusted scan/proof/private quarantine upload composition, then remaining real UI
 locale, review/moderation and security/device acceptance. Actual runtime/provider
 schema/identity/rate/quota/privacy/retention and separate staging actions still need
 owner approval. HOLD/NO-GO remains; dates are targets, not guaranteed acceptance.
+
+## Exact-source delivery / CI
+
+Feature source `b264c38a1d90eb1f9b3fd212bb9a5bc0a1b9dd4e` passed 3/3 workflows:
+- [Branch security 41500612830](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41500612830)
+- [Service SDK/Rules Emulator 41500612806](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41500612806)
+- [Review safety 41500612835](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41500612835)
+
+Final hardened source `66d34d891c8dd7ef861d2c207f3cae5d1fbdbe63` adds immutable
+moderation decision/from-revision/revoked-scope/generation audit fields and assertions,
+plus SDK workflow path coverage for the new server modules and shared fixtures.
+Focused release tests passed 2/2. Its applicable exact-source workflows passed:
+- [Service SDK/Rules Emulator 41501193483](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41501193483)
+- [Review safety 41501193442](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41501193442)
+
+Branch Security did not trigger for that narrow follow-up under its existing path
+filter; it passed on the feature source above. Do not describe it as a third final-
+source run. Review safety still runs the relevant Admin/Chat/safety regressions on
+the final source. No unchanged expensive LOCAL browser suite was repeated for the
+follow-up. Expanded SDK path filtering ensures future server-only changes get actual
+SDK Emulator validation, rather than relying on an unrelated package/feature change.
+
+Actual SDK/candidate Rules runtime now passes 28 cases, including the real generated
+codec metadata + independent moderation + atomic release/private edit preservation/
+revocation/withdrawal sequence. It also tests Provider-private service-photo moderation
+without adding v1 photo fields or allowing Provider public release. Scan/permission
+records are synthetic isolated authority, not live scanner/provider/IAM evidence.
+Local 34-command sweep, 76 integration cases, 29 browser cases and actual CI Emulator
+results are separately identified; no local actual Emulator claim.
+
+Remote remained unchanged before normal source pushes; original `37209fd`, canonical
+automation `58356e2`, `d495220b`, `9a1d1368` and all prior history preserved. No concurrent
+work needed overwrite/force-push/merge. No live Firebase/Cloudinary, Rule/index/IAM/
+secret/billing/Vercel config/deployment, migration, main or native packaging action.
+This final documentation follow-up changes no verified executable source. HOLD/NO-GO.
