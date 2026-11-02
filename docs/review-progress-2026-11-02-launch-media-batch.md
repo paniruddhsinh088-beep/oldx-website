@@ -108,5 +108,27 @@ command includes 63 cases. Focused media swap recheck passed 9 cases. Exact coun
 
 Local actual Emulator suites were not run: official binary-host access remains
 blocked by environment policy; no bypass or mirror attempted. Exact-source GitHub
-Emulator evidence is pending below. `git diff --check` passes. No dependencies added,
+Emulator evidence is recorded below. `git diff --check` passes. No dependencies added,
 no package-lock, deployment config or Rules changes.
+
+## Verified exact-source checkpoint
+
+Executable source `aaae4661ae44796e0e30a19d8e81033c268eb299` passed all three workflows:
+
+- [Branch security 41481802000](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41481802000)
+- [Service Provider Emulator 41481802187](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41481802187)
+- [Review safety 41481802057](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41481802057)
+
+Review safety includes the new 63-case integration command and existing actual
+baseline Firestore, Storage and private Chat user-state Emulator checks. Service CI
+passes the existing 23-case actual SDK/candidate Rules suite. New enquiry/journal
+acceptance is isolated mock evidence, not actual enquiry SDK/IAM/Cloudinary delivery
+validation. Local 34-script sweep, focused swap cases and CI are distinct evidence.
+The final 63-case integration command was rerun after atomic-swap review; it passed.
+
+Fresh remote remained `31021b42` before normal source commit/push. Preserved
+`37209fd`, canonical automation `58356e2`, `1d63e326`, `31021b42` and all previous
+ancestors. No concurrent automation change required a merge/rebase/overwrite.
+Branch deployment remains disabled in unchanged `vercel.json`; no provider metadata
+or account action was needed. This follow-up records evidence only, with no executable
+source change after verified `aaae466`. Next batch and activation gates above remain.
