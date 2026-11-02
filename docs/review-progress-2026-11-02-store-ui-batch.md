@@ -146,3 +146,56 @@ or product route. The new regression preserves the skip link's keyboard behavior
 and asserts both route and view identity.
 
 Exact commits, final targeted results and CI evidence follow after reviewed push.
+
+## Reviewed source checkpoint and CI
+
+`0ab408d9ed1b462283f8d72241deb0b40a939531` commits the preserved Store UI draft,
+reviewed boundary contracts and keyboard skip-link correction. Pushed normally
+only to `security-hardening-review` after checking FETCH_HEAD ancestry and the
+branch's deployment-disabled configuration. Local resumed checks passed:
+`test:stores:browser` **10/10**, `test:stores:preview` **3/3**,
+`test:static-build` **3/3**, plus `git diff --check`.
+
+Exact-source CI all passed:
+- [Branch security 41399403064](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41399403064).
+- [Service 41399402994](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41399402994).
+- [Review safety 41399403039](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41399403039).
+
+These workflows include the new Store tests and retained Service, locale,
+security and actual isolated Firebase Emulator checks. Vercel metadata lists
+zero deployments for this exact commit. No live Firebase was accessed.
+
+## Continued inactive contract hardening
+
+Continued automatically with the documented next independent task. The contract
+now describes optional server-side category/availability predicates with newest
+ordering; unsupported search/sorts fail closed rather than implying that filtering
+one page searches a whole Store. A versioned cursor binds seller, category,
+availability and order; changes require a new first page. `nextCursor` anchors the
+last returned card, preserves nanoseconds/ID ties and excludes the lookahead.
+
+Defensive response tests reject mismatched query membership, replayed anchors,
+unsorted rows and publication withdrawn between pages (including lookahead).
+Invalid record IDs are rejected before comparisons can coerce an object. Errors
+return no cards or continuation cursor. These tests do not establish cache erasure,
+snapshot isolation, approved publication policy, Store publication resolution,
+actual SDK query/index correctness or Rules authorization. All remain approval
+and implementation gates. No adapter or server/browser integration was added.
+
+Store UI category choices and the contract reuse the model's frozen category IDs,
+removing the duplicate 12-category list. The relevant comprehensive sweep passed:
+`test:stores` **27/27**, `test:stores:preview` **3/3**, `test:stores:browser`
+**10/10**, `test:static-build` **3/3**, `test:i18n` **11/11**,
+`test:emulator:safety` **78/78** (source/policy checks, not local emulators).
+The final additional ID-coercion regression passed in the focused contract suite
+**6/6**, bringing the Store unit suite to 28 cases. Earlier unchanged expensive
+checks were reused from the previous sweep and exact-source CI.
+
+Remaining development advisories are unchanged by this source batch; dependency
+versions/lockfile are untouched. Do not force major overrides. Native-speaker
+review and real public-data integration approvals remain outstanding.
+
+Next safe task: synthetic asynchronous adapter-response lifecycle tests for
+out-of-order requests, scope changes, revocation and clearing stale card/detail
+state, without fetching real data or activating a backend. Store share posters,
+real media/contact and social crawler routes remain separate gated roadmap work.

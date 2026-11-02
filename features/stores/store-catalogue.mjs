@@ -8,10 +8,11 @@
  * products documents to a public client as a substitute for that boundary.
  */
 
-const CATEGORY_IDS = new Set([
+export const STORE_CATEGORY_IDS = Object.freeze([
   "cars", "properties", "mobiles", "bikes", "electronics", "commercial",
   "furniture", "fashion", "books", "pets", "jobs", "services"
 ]);
+const CATEGORY_IDS = new Set(STORE_CATEGORY_IDS);
 const SORT_MODES = new Set(["newest", "name", "price-low", "price-high", "available"]);
 const MAX_BATCH = 100;
 const MAX_PAGE_SIZE = 24;

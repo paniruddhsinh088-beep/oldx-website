@@ -1,4 +1,4 @@
-import { buildStoreCataloguePage } from './store-catalogue.mjs';
+import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
 import { sampleStores, sampleListings } from './preview-fixtures.mjs';
 import { parseStorePreviewRoute } from './preview-route.mjs';
 import { createTranslator, loadTranslator, SUPPORTED_LOCALES } from '../i18n/i18n.mjs';
@@ -12,9 +12,7 @@ document.querySelector('.skip').addEventListener('click', event => {
   $('main').focus();
   $('main').scrollIntoView({ block: 'start', behavior: 'instant' });
 });
-const categories = ['cars', 'properties', 'mobiles', 'bikes', 'electronics', 'commercial',
-  'furniture', 'fashion', 'books', 'pets', 'jobs', 'services'];
-for (const category of categories) {
+for (const category of STORE_CATEGORY_IDS) {
   const option = document.createElement('option');
   option.value = category; option.dataset.i18n = 'store.category.' + category;
   $('category').append(option);

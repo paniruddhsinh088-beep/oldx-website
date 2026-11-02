@@ -5,7 +5,7 @@ const invalid = { ok: false, code: 'INVALID_PUBLIC_CATALOGUE_CONTRACT' };
 const record = (id, extra = {}) => ({ id, sellerUid: 'sample-store', publicationStatus: 'published',
   createdAt: { seconds: 1700000000, nanoseconds: 10 }, title: 'નમૂનો', category: 'books', basePrice: 100, isSold: false, ...extra });
 test('draft read plan requires exact seller/publication predicates, stable cursor order and limit+1', () => {
-  const cursor = { storeUid: 'sample-store', id: 'p1', seconds: 1700000000, nanoseconds: 10 };
+  const cursor = { version: 1, storeUid: 'sample-store', category: 'all', availableOnly: false, sort: 'newest', id: 'p1', seconds: 1700000000, nanoseconds: 10 };
   const result = planDraftPublicCatalogueRead({ storeUid: 'sample-store', pageSize: 24, cursor });
   assert.deepEqual(result, { ok: true, plan: { collection: 'publicProducts',
     where: [['sellerUid', '==', 'sample-store'], ['publicationStatus', '==', 'published']],
@@ -35,5 +35,5 @@ test('draft response fails closed for unpublished, mixed-seller, sparse, duplica
     assert.deepEqual(projectDraftPublicCataloguePage({ storeUid: 'sample-store', records }), invalid);
   }
   assert.deepEqual(projectDraftPublicCataloguePage({ storeUid: 'sample-store', records: [], collection: 'products' }), invalid);
-  assert.deepEqual(projectDraftPublicCataloguePage({ storeUid: 'sample-store', records: [] }), { ok: true, items: [], hasMore: false });
+  assert.deepEqual(projectDraftPublicCataloguePage({ storeUid: 'sample-store', records: [] }), { ok: true, items: [], hasMore: false, nextCursor: null });
 });

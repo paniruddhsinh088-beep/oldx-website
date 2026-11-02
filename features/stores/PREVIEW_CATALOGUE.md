@@ -37,7 +37,8 @@ headings; returning from detail restores its result link. Touch controls are at
 least 44px high, layouts wrap at 320px, and tests apply actual 200% computed text
 sizes in all languages across catalogue, product, empty and not-found views.
 
-Both previews reuse the existing translator/DOM/preference modules and explicit
+Store category choices now reuse the model’s frozen source category IDs rather
+than maintaining a second 12-category list. Both previews reuse the existing translator/DOM/preference modules and explicit
 static asset allowlist. The browser suites now share one loopback-only server
 fixture, removing duplicated request allowlist and MIME handling. The Store adds
 no dependency, remote font/media request or runtime framework. Its DOM contains

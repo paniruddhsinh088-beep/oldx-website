@@ -27,19 +27,31 @@ provider, image pipeline or publication policy has been selected by this work.
    afterward. Firestore Rules authorize documents; they cannot hide fields.
 3. Enforce page size 1–24, fetch at most size+1, order by trusted `createdAt desc`
    and document ID ascending, preserve nanosecond precision, and bind cursors to
-   Store, order and filters. The executable draft covers unfiltered catalogue
-   reads only. Any future category/availability/search/sort query requires its own
-   tested cursor binding, query shape and index; client filtering of one server
-   page must never be described as full-store search.
+   Store, order and filters. The executable draft covers newest-order reads with an optional known category
+   predicate and strict availability predicate (`isSold == false`). These filters
+   are part of the trusted query, never post-pagination client filtering. Full-store
+   search, price/name/availability sorting and unknown filter keys fail closed;
+   each needs a separately reviewed query/index/cursor contract. The offline UI's
+   extra sort modes operate only on the complete synthetic batch.
 4. Future external cursors must be server-issued, bounded, validated and scoped;
-   the draft's plain timestamp tuple is a synthetic test representation only.
+   the draft's version-1 timestamp tuple is a synthetic test representation only.
+   It binds seller, category, availability and the fixed `newest` order. Reject a
+   cursor when any bound filter changes and restart from the first page. A locale
+   change does not alter query membership. The response emits `nextCursor` only
+   with lookahead, anchored to the last returned card (not the lookahead record).
+   Preserve timestamp nanoseconds and ID tie ordering; no offset scans.
    No arbitrary client query path, collection, status, offset or limit is accepted.
 5. Project only `id`, `title`, `category`, numeric rounded `price`, formatted
    `priceLabel`, `available` for catalogue cards. Contact, exact coordinates,
    IP, arbitrary attributes/images, moderation notes and trust claims are absent.
    Locale controls interface text/number formatting; authored content is preserved.
 6. Validate response schema and limits at the server. The executable draft fails
-   the batch closed for mixed sellers, unpublished/malformed records or duplicates.
+   the batch closed for mixed sellers, unpublished/malformed records, duplicates,
+   mismatched filters, unsorted input or records at/before the cursor. Every record,
+   including lookahead, must satisfy publication; suspension/deletion between
+   pages yields an error with no cards or cursor. An empty fresh response has no
+   continuation cursor. This does not retroactively erase an earlier client cache:
+   clients must discard stale responses and honor the approved revocation policy.
    Recheck publication/detail access on every read; expired cached public data
    must not resurrect withdrawn listings. Define freshness/revocation guarantees
    before activation. Do not log response bodies or private/raw input.
@@ -70,3 +82,26 @@ contact each require separate approved public policies and trusted resolution.
 
 No Rules or indexes are changed by this contract. Deployment, live reads and
 migration remain separate owner approval gates.
+
+
+## Required future index and cursor validation matrix
+
+| Candidate query | Equality predicates before newest order | Status |
+| --- | --- | --- |
+| Default | sellerUid, publicationStatus | Draft only |
+| Category | sellerUid, publicationStatus, category | Draft only |
+| Available | sellerUid, publicationStatus, isSold | Draft only |
+| Category + available | sellerUid, publicationStatus, category, isSold | Draft only |
+
+All four use `createdAt desc`, document ID ascending and limit 1–24 plus one
+lookahead. Actual index definitions must be verified in isolated tests after
+schema approval; no index is created here. Cursors are not an authorization
+capability or a guaranteed snapshot. Concurrent stock/publication changes can
+alter query membership; server reads must revalidate Store publication and clients
+must reset query state/discard stale cards on revocation or scope changes.
+
+Pure contract regressions cover filter changes, unsupported sorts/search,
+lookahead anchoring, equal timestamps/nanosecond differences, cross-store replay,
+unknown cursor versions, unsorted/replayed rows and publication withdrawn between
+pages. They do not replace guest/seller/moderator Rules Emulator or real adapter
+query tests. The contract is not included in browser packaging.
