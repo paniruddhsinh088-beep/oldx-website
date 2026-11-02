@@ -87,3 +87,26 @@ No Firebase configuration or Rules file changed. Exact commands/counts:
 | `npm run test:service-conversation:browser` | 7 |
 | `npm run test:service-discovery:browser` | 6 |
 | `npm run test:provider-draft:transaction` | 41 |
+
+## Exact-source checkpoint / CI
+
+Executable source `b0e609069867de63f9c9b647989b68e111aef670` passed all workflows:
+- [Branch security 41472247412](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41472247412)
+- [Service Providers Emulator 41472247454](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41472247454)
+- [Review safety 41472247495](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41472247495)
+
+The 23-case Service runtime suite includes actual SDK v1 owner bootstrap, no-write/
+no-allocation reads, concurrent same-key opaque creation, multi-service update,
+current vs historical revision reconciliation, publish/withdraw and historical
+receipt without visibility. It runs under privileged isolated Emulator context,
+not live IAM/token/rate/retention acceptance. Existing client access remains denied
+and no Rules file changed. Local all-command sweep passed 34 scripts, including
+41 integration/reconciliation cases, Service models 189, browser 23 and Admin 115.
+
+Fresh remote remained `feb230f` before source commit/push. Previous checkpoints and
+canonical automation preserved; normal branch push only, no concurrent merge/force
+push. Deployment flag stayed false; read-only Vercel metadata found no deployment
+for exact source. No live Firebase, Rules/index deployment, IAM/secrets, billing,
+paid resource, main/merge, migration, deployment or Full Reset action. This final
+evidence-only follow-up changes no verified executable source. New design approval
+is recorded without changing runtime/privacy/retention/staging HOLD/NO-GO gates.
