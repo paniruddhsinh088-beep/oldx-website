@@ -1,5 +1,7 @@
 import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
-import { sampleStores, sampleListings } from './preview-fixtures.mjs';
+import { sampleStores } from './preview-fixtures.mjs';
+import { createStoreLoadController } from './preview-load.mjs';
+import { readSyntheticStore } from './preview-adapter.mjs';
 import { parseStorePreviewRoute } from './preview-route.mjs';
 import { createTranslator, loadTranslator, SUPPORTED_LOCALES } from '../i18n/i18n.mjs';
 import { applyCatalog } from '../i18n/dom.mjs';
@@ -19,6 +21,8 @@ for (const category of STORE_CATEGORY_IDS) {
 }
 let translator = createTranslator('en');
 const t = (key, params) => translator.t(key, params);
+let activeRecords = [], snapshot = null, selectedStoreId = null;
+let loadState = { status: 'idle' }, focusAfterLoad = false, restoreAfterLoad = false;
 let localeRequest = 0, page = 1, currentStore = null, renderedHash = null, returnProductId = null;
 function storage() { try { return window.localStorage; } catch { return null; } }
 function resetFilters() {
@@ -26,7 +30,7 @@ function resetFilters() {
   $('availableOnly').checked = false; page = 1;
 }
 function catalogue(options = {}) {
-  return buildStoreCataloguePage({ storeUid: currentStore.id, listings: sampleListings,
+  return buildStoreCataloguePage({ storeUid: currentStore.id, listings: activeRecords,
     locale: translator.locale, query: $('query').value, category: $('category').value,
     sort: $('sort').value, availableOnly: $('availableOnly').checked, page, pageSize: 6, ...options });
 }
@@ -66,10 +70,9 @@ function renderCatalogue() {
     card.append(heading, category, price, availability, link); $('results').append(card);
   }
 }
-function renderRoute(focus = false) {
+function displayRoute(focus = false, restoreResult = false) {
   const route = parseStorePreviewRoute(window.location.hash);
-  const store = sampleStores.find(item => item.id === route.storeId);
-  if (currentStore?.id !== store?.id) { resetFilters(); returnProductId = null; }
+  const store = snapshot?.store.id === route.storeId ? snapshot.store : null;
   currentStore = store ?? null;
   let view = route.view;
   let product = null;
@@ -94,7 +97,7 @@ function renderRoute(focus = false) {
   let target = $('notFoundHeading');
   if (view === 'catalogue') {
     renderCatalogue(); target = $('resultsHeading');
-    if (returnProductId) target = [...document.querySelectorAll('#results a')].find(link => link.dataset.productId === returnProductId) ?? target;
+    if (restoreResult && returnProductId) target = [...document.querySelectorAll('#results a')].find(link => link.dataset.productId === returnProductId) ?? target;
   } else if (view === 'product') {
     $('productTitle').textContent = product.title;
     $('productCategory').textContent = t('store.category.' + product.category);
@@ -110,17 +113,18 @@ function renderRoute(focus = false) {
 }
 function routeChanged() {
   if (renderedHash === window.location.hash) return;
-  renderedHash = window.location.hash; renderRoute(true);
+  const restore = renderedHash?.includes('/product/');
+  renderedHash = window.location.hash; requestRoute(true, restore);
 }
 window.addEventListener('hashchange', routeChanged);
 window.addEventListener('popstate', routeChanged);
-function filtersChanged() { if (!currentStore) return; page = 1; renderCatalogue(); }
+function filtersChanged() { if (!selectedStoreId) return; page = 1; requestRoute(); }
 $('query').addEventListener('input', filtersChanged);
 for (const id of ['category', 'sort', 'availableOnly']) $(id).addEventListener('change', filtersChanged);
 $('filters').addEventListener('submit', event => { event.preventDefault(); filtersChanged(); $('resultsHeading').focus(); });
-$('reset').addEventListener('click', () => { if (!currentStore) return; resetFilters(); renderCatalogue(); $('query').focus(); });
+$('reset').addEventListener('click', () => { if (!selectedStoreId) return; resetFilters(); requestRoute(); $('query').focus(); });
 for (const [id, step] of [['previous', -1], ['next', 1]]) {
-  $(id).addEventListener('click', () => { page += step; renderCatalogue(); $('resultsHeading').focus(); });
+  $(id).addEventListener('click', () => { page += step; requestRoute(true); });
 }
 async function selectLocale(requested, persist = false) {
   const request = ++localeRequest;
@@ -133,8 +137,62 @@ async function selectLocale(requested, persist = false) {
   $('localeStatus').textContent = failed ? t('languageUnavailable') : t('languageChanged', {
     language: SUPPORTED_LOCALES.find(locale => locale.code === translator.locale).name });
   if (persist && !failed) writeLocalePreference(storage(), translator.locale);
-  renderRoute();
+  renderLoadState();
 }
 $('localeSelect').addEventListener('change', event => selectLocale(event.target.value, true));
+const loader = createStoreLoadController({ read: readSyntheticStore, onChange(state) {
+  loadState = state;
+  snapshot = state.snapshot ?? null; activeRecords = snapshot?.records ?? [];
+  renderLoadState();
+} });
+function clearDisplayedData() {
+  currentStore = null;
+  for (const id of ['shopName', 'shopCity', 'shopDescription', 'productTitle', 'productCategory', 'productPrice', 'productAvailability', 'resultCount', 'pageStatus']) $(id).textContent = '';
+  $('results').replaceChildren(); $('shopHeader').hidden = true;
+  document.querySelectorAll('.samples a').forEach(link => link.setAttribute('aria-current', 'false'));
+  $('backToCatalogue').removeAttribute('href');
+  $('previous').disabled = $('next').disabled = true;
+  $('catalogueError').hidden = $('emptyState').hidden = true;
+}
+function renderLoadState() {
+  const busy = loadState.status === 'loading';
+  $('catalogueView').setAttribute('aria-busy', String(busy));
+  $('productView').setAttribute('aria-busy', String(busy));
+  $('loadStatus').textContent = busy ? t('store.loading') : '';
+  const failed = ['error', 'revoked'].includes(loadState.status);
+  $('loadError').hidden = !failed;
+  $('loadError').textContent = failed ? t(loadState.status === 'revoked' ? 'store.revoked' : 'store.readError') : '';
+  if (loadState.status === 'ready') {
+    const moveFocus = focusAfterLoad && [$('loadStatus'), $('resultsHeading')].includes(document.activeElement);
+    displayRoute(moveFocus, restoreAfterLoad); focusAfterLoad = false;
+  } else {
+    clearDisplayedData();
+    const route = parseStorePreviewRoute(window.location.hash);
+    for (const [id, visible] of [['catalogueView', route.view === 'catalogue'], ['productView', route.view === 'product'], ['notFoundView', route.view === 'not-found' || loadState.status === 'idle']]) $(id).hidden = !visible;
+    if (loadState.status === 'idle') { $('catalogueView').hidden = $('productView').hidden = true; }
+    if (failed && focusAfterLoad && [$('loadStatus'), $('resultsHeading')].includes(document.activeElement)) { $('loadError').focus(); focusAfterLoad = false; }
+  }
+}
+function requestRoute(focus = false, restoreResult = false) {
+  const route = parseStorePreviewRoute(window.location.hash);
+  const known = sampleStores.some(store => store.id === route.storeId);
+  if (selectedStoreId !== route.storeId) { resetFilters(); returnProductId = null; }
+  selectedStoreId = known ? route.storeId : null;
+  focusAfterLoad = focus; restoreAfterLoad = restoreResult;
+  if (!known) { loader.clear(); if (focus) $('notFoundHeading').focus(); return; }
+  if ($('responseMode').value === 'revoked') { loader.revoke(); if (focus) $('loadError').focus(); return; }
+  void loader.load({ storeUid: route.storeId, view: route.view, productId: route.productId,
+    query: $('query').value, category: $('category').value, sort: $('sort').value,
+    availableOnly: $('availableOnly').checked, page, scenario: $('responseMode').value });
+  // Keyboard navigation announces loading, then moves to the accepted view only
+  // if the user has not moved focus elsewhere while the response was pending.
+  if (focus) {
+    if (route.view === 'catalogue') { $('resultsHeading').focus(); }
+    else $('loadStatus').focus();
+  }
+}
+$('responseMode').addEventListener('change', () => requestRoute());
+$('retryRead').addEventListener('click', () => requestRoute(true));
 await selectLocale(readLocalePreference(storage(), 'gu'));
+requestRoute();
 renderedHash = window.location.hash;

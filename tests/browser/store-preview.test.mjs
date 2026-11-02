@@ -211,3 +211,170 @@ test('keyboard skip link keeps the current catalogue or product route intact', a
     assert.equal(await page.locator('#notFoundView').isVisible(), false);
   }
 });
+
+// Controlled mock completion, deliberately ignoring AbortSignal to prove the
+// revision gate rather than relying on a cooperative adapter or timing sleeps.
+async function controlledAdapter() {
+  await page.route('**/features/stores/preview-adapter.mjs', request => request.fulfill({ contentType: 'text/javascript', body: `
+    import { sampleStores, sampleListings } from './preview-fixtures.mjs';
+    window.sampleRequests = [];
+    export function readSyntheticStore(scope, { signal }) {
+      return new Promise((resolve, reject) => window.sampleRequests.push({scope, signal,
+        finish(kind = 'ready') {
+          if (kind === 'error') return reject(new Error('PRIVATE MOCK ERROR'));
+          if (kind === 'invalid') return resolve({status:'published',store:{},records:['PRIVATE']});
+          if (kind === 'revoked') return resolve({status:'revoked'});
+          resolve({status:'published',store:sampleStores.find(s=>s.id===scope.storeUid),
+            records:sampleListings.filter(r=>r.sellerUid===scope.storeUid && !(kind==='removed' && r.id===scope.productId)).map((r,i)=>({...r,publicationStatus:kind==='listing-revoked' && i===0?'suspended':'published'}))});
+        }
+      }));
+    }` }));
+  await page.reload();
+  await page.waitForFunction(() => window.sampleRequests?.length === 1);
+}
+async function finishRequest(index, kind = 'ready') {
+  await page.evaluate(({ index, kind }) => window.sampleRequests[index].finish(kind), { index, kind });
+}
+async function ready() { await page.waitForFunction(() => document.querySelector('#catalogueView').getAttribute('aria-busy') === 'false' && document.querySelector('#loadStatus').textContent === ''); }
+
+test('rapid category, sort, search and stale pagination accept only the latest mock response', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#next').click();
+  assert.equal(await page.locator('#results article').count(), 0);
+  assert.equal(await page.locator('#next').isDisabled(), true);
+  await page.locator('#category').selectOption('books');
+  await page.locator('#sort').selectOption('price-low');
+  await page.locator('#query').fill('ગુજરાતી');
+  await page.waitForFunction(() => window.sampleRequests.length === 5);
+  assert.equal(await page.evaluate(() => sampleRequests[1].scope.page), 2);
+  assert.equal(await page.evaluate(() => sampleRequests[4].scope.page), 1);
+  assert.equal(await page.evaluate(() => sampleRequests.slice(1,4).every(r=>r.signal.aborted)), true);
+  await finishRequest(4); await ready();
+  assert.deepEqual(await ids(), ['sample-13']);
+  for (const [index,kind] of [[1,'invalid'],[3,'ready'],[2,'revoked']]) await finishRequest(index,kind);
+  assert.deepEqual(await ids(), ['sample-13']);
+  assert.equal(await page.locator('#query').evaluate(node=>node===document.activeElement), true);
+});
+
+test('withdrawn products and pending details stay cleared through history and late completion', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#results a').first().click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  await finishRequest(1);
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  await page.locator('#responseMode').selectOption('revoked');
+  assert.equal(await page.locator('#loadError').isVisible(), true);
+  await finishRequest(2);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  assert.equal(await page.locator('#shopName').textContent(), '');
+  await page.goBack(); await page.goForward();
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  assert.equal(await page.locator('#results article').count(), 0);
+  assert.equal(await page.evaluate(()=>sampleRequests.length), 3);
+});
+
+test('invalid response and read failure have safe recovery without stale data or focus theft', async () => {
+  await controlledAdapter(); await finishRequest(0, 'invalid'); await ready();
+  assert.equal(await page.locator('#loadError').isVisible(), true);
+  assert.equal(await page.locator('#results article').count(), 0);
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await finishRequest(1, 'error'); await ready();
+  assert.equal(await page.locator('#loadError').evaluate(node=>node===document.activeElement), true);
+  assert.equal((await page.locator('body').textContent()).includes('PRIVATE'), false);
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  await page.locator('#query').focus();
+  await finishRequest(2); await ready();
+  assert.equal(await page.locator('#query').evaluate(node=>node===document.activeElement), true);
+  assert.equal(await page.locator('#results article').count(), 6);
+});
+
+test('pending/error/revoked states localize at 320px with 200 percent text without another read', async () => {
+  await controlledAdapter();
+  await page.setViewportSize({ width: 320, height: 900 });
+  for (const locale of ['gu','hi','en']) {
+    await language(locale);
+    const catalog = (await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#loadStatus').textContent(), catalog['store.loading']);
+    assert.equal(await page.evaluate(()=>sampleRequests.length), 1);
+    await page.evaluate(()=>{
+      const nodes=[...document.querySelectorAll('body *')];
+      const sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));
+      nodes.forEach((n,i)=>{n.style.fontSize=sizes[i]*2+'px';});
+    });
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1), true);
+    assert.equal(await page.locator('#responseMode').evaluate(node=>node.labels.length>0), true);
+    await page.evaluate(()=>document.querySelectorAll('body *').forEach(n=>n.style.removeProperty('font-size')));
+  }
+  await finishRequest(0,'revoked'); await ready();
+  for (const locale of ['gu','hi','en']) {
+    await language(locale);
+    const catalog = (await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#loadError').textContent(), catalog['store.revoked']);
+    await page.evaluate(()=>{
+      const nodes=[...document.querySelectorAll('body *')];
+      const sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));
+      nodes.forEach((n,i)=>{n.style.fontSize=sizes[i]*2+'px';});
+    });
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1), true);
+    await page.evaluate(()=>document.querySelectorAll('body *').forEach(n=>n.style.removeProperty('font-size')));
+  }
+});
+
+test('changing to an invalid route discards pending product data and late errors', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#results a').first().click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await page.evaluate(()=>{location.hash='#store/missing';});
+  await page.waitForFunction(()=>!document.querySelector('#notFoundView').hidden);
+  await finishRequest(1);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  assert.equal(await page.locator('#shopName').textContent(), '');
+  assert.equal(await page.locator('#results article').count(), 0);
+  assert.equal(await page.locator('#notFoundHeading').evaluate(node=>node===document.activeElement), true);
+  assert.equal(await page.locator('#loadError').isVisible(), false);
+});
+
+test('visible offline simulation controls delay, fail, withdraw and recover without remote requests', async () => {
+  await page.locator('#responseMode').selectOption('delayed');
+  assert.equal(await page.locator('#catalogueView').getAttribute('aria-busy'), 'true');
+  assert.equal(await page.locator('#results article').count(), 0);
+  await page.locator('#category').selectOption('books');
+  await page.waitForFunction(()=>document.querySelectorAll('#results article').length===3);
+  assert.equal(await page.locator('#catalogueView').getAttribute('aria-busy'), 'false');
+  for (const scenario of ['error','invalid','revoked']) {
+    await page.locator('#responseMode').selectOption(scenario);
+    await page.waitForFunction(()=>!document.querySelector('#loadError').hidden);
+    assert.equal(await page.locator('#results article').count(), 0);
+    assert.equal(await page.locator('#shopName').textContent(), '');
+  }
+  await page.locator('#responseMode').selectOption('normal');
+  await page.waitForFunction(()=>document.querySelectorAll('#results article').length===3);
+  assert.equal(await page.locator('#loadError').isVisible(), false);
+});
+
+test('withdrawn listing payloads fail closed and removed product detail recovers without stale fields', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#results a').first().click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await finishRequest(1);
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  await finishRequest(2,'listing-revoked'); await ready();
+  assert.equal(await page.locator('#loadError').isVisible(), true);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  assert.equal(await page.locator('#productPrice').textContent(), '');
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===4);
+  await finishRequest(3,'removed');
+  await page.waitForFunction(()=>!document.querySelector('#notFoundView').hidden);
+  assert.equal(await page.locator('#productTitle').textContent(), '');
+  assert.equal(await page.locator('#backToCatalogue').getAttribute('href'), null);
+  assert.equal(await page.locator('#notFoundHeading').evaluate(node=>node===document.activeElement), true);
+});

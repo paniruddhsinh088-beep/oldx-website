@@ -54,3 +54,21 @@ is inactive and excluded from the static package.
 Checks: `npm run test:stores`, `npm run test:stores:preview`,
 `npm run test:stores:browser`, `npm run test:i18n`, `npm run test:static-build`.
 Review CI runs these alongside the existing Service/security regression suites.
+
+## Asynchronous sample behavior
+
+The labelled sample-behavior selector offers normal, delayed (350ms), failed,
+invalid and withdrawn mock responses. Reload sample retries the current view.
+These controls change only in-memory demo behavior; they do not alter a real
+Store's publication status. Loading/error/withdrawn messages use the same three
+catalogs, announce state accessibly, clear previous product/header/cards, and
+retain query controls for rapid changes. Paging is disabled during loading.
+Old responses are ignored even if the mock ignores cancellation. Returning through
+history re-reads the sample, without restoring withdrawn card/detail state.
+
+The small request controller is isolated from DOM, locale and SDK code. The
+existing Service request counter remains unchanged: both previews use the same
+latest-request principle without a risky rewrite of already working components.
+Only Store adds an injectable offline read boundary. Browser tests replace that
+module with controlled promises to assert exact completion order without sleeps.
+No global mock hooks are added to the shipped preview.

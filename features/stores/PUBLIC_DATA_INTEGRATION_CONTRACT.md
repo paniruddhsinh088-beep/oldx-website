@@ -105,3 +105,41 @@ lookahead anchoring, equal timestamps/nanosecond differences, cross-store replay
 unknown cursor versions, unsorted/replayed rows and publication withdrawn between
 pages. They do not replace guest/seller/moderator Rules Emulator or real adapter
 query tests. The contract is not included in browser packaging.
+
+## Asynchronous client lifecycle — synthetic evidence only
+
+The offline preview now uses `preview-load.mjs` and `preview-adapter.mjs`. The
+adapter returns an in-memory, bounded sample snapshot only; filters and page
+numbers still operate on that complete sample batch. This is not the trusted
+cursor query adapter described above. No network/SDK/provider selector is added.
+
+Each new read increments a request revision, aborts the previous read where
+supported, immediately discards all accepted cards/header/detail state and
+announces loading. Completion is accepted only for the active revision, even if
+an adapter ignores cancellation. Route, seller, search, category, availability,
+sort, page and retry changes invalidate old reads; locale changes only reformat
+the currently accepted state and never start another read. Unknown routes and
+explicit withdrawal cancel the active revision. History navigation re-reads
+rather than restoring cached publication claims.
+
+Only validated, explicitly projected public sample fields reach display state.
+Snapshots are copied/frozen so later mutation of a mock payload cannot alter an
+accepted view. Failure/invalid/withdrawn responses remove prior card and detail
+state, disable paging and expose localized recovery; raw adapter errors are not
+rendered or logged. Focus moves after keyboard navigation only if the user has
+not moved focus while waiting. Query controls remain usable while loading.
+
+Before real integration, define trusted revocation events, cache TTL/revalidation,
+request deadlines, authentication and Store/listing publication checks. A client
+revision is not authorization or a server snapshot guarantee. Data already seen
+by a visitor cannot be retroactively erased. Never trust a browser's sample
+`published`/`revoked` value, and never fetch private legacy rows to redact later.
+Server-issued cursor scope, index verification, publication consent, strict
+Rules tests and D1–D12 approvals remain mandatory. Late requests must not restore
+withdrawn data after an explicit revocation event or a newer query scope.
+
+Synthetic snapshots require every sample listing to be explicitly marked
+`published`. Missing, pending or suspended markers fail the whole snapshot closed,
+including when a product detail was previously visible. A fresh accepted snapshot
+without that product shows not-found and clears detail fields. These markers are
+mock inputs only, never a replacement for server-controlled publication or Rules.

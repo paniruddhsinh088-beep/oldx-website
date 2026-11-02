@@ -211,3 +211,5 @@ Vercel metadata lists zero deployments for this source commit. All required
 Service/Store/locale checkpoints and `37209fd` remain unchanged ancestors;
 branch-only normal pushes succeeded and the working tree was clean. This final
 verification entry changes documentation only.
+
+Continuation: [asynchronous Store preview batch](review-progress-2026-11-02-store-async-batch.md).

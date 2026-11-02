@@ -10,6 +10,10 @@
 <main id="main" tabindex="-1">
 <p class="notice" data-i18n="store.notice">માત્ર નમૂનો · કોઈ વાસ્તવિક સ્ટોર, ખરીદી કે ડેટાબેઝ જોડાયેલ નથી.</p>
 <nav class="samples" data-i18n-aria-label="store.sampleNav"><a href="#store/demo-shop" data-i18n="store.sampleShop">નમૂના સ્ટોર</a><a href="#store/demo-empty" data-i18n="store.emptyShop">ખાલી સ્ટોરનું નમૂનું</a></nav>
+<section class="panel" aria-labelledby="simulationHeading"><h2 id="simulationHeading" data-i18n="store.simulation">Mock response behavior</h2>
+<label for="responseMode" data-i18n="store.responseMode">Sample response</label><select id="responseMode"><option value="normal" data-i18n="store.normal">Normal</option><option value="delayed" data-i18n="store.delayed">Delayed</option><option value="error" data-i18n="store.simulateError">Error</option><option value="invalid" data-i18n="store.invalidResponse">Invalid sample</option><option value="revoked" data-i18n="store.simulateRevoked">Withdrawn</option></select>
+<button id="retryRead" type="button" data-i18n="store.retry">Reload sample</button></section>
+<p id="loadStatus" role="status" tabindex="-1"></p><p id="loadError" role="alert" tabindex="-1" hidden></p>
 <section id="shopHeader" class="panel"><p class="eyebrow" data-i18n="store.eyebrow">સ્થાનિક સ્ટોરનું નમૂનું</p><h1 id="shopName"></h1><p id="shopCity"></p><p id="shopDescription"></p><p class="muted" data-i18n="store.contactNotice">સંપર્ક અને ખરીદી આ પ્રિવ્યૂમાં ઉપલબ્ધ નથી.</p></section>
 <section id="catalogueView"><form id="filters" class="panel" novalidate>
 <div class="fields"><div><label for="query" data-i18n="store.searchLabel">વસ્તુ શોધો</label><input id="query" aria-describedby="catalogueError" type="search" maxlength="80" data-i18n-placeholder="store.searchPlaceholder"></div>
