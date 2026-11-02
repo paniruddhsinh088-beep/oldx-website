@@ -239,3 +239,20 @@ test('isolated SDK Provider draft/publication transactions persist atomically wi
  });
  const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,schema.drafts,'sdk-provider')));await assertFails(sdk.getDoc(sdk.doc(guest,schema.publicViews,'sdk-provider')));
 });
+
+test('actual SDK public read barrier bridges row versions, pagination, HTTP composition and withdrawal',async()=>{
+ const sdk=await import('firebase/firestore');const {createIsolatedFirebaseProviderRepository}=await import('../../scripts/firebase-provider-repository.mjs');const {createIsolatedProviderPublicRead}=await import('../../scripts/firebase-provider-public-read.mjs');const {createProviderHttpComposition}=await import('../../scripts/provider-http-composition.mjs');const {createPublicProviderRepository}=await import('../../features/service-providers/provider-discovery.mjs');
+ const schema=Object.fromEntries(['actors','owners','identities','drafts','receipts','audits','permissions','publications','publicViews','generations'].map(k=>[k,'testProvider'+k[0].toUpperCase()+k.slice(1)+'Read']));const catalog={services:['Plumber'],localities:[{city:'Sample City',serviceArea:'Sample area'}]};
+ await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await sdk.setDoc(sdk.doc(db,schema.generations,'current'),{value:0});const repository=createIsolatedFirebaseProviderRepository({enabled:true,firestore:db,sdk,schema});const commands={};
+  for(const [uid,providerId,generation] of [['read-one','read-p1',0],['read-two','read-p2',1]]){
+   await sdk.setDoc(sdk.doc(db,schema.actors,uid),{uid,canWrite:true,suspended:false});await sdk.setDoc(sdk.doc(db,schema.permissions,uid),{uid,canPublish:true,canWithdraw:true,suspended:false});
+   commands[uid]=createProviderHttpComposition({enabled:true,verifyFirebaseToken:()=>({uid}),resolveProviderRole:()=>({uid,role:'provider',active:true}),consumeRateLimit:()=>({allowed:true,retryAfterSeconds:0}),draft:{repository,providerIdForActor:()=>providerId},publication:{repository,catalog}});
+   const request=body=>({method:'POST',headers:{authorization:'Bearer isolated.test.token','content-type':'application/json'},body:JSON.stringify(body)});commands[uid]={http:commands[uid],request};
+   assert.equal((await commands[uid].http.handle('draft.save',request({requestId:'draft',expectedRevision:0,profile:{displayName:providerId,city:'Sample City',serviceArea:'Sample area',services:['Plumber'],description:'Sample only',available:true,experienceYears:2,languages:['en']}}))).status,200);
+   assert.equal((await commands[uid].http.handle('publication.manage',request({requestId:'publish',expectedRevision:1,expectedGeneration:generation,action:'publish'}))).status,200);
+  }
+  const bridge=createIsolatedProviderPublicRead({enabled:true,firestore:db,sdk,schema,catalog}),tokens=new Map();let sequence=0;const read=createPublicProviderRepository({enabled:true,catalog,...bridge,readCursor:t=>tokens.get(t),issueCursor:s=>{const token='isolated_'+(++sequence);tokens.set(token,s);return token;}}),filter={category:'',locality:'',limit:1,cursor:null};
+  const first=await read.discover(filter);assert.equal(first.ok,true);assert.deepEqual(first.items.map(p=>p.id),['read-p1']);assert.equal(first.publicationEpoch,2);const second=await read.discover({...filter,cursor:first.nextCursor});assert.deepEqual(second.items.map(p=>p.id),['read-p2']);assert.equal((await read.detail({providerId:'read-p1',expectedGeneration:2})).ok,true);
+  const response=await commands['read-one'].http.handle('publication.manage',commands['read-one'].request({requestId:'withdraw',expectedRevision:1,expectedGeneration:2,action:'withdraw'}));assert.equal(response.status,200);assert.equal((await read.discover({...filter,cursor:first.nextCursor})).ok,false);const fresh=await read.discover(filter);assert.equal(fresh.ok,true);assert.deepEqual(fresh.items.map(p=>p.id),['read-p2']);assert.equal(fresh.publicationEpoch,3);assert.equal((await read.detail({providerId:'read-p1',expectedGeneration:null})).ok,false);
+ });
+});

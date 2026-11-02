@@ -55,5 +55,14 @@ identity and schema/index paths, actor eligibility/owner/publication permission
 records, publication/cursor snapshot consistency and revocation freshness, audit/
 receipt retention, and endpoint/rate-limit policies. Recommended low-cost default
 remains existing stack, bounded text-only operations, no new paid services and no
-large-scale infrastructure until measured need. The actual public read bridge and
-verified-token HTTP wiring are not yet supplied by the new mutation SDK adapter.
+large-scale infrastructure until measured need. Inactive consistent public reads and HTTP composition now exist in source, but
+real verifier/role/rate adapters, approved SDK identity/schema and an active transport
+are not supplied or authorized.
+
+Current HTTP/read acceptance decisions: approve member/provider role eligibility and
+promotion, account revocation policy and real Firebase token verifier contract;
+rate-limit thresholds/durable enforcement and pre-auth ingress limits; exact curated
+public fields/indexes plus canonical generation consistency and bounded read budget.
+Recommended default remains one same-origin text-only transport, existing Auth/data
+stack, no paid service, no private collection browser reads. Repository source and
+isolated tests do not authorize any binding, IAM/secret setup, Rules or deployment.

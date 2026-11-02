@@ -58,13 +58,13 @@ No operation is connected to an endpoint, browser or real account.
 The materialized row's publicationEpoch is its **last mutation generation**. The
 global counter invalidates discovery cursors after any publication change. Existing
 mock discovery ports represent per-response snapshot freshness with a current
-publicationEpoch on each result. A real public query adapter must bridge those
-representations using approved consistent snapshot/canonical checks; it cannot
-simply relabel cached rows or require rewriting every unrelated profile on change.
+publicationEpoch on each result. The inactive SDK public-read bridge now connects those representations through
+server-only queries, transactional canonical/generation checks and a final server
+generation check. It cannot relabel cached rows or rewrite unrelated profiles.
 Multi-provider reads, concurrent withdrawal, snapshot/cursor freshness, indexes and
 cost budgets need explicit acceptance tests before any real read adapter is wired.
-The current SDK mapping intentionally implements mutation transactions, not a
-production public-query bridge. A single global generation is a small initial
+The bridge is still emulator-locked and requires actual schema/IAM/cost/security
+acceptance; it is not a production public-query connection. A single global generation is a small initial
 coordination point; measure contention before choosing a more complex scheme.
 
 ## Evidence and remaining gates

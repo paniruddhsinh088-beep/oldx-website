@@ -76,7 +76,7 @@ export function createPublicProviderRepository({enabled=false,catalog,getPublica
  }});
 }
 function validCanonical(c,providerId,generation,catalog){return c&&c.providerId===providerId&&c.published===true&&c.publicationEpoch===generation&&Array.isArray(c.services)&&c.services.length>0&&c.services.length<=12&&c.services.every(s=>catalog.services.includes(s))&&normalizeServiceSelections(c.services).ok;}
-function projectPublicRow(raw,catalog,generation){
+export function projectPublicRow(raw,catalog,generation){
  const row=record(raw,DISCOVERY_FIELDS);
  if(!row||row.published!==true||row.publicationEpoch!==generation||!id(row.id)||!Array.isArray(row.services)||row.services.some(s=>!catalog.services.includes(s))||!catalog.localities.some(l=>l.city===row.city&&l.serviceArea===row.serviceArea))return null;
  const result=buildPublicProviderProfile(row);if(!result.ok)return null;

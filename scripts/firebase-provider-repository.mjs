@@ -8,11 +8,7 @@ const digest=values=>createHash('sha256').update(JSON.stringify(values)).digest(
 export function createIsolatedFirebaseProviderRepository({enabled=false,firestore,sdk,schema,now=Date.now}={}){
  const unavailable=()=>{throw new Error('Isolated Provider repository unavailable');};
  if(enabled!==true)return Object.freeze({runTransaction:unavailable});
- const db=firestore?._delegate??firestore;
- const project=db?.app?.options?.projectId,settings=db?._getSettings?.();
- if(typeof project!=='string'||!/^demo-oldx-[a-z0-9-]{1,60}$/.test(project)||!settings||!/^127\.0\.0\.1:[1-9][0-9]{0,4}$/.test(settings.host)||Number(settings.host.split(':')[1])>65535||settings.ssl!==false)unavailable();
- if(!schema||Reflect.ownKeys(schema).sort().join(',')!==[...names].sort().join(',')||names.some(k=>typeof schema[k]!=='string'||!/^testProvider[A-Za-z0-9]{1,48}$/.test(schema[k]))||new Set(Object.values(schema)).size!==names.length||!['doc','runTransaction','serverTimestamp'].every(k=>typeof sdk?.[k]==='function'))unavailable();
- const collections=Object.freeze({...schema});
+ const {db,collections}=getIsolatedProviderSdkContext({firestore,sdk,schema});
  const ref=(name,key)=>{if(!id(key)&&!/^[a-f0-9]{64}$/.test(key))unavailable();return sdk.doc(db,collections[name],key);};
  const receiptRef=(uid,operation,key)=>ref('receipts',digest([uid,operation,key]));
  return Object.freeze({async runTransaction(callback,{signal,deadlineAt}={}){
@@ -54,4 +50,14 @@ export function createIsolatedFirebaseProviderRepository({enabled=false,firestor
    raw.set(owner,{...m.canonical,committedAt:sdk.serverTimestamp()});raw.set(receipt,{...m.receipt,committedAt:sdk.serverTimestamp()});raw.set(audit,{...m.audit,committedAt:sdk.serverTimestamp()});check();return result;
   },{maxAttempts:3});
  }});
+}
+
+export function getIsolatedProviderSdkContext({firestore,sdk,schema}={}){
+ const unavailable=()=>{throw new Error('Isolated Provider repository unavailable');};
+ const db=firestore?._delegate??firestore;
+ const project=db?.app?.options?.projectId,settings=db?._getSettings?.();
+ if(typeof project!=='string'||!/^demo-oldx-[a-z0-9-]{1,60}$/.test(project)||!settings||!/^127\.0\.0\.1:[1-9][0-9]{0,4}$/.test(settings.host)||Number(settings.host.split(':')[1])>65535||settings.ssl!==false)unavailable();
+ if(!schema||Reflect.ownKeys(schema).sort().join(',')!==[...names].sort().join(',')||names.some(k=>typeof schema[k]!=='string'||!/^testProvider[A-Za-z0-9]{1,48}$/.test(schema[k]))||new Set(Object.values(schema)).size!==names.length||!['doc','runTransaction','serverTimestamp'].every(k=>typeof sdk?.[k]==='function'))unavailable();
+ const collections=Object.freeze({...schema});
+ return {db,collections};
 }
