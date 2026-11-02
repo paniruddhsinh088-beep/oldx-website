@@ -148,3 +148,5 @@ configuration, all previous checkpoints and 37209fd remain preserved. No main,
 live Firebase/Rules, real messages/reviews, provider resources or costs changed.
 The working tree was clean after the integration push. This final evidence entry
 and historical-next-task clarification change documentation only.
+
+Continuation: [buyer lifecycle and inactive messaging readiness](review-progress-2026-11-02-buyer-chat-batch.md).

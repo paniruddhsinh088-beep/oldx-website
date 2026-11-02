@@ -122,6 +122,9 @@ jobs:
       - name: Check isolated provider enquiry inbox in a local browser
         run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-inbox:browser
 
+      - name: Check isolated buyer enquiry lifecycle in a local browser
+        run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-buyer:browser
+
       - name: Verify loopback-only emulator test plans
         run: npm run test:emulator:guard
 

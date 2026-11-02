@@ -55,3 +55,14 @@ export function changeSampleEnquiry(context,actor,input){
  if(input.action==='confirm-completion')changed.buyerConfirmed=true;
  return {ok:true,context:{provider:{...context.provider,services:[...context.provider.services]},records:context.records.map(r=>r.id===row.id?changed:{...r})}};
 }
+
+export function buildSampleBuyerInbox(context,actor,{status='all',service='all'}={}){
+ if(!plain(actor)||actor.role!=='buyer'||typeof actor.id!=='string'||!ID.test(actor.id)||!validContext(context)||
+   (status!=='all'&&!SAMPLE_ENQUIRY_STATES.includes(status))||(service!=='all'&&!context.provider.services.includes(service)))return fail();
+ return {ok:true,items:context.records.filter(r=>r.buyerId===actor.id&&(status==='all'||r.status===status)&&(service==='all'||r.service===service))
+  .map(r=>({id:r.id,service:r.service,status:r.status,revision:r.revision}))};
+}
+export function sampleBuyerActions(context,actor,id){
+ const row=readSampleInboxDetail(context,actor,id);if(!row.ok||actor.role!=='buyer')return [];
+ return ['cancel','dispute','confirm-completion'].filter(action=>changeSampleEnquiry(context,actor,{providerId:row.record.providerId,id,revision:row.record.revision,action}).ok);
+}

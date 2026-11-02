@@ -71,3 +71,5 @@ read marker mapped to canonical new, and names such as in-progress map to the
 canonical underscore states. The UI does not add provider cancellation; cancelled
 and completed examples are buyer-state fixtures. Disputed is included as a sample.
 Provider switching/reload re-seeds fictional examples, not persisted job history.
+
+The shared controller also powers the [buyer lifecycle rehearsal](BUYER_LIFECYCLE_PREVIEW.md). Canonical model code remains unchanged; buyer actions and participant checks reuse the scoped adapter.

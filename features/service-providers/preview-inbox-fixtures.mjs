@@ -8,3 +8,10 @@ export function createSampleInbox(providerId){
   note:'નમૂનાનું કામ · नमूना काम · Sample repair only. No real buyer.',reply:'',revision:0,buyerConfirmed:status==='completed'
  }))};
 }
+
+export const SAMPLE_BUYERS=Object.freeze(['sample-buyer-1','sample-buyer-2']);
+export function createSampleBuyerInbox(providerId){
+ const context=createSampleInbox(providerId);if(!context)return null;
+ return {...context,records:context.records.map((row,index)=>({...row,buyerId:index===1?'sample-buyer-2':'sample-buyer-1',
+   reply:['new','viewed'].includes(row.status)?'':'નમૂનાનો પ્રદાતા જવાબ · नमूना उत्तर · Sample response only.'}))};
+}
