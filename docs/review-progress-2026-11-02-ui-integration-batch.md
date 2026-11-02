@@ -86,3 +86,27 @@ were not repeated. `git diff --check` passed. Commands and counts:
 | `npm run test:service-conversation:browser` | 7 |
 | `npm run test:service-discovery:browser` | 6 |
 | `npm run test:provider-draft:transaction` | 35 |
+
+## Exact-source verified checkpoint
+
+Executable source `545f8ccf8df985504e80dd223cae9e8ce3a00f02` passed all workflows:
+- [Branch security 41468368172](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41468368172)
+- [Service Providers Emulator 41468368179](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41468368179)
+- [Review safety 41468368471](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41468368471)
+
+Local all-command sweep passed 34 commands: Service models 189, Service browser 23,
+transaction/HTTP/enforcement/read integration 35, Admin 115 and existing Store,
+inbox, conversation, localization/security regressions. The affected final UI
+validation cases were additionally run as a three-flow targeted browser check.
+Service Emulator CI covers actual SDK persistence/read/publication and null optional
+experience round trip in its existing 22-case isolated suite. Token verification
+adapter tests use an injected Admin Auth SDK double; no live cryptographic token,
+real IAM/role/quota store, resource, deployment or production acceptance is claimed.
+
+Fresh remote stayed `e7a1cac` before source commit/push. Normal authorized branch
+push only, no concurrent reconciliation/force push; previous checkpoints and canonical
+automation preserved. Branch deployment flag remained false, and read-only Vercel
+metadata found no deployment for executable source SHA. Working tree clean. No live
+Firebase/Rules, main/merge, secrets/IAM, paid resource/billing, deployment or Full
+Reset action. This evidence-only follow-up changes no verified executable source.
+HOLD/NO-GO, staging deny-all and owner decisions remain unchanged.
