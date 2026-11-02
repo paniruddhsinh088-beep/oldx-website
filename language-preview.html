@@ -52,6 +52,7 @@ const status = document.getElementById('status');
 const proceed = document.getElementById('continue');
 const radios = [...document.querySelectorAll('input[name="locale"]')];
 let currentTranslator = null;
+let viewRevision = 0;
 function setBusy(busy) {
   proceed.disabled = busy || !radios.some(r => r.checked);
   document.getElementById('change').disabled = busy;
@@ -65,23 +66,26 @@ function showReady(result) {
   ready.focus();
 }
 async function applySelection(locale, restore = false) {
+  const request = ++viewRevision;
   setBusy(true);
   status.textContent = currentTranslator?.t('onboard.waiting') || 'Loading language…';
   const result = restore ? await flow.restore() : await flow.select(locale);
+  if (request !== viewRevision) return;
   if (result.ok) showReady(result);
   else if (result.reason !== 'stale') status.textContent = currentTranslator?.t('onboard.unavailable') || 'Language unavailable. Please try again.';
   setBusy(false);
 }
-for (const radio of radios) radio.addEventListener('change', () => { flow.cancelPending(); setBusy(false); status.textContent = ''; });
+for (const radio of radios) radio.addEventListener('change', () => { viewRevision++; flow.cancelPending(); setBusy(false); status.textContent = ''; });
 proceed.addEventListener('click', () => { const selected = radios.find(r => r.checked)?.value; if (selected) void applySelection(selected); });
 document.getElementById('change').addEventListener('click', () => {
+  viewRevision++;
   flow.cancelPending();
   ready.hidden = true;
   picker.hidden = false;
   status.textContent = '';
   radios.find(r => r.checked)?.focus();
 });
-window.addEventListener('pagehide', () => flow.cancelPending());
+window.addEventListener('pagehide', () => { viewRevision++; flow.cancelPending(); });
 if (flow.initialLocale) {
   const radio = radios.find(r => r.value === flow.initialLocale);
   if (radio) radio.checked = true;
