@@ -1,5 +1,17 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "onboard.pageTitle": "OldX — भाषा चयन नमूना",
+  "onboard.notice": "केवल नमूना · कोई खाता, लॉगिन या लाइव ऐप जुड़ा नहीं है।",
+  "onboard.heading": "अपनी भाषा चुनें",
+  "onboard.intro": "लॉगिन से पहले अपनी भाषा चुनें। यह केवल नमूना स्क्रीन है, वास्तविक लॉगिन नहीं।",
+  "onboard.choose": "ऐप की भाषा",
+  "onboard.continue": "आगे बढ़ें",
+  "onboard.readyHeading": "भाषा चुन ली गई",
+  "onboard.ready": "इस नमूने में अब आपकी चुनी हुई भाषा दिखेगी। कोई वास्तविक लॉगिन जुड़ा नहीं है।",
+  "onboard.change": "भाषा बदलें",
+  "onboard.storageDenied": "यहाँ भाषा बदल गई है, लेकिन इस डिवाइस पर चयन सहेजा नहीं जा सका।",
+  "onboard.unavailable": "यह भाषा लोड नहीं हो सकी। फिर कोशिश करें या दूसरी भाषा चुनें।",
+  "onboard.waiting": "भाषा लोड हो रही है…",
   pageTitle: "OldX Services — UI पूर्वावलोकन (डेमो)",
   demoNotice:
     "UI PREVIEW ONLY · यह डेमो है — कोई वास्तविक प्रोफ़ाइल, फ़ोन नंबर, संदेश या डेटाबेस जुड़ा नहीं है।",
