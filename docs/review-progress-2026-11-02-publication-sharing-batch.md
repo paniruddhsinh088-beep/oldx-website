@@ -112,3 +112,23 @@ not actual Firebase Rules execution; no local emulator run is claimed.
 `git diff --check` passed. No dependency versions, overrides or lockfile changed;
 unchanged expensive dependency investigations were intentionally not repeated.
 Actual CI and commit evidence follows after the combined push.
+
+## Exact commits and CI checkpoint
+
+- `d8c7a5a`: publication timelines, executable proposed matrix and feature inventory.
+- `12984c66b47ee5b1829fab031d057c7f1abe6d4a`: privacy-safe localized Store preview
+  sharing, updated feature matrix and combined regression evidence.
+
+Both were pushed together normally only to `security-hardening-review` after a
+fresh fetch/ancestry check, avoiding redundant intermediate CI. Exact combined
+source passed:
+- [Branch security 41415023475](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41415023475).
+- [Review safety 41415023451](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41415023451), including Store/Service browser, locale/security checks and existing isolated Firebase Emulator suites.
+
+New publication/role/freshness fixtures are synthetic contract evidence, not
+actual Rules enforcement of a new backend. Vercel metadata lists zero deployments
+for exact combined source. The deployment-disabled source setting was verified;
+710d1a2, 498e3a0, f8429c8, original 37209fd and earlier checkpoints remain ancestors.
+Working tree was clean after source commits. This final evidence entry changes
+documentation only. No main, live data/Rules, paid services or provider resources
+were changed.
