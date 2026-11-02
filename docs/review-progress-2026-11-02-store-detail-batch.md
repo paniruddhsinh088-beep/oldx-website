@@ -123,3 +123,19 @@ Vercel metadata lists zero deployments for 710d1a2. Final related cancellation
 sweep passed `test:stores` **42/42**, `test:stores:browser` **22/22**,
 `test:stores:preview` **3/3**, `test:static-build` **3/3** and diff checks.
 The unchanged comprehensive checks above were reused rather than repeated.
+
+## Final verified follow-up
+
+`498e3a0034ce525d1973738bd18d242854b40003` contains the prompt-cancellation
+settlement fix. Exact-source
+[review-safety CI 41412273730](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41412273730)
+completed successfully, including 42 Store unit cases, 22 Store browser flows,
+retained Service/browser/locale/security checks and existing isolated Firebase
+Emulator suites. New detail authorization/consistency contracts remain synthetic;
+this does not constitute actual Rules validation of a new detail backend.
+
+Vercel metadata lists zero deployments for both source commits. Earlier
+checkpoints including `37209fd`, 0ab408d, 632fe83, 23c226d and a6955a7 remain
+unchanged ancestors. Normal branch-only pushes succeeded and the working tree
+was clean after each source commit. No deployments, live data/rules, main,
+provider resources or paid services were changed. This final entry is docs only.
