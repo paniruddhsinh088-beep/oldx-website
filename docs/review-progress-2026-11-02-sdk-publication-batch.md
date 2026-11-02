@@ -89,3 +89,26 @@ Emulator execution is pending exact-source CI, not claimed locally.
 | `npm run test:service-conversation:browser` | 7 |
 | `npm run test:service-discovery:browser` | 6 |
 | `npm run test:provider-draft:transaction` | 20 |
+
+## Verified exact-source checkpoint
+
+Executable source `d2569047b1786abd86f03daf03d2bf8db8819ad0` passed all workflows:
+- [Service Providers Emulator 41456805748](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41456805748)
+- [Branch security 41456805347](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41456805347)
+- [Review safety 41456805345](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41456805345)
+
+Service Emulator success covers the actual SDK integration test added to its 21-case
+runtime suite: concurrent private draft creation/idempotent replay, timestamped
+private persistence, public materialization/replay, withdrawal, generation and
+atomic audit, followed by ordinary-client denial under unchanged Rules. It runs
+only in a demo emulator with Rules-disabled test context for privileged SDK calls;
+not a test of real IAM, deployed access policy or approved production schema.
+Local sweep: all 34 commands passed, including 20 transaction/SDK/helper cases,
+Service models 183, Admin 115 and all previous Store/Service/mobile regressions.
+
+Fresh remote remained `4ac9c4d` before source commit and normal push. Prior history
+and canonical automation preserved; no concurrent merge or force push. Branch
+deployment flag stayed false, and read-only Vercel metadata found no deployment
+for source SHA. No live Firebase/Rules/resource/secret/billing/main/merge/deploy/
+Full Reset action occurred. This final documentation-only commit changes no
+verified executable source; live approval and HOLD/NO-GO gates remain unchanged.
