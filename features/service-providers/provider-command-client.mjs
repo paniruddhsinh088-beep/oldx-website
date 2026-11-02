@@ -13,6 +13,7 @@ function snapshot(value, depth = 0, counter = {nodes: 0}) {
   if (value === null || typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) return value;
   if (Array.isArray(value)) {
     if (value.length > 64 || Reflect.ownKeys(value).length !== value.length + 1) throw new TypeError('Invalid array');
+    for (let i = 0; i < value.length; i++) if (!Object.hasOwn(value, i)) throw new TypeError('Sparse array');
     return value.map(item => snapshot(item, depth + 1, counter));
   }
   if (!plain(value)) throw new TypeError('Invalid command');
