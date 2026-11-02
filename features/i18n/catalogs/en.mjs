@@ -1,5 +1,17 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "onboard.pageTitle": "OldX — Language selection preview",
+  "onboard.notice": "SAMPLE ONLY · No account, login or live app is connected.",
+  "onboard.heading": "Choose your language",
+  "onboard.intro": "Choose a language before signing in. This is an isolated sample, not the live login screen.",
+  "onboard.choose": "Interface language",
+  "onboard.continue": "Continue",
+  "onboard.readyHeading": "Language selected",
+  "onboard.ready": "This sample now uses your chosen language. No account or real login is connected.",
+  "onboard.change": "Change language",
+  "onboard.storageDenied": "Your choice works here but could not be saved on this device.",
+  "onboard.unavailable": "This language could not load. Try again or choose another language.",
+  "onboard.waiting": "Loading language…",
   pageTitle: "OldX Services — UI Preview (Demo)",
   demoNotice:
     "UI PREVIEW ONLY · No real profiles, phone numbers, messages or database are connected.",

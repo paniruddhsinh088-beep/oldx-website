@@ -5,12 +5,12 @@ import { fileURLToPath } from 'node:url';
 // Deliberate browser allowlist: never copy functions/, test fixtures, environment
 // files other than the generated browser config, or server moderation modules.
 export const BROWSER_ASSETS = Object.freeze([
-  'index.html', 'admin.html', 'service-preview.html', 'service-inbox-preview.html', 'features/service-providers/preview-inbox.css', 'store-preview.html', 'features/stores/store-preview.css', 'firebase-config-guard.js', 'firebase-env.js',
+  'index.html', 'admin.html', 'language-preview.html', 'service-preview.html', 'service-inbox-preview.html', 'features/service-providers/preview-inbox.css', 'store-preview.html', 'features/stores/store-preview.css', 'firebase-config-guard.js', 'firebase-env.js',
   ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections', 'provider-public-profile', 'provider-public-card', 'preview-route', 'provider-mobile-share', 'provider-share', 'preview-enquiry', 'preview-inbox', 'preview-inbox-controller', 'preview-inbox-model', 'preview-inbox-fixtures', 'preview-inbox-route']
     .map(name => `features/service-providers/${name}.mjs`),
   ...['store-preview', 'store-catalogue', 'preview-fixtures', 'preview-route', 'preview-load', 'preview-adapter', 'preview-detail', 'preview-share', 'preview-card']
     .map(name => `features/stores/${name}.mjs`),
-  ...['i18n', 'dom', 'preference', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
+  ...['i18n', 'dom', 'preference', 'first-launch', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
     .map(name => `features/i18n/${name}.mjs`)
 ]);
 

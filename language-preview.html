@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5f7fa">
+<title data-i18n="onboard.pageTitle">OldX — language preview</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Noto Sans Gujarati","Noto Sans Devanagari",sans-serif;color:#162337;background:#f5f7fa;font-synthesis:none}
+*{box-sizing:border-box}body{margin:0}main{max-width:680px;margin:clamp(16px,5vw,64px) auto;padding:0 16px 40px}
+.notice{padding:12px 16px;background:#fff3d2;color:#634300;font-weight:650;text-align:center;font-size:.9rem}
+.card{background:#fff;border:1px solid #dce4ed;border-radius:20px;padding:clamp(20px,5vw,36px);box-shadow:0 12px 32px #172b4d0b}
+.brand{font-size:1.45rem;font-weight:800;color:#175d97}h1{font-size:clamp(1.6rem,5vw,2.4rem);line-height:1.25;margin:20px 0 10px}p{line-height:1.6;color:#475569}
+fieldset{border:0;margin:24px 0;padding:0}legend{font-weight:750;margin-bottom:12px}.choices{display:grid;gap:10px}
+.choice{display:flex;gap:12px;align-items:center;min-height:56px;padding:12px 16px;border:1px solid #cbd5e1;border-radius:12px;cursor:pointer;font-size:1.08rem}
+.choice:has(input:checked){border-color:#1769aa;background:#eef7ff}.choice input{width:20px;height:20px;accent-color:#1769aa;flex:none}
+button{font:inherit;min-height:48px;border:0;border-radius:11px;padding:11px 18px;background:#1769aa;color:#fff;font-weight:750;cursor:pointer;max-width:100%;overflow-wrap:anywhere}
+button:disabled{opacity:.55;cursor:not-allowed}button:focus-visible,input:focus-visible{outline:3px solid #e69b4c;outline-offset:3px}
+[hidden]{display:none!important}#status{min-height:1.5em;overflow-wrap:anywhere}#ready:focus{outline:none}
+@media(max-width:360px){.card{padding:18px}.choice{padding:10px}}
+</style>
+</head>
+<body>
+<div class="notice" data-i18n="onboard.notice">SAMPLE ONLY — no account or live app is connected.</div>
+<main><div class="card">
+<div class="brand">OldX</div>
+<section id="picker">
+<h1 data-i18n="onboard.heading">Choose your language · ભાષા પસંદ કરો · अपनी भाषा चुनें</h1>
+<p data-i18n="onboard.intro">Select the language you want to use. This is a standalone preview, not the live sign-in screen.</p>
+<fieldset><legend data-i18n="onboard.choose">Language</legend><div class="choices">
+<label class="choice"><input type="radio" name="locale" value="gu">ગુજરાતી</label>
+<label class="choice"><input type="radio" name="locale" value="en">English</label>
+<label class="choice"><input type="radio" name="locale" value="hi">हिन्दी</label>
+</div></fieldset>
+<button id="continue" type="button" disabled data-i18n="onboard.continue">Continue</button>
+</section>
+<section id="ready" hidden tabindex="-1">
+<h1 data-i18n="onboard.readyHeading">Language selected</h1>
+<p data-i18n="onboard.ready">Your language is selected for this sample. No sign-in or account data is connected.</p>
+<button id="change" type="button" data-i18n="onboard.change">Change language</button>
+</section>
+<p id="status" role="status" aria-live="polite"></p>
+</div></main>
+<script type="module">
+import { createFirstLaunchLanguageFlow } from './features/i18n/first-launch.mjs';
+import { applyCatalog } from './features/i18n/dom.mjs';
+const store = (() => { try { return window.localStorage; } catch { return null; } })();
+const flow = createFirstLaunchLanguageFlow({ storage: store });
+const picker = document.getElementById('picker');
+const ready = document.getElementById('ready');
+const status = document.getElementById('status');
+const proceed = document.getElementById('continue');
+const radios = [...document.querySelectorAll('input[name="locale"]')];
+let currentTranslator = null;
+let viewRevision = 0;
+function setBusy(busy) {
+  proceed.disabled = busy || !radios.some(r => r.checked);
+  document.getElementById('change').disabled = busy;
+}
+function showReady(result) {
+  currentTranslator = result.translator;
+  applyCatalog(document, result.translator);
+  picker.hidden = true;
+  ready.hidden = false;
+  status.textContent = result.persisted ? '' : result.translator.t('onboard.storageDenied');
+  ready.focus();
+}
+async function applySelection(locale, restore = false) {
+  const request = ++viewRevision;
+  setBusy(true);
+  status.textContent = currentTranslator?.t('onboard.waiting') || 'Loading language…';
+  const result = restore ? await flow.restore() : await flow.select(locale);
+  if (request !== viewRevision) return;
+  if (result.ok) showReady(result);
+  else if (result.reason !== 'stale') status.textContent = currentTranslator?.t('onboard.unavailable') || 'Language unavailable. Please try again.';
+  setBusy(false);
+}
+for (const radio of radios) radio.addEventListener('change', () => { viewRevision++; flow.cancelPending(); setBusy(false); status.textContent = ''; });
+proceed.addEventListener('click', () => { const selected = radios.find(r => r.checked)?.value; if (selected) void applySelection(selected); });
+document.getElementById('change').addEventListener('click', () => {
+  viewRevision++;
+  flow.cancelPending();
+  ready.hidden = true;
+  picker.hidden = false;
+  status.textContent = '';
+  radios.find(r => r.checked)?.focus();
+});
+window.addEventListener('pagehide', () => { viewRevision++; flow.cancelPending(); });
+if (flow.initialLocale) {
+  const radio = radios.find(r => r.value === flow.initialLocale);
+  if (radio) radio.checked = true;
+  void applySelection(flow.initialLocale, true);
+}
+</script>
+</body>
+</html>
