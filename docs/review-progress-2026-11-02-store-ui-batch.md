@@ -199,3 +199,15 @@ Next safe task: synthetic asynchronous adapter-response lifecycle tests for
 out-of-order requests, scope changes, revocation and clearing stale card/detail
 state, without fetching real data or activating a backend. Store share posters,
 real media/contact and social crawler routes remain separate gated roadmap work.
+
+## Final follow-up checkpoint
+
+`632fe83eb4b2fb5321f223248033e571322c5c3d` contains the inactive scoped-cursor
+and revocation hardening plus shared category IDs. Final local `test:stores`
+passed **28/28** after the ID-coercion regression. Exact-source
+[review-safety CI 41399934739](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41399934739)
+completed successfully, including both browser suites and isolated Emulator steps.
+Vercel metadata lists zero deployments for this source commit. All required
+Service/Store/locale checkpoints and `37209fd` remain unchanged ancestors;
+branch-only normal pushes succeeded and the working tree was clean. This final
+verification entry changes documentation only.
