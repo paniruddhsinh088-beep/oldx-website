@@ -143,3 +143,12 @@ Synthetic snapshots require every sample listing to be explicitly marked
 including when a product detail was previously visible. A fresh accepted snapshot
 without that product shows not-found and clears detail fields. These markers are
 mock inputs only, never a replacement for server-controlled publication or Rules.
+
+The preview also bounds mock reads to five seconds (controller configuration is
+restricted to 1–30,000ms for isolated tests). Timeout is a failure with no stale
+snapshot, and late completion cannot restore data. Page-hide clears accepted
+state and invalidates in-flight requests; persisted page-show re-reads the sample.
+Future real adapters must choose approved deadlines and cache policies and test
+actual browser page-cache/visibility behavior against trusted revocation. The
+synthetic PageTransitionEvent regression proves the handler contract only, not
+network authorization, server freshness or cross-browser cache guarantees.

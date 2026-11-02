@@ -72,3 +72,41 @@ test('mock adapter has bounded synthetic delay, abort cleanup, failure and revoc
   const task = readSyntheticStore({ ...scope, scenario: 'delayed' }, { signal: abort.signal });
   abort.abort(); await assert.rejects(task, { name: 'AbortError' });
 });
+
+function timedHarness() {
+  const clocks = new Map(), pending = [], states = [];
+  let id = 0;
+  const controller = createStoreLoadController({ timeoutMs: 100, onChange: value => states.push(value),
+    schedule(callback) { clocks.set(++id, callback); return id; }, cancel(key) { clocks.delete(key); },
+    read(scope, { signal }) { return new Promise((resolve, reject) => pending.push({ signal, resolve, reject })); }
+  });
+  return { controller, pending, states, clocks, fire() { const callback = [...clocks.values()][0]; callback(); } };
+}
+
+test('deadline fails closed, aborts the mock and ignores late completion before a successful retry', async () => {
+  const { controller, pending, states, clocks, fire } = timedHarness();
+  const slow = controller.load(scope); fire(); await slow;
+  assert.equal(pending[0].signal.aborted, true);
+  assert.deepEqual(states.at(-1), { status: 'error', code: 'PREVIEW_READ_TIMEOUT' });
+  assert.equal(clocks.size, 0);
+  pending[0].resolve(response()); await Promise.resolve();
+  assert.equal(states.at(-1).status, 'error');
+  const retry = controller.load(scope); pending[1].resolve(response()); await retry;
+  assert.equal(states.at(-1).status, 'ready'); assert.equal(clocks.size, 0);
+});
+
+test('deadline resources are removed on success, failure, replacement, clear and withdrawal', async () => {
+  const { controller, pending, clocks } = timedHarness();
+  const old = controller.load(scope); const next = controller.load(scope);
+  assert.equal(clocks.size, 1); assert.equal(pending[0].signal.aborted, true);
+  pending[0].resolve(response()); pending[1].reject(new Error('PRIVATE')); await Promise.all([old,next]);
+  assert.equal(clocks.size, 0);
+  for (const action of ['clear','revoke']) {
+    const task = controller.load(scope); assert.equal(clocks.size, 1);
+    controller[action](); assert.equal(clocks.size, 0);
+    pending.at(-1).resolve(response()); await task;
+  }
+  for (const timeoutMs of [0,-1,Infinity,30001,'100']) {
+    assert.throws(()=>createStoreLoadController({ read:()=>{}, onChange:()=>{}, timeoutMs }), TypeError);
+  }
+});

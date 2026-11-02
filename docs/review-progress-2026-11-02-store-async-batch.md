@@ -81,3 +81,33 @@ Current dependency audit: `npm audit --omit=dev --json` zero vulnerabilities;
 full `npm audit --json` **13 moderate**, zero high/critical. The remaining
 Firebase CLI transitive glob/minimatch findings have no verified compatible fix
 in this batch; no version, override or lockfile was changed.
+
+## First source commit and continued safety batch
+
+`5ba147859d9ef74484750ae2d2e2b71f4defea54` contains the asynchronous preview,
+projection, locales and deterministic race regressions. Pushed normally only to
+`security-hardening-review` after fetching/checking remote ancestry.
+
+Continued with bounded timeout recovery: default five-second mock deadline,
+strict 1–30,000ms test configuration, cancellation and timer cleanup on terminal
+states/replacement. Fake-clock tests exercise stalled reads, late completion,
+recovery and cleanup without wall-clock sleeps. A browser-clock test checks safe
+error status, no stale cards and keyboard retry.
+
+Also invalidates data on page-hide and requests a fresh sample on persisted
+page-show. The deterministic browser test dispatches PageTransitionEvents to
+verify handler behavior; actual cache behavior in every browser is not claimed.
+No Service rewrite, real adapter or backend activation is involved.
+
+Next safe task after this batch: a synthetic bounded detail-read contract with
+independent Store/listing publication revalidation and removed-product handling,
+separate from catalogue lookahead. Keep all live integration approval gates.
+
+First exact-source CI passed:
+- [Branch security 41403739929](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41403739929).
+- [Review safety 41403739904](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41403739904), including Store/Service browser regressions and actual isolated Emulator steps.
+
+Final local related sweep after timeout/cache-lifecycle changes:
+`test:stores` **35/35**, `test:stores:browser` **19/19**,
+`test:stores:preview` **3/3**, `test:static-build` **3/3**;
+`git diff --check` passed. Existing unaffected comprehensive checks were reused.

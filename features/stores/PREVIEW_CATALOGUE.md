@@ -72,3 +72,11 @@ latest-request principle without a risky rewrite of already working components.
 Only Store adds an injectable offline read boundary. Browser tests replace that
 module with controlled promises to assert exact completion order without sleeps.
 No global mock hooks are added to the shipped preview.
+
+Mock requests have a five-second deadline. Timeout uses the same localized safe
+error/retry state, aborts the mock where supported and rejects any later result.
+Timers are cleared on success, failure, replacement, route clear and withdrawal.
+Page-hide clears accepted/pending state; a persisted page-show requests a fresh
+sample instead of trusting browser back/forward-cache publication state. The
+cache-lifecycle browser regression dispatches deterministic PageTransitionEvents;
+it does not claim coverage of every engine's real cache implementation.

@@ -378,3 +378,34 @@ test('withdrawn listing payloads fail closed and removed product detail recovers
   assert.equal(await page.locator('#backToCatalogue').getAttribute('href'), null);
   assert.equal(await page.locator('#notFoundHeading').evaluate(node=>node===document.activeElement), true);
 });
+
+test('a stalled mock times out with accessible recovery and cannot restore late product data', async () => {
+  await page.clock.install();
+  await controlledAdapter();
+  await page.clock.fastForward(5001);
+  await page.waitForFunction(()=>!document.querySelector('#loadError').hidden);
+  assert.equal(await page.locator('#catalogueView').getAttribute('aria-busy'), 'false');
+  assert.equal(await page.locator('#results article').count(), 0);
+  await finishRequest(0);
+  assert.equal(await page.locator('#results article').count(), 0);
+  await page.locator('#retryRead').focus(); await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await finishRequest(1); await ready();
+  assert.equal(await page.locator('#results article').count(), 6);
+  assert.equal(await page.locator('#resultsHeading').evaluate(node=>node===document.activeElement), true);
+});
+
+test('document cache lifecycle clears pending data and requires a fresh mock read on restore', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+  assert.equal(await page.locator('#results article').count(), 0);
+  await finishRequest(1);
+  assert.equal(await page.locator('#results article').count(), 0);
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pageshow',{persisted:true})));
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  assert.equal(await page.locator('#results article').count(), 0);
+  await finishRequest(2); await ready();
+  assert.equal(await page.locator('#results article').count(), 6);
+});

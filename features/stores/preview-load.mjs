@@ -27,10 +27,13 @@ export function projectPreviewSnapshot(input, storeUid) {
       isSold: row.isSold, createdAt: Object.freeze({ seconds: row.createdAt.seconds, nanoseconds: row.createdAt.nanoseconds }) }))) });
 }
 
-export function createStoreLoadController({ read, onChange }) {
-  let revision = 0, pending = null;
+export function createStoreLoadController({ read, onChange, timeoutMs = 5000,
+  schedule = setTimeout, cancel = clearTimeout }) {
+  if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw new TypeError('Invalid preview deadline');
+  let revision = 0, pending = null, timer = null;
   const emit = state => onChange(Object.freeze(state));
-  function invalidate() { revision++; pending?.abort(); pending = null; }
+  function stopTimer() { if (timer !== null) cancel(timer); timer = null; }
+  function invalidate() { revision++; stopTimer(); pending?.abort(); pending = null; }
   return Object.freeze({
     async load(scope) {
       invalidate();
@@ -38,15 +41,23 @@ export function createStoreLoadController({ read, onChange }) {
       const controller = new AbortController(); pending = controller;
       const request = Object.freeze({ ...scope });
       emit({ status: 'loading' });
+      let timedOut = false;
       try {
-        const response = await read(request, { signal: controller.signal });
+        const deadline = new Promise((resolve, reject) => {
+          timer = schedule(() => {
+            timedOut = true;
+            controller.abort();
+            reject(new Error('Preview deadline'));
+          }, timeoutMs);
+        });
+        const response = await Promise.race([read(request, { signal: controller.signal }), deadline]);
         if (version !== revision) return;
         const snapshot = projectPreviewSnapshot(response, request.storeUid);
         emit(snapshot ? { status: snapshot.status, snapshot: snapshot.status === 'ready' ? snapshot : null }
           : { status: 'error', code: 'INVALID_PREVIEW_RESPONSE' });
       } catch {
-        if (version === revision) emit({ status: 'error', code: 'PREVIEW_READ_FAILED' });
-      } finally { if (version === revision) pending = null; }
+        if (version === revision) emit({ status: 'error', code: timedOut ? 'PREVIEW_READ_TIMEOUT' : 'PREVIEW_READ_FAILED' });
+      } finally { if (version === revision) { stopTimer(); pending = null; } }
     },
     clear() { invalidate(); emit({ status: 'idle' }); },
     revoke() { invalidate(); emit({ status: 'revoked' }); }

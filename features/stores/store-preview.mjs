@@ -191,6 +191,10 @@ function requestRoute(focus = false, restoreResult = false) {
     else $('loadStatus').focus();
   }
 }
+// Back/forward cache restores must re-read, never revive a cached publication
+// claim or let an old pending read complete into the restored document.
+window.addEventListener('pagehide', () => loader.clear());
+window.addEventListener('pageshow', event => { if (event.persisted) requestRoute(); });
 $('responseMode').addEventListener('change', () => requestRoute());
 $('retryRead').addEventListener('click', () => requestRoute(true));
 await selectLocale(readLocalePreference(storage(), 'gu'));
