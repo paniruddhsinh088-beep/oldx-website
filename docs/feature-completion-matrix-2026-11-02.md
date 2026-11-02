@@ -155,3 +155,13 @@ inactive. Essential Search/Login controls in index.html now use gu/hi/en, with e
 password-byte handling and generic credential-error fix. Whole-app localization,
 actual uploads/deletion/delivery, full trusted UI integration and P0 staging/device/
 security acceptance remain missing. No agreed requirement removed; HOLD/NO-GO.
+
+Latest [media delivery/journey checkpoint](review-progress-2026-11-02-media-delivery-journey-batch.md)
+adds Emulator-locked durable media quota/attempt/registry/delete/reconciliation source,
+approved-derivative public projection and private token/redemption contracts. Provider
+owner and buyer now share session-safe injected ports; SDK acceptance covers private
+create/read/cancel without activation. Marketplace archival retains private images;
+legacy Chat now shows the latest 35 in chronological order. No provider/processor/
+public release/byte gateway, service-worker cleanup, full UI/locale/native integration
+or operational readiness is claimed. All agreed requirements, HOLD/NO-GO and staging
+deny-all remain. New client logic is platform-neutral; native packaging is not started.

@@ -39,11 +39,11 @@ none proves real IAM, a live identity, resource plan eligibility or deployment.
 | P0 Provider registration/publish/discover | Disabled v1 opaque-owner, draft/publication, HTTP/private restore and public read components | SDK mocks and existing demo/loopback Emulator path | Actual schema/runtime/identity/role/quota/retention binding; approved indexes/Rules and same-origin transport; no private browser reads |
 | P0 Private buyer/provider enquiry | New disabled atomic creation + no-store HTTP command + UID-derived participant DTO; existing canonical statuses | Concurrent/replay/lost-ack/withdrawal tests and composed draft -> publish -> discover -> enquiry case | New SDK repository and private snapshots exist but remain Emulator-locked; operational namespace/retention, real identity/rate enforcement and owner/buyer UI wiring; no auto review grant |
 | P0 Text Chat | Legacy 35-message UI; inactive intent/read/privacy contracts | Policy, conversation/browser and candidate Rules suites | Trusted participant/block/send/receipt/delete/rate enforcement; actual idempotency, retention, private delivery |
-| P0 Mandatory photos (Product/Store/Service plus existing avatar/Chat) | Inactive upload/delete lifecycle, single-process journal, durable private reference transactions and compatibility descriptors | Quota/reference/delete races and unknown-outcome tests; no provider API calls | Provider/runtime/credentials, trusted decoder/scan, durable journal + references + moderation, public/private delivery, quota hard stops; Service v1 media schema extension separately approved |
+| P0 Mandatory photos (Product/Store/Service plus existing avatar/Chat) | Inactive durable SDK quota/attempt/registry/delete/reconciliation journal, private references and public/private delivery contracts | Quota/reference/delete races and unknown-outcome tests; no provider API calls | Provider/runtime/credentials, trusted decoder/scan/proof and moderation/public release, byte delivery/private Chat SDK gateway, operational quota/credit/rate guards; Service v1 media schema extension separately approved |
 | P0 Minimum Admin | Existing protected server interfaces/validators | 115 existing Admin tests; mocks | Approved server role/IAM, bounded DTO reads and minimal mutation/audit repository. Legacy UID UI/direct writes cannot enforce authorization |
 | P0 gu/hi/en + mobile | Preview locales/focus/320px/200% text; legacy authored text preserved | Existing browser/localization regressions | Search/auth essential controls now bind to gu/hi/en; remaining listing/Store/settings/account/Chat/Admin/error copy, native-language review and real devices remain |
 | P0 Privacy/security/release | Deny-all baseline, split/projection and lifecycle contracts | Named model/Rules suites | Consent/contact/private data, retention/export/account deletion, abuse response, migration/rollback, real security acceptance and explicit release approval |
-| P1 Media cleanup/moderation operations | Reconciliation/reference model and proposed policy | Isolated reference implementation | Durable orphan cleanup, moderation appeals/abuse, removal/backup/CDN semantics. Upload safety itself is P0, not deferred |
+| P1 Media cleanup/moderation operations | Reconciliation/reference model and proposed policy | Isolated reference implementation | Owner-scoped orphan journal exists; service-worker scheduling/deleted-user cleanup, moderation appeals/abuse and removal/backup/CDN semantics remain. Upload safety itself is P0, not deferred |
 | P1 Roadmap extensions | Store posters, Service sharing/multiservice and later contact/reviews plans preserved | Existing synthetic sharing/status coverage | Real routes/media consent, trustworthy completion/review eligibility; no claim of live reviews/contact |
 | P1 Android | Existing Capacitor roadmap | Web mobile tests only | Web gates first, then approved native packaging/device/deep-link/privacy/signing/release acceptance |
 
@@ -99,3 +99,11 @@ adds SDK enquiry/marketplace/photo reference mappings and actual essential-contr
 locale binding. Source is default-disabled and Emulator-locked. Durable upload quotas/
 provider outcomes/processing/delivery, complete UI integration and real staging remain
 blocked; this does not satisfy all P0 requirements or guarantee November 7.
+
+
+Latest [media delivery/journey checkpoint](review-progress-2026-11-02-media-delivery-journey-batch.md)
+adds durable SDK media journals and contract projection/redemption, owner/buyer shared
+portable ports, archive and latest Chat-window fix. Real provider/processor/release/
+delivery and complete UI/locale/device/security acceptance remain unimplemented or
+inactive. Android-compatible source separation is checked; no native package exists.
+All full-product P0 requirements remain and November 7 is conditional.

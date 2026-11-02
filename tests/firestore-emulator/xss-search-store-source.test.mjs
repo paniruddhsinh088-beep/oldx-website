@@ -87,3 +87,7 @@ test('essential locale markers do not relabel listing submit controls or replace
  assert.match(source,/src="features\/i18n\/marketplace.mjs"/);
  assert.match(source,/for="loginPassword" data-i18n="market.password"/);
 });
+
+test('legacy Chat displays latest 35 records chronologically without mutating the SDK snapshot',async()=>{
+ const {runInNewContext}=await import('node:vm');const helper=runInNewContext('('+section('function chronologicalChatDocuments(', 'function loadChatMessages(').trim()+')');const docs=[{id:'newest'},{id:'older'}];assert.deepEqual(Array.from(helper({docs})).map(x=>x.id),['older','newest']);assert.equal(docs[0].id,'newest');assert.equal(helper({}).length,0);const listener=section('function loadChatMessages(', 'async function openChatPrivacyMenu(');assert.match(listener,/orderBy\('createdAt', 'desc'\)\.limit\(35\)/);assert.match(listener,/chronologicalChatDocuments\(snapshot\)\.forEach/);
+});

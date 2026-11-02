@@ -1,4 +1,4 @@
-import {createProviderUiIntegration} from './ui-integration.mjs';
+import {createProviderJourneyIntegration} from './enquiry-integration.mjs';
 const bindings=new WeakMap();
 // Existing-page binding, not a route or endpoint. Enabled only by explicit injected
 // host/test ports; no global configuration, fetch or Firebase initialization.
@@ -14,14 +14,14 @@ export function mountProviderUiIntegration({root=document,enabled=false,readProf
   $('providerIntegrationPanel').setAttribute('aria-busy',String(busy));
   if(enabled&&lastPublic!==state.public){lastPublic=state.public;onPublicState(state.public);}
  }
- model=createProviderUiIntegration({...options,enabled,onOwnerDraft:restorePrivateForm,onChange:render});
+ const journey=createProviderJourneyIntegration({...options,enabled,onOwnerDraft:restorePrivateForm,onChange:render});model=journey.owner;
  listen($('loadProviderOwner'),'click',()=>model.bootstrap({restoreDraft:true}));
  listen($('saveProviderDraft'),'click',()=>model.saveDraft(readProfile?.()));listen($('publishProvider'),'click',()=>model.publish());listen($('withdrawProvider'),'click',()=>model.withdraw());listen($('retryProviderCommand'),'click',()=>model.retry());
  const window=root.defaultView;
- for(const event of ['hashchange','popstate'])listen(window,event,()=>model.changeScope());
- for(const id of ['q','area','sort','availableOnly','categories'])listen($(id),'input',()=>model.changeScope());
- listen($('categories'),'click',()=>model.changeScope());listen($('resetSearch'),'click',()=>model.changeScope());
- listen(window,'offline',()=>model.setOnline(false));listen(window,'online',()=>model.setOnline(true));
- listen(window,'pagehide',()=>{model.clear();if(enabled)clearPrivateForm();});
- const api=Object.freeze({model,setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;model.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());model.clear();bindings.delete(root);}});bindings.set(root,api);return api;
+ for(const event of ['hashchange','popstate'])listen(window,event,()=>journey.changeScope());
+ for(const id of ['q','area','sort','availableOnly','categories'])listen($(id),'input',()=>journey.changeScope());
+ listen($('categories'),'click',()=>journey.changeScope());listen($('resetSearch'),'click',()=>journey.changeScope());
+ listen(window,'offline',()=>journey.setOnline(false));listen(window,'online',()=>journey.setOnline(true));
+ listen(window,'pagehide',()=>{journey.clear();if(enabled)clearPrivateForm();});
+ const api=Object.freeze({model,buyer:journey.buyer,setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;journey.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());journey.clear();bindings.delete(root);}});bindings.set(root,api);return api;
 }

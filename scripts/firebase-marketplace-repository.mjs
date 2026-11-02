@@ -16,7 +16,7 @@ function publicProfile(kind,id,profile,revision){const {photos,...fields}=profil
 // Actual SDK transaction/query mapping, demo/loopback only. No legacy collection
 // access, browser import, app creation, credential or production-enable mode.
 export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
- if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE')});
+ if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const ref=(role,key)=>{if(!safeId(key))throw new Error('Invalid record identity');return sdk.doc(db,c[role],key);},recordKey=(kind,id)=>kind+'_'+id;
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
@@ -42,7 +42,7 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
      const ownerKey=hash(['store',context.actorUid]),owner=kind==='store'?await read(raw,ref('owners',ownerKey)):null,id=input.id??allocateId();if(!safeId(id))return expected=fail('INVALID_REQUEST');
      const target=ref('privateRecords',recordKey(kind,id)),previous=await read(raw,target),generation=await read(raw,ref('generations','current'));
      if(!generation||!integer(generation.value)||generation.value===Number.MAX_SAFE_INTEGER)return expected=fail('CONFLICT');
-     if(previous?previous.ownerUid!==context.actorUid||previous.kind!==kind||previous.id!==id:input.id!==null)return expected=fail('DENIED');
+     if(previous?previous.archived===true||previous.ownerUid!==context.actorUid||previous.kind!==kind||previous.id!==id:input.id!==null)return expected=fail('DENIED');
      if((previous?.revision??0)!==input.expectedRevision||!previous&&input.expectedRevision!==0||kind==='store'&&(owner?owner.ownerUid!==context.actorUid||owner.id!==id:previous!==null))return expected=fail('REVISION_CONFLICT');
      if(kind==='product'&&profile.storeId!==null){const shop=await read(raw,ref('privateRecords',recordKey('store',profile.storeId)));if(shop?.ownerUid!==context.actorUid||input.publication==='publish'&&shop.published!==true)return expected=fail('DENIED');}
      const revision=input.expectedRevision+1,published=input.publication==='publish'||input.publication==='draft'&&previous?.published===true,view=input.publication==='draft'?previous?.publicProfile??null:published?publicProfile(kind,id,profile,revision):null,nextGeneration=generation.value+(input.publication==='draft'?0:1);
@@ -52,6 +52,16 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
      raw.set(ref('receipts',key),{actorUid:context.actorUid,fingerprint,id,revision,generation:nextGeneration});raw.set(ref('audits',key),{requestKey:key,actorUid:context.actorUid,id,kind,fromRevision:input.expectedRevision,toRevision:revision,publication:input.publication});check(context);return expected={ok:true,status:'saved',id,revision,generation:nextGeneration};
     },{maxAttempts:3});if(JSON.stringify(expected)!==JSON.stringify(result))throw new Error('Invalid marketplace acknowledgement');return result;
    }});
+  },
+  async archive(kind,request,{credential,signal}={}){
+   const input=copyRecord(request,['requestId','id','expectedRevision']);if(!['product','store'].includes(kind)||!input||!safeId(input.requestId)||!safeId(input.id)||!integer(input.expectedRevision)||input.expectedRevision===Number.MAX_SAFE_INTEGER)return fail('INVALID_REQUEST');
+   return runVerifiedOperation({authenticate,credential,signal,timeoutMs,now,run:async context=>{const key=hash([context.actorUid,kind,'archive',input.requestId]),fingerprint=hash(input);context.markMutationAttempted();return sdk.runTransaction(db,async raw=>{
+    check(context);const actor=await read(raw,ref('actors',context.actorUid)),target=ref('privateRecords',recordKey(kind,input.id)),stored=await read(raw,target),receipt=await read(raw,ref('receipts',key)),audit=await read(raw,ref('audits',key)),generation=await read(raw,ref('generations','current'));
+    if(actor?.uid!==context.actorUid||actor.canWrite!==true||actor.canPublish!==true||actor.suspended!==false||stored?.ownerUid!==context.actorUid||stored.id!==input.id||stored.kind!==kind)return fail('DENIED');
+    if(receipt){if(receipt.actorUid!==context.actorUid||receipt.fingerprint!==fingerprint||receipt.id!==input.id||receipt.revision!==input.expectedRevision+1||audit?.requestKey!==key||audit.actorUid!==context.actorUid||audit.toRevision!==receipt.revision||stored.archived!==true||stored.revision<receipt.revision)return fail('IDEMPOTENCY_CONFLICT');return {ok:true,status:'replayed',id:input.id,revision:receipt.revision,generation:receipt.generation};}
+    if(audit||stored.archived===true||stored.revision!==input.expectedRevision||!generation||!integer(generation.value)||generation.value===Number.MAX_SAFE_INTEGER)return fail('REVISION_CONFLICT');const revision=stored.revision+1,next=generation.value+1;check(context);
+    raw.set(target,{...stored,revision,published:false,publicProfile:null,publicationRevision:0,archived:true,committedAt:sdk.serverTimestamp()});raw.delete(ref('publicViews',recordKey(kind,input.id)));raw.set(ref('generations','current'),{value:next});raw.set(ref('receipts',key),{actorUid:context.actorUid,fingerprint,id:input.id,revision,generation:next});raw.set(ref('audits',key),{requestKey:key,actorUid:context.actorUid,id:input.id,kind,fromRevision:stored.revision,toRevision:revision,operation:'archive'});check(context);return {ok:true,status:'archived',id:input.id,revision,generation:next};
+   },{maxAttempts:3});}});
   },
   async detail(request,{signal}={}){const input=copyRecord(request,['kind','id']);if(!input)return fail('INVALID_REQUEST');const {kind,id}=input;if(!['product','store'].includes(kind)||!safeId(id))return fail('INVALID_REQUEST');return bounded(async context=>sdk.runTransaction(db,async raw=>{const row=await read(raw,ref('publicViews',recordKey(kind,id)));check(context);if(!row)return fail('UNAVAILABLE');if(row.kind!==kind||row.id!==id||!inspectProfile(kind,{...Object.fromEntries(Object.entries(row).filter(([k])=>!['id','kind','revision'].includes(k))),photos:[]}))return fail('UNAVAILABLE');await currentPublic(raw,row);check(context);return {ok:true,profile:row};},{maxAttempts:3}),{signal});},
   async list(request,{signal}={}){

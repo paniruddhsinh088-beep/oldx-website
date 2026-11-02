@@ -1,0 +1,30 @@
+import {validateProcessedImage} from './image-upload-contract-policy.mjs';
+import {runVerifiedOperation} from './verified-operation.mjs';
+import {safeId,copyRecord} from './isolated-firestore-context.mjs';
+const fail=()=>({ok:false,code:'MEDIA_UNAVAILABLE'}),int=v=>Number.isSafeInteger(v)&&v>=0;
+const approved=(a,p,association)=>a&&typeof a.imageId==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(a.imageId)&&a.state==='attached'&&a.ownerUid===p.ownerUid&&a.parentId===p.id&&a.kind===p.kind&&a.service===null&&a.references?.includes(association.associationId)&&a.processed?.metadataStripped===true&&a.processed?.contentScanned===true&&validateProcessedImage({...a.processed,surface:p.kind,fileCount:1}).ok&&a.publicRelease?.approved===true&&a.publicRelease.kind===p.kind&&a.publicRelease.parentId===p.id&&a.publicRelease.parentRevision===p.publicationRevision&&a.publicRelease.photoRevision===association.photoRevision&&a.publicRelease.imageId===a.imageId&&safeId(a.publicRelease.derivativeId)&&int(a.publicRelease.version)&&a.publicRelease.version>0;
+// Server DTO/capability contract only: never constructs URLs, initializes SDKs,
+// reads bytes or calls a provider. Public and private ports cannot fall back.
+export function createMediaDeliveryContract({enabled=false,authenticate,readPublicSnapshot,readPrivateSnapshot,issuePrivateToken,verifyPrivateToken,now=Date.now,timeoutMs=5000}={}){
+ async function publicPhotos(request,{signal}={}){
+  if(enabled!==true||typeof readPublicSnapshot!=='function')return fail();const input=copyRecord(request,['kind','parentId','expectedParentRevision','expectedPhotoRevision']);
+  if(!input||!['product','store'].includes(input.kind)||!safeId(input.parentId)||!int(input.expectedParentRevision)||input.expectedParentRevision<1||!int(input.expectedPhotoRevision)||input.expectedPhotoRevision<1)return fail();
+  return runVerifiedOperation({authenticate:()=>({uid:'public-media'}),signal,now,timeoutMs,run:async context=>{
+   const snapshot=await readPublicSnapshot({...input},context);context.checkpoint();const p=snapshot?.parent,a=snapshot?.association,assets=snapshot?.assets;
+   if(!p||p.kind!==input.kind||p.id!==input.parentId||p.published!==true||p.actorActive!==true||!safeId(p.ownerUid)||p.publicationRevision!==input.expectedParentRevision||!a||!safeId(a.associationId)||a.parentId!==p.id||a.kind!==p.kind||a.ownerUid!==p.ownerUid||a.service!==null||a.parentRevision!==p.publicationRevision||a.photoRevision!==input.expectedPhotoRevision||!Array.isArray(a.imageIds)||a.imageIds.length>(p.kind==='store'?1:6)||new Set(a.imageIds).size!==a.imageIds.length||!Array.isArray(assets)||assets.length!==a.imageIds.length)return fail();
+   const photos=[];for(let index=0;index<assets.length;index++){const asset=assets[index];if(asset?.imageId!==a.imageIds[index]||!approved(asset,p,a))return fail();photos.push({imageId:asset.imageId,derivativeId:asset.publicRelease.derivativeId,version:asset.publicRelease.version});}
+   return {ok:true,parentId:p.id,parentRevision:p.publicationRevision,photoRevision:a.photoRevision,photos};
+  }});
+ }
+ const inspect=input=>{const r=copyRecord(input,['kind','scopeId','imageId','expectedRevision']);return r&&['chat','profile'].includes(r.kind)&&safeId(r.scopeId)&&safeId(r.imageId)&&int(r.expectedRevision)?r:null;};
+ async function scope(request,context){const snapshot=await readPrivateSnapshot({...request},context);context.checkpoint();return snapshot?.kind===request.kind&&snapshot.scopeId===request.scopeId&&snapshot.imageId===request.imageId&&snapshot.revision===request.expectedRevision&&snapshot.active===true&&snapshot.blocked===false&&snapshot.visibility==='private'&&Array.isArray(snapshot.participants)&&snapshot.participants.length===(request.kind==='chat'?2:1)&&snapshot.participants.every(safeId)&&new Set(snapshot.participants).size===snapshot.participants.length&&snapshot.participants.includes(context.actorUid);}
+ async function privateDelivery(request,{credential,signal}={}){
+  if(enabled!==true||![readPrivateSnapshot,issuePrivateToken].every(f=>typeof f==='function'))return fail();const input=inspect(request);if(!input)return fail();
+  return runVerifiedOperation({authenticate,credential,signal,now,timeoutMs,run:async context=>{if(!await scope(input,context))return fail();const claims=Object.freeze({...input,actorUid:context.actorUid,expiresAt:now()+60000});const token=await issuePrivateToken(claims,context);context.checkpoint();if(typeof token!=='string'||!/^[A-Za-z0-9_.-]{20,2048}$/.test(token)||!await scope(input,context))return fail();return {ok:true,token,expiresAt:claims.expiresAt,cacheControl:'private, no-store'};}});
+ }
+ async function authorizeRedemption(token,{credential,signal}={}){
+  if(enabled!==true||![readPrivateSnapshot,verifyPrivateToken].every(f=>typeof f==='function')||typeof token!=='string'||!/^[A-Za-z0-9_.-]{20,2048}$/.test(token))return fail();
+  return runVerifiedOperation({authenticate,credential,signal,now,timeoutMs,run:async context=>{const claims=copyRecord(await verifyPrivateToken(token,context),['kind','scopeId','imageId','expectedRevision','actorUid','expiresAt']);context.checkpoint();const input=inspect(claims&&Object.fromEntries(Object.entries(claims).filter(([k])=>!['actorUid','expiresAt'].includes(k))));if(!claims||!input||claims.actorUid!==context.actorUid||!int(claims.expiresAt)||claims.expiresAt<=now()||claims.expiresAt>now()+60000||!await scope(input,context))return fail();return {ok:true,imageId:input.imageId,scopeId:input.scopeId,revision:input.expectedRevision,cacheControl:'private, no-store'};}});
+ }
+ return Object.freeze({publicPhotos,privateDelivery,authorizeRedemption});
+}

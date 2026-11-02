@@ -2603,6 +2603,11 @@
             });
         }
 
+        // The listener reads the latest bounded window; render it oldest first.
+        function chronologicalChatDocuments(snapshot) {
+            return Array.isArray(snapshot?.docs) ? snapshot.docs.slice().reverse() : [];
+        }
+
         function loadChatMessages(chatRoomId) {
             const container = document.getElementById('fullChatMessages');
 
@@ -2610,7 +2615,7 @@
                 db.collection('chats').doc(chatRoomId).collection('messages')
                   .where('senderUid', '!=', window.currentUser.uid)
                   .get().then(snapshot => {
-                      snapshot.forEach(doc => {
+                      chronologicalChatDocuments(snapshot).forEach(doc => {
                           doc.ref.update({ status: 'read' });
                       });
                   }).catch(err => console.warn('Read receipt update failed:', err));
@@ -2619,7 +2624,7 @@
             if (activeChatUnsubscribe) activeChatUnsubscribe();
 
             activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
-              .orderBy('createdAt', 'asc').limit(35)
+              .orderBy('createdAt', 'desc').limit(35)
               .onSnapshot(snapshot => {
                   container.replaceChildren();
                   if (snapshot.empty) {

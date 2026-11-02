@@ -121,3 +121,14 @@ approved operational schemas; Provider v1 keys remain text-only. No runtime reso
 Rules/index, IAM/secret, media provider, migration, billing, deployment or release
 approval inferred. Essential locale/control and password-byte fixes change repository
 UI source, not authentication configuration. All P0 requirements and HOLD/NO-GO remain.
+
+## Media journal/delivery and portable UI ports — 2 November 2026
+
+Repository-only/isolated testing now includes durable quota/attempt/registry/delete/
+reconciliation and private/public media contracts. Public-release records and proof/
+token verifiers in tests are synthetic authority, not permission to expose images.
+No actual media provider, moderation/release writer, service-worker identity, byte
+gateway, quota reset, retention worker or native app is approved or activated.
+Provider v1 remains unchanged/text-only; media stays in unactivated separate namespaces.
+All runtime, schema/index, identity/role/rate/quota/cleanup, consent/privacy/retention,
+media, IAM/secrets/resource/staging/deployment/migration/billing/release gates remain.

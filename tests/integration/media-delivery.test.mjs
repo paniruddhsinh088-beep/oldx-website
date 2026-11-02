@@ -1,0 +1,12 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';import {durableMediaAcceptance} from './durable-media-acceptance.mjs';
+import {createMediaDeliveryContract} from '../../scripts/media-delivery-contract.mjs';
+import {createIsolatedMediaJournal} from '../../scripts/firebase-media-journal.mjs';
+test('durable media SDK mock: quotas, retry, lost ack, references, public approval, deletion and orphan reconciliation',async()=>{const f=fakeFirestoreSdk();await durableMediaAcceptance({sdk:f.sdk,db:f.db,seed:(...args)=>f.seed(...args),get:(...args)=>f.get(...args)});});
+test('private media tokens bind verified participant and fresh blocks/revisions; no public fallback or provider URL',async()=>{
+ let uid='buyer',blocked=false,clock=1000000,revision=1;const tokens=new Map(),request={kind:'chat',scopeId:'chat-sample',imageId:'image-sample',expectedRevision:1};const readPrivateSnapshot=r=>({...r,revision,participants:['buyer','provider'],active:true,blocked,visibility:'private'});const contract=createMediaDeliveryContract({enabled:true,authenticate:()=>({uid}),now:()=>clock,readPrivateSnapshot,issuePrivateToken:claims=>{const key='sample-private-token-'+tokens.size;tokens.set(key,claims);return key;},verifyPrivateToken:token=>tokens.get(token)});
+ const result=await contract.privateDelivery(request);assert.equal(result.ok,true);assert.equal(Object.hasOwn(result,'url'),false);assert.equal((await contract.authorizeRedemption(result.token)).ok,true);uid='foreign';assert.equal((await contract.authorizeRedemption(result.token)).ok,false);uid='buyer';blocked=true;assert.equal((await contract.authorizeRedemption(result.token)).ok,false);blocked=false;revision=2;assert.equal((await contract.authorizeRedemption(result.token)).ok,false);revision=1;clock+=60001;assert.equal((await contract.authorizeRedemption(result.token)).ok,false);assert.equal((await contract.privateDelivery({...request,url:'https://res.cloudinary.com/private'})).ok,false);assert.equal((await contract.publicPhotos({kind:'chat'})).ok,false);
+});
+test('media factories default off and private unknown enforcement cannot authorize delivery',async()=>{
+ assert.equal((await createIsolatedMediaJournal().reserve()).code,'UNAVAILABLE');assert.equal((await createMediaDeliveryContract().privateDelivery({})).ok,false);assert.equal((await createMediaDeliveryContract({enabled:true,authenticate:()=>({uid:'owner'})}).privateDelivery({kind:'profile',scopeId:'profile',imageId:'image',expectedRevision:0})).ok,false);
+});

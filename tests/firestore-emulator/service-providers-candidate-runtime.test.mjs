@@ -286,3 +286,9 @@ for (const [name,exportName] of [['durable enquiry authorization and cancellatio
   for(const [collection,id] of [['testOldxEnquiryEnquiries','durable-enquiry'],['testOldxMarketPrivateRecords','store_market-1'],['testOldxPhotoAssets','photo-image-1234567890123'],['testOldxMarketPublicViews','product_market-2']])await assertFails(sdk.getDoc(sdk.doc(guest,collection,id)));
  });
 }
+
+test('actual SDK durable media journal quota retry reconciliation and trusted public projection',async()=>{
+ const sdk=await import('firebase/firestore');const {durableMediaAcceptance}=await import('../integration/durable-media-acceptance.mjs');
+ await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await durableMediaAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const snapshot=await sdk.getDoc(sdk.doc(db,collection,id));return snapshot.exists()?snapshot.data():null;}});});
+ const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxMediaQuotas','global')));
+});
