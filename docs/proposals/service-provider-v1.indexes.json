@@ -1,0 +1,12 @@
+{
+  "indexes": [
+    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
+    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"services","arrayConfig":"CONTAINS"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
+    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"serviceArea","order":"ASCENDING"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
+    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"services","arrayConfig":"CONTAINS"},{"fieldPath":"serviceArea","order":"ASCENDING"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]}
+  ],
+  "fieldOverrides": [
+    {"collectionGroup":"serviceProviderDrafts_v1","fieldPath":"profile.description","indexes":[]},
+    {"collectionGroup":"serviceProviderReceipts_v1","fieldPath":"fingerprint","indexes":[]}
+  ]
+}

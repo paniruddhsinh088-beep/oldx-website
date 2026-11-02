@@ -67,3 +67,21 @@ Owner explicitly authorizes repository-only Firebase/Vercel architecture code an
 isolated mock/emulator testing at zero additional spend. This is not selection or
 approval of D1–D12 live runtime/schema/region/IAM/secrets/cost/resource/deployment
 choices. No live data, Rules changes, provider setup or release activation approved.
+
+### Owner-approved Service design — 2 November 2026
+
+Approved for DESIGN AND REPOSITORY-ONLY DEVELOPMENT: Gujarat-first text-only Service
+Providers on existing Firebase Auth/Firestore architecture; one profile per verified
+owner with multiple services; private drafts and explicit authorized publication;
+strict public fields with no public IP/private personal data/exact GPS. Preserve
+Products, Stores, Chat and future media/reviews. No new paid infrastructure.
+
+The [v1 proposal](docs/proposals/service-provider-schema-v1.md) translates this semantic
+design into candidate paths, identity/index and compatibility contracts. Proposed
+paths/index JSON remain unactivated. This is not approval to use those collections
+in a live project or deploy indexes/Rules. D9 feature/data design is approved only
+at this scope; actual operational schema binding/access remains unapproved. Existing
+architecture choice is approved in principle, not D1/D2 runtime/account/region setup.
+D6 retention/privacy operations, D7/D8 IAM/secrets, D10 eligibility/moderation/role
+provisioning and D11/D12 staging/rollback/release actions remain unapproved. No live
+reads/writes, migration, billing, resource, Rules or deployment approval inferred.

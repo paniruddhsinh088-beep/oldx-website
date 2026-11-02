@@ -1,6 +1,6 @@
 # First text-only OLDX launch: minimum owner decisions
 
-Recommendations only, not recorded approvals. No provider pricing/account quota was
+Runtime recommendations are not approvals; approved Service design scope is recorded below. No provider pricing/account quota was
 verified. “Free-tier possible” means technically plausible within the existing
 account's eligibility/quotas; it is not guaranteed free hosting or approval to spend.
 Keep staging deny-all and release HOLD/NO-GO until isolated tests, approved staging
@@ -75,3 +75,14 @@ staging Rules/transport/data acceptance and rollback. Recommended minimum: one
 same-origin text-only private draft -> reviewed publication -> bounded public profile
 journey on the existing stack; no uploads/SMS/reviews/new infrastructure. Existing
 UI port bindings do not authorize connecting live services or deploying anything.
+
+Owner now approves Gujarat-first text-only Service design and repository development:
+one Provider per verified owner, multi-service private drafts, explicit authorized
+publication and public allowlist with no public IP/private personal data/exact GPS.
+[Concrete v1 schema/index/compatibility proposal](proposals/service-provider-schema-v1.md)
+remains unactivated. No actual cloud path/region/IAM/secrets/retention, legacy migration,
+Rules/index deployment, billing or staging/release action is approved. Preserve
+Products/Stores/Chat and gated media/review plans. First journey defaults remain
+existing stack and zero extra spend, one opaque-owner draft -> reviewed publication
+-> bounded public profile. Separate runtime/schema binding, eligibility/moderation/
+role and quota/retention choices plus staging transport/rollback acceptance remain.
