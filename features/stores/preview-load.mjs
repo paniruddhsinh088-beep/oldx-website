@@ -42,7 +42,7 @@ export function createStoreLoadController({ read, onChange,
       const controller = new AbortController(); pending = controller;
       const request = Object.freeze({ ...scope });
       emit({ status: 'loading' });
-      let timedOut = false;
+      let timedOut = false, abortRead;
       try {
         const deadline = new Promise((resolve, reject) => {
           timer = schedule(() => {
@@ -51,14 +51,24 @@ export function createStoreLoadController({ read, onChange,
             reject(new Error('Preview deadline'));
           }, timeoutMs);
         });
-        const response = await Promise.race([read(request, { signal: controller.signal }), deadline]);
+        // Settle cancelled callers even when the adapter ignores AbortSignal.
+        // Promise.race retains a rejection handler for any late adapter failure.
+        const cancellation = new Promise((resolve, reject) => {
+          abortRead = () => reject(new Error('Preview cancelled'));
+          if (controller.signal.aborted) abortRead();
+          else controller.signal.addEventListener('abort', abortRead, { once: true });
+        });
+        const response = await Promise.race([read(request, { signal: controller.signal }), deadline, cancellation]);
         if (version !== revision) return;
         const snapshot = project(response, request);
         emit(snapshot ? { status: snapshot.status, snapshot: snapshot.status === 'ready' ? snapshot : null }
           : { status: 'error', code: 'INVALID_PREVIEW_RESPONSE' });
       } catch {
         if (version === revision) emit({ status: 'error', code: timedOut ? 'PREVIEW_READ_TIMEOUT' : 'PREVIEW_READ_FAILED' });
-      } finally { if (version === revision) { stopTimer(); pending = null; } }
+      } finally {
+        if (abortRead) controller.signal.removeEventListener('abort', abortRead);
+        if (version === revision) { stopTimer(); pending = null; }
+      }
     },
     clear() { invalidate(); emit({ status: 'idle' }); },
     revoke() { invalidate(); emit({ status: 'revoked' }); }

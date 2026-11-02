@@ -89,3 +89,37 @@ All 29 available non-emulator commands passed, reporting 601 tests in aggregate
 `test:emulator:safety` and policy models are local source/contract checks, not
 actual emulator execution. `git diff --check` passed. No dependency version,
 override or lockfile changed; unchanged advisory/toolchain work was not repeated.
+
+## Reviewed detail source and verified cancellation follow-up
+
+`710d1a2bb4da4ece101e37ce58023860e100f027` contains the independent synthetic
+detail contract, projection, adapter and UI integration. Pushed normally only to
+`security-hardening-review` after fetching/checking remote ancestry and preserving
+the review branch's deployment-disabled configuration.
+
+Continued with the documented next independent safety task. A deterministic
+regression failed before the fix: clear invalidated the view and timer, but the
+request caller stayed pending if the mock ignored AbortSignal. Added cancellation
+to the existing request race so callers settle promptly on clear, revoke and
+replacement. Cancellation listeners are removed on settlement; late rejection
+remains handled without changing current state or exposing raw error text. The
+underlying uncooperative operation cannot be forcibly stopped; future real server
+request/cancellation limits remain separate approval requirements.
+
+The focused cancellation regression passed after the fix. Final related sweep
+and exact-source CI evidence follow below; unchanged expensive checks are reused
+from the comprehensive sweep rather than repeated locally.
+
+Next safe task after this follow-up: prepare deterministic cross-document
+publication-change fixtures and an executable guest/seller/moderator authorization
+case matrix for the future detail endpoint, keeping Rules and backend inactive.
+
+
+First exact-source workflows passed:
+- [Branch security 41411829264](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41411829264).
+- [Review safety 41411829358](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41411829358), including Store/Service browser and isolated Firebase Emulator steps.
+
+Vercel metadata lists zero deployments for 710d1a2. Final related cancellation
+sweep passed `test:stores` **42/42**, `test:stores:browser` **22/22**,
+`test:stores:preview` **3/3**, `test:static-build` **3/3** and diff checks.
+The unchanged comprehensive checks above were reused rather than repeated.

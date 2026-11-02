@@ -73,3 +73,13 @@ and offline browser tests, not actual Rules or trusted endpoint validation.
 - Require compatibility/migration, rollback and real browser cache/freshness
   evidence before changing clients. Rules cannot redact fields from a document.
   Keep live deny-all and all deployment/production gates untouched.
+
+## Cancellation settlement follow-up
+
+The shared controller now also settles a cancelled request's caller promptly,
+even if the mock ignores AbortSignal. Clear, withdrawal and replacement invalidate
+its revision before signalling cancellation. The request race keeps handlers for
+late adapter resolution/rejection and unregisters its cancellation listener on
+settlement. This is client lifecycle cleanup, not a claim that an uncooperative
+remote operation has stopped. A future real adapter still needs approved server
+request deadlines and cancellation/retry limits.

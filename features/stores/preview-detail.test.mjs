@@ -82,3 +82,21 @@ test('offline detail adapter resolves only a single requested product and does n
   abort.abort(); await assert.rejects(task,{name:'AbortError'});
   await assert.rejects(readSyntheticDetail({...scope,productId:'../private'}));
 });
+
+test('cancelled detail callers settle promptly even when the mock ignores AbortSignal', async () => {
+  for (const action of ['clear','revoke','replace']) {
+    const pending = [], states = [];
+    const loader = createStoreLoadController({ project, schedule:()=>1, cancel:()=>{}, onChange:s=>states.push(s),
+      read:()=>new Promise((resolve,reject)=>pending.push({resolve,reject})) });
+    const old = loader.load(scope);
+    let next;
+    if (action==='replace') next=loader.load({...scope,productId:'sample-2'}); else loader[action]();
+    const settled = await Promise.race([old.then(()=>true), new Promise(resolve=>setImmediate(()=>resolve(false)))]);
+    // Clean up the active request before asserting, even if the regression fails.
+    if (next) { pending[1].resolve({...response(),listing:{...sampleListings[1],publicationStatus:'published'}}); await next; }
+    assert.equal(settled,true,action+' must not wait for an uncooperative adapter');
+    const state=states.at(-1);
+    pending[0].reject(new Error('PRIVATE LATE ERROR')); await Promise.resolve();
+    assert.equal(states.at(-1),state,'late rejection cannot change current state');
+  }
+});
