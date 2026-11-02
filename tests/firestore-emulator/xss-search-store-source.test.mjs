@@ -59,3 +59,17 @@ test('Homepage Store discovery uses a bounded public query and safe DOM renderin
   assert.match(block, /card\.addEventListener\('click'/);
   assert.doesNotMatch(block, /innerHTML\s*=/);
 });
+
+test('legacy partial product records cannot crash catalogue/autocomplete search and authored multilingual text is preserved', async () => {
+  const {runInNewContext}=await import('node:vm');
+  const block=section('function productMatchesSearch(', 'function handleSearchInput()');
+  const matches=runInNewContext('('+block.trim()+')');
+  for(const row of [null,{}, {title:null,location:4,category:[]}, {title:12}])assert.equal(matches(row,'sample',['title','location']),false);
+  const row={title:'ગુજરાતી नमूना SAMPLE',category:'Tools',location:'અમદાવાદ'};
+  assert.equal(matches(row,'sample',['title','category']),true);
+  assert.equal(matches(row,'नमूना',['title','location']),true);
+  assert.equal(matches(row,'અમદાવાદ',['title','location']),true);
+  assert.equal(row.title,'ગુજરાતી नमूना SAMPLE');
+  assert.match(source,/productMatchesSearch\(p, query, \['title', 'category'\]\)/);
+  assert.match(source,/productMatchesSearch\(p, searchVal, \['title', 'location'\]\)/);
+});

@@ -22,7 +22,7 @@ export function createIsolatedMediaLifecycle({enabled=false,mode,authenticate,au
     if(await authorize({...scope,action:'upload'},context)!==true)return fail('DENIED');context.checkpoint();context.markMutationAttempted();
     const lease=await journal.reserveUpload({...scope,requestId:input.requestId,digest,reservedBytes},context);context.checkpoint();
     if(!lease||lease.actorUid!==scope.actorUid||lease.surface!==scope.surface||lease.parentId!==scope.parentId||lease.digest!==digest||!id(lease.leaseId)||!imageId(lease.imageId)||lease.publicId!=='oldx/quarantine/'+lease.imageId||lease.quotaReserved!==true||lease.budgetKnown!==true)return fail('UPLOAD_NOT_AUTHORIZED');
-    if(lease.state==='quarantined')return {ok:true,state:'quarantined',imageId:lease.imageId};
+    if(['quarantined','attached'].includes(lease.state))return {ok:true,state:'quarantined',imageId:lease.imageId};
     if(lease.state!=='reserved')return {ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true};
     let processed;
     try{processed=await processor.decodeAndReencode(source,{surface:input.surface,maxBytes:reservedBytes,maxPixels:getSurfacePolicy(input.surface).maxPixels,signal:context.signal});}catch{await journal.rejectLease(lease.leaseId,scope.actorUid,context);return fail('IMAGE_REJECTED');}

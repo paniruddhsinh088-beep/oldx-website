@@ -120,3 +120,27 @@ Store unsigned Cloudinary uploads from Product/avatar/Chat Firestore data URLs a
 unimplemented Service photos. A test-only injected quarantine/delete lifecycle is
 source, not real Cloudinary integration, decoder, journal or media activation. Legacy
 images remain unchanged. Text-only launch and all owner gates remain the priority.
+
+## November 7 target checkpoint
+
+[Prioritized launch register](launch-decision-register-2026-11-07.md) now distinguishes
+source-ready, isolated-test-ready, staging-required and production-blocked work for
+every essential journey. The target is conditional; all P0 requirements and
+HOLD/NO-GO remain. Mandatory photos and whole-app localization are not removed by
+using an intermediate text-only Service staging milestone.
+
+New [integration contract](media-journal-and-enquiry-integration-contract.md): disabled
+private enquiry creation reuses existing validation/status/verified-operation and HTTP
+ports, atomically requires private record/receipt/audit, and maps verified participant
+reads into the existing DTO. Mock acceptance composes opaque owner draft, publication,
+two-Provider discovery generation, private enquiry and withdrawal. Real enquiry SDK
+persistence, trusted graph/actor/block reads and actual UI/runtime remain missing.
+
+Media now has a test-only bounded atomic in-memory journal for upload/reference/
+replacement/delete leases, quota reservation, same-key replay and uncertain provider
+reconciliation. Compatibility descriptors preserve Base64/Cloudinary/legacy references
+without claiming ownership or migrating anything. Service photo descriptors remain
+an unactivated future schema extension. Durable journal, actual decoder/moderation/
+provider credentials/delivery, parent transactions and retention are still missing.
+Legacy Search now tolerates missing/non-string Product fields; no authored text or
+existing storage/Login/Store/Chat/Admin behavior was otherwise changed.

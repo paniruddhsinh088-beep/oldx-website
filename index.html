@@ -4991,6 +4991,12 @@
         function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
         function closeMyAdsModal() { document.getElementById('myAdsModal').style.display = 'none'; }
 
+        // Legacy/partial records must not break all catalogue search results.
+        function productMatchesSearch(product, query, fields) {
+            return !!product && typeof query === 'string' && fields.some(field =>
+                typeof product[field] === 'string' && product[field].toLowerCase().includes(query));
+        }
+
         function handleSearchInput() {
             renderProducts();
             const query = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -5002,7 +5008,7 @@
                 return;
             }
 
-            const matches = products.filter(p => p.title.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)).slice(0, 5);
+            const matches = products.filter(p => productMatchesSearch(p, query, ['title', 'category'])).slice(0, 5);
             if(matches.length === 0) {
                 dropdown.style.display = 'none';
                 return;
@@ -5099,7 +5105,7 @@
 
             const filtered = products.filter(p => {
                 const matchCat = (currentFilterCat === 'all' || p.category === currentFilterCat);
-                const matchSearch = p.title.toLowerCase().includes(searchVal) || p.location.toLowerCase().includes(searchVal);
+                const matchSearch = productMatchesSearch(p, searchVal, ['title', 'location']);
                 const matchState = (!stateVal || p.state === stateVal);
                 
                 let matchDistance = true;

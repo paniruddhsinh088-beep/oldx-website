@@ -102,3 +102,13 @@ private delivery/revocation, retention/deletion/backups, journal schema and migr
 Any account/preset/secret/IAM/Rules/resource/deployment action remains separately gated.
 The approved Gujarat-first v1 design stays text-only; repository mocks do not prove
 live identity, authorization, spending controls or actual provider functionality.
+
+## November 7 target / integration preparation — 2 November 2026
+
+Owner's new instruction prioritizes repository-only launch preparation, mandatory
+photo contracts and isolated journal/enquiry tests. This does not authorize runtime,
+IAM/secrets, live provider/Firebase access, Rules/indexes, staging/deployment, billing,
+media migration or production actions. The approved Provider v1 stays text-only;
+future Provider media descriptors do not add fields to that schema. All agreed
+requirements remain in the [P0/P1 launch register](docs/launch-decision-register-2026-11-07.md).
+November 7 remains a target, with HOLD/NO-GO until evidence/approval gates are met.
