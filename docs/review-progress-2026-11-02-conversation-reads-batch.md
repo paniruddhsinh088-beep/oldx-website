@@ -116,3 +116,26 @@ source. `git diff --check` passed. Full commands and individual counts:
 | `npm run test:service-inbox:browser` | 7 |
 | `npm run test:service-buyer:browser` | 6 |
 | `npm run test:service-conversation:browser` | 7 |
+
+## Pushed checkpoint and exact-source CI
+
+Source `16f510ae8cffbb89f85da3a21ce67871a042e3ba` includes the complete bounded
+conversation lifecycle and inactive Service executor. All exact-source workflows
+completed successfully:
+- [Branch security 41437206688](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41437206688)
+- [Service Emulator 41437206705](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41437206705)
+- [Review safety 41437206719](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41437206719)
+
+Local results include Service models 174, Chat/integration 27, conversation browser
+7, provider browser 7, buyer browser 6, Service browser 20, Store browser 28 and
+Admin 115. CI's existing isolated Rules Emulator results are distinct from local
+Node/mock checks; neither proves live acceptance of unimplemented Service backends.
+
+Fresh remote stayed `7b4ef98` before source commit and normal push. No concurrent
+changes required reconciliation, no force push, canonical automation unchanged.
+All previous history remains ancestral. Branch deployment flag remained false;
+read-only Vercel metadata showed zero deployments for the exact source SHA. No
+main/merge/deploy/live Firebase/Rules/resource/billing/Full Reset action occurred.
+
+This documentation-only follow-up records evidence without changing verified
+executable source. Feature matrix and next meaningful safe task above are current.
