@@ -30,14 +30,14 @@ function normalizedText(value, max) {
   return text.length > 0 && text.length <= max && !FORBIDDEN_TEXT.test(text) ? text : null;
 }
 
-function timestampMillis(value) {
-  if (Number.isSafeInteger(value) && value >= 0) return value;
+function timestampOrder(value) {
+  if (Number.isSafeInteger(value) && value >= 0) return { millis: value, nanos: 0 };
   if (!plainRecord(value) || !Number.isSafeInteger(value.seconds) || value.seconds < 0 ||
       !Number.isInteger(value.nanoseconds) || value.nanoseconds < 0 || value.nanoseconds >= 1e9) {
     return null;
   }
   const millis = value.seconds * 1000 + Math.floor(value.nanoseconds / 1e6);
-  return Number.isSafeInteger(millis) ? millis : null;
+  return Number.isSafeInteger(millis) ? { millis, nanos: value.nanoseconds % 1e6 } : null;
 }
 
 function projectListing(value, storeUid) {
@@ -55,7 +55,7 @@ function projectListing(value, storeUid) {
     // private attributes, raw images, or client-supplied verification badges.
     card: { id: value.id, title, category: value.category, price,
       priceLabel: "₹" + priceFormatter.format(price), available: !value.isSold },
-    createdAtMs: timestampMillis(value.createdAt)
+    createdAtOrder: timestampOrder(value.createdAt)
   };
 }
 
@@ -93,7 +93,11 @@ export function buildStoreCataloguePage(options = {}) {
     accepted.push(projected);
   }
 
-  const newest = (a, b) => (b.createdAtMs ?? -1) - (a.createdAtMs ?? -1);
+  // Keep the sub-millisecond remainder separate: converting the entire
+  // timestamp to a Number of nanoseconds would lose integer precision.
+  const newest = (a, b) =>
+    (b.createdAtOrder?.millis ?? -1) - (a.createdAtOrder?.millis ?? -1) ||
+    (b.createdAtOrder?.nanos ?? 0) - (a.createdAtOrder?.nanos ?? 0);
   const byId = (a, b) => a.card.id < b.card.id ? -1 : a.card.id > b.card.id ? 1 : 0;
   accepted.sort((a, b) => {
     let order = 0;

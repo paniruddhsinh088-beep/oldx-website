@@ -13,7 +13,8 @@ legacy Store page, Firebase, Admin, a deployment or a real seller account.
 - Uses numeric `basePrice` rather than parsing legacy `finalPriceStr` HTML
   entities (`&#8377;`), which can produce incorrect price ordering.
 - Supports title search with Unicode NFC normalization, category filtering,
-  deterministic sorting, and bounded pagination *within the supplied batch*.
+  deterministic sorting (including Firestore sub-millisecond timestamp precision),
+  and bounded pagination *within the supplied batch*.
   `hasMoreInBatch` does **not** indicate whether the server has more records.
 
 **Required before UI integration:** owner-approved public/private product split,

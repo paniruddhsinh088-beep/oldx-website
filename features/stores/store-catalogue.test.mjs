@@ -136,3 +136,17 @@ test("does not mutate the input records or array", () => {
   assert.equal(view(records).items[0].title, "Chair");
   assert.equal(source.title, "  Chair  ");
 });
+
+test("newest retains Firestore sub-millisecond precision and mixed timestamp ordering", () => {
+  const records = [
+    listing("a-older", { createdAt: { seconds: 20, nanoseconds: 100 } }),
+    listing("z-newer", { createdAt: { seconds: 20, nanoseconds: 900 } }),
+    listing("b-millis", { createdAt: 20000 }),
+    listing("c-invalid", { createdAt: { seconds: 20, nanoseconds: 1e9 } })
+  ];
+  for (const sort of ["newest", "available"]) {
+    const result = view(records, { sort });
+    assert.deepEqual(result.items.map(p => p.id), ["z-newer", "a-older", "b-millis", "c-invalid"]);
+    assert.equal(Object.hasOwn(result.items[0], "createdAt"), false);
+  }
+});
