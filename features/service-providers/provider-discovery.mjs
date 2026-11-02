@@ -67,7 +67,7 @@ export function createPublicProviderRepository({enabled=false,catalog,getPublica
    const plan=Object.freeze({view:'public-provider-discovery-v1',fields:DISCOVERY_FIELDS,where:Object.freeze([Object.freeze(['id','==',r.providerId]),Object.freeze(['published','==',true])]),orderBy:Object.freeze(['id','asc']),limit:1,after:null,publicationEpoch:generation});
    const response=record(await query(plan,{signal}),['publicationEpoch','rows']);
    if(signal?.aborted||!response||response.publicationEpoch!==generation||!Array.isArray(response.rows)||response.rows.length!==1)return deny();
-   const profile=projectPublicRow(response.rows[0],config,generation);
+   const profile=projectPublicRow(response.rows[0],config,generation,canonical.publicationEpoch);
    if(!profile||profile.id!==r.providerId||JSON.stringify(profile.services)!==JSON.stringify(canonical.services))return deny();
    const fresh=record(await readCanonical(r.providerId,{signal}),['providerId','services','published','publicationEpoch']);
    if(!validCanonical(fresh,r.providerId,generation,config)||JSON.stringify(fresh)!==JSON.stringify(canonical)||signal?.aborted||await getPublicationEpoch({signal})!==generation||signal?.aborted)return deny();
@@ -75,10 +75,12 @@ export function createPublicProviderRepository({enabled=false,catalog,getPublica
   }catch{return deny();}
  }});
 }
-function validCanonical(c,providerId,generation,catalog){return c&&c.providerId===providerId&&c.published===true&&c.publicationEpoch===generation&&Array.isArray(c.services)&&c.services.length>0&&c.services.length<=12&&c.services.every(s=>catalog.services.includes(s))&&normalizeServiceSelections(c.services).ok;}
-function projectPublicRow(raw,catalog,generation){
+// Global generation invalidates cursors and in-flight reads; individual public rows
+// retain their own last-publication epoch until that provider is republished.
+function validCanonical(c,providerId,generation,catalog){return c&&c.providerId===providerId&&c.published===true&&epoch(c.publicationEpoch)&&c.publicationEpoch>=1&&c.publicationEpoch<=generation&&Array.isArray(c.services)&&c.services.length>0&&c.services.length<=12&&c.services.every(s=>catalog.services.includes(s))&&normalizeServiceSelections(c.services).ok;}
+function projectPublicRow(raw,catalog,generation,canonicalEpoch=null){
  const row=record(raw,DISCOVERY_FIELDS);
- if(!row||row.published!==true||row.publicationEpoch!==generation||!id(row.id)||!Array.isArray(row.services)||row.services.some(s=>!catalog.services.includes(s))||!catalog.localities.some(l=>l.city===row.city&&l.serviceArea===row.serviceArea))return null;
+ if(!row||row.published!==true||!epoch(row.publicationEpoch)||row.publicationEpoch<1||row.publicationEpoch>generation||canonicalEpoch!==null&&row.publicationEpoch!==canonicalEpoch||!id(row.id)||!Array.isArray(row.services)||row.services.some(s=>!catalog.services.includes(s))||!catalog.localities.some(l=>l.city===row.city&&l.serviceArea===row.serviceArea))return null;
  const result=buildPublicProviderProfile(row);if(!result.ok)return null;
  return Object.freeze({...result.profile,services:Object.freeze(result.profile.services),languages:Object.freeze(result.profile.languages)});
 }

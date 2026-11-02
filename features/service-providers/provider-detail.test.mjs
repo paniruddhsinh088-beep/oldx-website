@@ -22,3 +22,32 @@ test('detail lifecycle cancels ignored reads, times out and safely recovers with
  const loader=createPublicProviderDetailRead({repository,onChange:s=>states.push(s),schedule:fn=>{expire=fn;return 1;},cancel:()=>{}});const old=loader.load(request);await Promise.resolve();loader.clear();await old;resolve({ok:true,profile:row()});await Promise.resolve();assert.equal(states.at(-1).status,'idle');
  const pending=loader.load(request);await Promise.resolve();expire();await pending;assert.equal(states.at(-1).code,'READ_TIMEOUT');read=()=>createPublicProviderRepository(fixture()).detail(request);await loader.load(request);assert.equal(states.at(-1).status,'ready');
 });
+
+test('global generation advances for another provider without hiding older valid public profiles',async()=>{
+ let generation=2;
+ const first=row(),second={...row(),id:'p2',displayName:'Second',publicationEpoch:2};
+ let publicRows=[first,second];
+ const deps={...fixture(),getPublicationEpoch:()=>generation,
+  readCanonical:()=>canonical(),
+  query:plan=>({publicationEpoch:generation,rows:publicRows.filter(p=>plan.where.every(([field,op,value])=>op==='array-contains'?p[field].includes(value):p[field]===value)).slice(0,plan.limit)})};
+ const repo=createPublicProviderRepository(deps);
+ const listing=await repo.discover({category:'',locality:'',limit:2,cursor:null});
+ assert.equal(listing.ok,true);assert.deepEqual(listing.items.map(p=>p.id),['p1','p2']);
+ assert.equal((await repo.detail({providerId:'p1',expectedGeneration:null})).ok,true);
+ assert.equal((await repo.detail({providerId:'p1',expectedGeneration:2})).ok,true);
+ assert.equal((await repo.detail({providerId:'p1',expectedGeneration:1})).ok,false);
+ // A different publication epoch for the requested provider is not authorized by its canonical record.
+ publicRows=[{...first,publicationEpoch:2},second];
+ assert.equal((await repo.detail({providerId:'p1',expectedGeneration:null})).ok,false);
+ // A future epoch is never a valid snapshot, even if a query falsely claims the current generation.
+ publicRows=[{...first,publicationEpoch:3},second];
+ assert.equal((await repo.discover({category:'',locality:'',limit:2,cursor:null})).ok,false);
+ // Withdrawal still removes the row and invalidates old generation links.
+ generation=3;publicRows=[second];
+ assert.equal((await repo.detail({providerId:'p1',expectedGeneration:null})).ok,false);
+});
+test('generation change during older-row read still fails closed',async()=>{
+ let generation=2;
+ const deps={...fixture(),getPublicationEpoch:()=>generation,query:()=>{generation=3;return {publicationEpoch:2,rows:[row()]};}};
+ assert.equal((await createPublicProviderRepository(deps).detail({providerId:'p1',expectedGeneration:null})).ok,false);
+});
