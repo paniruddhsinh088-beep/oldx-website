@@ -55,7 +55,7 @@ still required before activation. Exported SVG fonts depend on viewer support;
 OS downloads after handoff cannot be cancelled by this preview.
 
 Next safe user-facing task: a synthetic provider enquiry inbox/status rehearsal
-using the existing state-transition contracts and strictly sample fixtures; no
+following the documented enquiry/privacy requirements with strictly sample fixtures; no
 real identity, send, completion/review grants or persistence. Keep policy approval
 and actual server enforcement separate.
 
@@ -102,3 +102,25 @@ were run once in this combined sweep, not repeatedly per UI task.
 not local Rules execution. No local emulator run or native Android/device testing
 is claimed. Dependency versions/overrides/lockfile were unchanged; no installation
 or unrelated advisory investigation was performed.
+
+
+## Final exact source and CI
+
+- `5fd646e`: pure bounded SVG/export and local enquiry draft models/tests.
+- `7dd058dc6492c91626bba7cb27c298e0d5d1f9d6`: localized UI integration,
+  accessible preview/export, sample buyer flow, mobile regressions and matrix/docs.
+
+The commits were pushed together normally only to `security-hardening-review`
+after fetch/ancestry and deployment-disabled configuration checks. Exact combined
+source passed all three workflows:
+- [Review safety 41420372889](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41420372889).
+- [Branch security 41420372847](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41420372847).
+- [Service emulator security 41420372893](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41420372893).
+
+These include the new offline UI/unit regressions and existing isolated Firebase
+Emulator suites. They do not prove a trusted enquiry backend, real publication,
+new enquiry Rules authorization or production readiness. Vercel metadata lists
+zero deployments for the exact source. f52bd7a, earlier Service/Store/security
+checkpoints and 37209fd remain ancestors; no main/live data/Rules/resources/cost
+changes occurred. Working tree was clean after source commits. This final evidence
+entry changes documentation only.
