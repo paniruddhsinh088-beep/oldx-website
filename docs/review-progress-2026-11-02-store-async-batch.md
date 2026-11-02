@@ -111,3 +111,18 @@ Final local related sweep after timeout/cache-lifecycle changes:
 `test:stores` **35/35**, `test:stores:browser` **19/19**,
 `test:stores:preview` **3/3**, `test:static-build` **3/3**;
 `git diff --check` passed. Existing unaffected comprehensive checks were reused.
+
+## Final exact-source verification
+
+`23c226d2822ff448aaa8854f52bb1a95949e8209` contains the bounded timeout and
+page-cache lifecycle follow-up. Exact-source
+[review-safety CI 41404106240](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41404106240)
+completed successfully, including the 35 Store unit tests, 19 Store browser flows,
+retained Service/browser/locale/security checks and actual isolated Emulator
+steps. These are isolated test results, not deployment or live-data evidence.
+
+Vercel metadata lists zero deployments for both source commits. The review-branch
+deployment-disabled setting was verified before pushing. `37209fd`, 0ab408d,
+632fe83, 910744e and earlier checkpoints remain unchanged ancestors. Branch-only
+normal pushes succeeded; the working tree was clean after the source commits.
+This final evidence entry changes documentation only.
