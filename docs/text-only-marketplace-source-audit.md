@@ -25,3 +25,12 @@ never consume this private intent as a publication grant.
 See [owner decisions](text-only-launch-owner-decisions.md) for recommended low-cost
 defaults. Cost/quota eligibility is unverified; no paid service is assumed. A working
 marketplace requires all essential journeys, not just the first public read slice.
+
+Latest reusable integration improvement: `scripts/verified-operation.mjs` supplies
+server-derived UID extraction, cancellation/deadline checkpoints, credential/error
+redaction and explicit unknown-mutation outcomes. The inactive Provider transaction
+adapter uses it with current transactional ownership/suspension and minimal atomic
+audit/idempotency contracts. It can reduce duplicated backend work for Product,
+Store and text Chat after their schemas/permissions are approved. The legacy
+Firebase Login callbacks, Product listener/posting, Store save and Chat sends were
+rechecked and left unchanged; none is newly certified live or wired to this helper.

@@ -16,16 +16,20 @@ export function prepareProviderDraftIntent(request,canonical,actorUid,{enabled=f
  return Object.freeze({operation:'save-provider-private-draft',providerId:c.providerId,ownerUid:actorUid,expectedRevision:c.revision,requestId:r.requestId,
   draft:Object.freeze({...safe.profile,services:Object.freeze(safe.profile.services),languages:Object.freeze(safe.profile.languages)})});
 }
+// Shared strict request snapshot; no credentials/canonical ownership in input.
+export function inspectProviderDraftRequest(request){
+ const input=copy(request,['requestId','expectedRevision','profile']),profile=copy(input?.profile,profileKeys);
+ if(!input||!profile||!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||input.expectedRevision===Number.MAX_SAFE_INTEGER)return null;
+ const normalized=normalizeProviderProfile(profile);if(!normalized.ok||!buildPublicProviderProfile({id:'validation',...normalized.value}).ok)return null;
+ return Object.freeze({...input,profile:Object.freeze({...profile,services:Object.freeze([...normalized.value.services]),languages:Object.freeze([...normalized.value.languages])})});
+}
 // Inject verified authentication and owner lookup. Both must be implemented by a
 // future approved trusted adapter. This port NEVER commits or publishes anything.
 export function createProviderDraftPreparation({enabled=false,authenticate,readOwnedProvider,timeoutMs=5000,schedule=setTimeout,cancel=clearTimeout}={}){
  return Object.freeze({async prepare(request,{credential,signal}={}){
   if(enabled!==true||typeof authenticate!=='function'||typeof readOwnedProvider!=='function'||signal?.aborted)return {status:'unavailable'};
-  const input=copy(request,['requestId','expectedRevision','profile']),profile=copy(input?.profile,profileKeys);
-  if(!input||!profile||!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)return {status:'unavailable'};
-  // Normalize before awaiting; later caller mutation cannot replace request fields.
-  const normalized=normalizeProviderProfile(profile);if(!normalized.ok)return {status:'unavailable'};
-  const immutable={...input,profile:{...profile,services:[...normalized.value.services],languages:[...normalized.value.languages]}};
+  const immutable=inspectProviderDraftRequest(request);if(!immutable)return {status:'unavailable'};
+  const input=immutable;
   let state={status:'idle'};
   const reader=createBoundedRead({timeoutMs,schedule,cancel,onChange:next=>{state=next;},read:async(_,context)=>{
    const identity=await authenticate(credential,context);

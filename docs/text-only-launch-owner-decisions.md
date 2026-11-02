@@ -29,3 +29,16 @@ legacy working source UI where compatible. No infrastructure for hypothetical
 10,000 concurrent users: bounded pages, required indexes, cancellation, measured
 query/read budgets and a small API suffice to start; revisit generation contention
 and per-scope publication versions only with measured traffic/latency evidence.
+
+Current blockers after inactive draft transaction implementation:
+
+| Slice | Still blocking | Recommended low-cost default / approval scope |
+| --- | --- | --- |
+| First real public read | Approved curated public schema, canonical ID/service/publication mapping, generation consistency/indexes, runtime/region/zero-cost eligibility and read IAM; actual adapter + isolated Rules acceptance | Existing-stack text-only Provider public view; no private/browser filtering, one small approved API. Owner must approve those named data/runtime/IAM choices plus staging resource/Rules/deployment actions separately. |
+| First real private draft write | All identity/runtime gates plus owner allocation, account write eligibility/suspension, private draft schema, atomic create/update/receipt/audit repository, isolation/retry/deadline policy and rate limits | One Provider per verified owner initially; owner index and opaque provider ID reserved atomically by trusted repository. Reuse existing datastore transactions if approved, no new queue/service. Owner must approve ID mapping, write policy and operation-specific IAM. |
+| Audit/idempotency and unknown outcomes | Private ledger access/retention, server commit timestamps, request-key reuse/quota, acknowledgement-loss UX | Minimal metadata audit, no profile text/credentials. Keep receipts for an explicitly approved retry window; retries use same key/content. Timeout after commit attempt is **unknown**, not rollback. No cleanup/retention schedule is activated without policy approval. |
+
+These implementations do not remove any activation gate or prove free-tier account
+eligibility. The actual SDK transaction/public-view writer is still absent; mock
+atomicity tests are not real database acceptance. No backend, secret, Rules or
+billing approval has been supplied.

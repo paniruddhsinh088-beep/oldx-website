@@ -131,6 +131,9 @@ jobs:
       - name: Check bounded public provider discovery preview
         run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-discovery:browser
 
+      - name: Verify inactive Provider draft atomic transaction boundary
+        run: npm run test:provider-draft:transaction
+
       - name: Verify loopback-only emulator test plans
         run: npm run test:emulator:guard
 
