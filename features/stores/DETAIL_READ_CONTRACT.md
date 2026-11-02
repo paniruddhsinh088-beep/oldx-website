@@ -83,3 +83,8 @@ late adapter resolution/rejection and unregisters its cancellation listener on
 settlement. This is client lifecycle cleanup, not a claim that an uncooperative
 remote operation has stopped. A future real adapter still needs approved server
 request deadlines and cancellation/retry limits.
+
+The [executable proposed authorization matrix](PUBLICATION_AUTHORIZATION_MATRIX.md)
+adds cross-document publication timelines and cursor-to-detail fixtures. Its old
+Store/new listing case deliberately records why a DTO is not freshness evidence.
+No private/moderator policy is granted by client role metadata or these tests.
