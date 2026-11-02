@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="gu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title data-i18n="store.pageTitle">OldX Store — Synthetic Preview</title>
+<link rel="stylesheet" href="./features/stores/store-preview.css"></head><body>
+<a class="skip" href="#main" data-i18n="store.skip">મુખ્ય સામગ્રી પર જાઓ</a>
+<header><div class="bar"><a class="brand" href="./service-preview.html">OldX <span data-i18n="store.brand">Store preview</span></a>
+<a href="./service-preview.html" data-i18n="store.services">સેવાના નમૂના</a></div>
+<div class="bar locale"><label for="localeSelect" data-i18n="languageLabel">ભાષા</label><select id="localeSelect"><option value="gu">ગુજરાતી</option><option value="en">English</option><option value="hi">हिन्दी</option></select><p id="localeStatus" role="status"></p></div></header>
+<main id="main" tabindex="-1">
+<p class="notice" data-i18n="store.notice">માત્ર નમૂનો · કોઈ વાસ્તવિક સ્ટોર, ખરીદી કે ડેટાબેઝ જોડાયેલ નથી.</p>
+<nav class="samples" data-i18n-aria-label="store.sampleNav"><a href="#store/demo-shop" data-i18n="store.sampleShop">નમૂના સ્ટોર</a><a href="#store/demo-empty" data-i18n="store.emptyShop">ખાલી સ્ટોરનું નમૂનું</a></nav>
+<section id="shopHeader" class="panel"><p class="eyebrow" data-i18n="store.eyebrow">સ્થાનિક સ્ટોરનું નમૂનું</p><h1 id="shopName"></h1><p id="shopCity"></p><p id="shopDescription"></p><p class="muted" data-i18n="store.contactNotice">સંપર્ક અને ખરીદી આ પ્રિવ્યૂમાં ઉપલબ્ધ નથી.</p></section>
+<section id="catalogueView"><form id="filters" class="panel" novalidate>
+<div class="fields"><div><label for="query" data-i18n="store.searchLabel">વસ્તુ શોધો</label><input id="query" aria-describedby="catalogueError" type="search" maxlength="80" data-i18n-placeholder="store.searchPlaceholder"></div>
+<div><label for="category" data-i18n="store.category">શ્રેણી</label><select id="category"><option value="all" data-i18n="store.all">બધી વસ્તુઓ</option></select></div>
+<div><label for="sort" data-i18n="store.sort">ક્રમ</label><select id="sort"><option value="newest" data-i18n="store.newest">નવી વસ્તુઓ પહેલા</option><option value="price-low" data-i18n="store.priceLow">ઓછી કિંમત પહેલા</option><option value="price-high" data-i18n="store.priceHigh">વધુ કિંમત પહેલા</option><option value="name" data-i18n="store.nameSort">નામ પ્રમાણે</option><option value="available" data-i18n="store.availableSort">ઉપલબ્ધ વસ્તુઓ પહેલા</option></select></div></div>
+<div class="actions"><label class="check"><input id="availableOnly" type="checkbox"><span data-i18n="store.availableOnly">માત્ર ઉપલબ્ધ વસ્તુઓ</span></label><button id="search" type="submit" data-i18n="store.search">શોધો</button><button id="reset" type="button" class="secondary" data-i18n="store.reset">ફરીથી બતાવો</button></div></form>
+<div class="results-head"><h2 id="resultsHeading" tabindex="-1" data-i18n="store.catalogue">વસ્તુઓ</h2><p id="resultCount" role="status"></p></div>
+<p id="catalogueError" role="alert" hidden></p><p id="emptyState" class="panel" hidden></p><div id="results" class="cards"></div>
+<nav class="pagination" data-i18n-aria-label="store.pagination"><button id="previous" type="button" disabled data-i18n="store.previous">પાછળ</button><span id="pageStatus"></span><button id="next" type="button" disabled data-i18n="store.next">આગળ</button></nav>
+<p class="muted" data-i18n="store.batchNotice">આ નમૂનાની મર્યાદિત યાદી છે, કોઈ લાઇવ સ્ટોરની સંપૂર્ણ યાદી નથી.</p></section>
+<section id="productView" class="panel" hidden><a id="backToCatalogue" href="#store/demo-shop" data-i18n="store.back">વસ્તુઓ પર પાછા જાઓ</a><h2 id="productTitle" tabindex="-1"></h2><p id="productCategory"></p><p id="productPrice" class="price"></p><p id="productAvailability"></p><p class="muted" data-i18n="store.productNotice">આ નમૂનો છે. ખરીદી, સંપર્ક અને વાસ્તવિક વસ્તુની વિગતો ઉપલબ્ધ નથી.</p></section>
+<section id="notFoundView" class="panel" hidden><h2 id="notFoundHeading" tabindex="-1" data-i18n="store.notFound">નમૂનો મળ્યો નથી</h2><p data-i18n="store.notFoundText">આ સ્ટોર કે વસ્તુની પ્રિવ્યૂ લિંક અમાન્ય છે.</p><a href="#store/demo-shop" data-i18n="store.recover">નમૂના સ્ટોર ખોલો</a></section>
+<footer><p data-i18n="store.footer">Synthetic preview only · No live Firebase reads/writes</p></footer>
+<noscript>JavaScript is required for this synthetic preview. No real store is connected.</noscript>
+</main><script type="module" src="./features/stores/store-preview.mjs"></script></body></html>

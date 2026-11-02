@@ -135,3 +135,6 @@ fix lines glob 14.0.3 and minimatch 11.0.1 are major jumps for those consumers.
 Preserve the pinned tooling until a compatible upstream update or separately
 verified migration is available. Runtime audit remains zero; do not use a forced
 major override merely to suppress the development audit report.
+
+
+Continuation: [isolated Store catalogue UI batch](review-progress-2026-11-02-store-ui-batch.md).

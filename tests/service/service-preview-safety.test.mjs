@@ -6,7 +6,7 @@ import { BROWSER_ASSETS } from '../../scripts/build-static-assets.mjs';
 const html = await readFile(new URL('../../service-preview.html', import.meta.url), 'utf8');
 const modules = await Promise.all(BROWSER_ASSETS.filter(path => path.startsWith('features/'))
   .map(path => readFile(new URL('../../' + path, import.meta.url), 'utf8')));
-const controller = modules[0];
+const controller = await readFile(new URL('../../features/service-providers/service-preview.mjs', import.meta.url), 'utf8');
 const source = [html, ...modules].join('\n');
 
 test('Service preview is prominently identified as demo-only', () => {

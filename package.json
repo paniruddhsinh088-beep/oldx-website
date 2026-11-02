@@ -34,7 +34,9 @@
     "test:static-build": "node --test scripts/build-static-assets.test.mjs",
     "test:i18n": "node --test features/i18n/*.test.mjs",
     "test:toolchain": "node --test scripts/toolchain-compat.test.mjs",
-    "test:stores": "node --test features/stores/*.test.mjs"
+    "test:stores": "node --test features/stores/*.test.mjs",
+    "test:stores:browser": "node --test tests/browser/store-preview.test.mjs",
+    "test:stores:preview": "node --test tests/stores/*.test.mjs"
   },
   "engines": {
     "node": ">=24.12.0"

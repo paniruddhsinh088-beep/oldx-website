@@ -1,8 +1,9 @@
 # Review-only Store catalogue model
 
 `store-catalogue.mjs` is an **isolated, pure in-memory display model** for a
-small, already-authorized `publicProducts` batch. It is not connected to the
-legacy Store page, Firebase, Admin, a deployment or a real seller account.
+small, already-authorized `publicProducts` batch. It now powers an [isolated synthetic catalogue UI](PREVIEW_CATALOGUE.md). It is
+not connected to the legacy Store page, Firebase, Admin, a deployment or a real
+seller account.
 
 - Accepts at most 100 input cards and displays at most 24 per local page.
 - Requires exact seller UID matching, known category IDs, safe titles and a
@@ -29,3 +30,5 @@ legacy `products` collection without a limit. This module does not fix that
 runtime behavior and must never be used to justify making legacy records public.
 
 Local standalone check: `node --test features/stores/store-catalogue.test.mjs`.
+
+Future integration remains gated by the [inactive public-data contract](PUBLIC_DATA_INTEGRATION_CONTRACT.md).

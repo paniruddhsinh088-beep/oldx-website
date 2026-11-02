@@ -1,28 +1,13 @@
 import test, { before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
-import { BROWSER_ASSETS } from '../../scripts/build-static-assets.mjs';
+import { startPreviewServer } from './preview-server.mjs';
 
-// This server deliberately exposes only the isolated preview and its pure
-// modules, never index.html, Firebase config, credentials or live integrations.
-const allowed = new Set(['/service-preview.html', ...BROWSER_ASSETS
-  .filter(path => path.startsWith('features/')).map(path => '/' + path)]);
 let server, browser, context, page, origin;
 let errors, remoteRequests, requestedPaths;
 
 before(async () => {
-  server = createServer(async (req, res) => {
-    const path = new URL(req.url, 'http://127.0.0.1').pathname;
-    if (!allowed.has(path)) { res.writeHead(404); res.end(); return; }
-    try {
-      const body = await readFile(new URL('../..' + path, import.meta.url));
-      res.setHeader('Content-Type', path.endsWith('.html') ? 'text/html; charset=utf-8' : 'text/javascript; charset=utf-8');
-      res.end(body);
-    } catch { res.writeHead(500); res.end(); }
-  });
-  await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
+  server = await startPreviewServer(['service-preview.html']);
   origin = `http://127.0.0.1:${server.address().port}`;
   browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
 });

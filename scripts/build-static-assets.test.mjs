@@ -28,6 +28,12 @@ test('homepage preview link and all transitive module imports exist in the stati
     const packaged = await files(output);
     assert.deepEqual(packaged, [...BROWSER_ASSETS].sort());
     assert.match(await readFile(join(output, 'index.html'), 'utf8'), /href="\.\/service-preview\.html"/);
+    for (const page of ['service-preview.html', 'store-preview.html']) {
+      const html = await readFile(join(output, page), 'utf8');
+      for (const [, linked] of html.matchAll(/(?:src|href)="\.\/([^"#]+)"/g)) {
+        assert.equal(packaged.includes(linked), true, `unpackaged ${page} dependency: ${linked}`);
+      }
+    }
     for (const asset of packaged.filter(name => name.endsWith('.mjs'))) {
       const source = await readFile(join(output, asset), 'utf8');
       for (const [, imported] of source.matchAll(/(?:from\s+|import\s*\(\s*)['"]([^'"]+)['"]/g)) {
