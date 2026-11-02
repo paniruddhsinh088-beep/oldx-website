@@ -103,5 +103,35 @@ expensive suite was repeated after the sweep. Exact latest command counts:
 
 The final integration command has 48 cases; Service models 191, Service browser 24,
 Admin 115 and Store browser 28. Local actual Emulator suites were not run (documented
-network-policy blocker); exact-source GitHub results are pending. `git diff --check`
+network-policy blocker); exact-source GitHub results are recorded below. `git diff --check`
 passes. Deployment remains explicitly disabled for the authorized branch.
+
+## Exact-source delivery checkpoint
+
+Executable source `1d63e326879deb528482fa4c709625559fad9ccd` passed 3/3 workflows:
+
+- [Branch security 41478030896](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41478030896)
+- [Service Provider Emulator 41478030678](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41478030678)
+- [Review safety 41478030801](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41478030801)
+
+Service runtime remains 23 cases, with the v1 case extended through the actual SDK
+repository -> verified mock-token HTTP owner bootstrap -> strict private DTO,
+current/historic counters and withdrawn-publication assertions. This is real isolated
+Firestore Emulator evidence, not real Firebase token/IAM/account acceptance. Review
+safety also passes baseline Firestore/Storage/private-chat Emulator suites. Local
+pure tests and browser results are separately listed above; no local actual Emulator
+claim. No Cloudinary API was called; media tests are mocks only.
+
+Fresh remote was unchanged at `967dd8d` before normal source push. `37209fd`,
+`58356e2`, `b0e6090`, `967dd8d` and all earlier ancestors preserved. No concurrent
+agent/automation change required reconciliation. This final evidence-only follow-up
+also completes photo audit notes for local image-enhancement previews, external
+static images and the unused pure optional Service share-card photo field; no
+executable source changes after verified `1d63e32`.
+
+Remaining approval decisions: concrete runtime/region/commercial zero-cost eligibility,
+server identity/Auth/role/quota enforcement, v1 cloud paths/indexes and privacy/
+receipt/audit retention, then separate staging transport/Rules/data/deployment/rollback.
+Media additionally needs provider/account choice, moderation, private delivery,
+quota/retention/deletion policy and explicit secrets/settings/migration approval.
+No activation approval is inferred. HOLD/NO-GO and staging deny-all remain.

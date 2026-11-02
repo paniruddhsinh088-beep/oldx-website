@@ -136,3 +136,10 @@ approved runtime/identity/schema/role/quota/retention and deployment gates.
 Verified repository hardening: shared surface-policy lookup now rejects inherited
 prototype names (`__proto__`, `constructor`, `toString`) and non-string keys. This
 fix applies to the policy helper; it does not replace or activate legacy upload code.
+
+Additional source-only paths: `handleAiImagePreview` in `index.html` (2060 onwards)
+uses a local brightness/contrast canvas JPEG preview; it is not an external AI API,
+managed upload or alternate persisted photo pipeline. Static category/fallback images
+use third-party URLs (for example Unsplash/Flaticon), outside OLDX ownership. The pure
+`provider-share-card.mjs` model can validate an optional allowlisted Cloudinary/Storage
+URL; it neither fetches nor uploads photos and is not an activated Service photo flow.
