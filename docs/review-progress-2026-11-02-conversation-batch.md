@@ -116,3 +116,25 @@ local emulator binaries remain blocked by environment policy; CI is separate.
 `git diff --check` passed. Starting-head documentation CI 41433833880 passed.
 Fresh remote remained `32f9782` before commit; no concurrent changes required
 reconciliation. Canonical enquiry automation remains untouched.
+
+## Source checkpoint and exact-source CI
+
+Executable source: `dfcf230b876a231f0a38cb45554bc574b105e64e` — isolated Service
+conversations, shared bounded draft schema, disabled integration response adapter,
+localization, privacy/accessibility/mobile regressions and CI packaging.
+
+All exact-source GitHub workflows succeeded:
+- [Branch Security 41435453672](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41435453672)
+- [Service Providers Emulator 41435453650](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41435453650)
+- [Review safety 41435453676](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41435453676)
+
+These include existing isolated Emulator suites and new local-browser CI, not live
+Firebase authorization, integration or release acceptance. The branch deployment
+flag remained false; read-only Vercel metadata returned no deployment for this SHA.
+Fresh remote ancestry was checked before normal push; no concurrent updates or
+force push. Original `37209fd`, automation `58356e2` and latest `32f9782` remain
+ancestors. This evidence-only follow-up does not change verified executable source.
+
+Priority C was deferred to keep this coherent source batch within efficient session
+scope. Admin/Store/mobile work remains preserved and regression-tested. The next
+safe task and exact integration/owner gates above are the continuation checkpoint.
