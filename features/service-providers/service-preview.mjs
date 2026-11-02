@@ -1,3 +1,4 @@
+import {mountProviderUiIntegration} from './ui-integration-dom.mjs';
 import { inspectSampleEnquiry } from './preview-enquiry.mjs';
 import { demoProviders } from "./preview-fixtures.mjs";
 import { buildPublicProviderProfile } from "./provider-public-profile.mjs";
@@ -17,13 +18,14 @@ import {
 } from "../i18n/preference.mjs";
 
 // Only explicitly projected synthetic public data reaches rendering/share state.
-const publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
+let publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
   id: provider.id, displayName: provider.name, city: provider.city,
   serviceArea: provider.area, description: provider.about, services: provider.services,
   available: provider.available !== false, experienceYears: provider.experience
 })).filter(result => result.ok).map(result => result.profile);
 const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.icon]));
 
+let providerIntegration=null,providerIntegrationEnabled=false;
 let translator = createTranslator("en");
 const t = (key, params) => translator.t(key, params);
 let currentProfile = null;
@@ -327,6 +329,7 @@ async function selectLocale(requested, persist = false) {
   if (feedbackKey) $("profileShareStatus").textContent = t(feedbackKey);
   renderSampleEnquiry();
   updatePreview();
+  providerIntegration?.render();
 }
 $("localeSelect").addEventListener("change", (event) =>
   selectLocale(event.target.value, true),
@@ -356,8 +359,10 @@ function syncRoute({ focus = true, restoreResult = false, force = false } = {}) 
   if (!force && renderedHash === window.location.hash) return;
   const previous = renderedHash;
   renderedHash = window.location.hash; routeRevision++;
-  clearProfile();
+  providerIntegration?.model.changeScope();
+  clearProfile(providerIntegrationEnabled);
   const route = parseServicePreviewRoute(renderedHash);
+  if(providerIntegrationEnabled&&route.view==='profile'){show("profileView",false,focus);providerIntegration.model.detail({providerId:route.providerId,expectedGeneration:null});return;}
   if (route.view === "profile" && openProfile(route.providerId, focus)) return;
   if (route.view === "browse") show("browseView", restoreResult || previous?.startsWith("#provider/"), focus);
   else if (route.view === "provider") show("providerView", false, focus);
@@ -421,5 +426,20 @@ $('cancelSampleEnquiry').addEventListener('click',()=>{resetSampleEnquiry();$('e
 window.addEventListener('pagehide',()=>resetSampleEnquiry());
 window.addEventListener('pageshow',event=>{if(event.persisted)resetSampleEnquiry();});
 
+// Future approved host supplies ports/session; default mounts disabled only.
+export function configureProviderIntegration(options={}){
+ providerIntegrationEnabled=options.enabled===true;
+ providerIntegration=mountProviderUiIntegration({...options,root:document,translate:t,
+  readProfile:()=>{validated=true;const inspected=updatePreview();return inspected.ok?inspected.profile:null;},
+  clearPrivateForm:()=>{$('providerForm').reset();validated=false;updatePreview();},
+  onPublicState:state=>{
+   clearProfile(true);
+   publicProfiles=state.status==='ready'?(state.items??[state.profile]):[];
+   if(state.status==='ready'&&state.profile){openProfile(state.profile.id,false);return;}
+   render();if(state.status!=='ready'){const message=document.createElement('p');message.setAttribute('role','status');message.textContent=t('integration.read_'+state.status);$('results').replaceChildren(message);$('profileShareStatus').textContent=message.textContent;}
+  }
+ });return providerIntegration;
+}
+configureProviderIntegration();
 await selectLocale(readLocalePreference(preferenceStorage(), "gu"));
 syncRoute({ focus: false });

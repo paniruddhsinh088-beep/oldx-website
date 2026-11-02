@@ -223,10 +223,10 @@ test('isolated SDK Provider draft/publication transactions persist atomically wi
   await sdk.setDoc(sdk.doc(db,schema.generations,'current'),{value:0});
   const repository=createIsolatedFirebaseProviderRepository({enabled:true,firestore:db,sdk,schema});
   const authenticate=()=>({uid:'sdk-owner'}),draft=createProviderDraftTransaction({enabled:true,authenticate,repository,providerIdForActor:()=> 'sdk-provider'});
-  const profile={displayName:'SDK sample',city:'Sample City',serviceArea:'Sample area',services:['Plumber'],available:true,experienceYears:2,description:'Sample only',languages:['en']};
+  const profile={displayName:'SDK sample',city:'Sample City',serviceArea:'Sample area',services:['Plumber'],available:true,experienceYears:null,description:'Sample only',languages:['en']};
   const input={requestId:'sdk-draft',expectedRevision:0,profile};
   const results=await Promise.all([draft.save(input),draft.save(input)]);assert.equal(results.filter(r=>r.status==='saved').length,1);assert.equal(results.filter(r=>r.status==='replayed').length,1);
-  const privateDoc=await sdk.getDoc(sdk.doc(db,schema.drafts,'sdk-provider'));assert.equal(privateDoc.data().revision,1);assert.ok(privateDoc.data().committedAt);
+  const privateDoc=await sdk.getDoc(sdk.doc(db,schema.drafts,'sdk-provider'));assert.equal(privateDoc.data().revision,1);assert.equal(privateDoc.data().profile.experienceYears,null);assert.ok(privateDoc.data().committedAt);
   const publication=createProviderPublicationTransaction({enabled:true,authenticate,repository,catalog:{services:['Plumber'],localities:[{city:'Sample City',serviceArea:'Sample area'}]}});
   const publish={requestId:'sdk-publish',expectedRevision:1,expectedGeneration:0,action:'publish'};
   assert.equal((await publication.execute(publish)).generation,1);

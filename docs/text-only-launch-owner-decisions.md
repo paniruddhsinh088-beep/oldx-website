@@ -66,3 +66,12 @@ public fields/indexes plus canonical generation consistency and bounded read bud
 Recommended default remains one same-origin text-only transport, existing Auth/data
 stack, no paid service, no private collection browser reads. Repository source and
 isolated tests do not authorize any binding, IAM/secret setup, Rules or deployment.
+
+For one first staging Service journey, approve the concrete schema/ID/index mapping,
+actual runtime/region/verified zero-cost eligibility and server identity/token verifier,
+member/provider promotion and independent publication consent, durable quota/ingress
+thresholds, retention and read/revocation budget. Then separately approve synthetic
+staging Rules/transport/data acceptance and rollback. Recommended minimum: one
+same-origin text-only private draft -> reviewed publication -> bounded public profile
+journey on the existing stack; no uploads/SMS/reviews/new infrastructure. Existing
+UI port bindings do not authorize connecting live services or deploying anything.

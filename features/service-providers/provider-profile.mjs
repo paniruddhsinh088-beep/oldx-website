@@ -37,7 +37,7 @@ export function normalizeProviderProfile(input) {
   }
 
   const years = input.experienceYears;
-  if (years !== undefined && (!Number.isInteger(years) || years < 0 || years > 80)) {
+  if (years !== undefined && years !== null && (!Number.isInteger(years) || years < 0 || years > 80)) {
     return { ok: false, code: "INVALID_PROFILE" };
   }
   if (input.available !== undefined && typeof input.available !== "boolean") {
