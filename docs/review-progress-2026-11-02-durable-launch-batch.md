@@ -104,3 +104,34 @@ provider/visibility; separately approve staging Rules/resources/IAM/secrets/tran
 rollback/deployment. No operational approval inferred from code/CI. No live Firebase/
 Cloudinary, Rules/index deployment, IAM/secrets, billing, Vercel changes, staging/live
 deployment, migration, main/merge or Full Reset. HOLD/NO-GO and deny-all remain.
+
+## Exact-source CI / delivery
+
+Executable source `1b2f20c8e10008da06e658133b5d42ea93978478` passed 3/3 workflows:
+
+- [Branch security 41485684216](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41485684216)
+- [Service Provider Emulator 41485684014](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41485684014)
+- [Review safety 41485684204](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41485684204)
+
+The actual SDK/candidate Rules runtime suite is now 26 cases (23 existing + three
+shared durable scenarios). Enquiry creation/cancellation/private snapshots, the actual
+withdrawal-after-staging conflict, Product/Store split/owner/publication/pagination,
+and parent-scoped durable private photo references passed in the isolated Emulator.
+Direct guest reads remain denied under unchanged Rules. Review safety passes the
+67-case integration command and existing baseline Firestore/Storage/private Chat
+Emulator suites; local 34-script and browser counts above are separate evidence.
+No real token/IAM/account/provider acceptance is inferred.
+
+Fresh remote stayed `99fe4f5` before normal source push; subsequent reconciliation
+verified the pushed source head before this documentation-only follow-up. Original
+`37209fd`, canonical automation `58356e2`, `aaae4661`, `99fe4f5` and all earlier
+ancestors are preserved. No overwrite, force-push, merge, deployment or provider
+change. The unchanged branch deployment flag remains false. This final checkpoint
+changes no executable source after verified `1b2f20c`.
+
+Remaining repository implementation: durable upload quota/attempt/delete/outcome
+journal and actual trusted processing/delivery interfaces, public-media approval/
+projection, complete buyer/provider/Product/Store UI ports, remaining whole-app
+translations and real-device/operational acceptance. Owner decisions and staging/
+release gates remain as recorded; Nov 7 is conditional, all full-marketplace
+requirements remain, and HOLD/NO-GO remains in force.
