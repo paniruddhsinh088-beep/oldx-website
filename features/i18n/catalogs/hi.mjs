@@ -275,4 +275,5 @@ export default Object.freeze({
   "inbox.state.declined": "अस्वीकृत नमूना",
   "inbox.state.cancelled": "रद्द नमूना",
   "inbox.replyError": "व्यक्तिगत जानकारी या मार्कअप के बिना 400 अक्षरों तक सामान्य नमूना पाठ लिखें।",
+  "inbox.state.disputed": "विवादित नमूना",
 });

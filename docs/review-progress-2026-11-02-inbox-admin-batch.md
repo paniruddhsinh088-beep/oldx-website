@@ -5,8 +5,9 @@
 Read AGENTS.md, Store/Service roadmaps/feature/privacy contracts, release security
 report, latest feature matrix and card/enquiry progress. Clean authorized branch
 `b7e2388` matched freshly fetched remote; exact starting-head CI 41420959302 passed.
-Preserved 5fd646e, 7dd058d, b7e2388 and earlier checkpoints. No concurrent work or
-completed inbox implementation was found.
+Preserved 5fd646e, 7dd058d, b7e2388 and earlier checkpoints. At that initial check no concurrent work or
+completed inbox implementation was found; a later pre-push check detected the
+automation model described in the synchronization section below.
 
 ## Provider enquiry-management rehearsal
 
@@ -16,7 +17,7 @@ bounded status/service filters, detail view, private local reply preview and
 accessible navigation. No real incoming buyer form/message is connected.
 
 States: new, viewed, accepted, in-progress, completion-requested, declined,
-cancelled, plus completed buyer-confirmed seed examples. Provider can only request
+cancelled and disputed, plus completed buyer-confirmed seed examples. Provider can only request
 completion; the UI cannot confirm as buyer or grant reviews. The pure proposed
 matrix tests linked buyer confirmation, other participant/guest/admin denial,
 revision/state consistency, stale/replayed changes, invalid IDs/services/text,
@@ -103,3 +104,27 @@ All 30 available non-emulator commands passed in one combined sweep.
 `git diff --check` passed. Policy/source checks are not actual local Rules
 execution. No dependencies, versions or lockfile were changed; no installs or
 unrelated advisory investigations were performed. Exact source CI follows below.
+
+
+## Concurrent automation synchronization
+
+The pre-push ancestry check stopped the push: remote had advanced to
+`58356e227af79332e24fcd7a20d5bbccdf2132c9`, a pure inbox model and six tests.
+Preserved both histories with a local branch merge (no PR merge or force push).
+Kept the remote `preview-inbox.mjs` code and original tests unchanged, moved the
+DOM controller to `preview-inbox-controller.mjs`, and adapted the scoped private
+model to reuse its validator and domain transitions. No parallel transition
+policy overrides it: provider cancellation is absent; linked buyer cancellation,
+dispute and confirmation follow the canonical model. Viewed is local UI metadata.
+
+After reconciliation, focused Service/model, inbox browser, source/privacy,
+packaging and catalog checks passed. The earlier 30-command sweep remains local
+evidence for unchanged Admin/Store/Chat paths; merged exact-source CI is required
+for the final combined tree. No previously completed checkpoint was discarded.
+
+Merged verification: Service units **163/163** (including automation's unchanged
+six tests), inbox browser **7/7**, retained Service browser **20/20**, Service
+source/privacy **11/11**, static packaging **3/3**, locale catalogs **11/11**.
+The canonical remote model's Git blob hash matches the preserved file exactly.
+Admin **114/114**, Store **81/81** and Store browser **28/28** remain the unchanged
+paths from the earlier comprehensive sweep. New exact-source CI covers the merge.

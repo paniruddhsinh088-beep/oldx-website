@@ -1,25 +1,29 @@
+import {inspectSampleProviderInbox,rehearseSampleEnquiryTransition} from './preview-inbox.mjs';
 import { inspectSampleEnquiry } from './preview-enquiry.mjs';
-export const SAMPLE_ENQUIRY_STATES=Object.freeze(['new','viewed','accepted','in-progress','completion-requested','completed','declined','cancelled']);
+export const SAMPLE_ENQUIRY_STATES=Object.freeze(['new','viewed','accepted','in-progress','completion-requested','completed','declined','cancelled','disputed']);
 const ID=/^[A-Za-z0-9_-]{1,100}$/;
 const plain=v=>v!==null && typeof v==='object' && !Array.isArray(v) && Object.getPrototypeOf(v)===Object.prototype;
 export const isSampleReply=v=>typeof v==='string' && v.length<=400 && !/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/u.test(v);
 const fail=()=>({ok:false,code:'SAMPLE_UNAVAILABLE'});
 const providerActions={
   view:['new'],accept:['new','viewed'],decline:['new','viewed'],start:['accepted'],
-  'request-completion':['in-progress'],cancel:['new','viewed','accepted','in-progress','completion-requested'],
+  'request-completion':['in-progress'],
   reply:['new','viewed','accepted','in-progress','completion-requested']
 };
 export const SAMPLE_PROVIDER_ACTIONS=Object.freeze(Object.fromEntries(Object.entries(providerActions).map(([key,states])=>[key,Object.freeze(states)])));
-const targets={view:'viewed',accept:'accepted',decline:'declined',start:'in-progress','request-completion':'completion-requested',cancel:'cancelled','confirm-completion':'completed'};
+const targets={view:'viewed',accept:'accepted',decline:'declined',start:'in-progress','request-completion':'completion-requested',cancel:'cancelled','confirm-completion':'completed',dispute:'disputed'};
+const remoteStatus=status=>({viewed:'new','in-progress':'in_progress','completion-requested':'completion_requested',completed:'completed_confirmed'}[status]??status);
+const remoteRow=(row,index=0)=>({requestId:row.id,providerId:row.providerId,service:row.service,summary:'Sample enquiry only',timing:'flexible',status:remoteStatus(row.status),createdOrder:index});
 function validContext(context){
  return plain(context) && plain(context.provider) && context.provider.published===true && typeof context.provider.id==='string' && ID.test(context.provider.id) && Array.isArray(context.provider.services) && context.provider.services.length>0 && context.provider.services.length<=12 &&
-  Array.isArray(context.records) && context.records.length<=24 && new Set(context.records.map(r=>r?.id)).size===context.records.length &&
+  Array.isArray(context.records) && context.records.length<=20 && new Set(context.records.map(r=>r?.id)).size===context.records.length &&
   Array.from(context.records).every(r=>plain(r) && Object.keys(r).sort().join(',')==='buyerConfirmed,buyerId,id,note,providerId,reply,revision,service,status' &&
     typeof r.id==='string' && ID.test(r.id) && typeof r.buyerId==='string' && ID.test(r.buyerId) &&
     r.providerId===context.provider.id && SAMPLE_ENQUIRY_STATES.includes(r.status) &&
     Number.isSafeInteger(r.revision) && r.revision>=0 && typeof r.buyerConfirmed==='boolean' &&
     r.buyerConfirmed===(r.status==='completed') && isSampleReply(r.reply) &&
-    inspectSampleEnquiry(context.provider,{service:r.service,description:r.note,timing:'flexible'}).ok);
+    inspectSampleEnquiry(context.provider,{service:r.service,description:r.note,timing:'flexible'}).ok) &&
+  inspectSampleProviderInbox(context.provider,context.records.map(remoteRow),{limit:20}).ok;
 }
 export function buildSampleInbox(context,actor,{status='all',service='all'}={}){
  if(!validContext(context) || actor?.role!=='provider' || actor.id!==context.provider.id ||
@@ -42,8 +46,9 @@ export function changeSampleEnquiry(context,actor,input){
  if(input.revision!==row.revision || row.revision===Number.MAX_SAFE_INTEGER)return {ok:false,code:'STALE_SAMPLE'};
  let allowed=false;
  if(actor.role==='provider'&&actor.id===row.providerId && Object.hasOwn(SAMPLE_PROVIDER_ACTIONS,input.action))allowed=SAMPLE_PROVIDER_ACTIONS[input.action].includes(row.status);
- if(actor.role==='buyer'&&actor.id===row.buyerId)allowed=input.action==='confirm-completion'&&row.status==='completion-requested'||input.action==='cancel'&&['new','viewed','accepted'].includes(row.status);
+ if(actor.role==='buyer'&&actor.id===row.buyerId)allowed=input.action==='confirm-completion'&&row.status==='completion-requested'||input.action==='cancel'&&['new','viewed','accepted','in-progress'].includes(row.status)||input.action==='dispute'&&['in-progress','completion-requested'].includes(row.status);
  if(!allowed || input.action==='reply'&&!isSampleReply(input.reply))return fail();
+ if(!['view','reply'].includes(input.action) && !rehearseSampleEnquiryTransition(context.provider,remoteRow(row),{actor:actor.role,nextStatus:remoteStatus(targets[input.action])}).ok)return fail();
  const changed={...row,revision:row.revision+1};
  if(input.action==='reply')changed.reply=input.reply;
  else changed.status=targets[input.action];

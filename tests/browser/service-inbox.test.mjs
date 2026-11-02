@@ -2,7 +2,7 @@ import test,{before,after,beforeEach,afterEach} from 'node:test';import assert f
 let server,browser,page,context,origin,errors,remote;
 before(async()=>{server=await startPreviewServer(['service-inbox-preview.html','service-preview.html']);origin=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});});
 after(async()=>{await browser?.close();if(server)await new Promise(resolve=>server.close(resolve));});
-beforeEach(async()=>{errors=[];remote=[];context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){remote.push(route.request().url());return route.abort();}return route.continue();});page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/service-inbox-preview.html');await page.waitForFunction(()=>document.querySelectorAll('#inboxRows a').length===8);});
+beforeEach(async()=>{errors=[];remote=[];context=await browser.newContext({viewport:{width:390,height:844},reducedMotion:'reduce'});await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){remote.push(route.request().url());return route.abort();}return route.continue();});page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin+'/service-inbox-preview.html');await page.waitForFunction(()=>document.querySelectorAll('#inboxRows a').length===9);});
 afterEach(async()=>{await context?.close();assert.deepEqual(errors,[]);assert.deepEqual(remote,[]);});
 async function language(code){await page.locator('#localeSelect').selectOption(code);await page.waitForFunction(code=>document.documentElement.lang===code,code);}
 async function detail(id='p1-sample-1'){await page.evaluate(id=>{location.hash='#inbox/p1/enquiry/'+id;},id);await page.waitForFunction(()=>!document.querySelector('#inboxDetail').hidden);}
@@ -17,7 +17,7 @@ test('provider rehearses viewed/accepted/work/completion-requested without confi
  for(const action of ['view','accept','start','request-completion'])await page.locator(`[data-action="${action}"]`).click();
  const gu=(await import('../../features/i18n/catalogs/gu.mjs')).default;assert.equal(await page.locator('#detailStatus').textContent(),gu['inbox.state.completion_requested']);
  assert.equal(await page.locator('[data-action="confirm-completion"]').count(),0);
- await page.locator('[data-action="cancel"]').click();assert.equal(await page.locator('#detailStatus').textContent(),gu['inbox.state.cancelled']);assert.equal(await page.locator('#previewReply').isDisabled(),true);
+ assert.equal(await page.locator('[data-action="cancel"]').count(),0);await page.locator('#inboxBack').click();await page.waitForFunction(()=>!document.querySelector('#inboxList').hidden);await page.locator('#inboxStatus').selectOption('cancelled');await page.locator('#inboxRows a').first().click();await page.waitForFunction(()=>!document.querySelector('#inboxDetail').hidden);assert.equal(await page.locator('#detailStatus').textContent(),gu['inbox.state.cancelled']);assert.equal(await page.locator('#previewReply').isDisabled(),true);
 });
 test('private local reply survives locale only, is absent from list and clears across provider scope',async()=>{
  await detail();const note=await page.locator('#detailNote').textContent();await page.locator('#inboxReply').fill('PRIVATE SAMPLE reply');

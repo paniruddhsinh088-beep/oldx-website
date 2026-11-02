@@ -273,4 +273,5 @@ export default Object.freeze({
   "inbox.state.declined": "Declined sample",
   "inbox.state.cancelled": "Cancelled sample",
   "inbox.replyError": "Use up to 400 characters of plain sample text, without markup or personal information.",
+  "inbox.state.disputed": "Disputed sample",
 });

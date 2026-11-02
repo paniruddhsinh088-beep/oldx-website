@@ -1,7 +1,7 @@
 # Synthetic provider inbox and inactive enforcement proposal
 
 `service-inbox-preview.html` is a separate local rehearsal linked from Services.
-It selects authored sample providers and at most 24 in-memory sample records.
+It selects authored sample providers and at most 20 in-memory sample records.
 Selection is explicitly not login. Seed notes are generic authored fixtures,
 not real buyer information. No buyer form is secretly submitted to this page.
 
@@ -22,11 +22,11 @@ in this demo is synthetic context, never a trusted identity or a permission gran
 | Proposed caller | Scoped detail | Proposed actions |
 | --- | --- | --- |
 | Guest / unknown buyer / other provider | Denied | None |
-| Linked provider | Own provider + service only | New → viewed/accepted/declined/cancelled; viewed → accepted/declined/cancelled; accepted → in-progress/cancelled; in-progress → completion-requested/cancelled; pending completion → cancelled |
-| Linked buyer | Own enquiry only | Cancel new/viewed/accepted; confirm own completion-requested → completed |
+| Linked provider | Own provider + service only | New → local viewed marker/accepted/declined; viewed → accepted/declined; accepted → in-progress; in-progress → completion-requested |
+| Linked buyer | Own enquiry only | Cancel new/viewed/accepted/in-progress; dispute in-progress/pending completion; confirm own pending completion → completed |
 | Admin/support | Denied pending approved support policy | No automatic override |
 
-Provider reply preview is available only in nonterminal states. Completed,
+Provider reply preview is available only in nonterminal states. Completed, disputed,
 declined and cancelled are terminal in this demo. Expected revision must match;
 stale/replayed mutations, identity/provider mismatches, malformed records,
 unsupported service/status, oversized/unsafe text and withdrawn contexts fail
@@ -58,3 +58,16 @@ support identities; direct get/list, forged IDs/roles, stale concurrent mutation
 withdrawal, cancellation, confirmation, private-field leakage, revocation and
 migration compatibility. Staging deny-all and all live/backend/deployment gates
 remain. This page adds no schema, real enquiry, contact, persistence or API.
+
+
+## Concurrent model integration
+
+Remote automation commit `58356e2` added the pure `preview-inbox.mjs` model during
+this session. That file and its six original tests are preserved unchanged.
+`preview-inbox-controller.mjs` is now the DOM controller; `preview-inbox-model.mjs`
+is a private-detail/reply/revision adapter that reuses the remote scope validator
+and delegates domain transitions to its existing function. Viewed is a local UI
+read marker mapped to canonical new, and names such as in-progress map to the
+canonical underscore states. The UI does not add provider cancellation; cancelled
+and completed examples are buyer-state fixtures. Disputed is included as a sample.
+Provider switching/reload re-seeds fictional examples, not persisted job history.

@@ -4,7 +4,7 @@ import {createSampleInbox} from './preview-inbox-fixtures.mjs';
 const actor={role:'provider',id:'p1'};
 const request=(row,action)=>({providerId:row.providerId,id:row.id,revision:row.revision,action});
 test('inbox summaries preserve provider/service separation without notes, replies or buyer IDs',()=>{
- const context=createSampleInbox('p1');assert.equal(buildSampleInbox(context,actor).items.length,8);
+ const context=createSampleInbox('p1');assert.equal(buildSampleInbox(context,actor).items.length,9);
  const result=buildSampleInbox(context,actor,{status:'new'});assert.equal(result.items.length,1);
  assert.deepEqual(Object.keys(result.items[0]).sort(),['id','service','status','revision'].sort());
  assert.ok(buildSampleInbox(context,actor,{service:context.provider.services[0]}).items.every(r=>r.service===context.provider.services[0]));
@@ -38,7 +38,7 @@ test('local replies are bounded, private detail only, immutable and invalid on c
  const context=createSampleInbox('p1'),row=context.records[0];const input={...request(row,'reply'),reply:'PRIVATE SAMPLE reply'};
  const next=changeSampleEnquiry(context,actor,input);assert.equal(next.ok,true);assert.equal(context.records[0].reply,'');
  assert.equal(JSON.stringify(buildSampleInbox(next.context,actor)).includes('PRIVATE'),false);
- const cancelled=changeSampleEnquiry(next.context,actor,{...request(next.context.records[0],'cancel')});
+ const cancelled=changeSampleEnquiry(next.context,{role:'buyer',id:row.buyerId},{...request(next.context.records[0],'cancel')});
  assert.equal(changeSampleEnquiry(cancelled.context,actor,{...request(cancelled.context.records[0],'reply'),reply:'text'}).ok,false);
  for(const reply of ['<script>','x'.repeat(401),'bad\u0085'])assert.equal(changeSampleEnquiry(context,actor,{...input,reply}).ok,false);
 });
@@ -51,4 +51,13 @@ test('malformed or withdrawn contexts and inconsistent completion flags fail clo
  const withdrawn={...context,provider:{...context.provider,published:false}};assert.equal(changeSampleEnquiry(withdrawn,actor,request(row,'accept')).ok,false);
  const saturated={...context,records:[{...row,revision:Number.MAX_SAFE_INTEGER}]};assert.equal(changeSampleEnquiry(saturated,actor,request(saturated.records[0],'accept')).ok,false);
  assert.ok(Object.values(SAMPLE_PROVIDER_ACTIONS).every(Object.isFrozen));
+});
+
+test('UI adapter delegates canonical buyer cancellation/dispute and rejects provider cancellation',()=>{
+ const context=createSampleInbox('p1'),row=context.records.find(r=>r.status==='in-progress');
+ assert.equal(changeSampleEnquiry(context,actor,request(row,'cancel')).ok,false);
+ for(const action of ['cancel','dispute']){
+  const changed=changeSampleEnquiry(context,{role:'buyer',id:row.buyerId},request(row,action));assert.equal(changed.ok,true);
+  assert.equal(changed.context.records.find(r=>r.id===row.id).status,action==='cancel'?'cancelled':'disputed');
+ }
 });

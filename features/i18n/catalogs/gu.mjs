@@ -275,4 +275,5 @@ export default Object.freeze({
   "inbox.state.declined": "નકારેલો નમૂનો",
   "inbox.state.cancelled": "રદ કરેલો નમૂનો",
   "inbox.replyError": "વ્યક્તિગત માહિતી અથવા માર્કઅપ વિના 400 અક્ષર સુધીનું સાદું નમૂનાનું લખાણ લખો.",
+  "inbox.state.disputed": "વિવાદિત નમૂનો",
 });
