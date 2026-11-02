@@ -63,3 +63,29 @@ System Noto Gujarati/Devanagari fallbacks are named in CSS; no font API or new
 remote font download was added. Native shaping/terminology review, full app string
 inventory, offline application caching, first-launch/settings integration and
 owner-controlled private preference sync remain outstanding. Nothing is deployed.
+
+
+## First-launch language selection (isolated sample only)
+
+`language-preview.html` demonstrates an accessible first-launch language picker
+for Gujarati, English and Hindi. It is deliberately **not connected to the
+main OLDX app, authentication, account profile, or any Firebase service**.
+The `first-launch.mjs` controller checks only the existing allowlisted local
+preference key, never infers a language from IP/GPS/browser settings, and
+writes only after an explicit selection. It restores a valid previous choice
+without rewriting storage. Storage denial keeps the selected language usable
+for the current page and displays an honest warning.
+
+Async locale loading uses a revision guard so late responses cannot replace
+a newer choice; page navigation invalidates pending selections. A failed
+catalog load does not save a new choice. The page uses the existing text-only
+`applyCatalog` renderer and locally bundled catalogs, with native-script
+radio labels, keyboard controls, visible focus and a live status region.
+No contact details, account identifiers, server calls or remote assets exist
+in this sample.
+
+`npm run test:i18n` includes model and source/translation checks.
+`npm run test:static-build` verifies the sample is included in the
+explicit browser-asset allowlist. Browser/device QA, native-speaker review,
+actual pre-login wiring, Profile/Settings switching and private account sync
+remain future gates. This preview does **not** make the main site multilingual.
