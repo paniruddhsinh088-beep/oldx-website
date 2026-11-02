@@ -33,3 +33,5 @@ Checks: `npm run test:service-providers`, `npm run test:service-preview`,
 `npm run test:static-build`.
 
 Profiles also offer a [local sample buyer-enquiry rehearsal](SAMPLE_ENQUIRY_PREVIEW.md), with no sending, booking, contact or persistence.
+
+The Services navigation now links to a [separate synthetic provider inbox](ENQUIRY_INBOX_CONTRACT.md). It uses authored fixtures, never real incoming messages.

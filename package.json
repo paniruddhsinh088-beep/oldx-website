@@ -36,7 +36,8 @@
     "test:toolchain": "node --test scripts/toolchain-compat.test.mjs",
     "test:stores": "node --test features/stores/*.test.mjs",
     "test:stores:browser": "node --test tests/browser/store-preview.test.mjs",
-    "test:stores:preview": "node --test tests/stores/*.test.mjs"
+    "test:stores:preview": "node --test tests/stores/*.test.mjs",
+    "test:service-inbox:browser": "node --test tests/browser/service-inbox.test.mjs"
   },
   "engines": {
     "node": ">=24.12.0"
