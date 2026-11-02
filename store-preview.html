@@ -18,7 +18,9 @@
 <p class="muted" data-i18n="store.shareNotice">આ લિંક માત્ર નમૂનાનો સ્ટોર ખોલે છે. વાસ્તવિક સ્ટોર જાહેર થયો નથી.</p>
 <label for="storeShareLink" data-i18n="store.shareLinkLabel">નમૂનાના સ્ટોરની લિંક</label><input id="storeShareLink" type="url" readonly>
 <div class="actions"><button id="copyStoreLink" type="button" disabled data-i18n="store.copyLink">લિંક કૉપી કરો</button><button id="shareStoreLink" type="button" disabled data-i18n="store.shareLink">નમૂનો શેર કરો</button></div>
-<p id="storeShareStatus" class="muted" role="status"></p></div></section>
+<p id="storeShareStatus" class="muted" role="status"></p><h2 data-i18n="store.cardHeading">નમૂનાનું શેર કાર્ડ</h2><p class="muted" data-i18n="store.cardNotice">ફોટા વગરનું નમૂનાનું કાર્ડ. વાસ્તવિક સ્ટોર માટે નથી.</p>
+<figure id="storeCardPreview" class="store-share-card" aria-labelledby="cardName" aria-describedby="cardBadge cardCaption" hidden><strong id="cardBadge"></strong><h3 id="cardName"></h3><p id="cardCategory"></p><p id="cardCity"></p><p id="cardCaption"></p><p id="cardLink" class="card-link"></p></figure>
+<div class="actions"><button id="exportStoreCard" type="button" disabled data-i18n="store.cardExport">SVG ડાઉનલોડ કરો</button><button id="cancelStoreCard" type="button" disabled data-i18n="store.cardCancel">નિકાસ રદ કરો</button></div><p id="storeCardStatus" role="status" class="muted"></p></div></section>
 <section id="catalogueView"><form id="filters" class="panel" novalidate>
 <div class="fields"><div><label for="query" data-i18n="store.searchLabel">વસ્તુ શોધો</label><input id="query" aria-describedby="catalogueError" type="search" maxlength="80" data-i18n-placeholder="store.searchPlaceholder"></div>
 <div><label for="category" data-i18n="store.category">શ્રેણી</label><select id="category"><option value="all" data-i18n="store.all">બધી વસ્તુઓ</option></select></div>

@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url';
 // files other than the generated browser config, or server moderation modules.
 export const BROWSER_ASSETS = Object.freeze([
   'index.html', 'admin.html', 'service-preview.html', 'store-preview.html', 'features/stores/store-preview.css', 'firebase-config-guard.js', 'firebase-env.js',
-  ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections', 'provider-public-profile', 'provider-public-card', 'preview-route', 'provider-mobile-share', 'provider-share']
+  ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections', 'provider-public-profile', 'provider-public-card', 'preview-route', 'provider-mobile-share', 'provider-share', 'preview-enquiry']
     .map(name => `features/service-providers/${name}.mjs`),
-  ...['store-preview', 'store-catalogue', 'preview-fixtures', 'preview-route', 'preview-load', 'preview-adapter', 'preview-detail', 'preview-share']
+  ...['store-preview', 'store-catalogue', 'preview-fixtures', 'preview-route', 'preview-load', 'preview-adapter', 'preview-detail', 'preview-share', 'preview-card']
     .map(name => `features/stores/${name}.mjs`),
   ...['i18n', 'dom', 'preference', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
     .map(name => `features/i18n/${name}.mjs`)

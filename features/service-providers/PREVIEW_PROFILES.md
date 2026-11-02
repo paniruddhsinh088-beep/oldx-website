@@ -31,3 +31,5 @@ production route.
 Checks: `npm run test:service-providers`, `npm run test:service-preview`,
 `npm run test:service-preview:browser`, `npm run test:i18n` and
 `npm run test:static-build`.
+
+Profiles also offer a [local sample buyer-enquiry rehearsal](SAMPLE_ENQUIRY_PREVIEW.md), with no sending, booking, contact or persistence.

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import test, { before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright-core';
@@ -232,7 +233,7 @@ async function controlledAdapter() {
               listing:kind==='removed'?null:{...row,id:kind==='wrong-id'?'other-product':row?.id,
                 sellerUid:kind==='wrong-owner'?'other-seller':row?.sellerUid,publicationStatus:kind==='listing-revoked'?'suspended':'published'}});
           }
-          resolve({status:'published',store:sampleStores.find(s=>s.id===scope.storeUid),
+          resolve({status:'published',store:{...sampleStores.find(s=>s.id===scope.storeUid),...(kind==='long-name'?{name:'W'.repeat(120)}:{})},
             records:sampleListings.filter(r=>r.sellerUid===scope.storeUid && !(kind==='removed' && r.id===scope.productId)).map((r,i)=>({...r,publicationStatus:kind==='listing-revoked' && i===0?'suspended':'published'}))});
         }
       }));
@@ -551,4 +552,66 @@ test('Store sharing is disabled during loading/withdrawal and late copy feedback
   await finishRequest(1); await ready();
   assert.equal(await page.locator('#shareStoreLink').isEnabled(),true);
   assert.equal(await page.locator('#storeShareStatus').textContent(),'');
+});
+
+test('sample card exports a safe local SVG in every language with public sample fields only', async()=>{
+  const name=await page.locator('#shopName').textContent();
+  for(const locale of ['gu','hi','en']){
+    await language(locale);
+    const catalog=(await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#cardBadge').textContent(),catalog['store.cardBadge']);
+    assert.equal(await page.locator('#cardName').textContent(),name);
+    const event=page.waitForEvent('download');await page.locator('#exportStoreCard').focus();await page.keyboard.press('Enter');
+    const download=await event;
+    assert.equal(download.suggestedFilename(),'oldx-sample-store-demo-shop.svg');
+    const svg=await readFile(await download.path(),'utf8');
+    const facts=await page.evaluate(svg=>{
+      const doc=new DOMParser().parseFromString(svg,'image/svg+xml');
+      return {error:!!doc.querySelector('parsererror'),unsafe:doc.querySelectorAll('script,image,foreignObject,a').length,text:doc.documentElement.textContent};
+    },svg);
+    assert.equal(facts.error,false);assert.equal(facts.unsafe,0);
+    assert.ok(facts.text.includes(name));assert.ok(facts.text.includes(catalog['store.cardBadge']));
+    assert.ok(svg.includes(origin+'/store-preview.html#store/demo-shop'));
+    assert.ok(svg.length<32768);
+  }
+});
+
+test('card cancel, denied export and withdrawal cannot trigger a stale image download', async()=>{
+  await page.evaluate(()=>{
+    window.cardDownloads=0;
+    Object.defineProperty(document.fonts,'ready',{configurable:true,get:()=>new Promise(resolve=>{window.releaseCardFonts=resolve;})});
+    URL.createObjectURL=()=>{cardDownloads++;throw new Error('PRIVATE DENIAL');};
+  });
+  await page.locator('#exportStoreCard').click();
+  await page.waitForFunction(()=>typeof releaseCardFonts==='function');
+  await page.locator('#cancelStoreCard').click();
+  await page.evaluate(()=>releaseCardFonts());
+  assert.equal(await page.evaluate(()=>cardDownloads),0);
+  assert.equal(await page.locator('#exportStoreCard').evaluate(n=>n===document.activeElement),true);
+  await page.locator('#exportStoreCard').click();
+  await page.evaluate(()=>releaseCardFonts());
+  await page.waitForFunction(()=>!document.querySelector('#exportStoreCard').disabled);
+  assert.equal(await page.evaluate(()=>cardDownloads),1);
+  const gu=(await import('../../features/i18n/catalogs/gu.mjs')).default;
+  assert.equal(await page.locator('#storeCardStatus').textContent(),gu['store.cardDenied']);
+  assert.equal((await page.locator('#storeCardStatus').textContent()).includes('PRIVATE'),false);
+  await page.locator('#exportStoreCard').click();
+  await page.locator('#responseMode').selectOption('revoked');
+  await page.evaluate(()=>releaseCardFonts());
+  assert.equal(await page.locator('#cardName').textContent(),'');
+  assert.equal(await page.locator('#storeCardPreview').isVisible(),false);
+  assert.equal(await page.locator('#exportStoreCard').isDisabled(),true);
+  assert.equal(await page.evaluate(()=>cardDownloads),1);
+});
+
+test('long authored card names stay complete at 320px and doubled text',async()=>{
+  await controlledAdapter();await finishRequest(0,'long-name');await ready();
+  await page.setViewportSize({width:320,height:900});
+  assert.equal(await page.locator('#cardName').textContent(),'W'.repeat(120));
+  await page.evaluate(()=>{
+    const nodes=[...document.querySelectorAll('body *')],sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));
+    nodes.forEach((n,i)=>n.style.fontSize=sizes[i]*2+'px');
+  });
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  assert.equal(await page.locator('#cardName').textContent(),'W'.repeat(120));
 });

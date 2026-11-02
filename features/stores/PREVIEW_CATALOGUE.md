@@ -107,3 +107,5 @@ retracted by a later revocation. Future server reads still require fresh policy.
 
 No production URL, poster/photo, QR export or dynamic Open Graph preview is added.
 Legacy Store sharing and the production application are unchanged.
+
+The Store preview now includes a [text-only sample share card and local SVG export](SHARE_CARD_PREVIEW.md). Real imagery and production sharing remain gated.

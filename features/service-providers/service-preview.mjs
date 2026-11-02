@@ -1,3 +1,4 @@
+import { inspectSampleEnquiry } from './preview-enquiry.mjs';
 import { demoProviders } from "./preview-fixtures.mjs";
 import { buildPublicProviderProfile } from "./provider-public-profile.mjs";
 import { parseServicePreviewRoute, buildServicePreviewLink } from "./preview-route.mjs";
@@ -26,6 +27,7 @@ const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.i
 let translator = createTranslator("en");
 const t = (key, params) => translator.t(key, params);
 let currentProfile = null;
+let enquiryPreview = null, enquiryValidated = false;
 let localeRequest = 0;
 function preferenceStorage() {
   try {
@@ -157,6 +159,7 @@ function openProfile(id, focus = true) {
   const p = publicProfiles.find((x) => x.id === id);
   if (!p) return false;
   currentProfile = p;
+  $('enquiryService').replaceChildren(...p.services.map(service=>{const option=document.createElement('option');option.value=service;option.textContent=service;return option;}));
   $("pName").textContent = p.displayName;
   $("pArea").textContent = p.serviceArea;
   const serviceTags = p.services.map((service) => {
@@ -322,6 +325,7 @@ async function selectLocale(requested, persist = false) {
     });
   }
   if (feedbackKey) $("profileShareStatus").textContent = t(feedbackKey);
+  renderSampleEnquiry();
   updatePreview();
 }
 $("localeSelect").addEventListener("change", (event) =>
@@ -339,6 +343,7 @@ function prepareProfileLink() {
   if (!link?.ok) $("profileShareStatus").textContent = t("previewShareUnavailable");
 }
 function clearProfile(erase = false) {
+  resetSampleEnquiry(true);
   currentProfile = null; feedbackKey = null;
   $("profileLink").value = ""; $("profileShareStatus").textContent = "";
   $("copyProfileLink").disabled = $("shareProfileLink").disabled = true;
@@ -385,5 +390,36 @@ $("shareProfileLink").addEventListener("click", () => shareCurrentProfile(false)
 $("notFoundBack").addEventListener("click", () => navigate("#services"));
 window.addEventListener("popstate", () => syncRoute());
 window.addEventListener("hashchange", () => syncRoute());
+function readSampleEnquiry() {
+  return {service:$('enquiryService').value,description:$('enquiryDescription').value,timing:$('enquiryTiming').value};
+}
+function renderSampleEnquiry() {
+  const result=currentProfile?inspectSampleEnquiry(currentProfile,readSampleEnquiry()):{ok:false,fields:[]};
+  const invalid=enquiryValidated && !result.ok;
+  for(const [field,id] of [['service','enquiryService'],['description','enquiryDescription'],['timing','enquiryTiming']]) $(id).setAttribute('aria-invalid',String(invalid && result.fields.includes(field)));
+  $('enquiryError').textContent=invalid?t('enquiry.error'):'';
+  $('enquirySummary').hidden=!enquiryPreview;
+  $('enquiryChosenService').textContent=enquiryPreview?.service??'';
+  $('enquiryChosenDescription').textContent=enquiryPreview?.description??'';
+  $('enquiryChosenTiming').textContent=enquiryPreview?t(enquiryPreview.timing==='this-week'?'enquiry.thisWeek':'enquiry.flexible'):'';
+}
+function resetSampleEnquiry(removeOptions=false) {
+  enquiryPreview=null;enquiryValidated=false;
+  $('enquiryDescription').value='';$('enquiryTiming').value='flexible';
+  if(removeOptions)$('enquiryService').replaceChildren();else $('enquiryService').selectedIndex=0;
+  renderSampleEnquiry();
+}
+$('sampleEnquiryForm').addEventListener('submit',event=>{
+  event.preventDefault();enquiryValidated=true;
+  const result=inspectSampleEnquiry(currentProfile,readSampleEnquiry());
+  enquiryPreview=result.ok?result.value:null;renderSampleEnquiry();
+  if(result.ok)$('enquirySummary').focus();
+  else $(result.fields[0]==='service'?'enquiryService':result.fields[0]==='description'?'enquiryDescription':'enquiryTiming').focus();
+});
+$('sampleEnquiryForm').addEventListener('input',()=>{enquiryPreview=null;renderSampleEnquiry();});
+$('cancelSampleEnquiry').addEventListener('click',()=>{resetSampleEnquiry();$('enquiryService').focus();});
+window.addEventListener('pagehide',()=>resetSampleEnquiry());
+window.addEventListener('pageshow',event=>{if(event.persisted)resetSampleEnquiry();});
+
 await selectLocale(readLocalePreference(preferenceStorage(), "gu"));
 syncRoute({ focus: false });

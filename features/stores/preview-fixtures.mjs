@@ -17,3 +17,6 @@ export const sampleListings = Object.freeze(titles.map(([title, category, basePr
   id: 'sample-' + (index + 1), sellerUid: 'demo-shop', title, category, basePrice,
   isSold: index % 4 === 1, createdAt: Object.freeze({ seconds: 1700000000 + index, nanoseconds: 0 })
 })));
+
+// Public category copy for the synthetic share card, not a live Store schema.
+export const sampleStoreCardCategories = Object.freeze({ 'demo-shop': Object.freeze(['furniture','books','electronics','mobiles']), 'demo-empty': Object.freeze([]) });

@@ -132,3 +132,5 @@ for exact combined source. The deployment-disabled source setting was verified;
 Working tree was clean after source commits. This final evidence entry changes
 documentation only. No main, live data/Rules, paid services or provider resources
 were changed.
+
+Continuation: [Store share card and sample Service enquiry](review-progress-2026-11-02-card-enquiry-batch.md).

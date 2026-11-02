@@ -344,3 +344,84 @@ test('denied clipboard keeps a selectable link and localized recovery in every l
     assert.equal(await page.locator('#notFoundHeading').textContent(), catalog.previewNotFoundHeading);
   }
 });
+
+test('buyer can rehearse an enquiry for one of the provider services without sending or persisting',async()=>{
+  await page.locator('#results article button').first().click();
+  const services=await page.locator('#enquiryService option').allTextContents();
+  assert.equal(services.length,2);
+  await page.locator('#sampleEnquiryForm button[type="submit"]').click();
+  assert.equal(await page.locator('#enquiryDescription').getAttribute('aria-invalid'),'true');
+  await page.locator('#enquiryService').selectOption(services[1]);
+  await page.locator('#enquiryDescription').fill('નમૂનાની ખુરશી રિપેર કરવી');
+  await page.locator('#enquiryTiming').selectOption('this-week');
+  await page.locator('#sampleEnquiryForm button[type="submit"]').click();
+  assert.equal(await page.locator('#enquirySummary').isVisible(),true);
+  assert.equal(await page.locator('#enquiryChosenService').textContent(),services[1]);
+  assert.equal(await page.locator('#enquirySummary').evaluate(n=>n===document.activeElement),true);
+  assert.equal(await page.locator('.contact-demo:disabled').count(),3);
+  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),[]);
+  await page.locator('#cancelSampleEnquiry').click();
+  assert.equal(await page.locator('#enquiryDescription').inputValue(),'');
+  assert.equal(await page.locator('#enquirySummary').isVisible(),false);
+  assert.equal(await page.locator('#enquiryService').evaluate(n=>n===document.activeElement),true);
+});
+
+test('sample enquiry keeps authored notes across locale changes but clears them on route changes',async()=>{
+  await page.locator('#results article button').first().click();
+  const note='PRIVATE SAMPLE · नमूना કામ';
+  await page.locator('#enquiryDescription').fill(note);
+  await page.locator('#sampleEnquiryForm button[type="submit"]').click();
+  for(const locale of ['en','hi','gu']){
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+    assert.equal(await page.locator('#enquiryChosenDescription').textContent(),note);
+    const catalog=(await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.ok((await page.locator('#enquirySummary').textContent()).includes(catalog['enquiry.notSent']));
+  }
+  await page.locator('#backBtn').click();
+  assert.equal(await page.locator('#enquiryDescription').inputValue(),'');
+  assert.equal(await page.locator('#enquiryChosenDescription').textContent(),'');
+  await page.locator('#results article button').nth(1).click();
+  assert.equal(await page.locator('#enquiryDescription').inputValue(),'');
+  await page.locator('#enquiryDescription').fill('<img src=x onerror=alert(1)>');
+  await page.locator('#sampleEnquiryForm button[type="submit"]').click();
+  assert.equal(await page.locator('#enquirySummary').isVisible(),false);
+  assert.equal(await page.locator('#enquiryDescription').getAttribute('aria-invalid'),'true');
+  assert.equal(await page.locator('#sampleEnquiryForm img').count(),0);
+});
+
+test('sample enquiry notes never enter sharing and are cleared on page-hide',async()=>{
+  await page.locator('#results article button').first().click();
+  await page.locator('#enquiryDescription').fill('PRIVATE SAMPLE job details');
+  await page.evaluate(()=>{
+    window.copiedSampleLinks=[];
+    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>copiedSampleLinks.push(value)}});
+  });
+  await page.locator('#copyProfileLink').click();
+  await page.waitForFunction(()=>copiedSampleLinks.length===1);
+  assert.equal(await page.evaluate(()=>copiedSampleLinks[0].includes('PRIVATE')),false);
+  await page.evaluate(()=>window.dispatchEvent(new PageTransitionEvent('pagehide',{persisted:true})));
+  assert.equal(await page.locator('#enquiryDescription').inputValue(),'');
+  assert.equal(await page.locator('#enquiryChosenDescription').textContent(),'');
+});
+
+test('sample enquiry review remains readable at 320px with actual doubled text in all locales',async()=>{
+  await page.setViewportSize({width:320,height:900});
+  await page.locator('#results article button').first().click();
+  await page.locator('#enquiryDescription').fill('નમૂનો · नमूना · '+ 'W'.repeat(300));
+  await page.locator('#sampleEnquiryForm button[type="submit"]').click();
+  for(const locale of ['gu','hi','en']){
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+    await page.evaluate(()=>{
+      const nodes=[...document.querySelectorAll('body *')],sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));
+      nodes.forEach((n,i)=>n.style.fontSize=sizes[i]*2+'px');
+    });
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+    assert.equal(await page.locator('#enquirySummary').isVisible(),true);
+    assert.equal(await page.locator('#enquiryChosenDescription').textContent(),'નમૂનો · नमूना · '+'W'.repeat(300));
+    assert.equal(await page.locator('#enquiryDescription').evaluate(n=>n.labels.length>0),true);
+    await page.evaluate(()=>document.querySelectorAll('body *').forEach(n=>n.style.removeProperty('font-size')));
+  }
+  assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),['oldx.preview.locale.v1']);
+});

@@ -1,7 +1,8 @@
+import { buildStorePreviewCard, exportStorePreviewCard } from './preview-card.mjs';
 import { buildStorePreviewLink } from './preview-share.mjs';
 import { shareProviderLink } from '../service-providers/provider-mobile-share.mjs';
 import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
-import { sampleStores } from './preview-fixtures.mjs';
+import { sampleStores, sampleStoreCardCategories } from './preview-fixtures.mjs';
 import { projectSyntheticDetail } from './preview-detail.mjs';
 import { createStoreLoadController, projectPreviewSnapshot } from './preview-load.mjs';
 import { readSyntheticStore, readSyntheticDetail } from './preview-adapter.mjs';
@@ -26,6 +27,7 @@ let translator = createTranslator('en');
 const t = (key, params) => translator.t(key, params);
 let activeRecords = [], snapshot = null, selectedStoreId = null;
 let shareRevision = 0, sharePending = false, shareFeedback = null;
+let exportRevision = 0, exportPending = false, exportFeedback = null;
 let loadState = { status: 'idle' }, focusAfterLoad = false, restoreAfterLoad = false;
 let localeRequest = 0, page = 1, currentStore = null, renderedHash = null, returnProductId = null;
 function storage() { try { return window.localStorage; } catch { return null; } }
@@ -136,6 +138,7 @@ async function selectLocale(requested, persist = false) {
   catch { next = createTranslator('en'); failed = true; }
   if (request !== localeRequest) return;
   translator = next; applyCatalog(document, translator);
+  exportRevision++; exportPending = false; exportFeedback = null;
   $('localeSelect').value = translator.locale;
   $('localeStatus').textContent = failed ? t('languageUnavailable') : t('languageChanged', {
     language: SUPPORTED_LOCALES.find(locale => locale.code === translator.locale).name });
@@ -150,6 +153,7 @@ const loader = createStoreLoadController({
     : projectPreviewSnapshot(response, scope.storeUid),
   onChange(state) {
   shareRevision++; sharePending = false; shareFeedback = null;
+  exportRevision++; exportPending = false; exportFeedback = null;
   loadState = state;
   snapshot = state.snapshot ?? null; activeRecords = snapshot?.records ?? [];
   renderLoadState();
@@ -220,6 +224,7 @@ function renderStoreShare() {
   $('copyStoreLink').disabled = $('shareStoreLink').disabled = !link?.ok || sharePending;
   $('storeShareStatus').textContent = link?.ok
     ? (sharePending ? t('previewSharePending') : shareFeedback ? t(shareFeedback) : '') : '';
+  renderStoreCard();
 }
 async function shareStorePreview(copyOnly) {
   if (loadState.status !== 'ready' || !snapshot?.store || !$('storeShareLink').value || sharePending) return;
@@ -238,6 +243,36 @@ async function shareStorePreview(copyOnly) {
 }
 $('copyStoreLink').addEventListener('click', () => shareStorePreview(true));
 $('shareStoreLink').addEventListener('click', () => shareStorePreview(false));
+
+function cardInput() {
+  const id=snapshot?.store.id;
+  const categories=Object.hasOwn(sampleStoreCardCategories,id)?sampleStoreCardCategories[id]:[];
+  return {store:snapshot?.store, pageUrl:window.location.href,origin:window.location.origin,
+    category:categories.map(category=>t('store.category.'+category)).join(' · ')||t('store.all'),
+    labels:{badge:t('store.cardBadge'),caption:t('store.cardCaption')}};
+}
+function renderStoreCard() {
+  const eligible=loadState.status==='ready' && !$('shopHeader').hidden;
+  const card=eligible ? buildStorePreviewCard(cardInput()):null;
+  $('storeCardPreview').hidden=!card?.ok;
+  $('exportStoreCard').disabled=!card?.ok || exportPending;
+  $('cancelStoreCard').disabled=!exportPending;
+  for(const [id,key] of [['cardBadge','badge'],['cardName','name'],['cardCategory','category'],['cardCity','city'],['cardLink','url'],['cardCaption','caption']]) $(id).textContent=card?.ok?card.value[key]:'';
+  $('storeCardStatus').textContent=card?.ok ? exportPending?t('store.cardPreparing'):exportFeedback?t(exportFeedback):'' : eligible?t('store.cardDenied'):'';
+}
+$('exportStoreCard').addEventListener('click',async()=>{
+  if(exportPending || loadState.status!=='ready')return;
+  const revision=++exportRevision;
+  const input=cardInput();exportPending=true;exportFeedback=null;renderStoreCard();
+  const result=await exportStorePreviewCard(input,{
+    ready:async()=>{await document.fonts?.ready;},
+    createBlob:(svg,type)=>new Blob([svg],{type}),createObjectURL:blob=>URL.createObjectURL(blob),revokeObjectURL:url=>URL.revokeObjectURL(url),
+    download:async(url,filename)=>{const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);try{link.click();}finally{link.remove();}}
+  },()=>revision===exportRevision && loadState.status==='ready');
+  if(revision!==exportRevision)return;
+  exportPending=false;exportFeedback=result.ok?'store.cardRequested':result.code==='EXPORT_CANCELLED'?'store.cardCancelled':'store.cardDenied';renderStoreCard();
+});
+$('cancelStoreCard').addEventListener('click',()=>{exportRevision++;exportPending=false;exportFeedback='store.cardCancelled';renderStoreCard();$('exportStoreCard').focus();});
 
 await selectLocale(readLocalePreference(storage(), 'gu'));
 requestRoute();
