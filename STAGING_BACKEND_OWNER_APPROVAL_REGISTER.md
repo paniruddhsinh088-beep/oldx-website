@@ -60,3 +60,10 @@ See also:
 - `IMAGE_UPLOAD_BACKEND_ATOMIC_QUOTA_CONTRACT.md`
 - `IMAGE_STORAGE_PROVIDER_COST_AND_SECURITY_COMPARISON.md`
 - `PRODUCTS_PUBLIC_PRIVATE_MIGRATION_PLAN.md`
+
+### Limited repository/testing authorization — 2 November 2026
+
+Owner explicitly authorizes repository-only Firebase/Vercel architecture code and
+isolated mock/emulator testing at zero additional spend. This is not selection or
+approval of D1–D12 live runtime/schema/region/IAM/secrets/cost/resource/deployment
+choices. No live data, Rules changes, provider setup or release activation approved.

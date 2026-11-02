@@ -42,3 +42,18 @@ These implementations do not remove any activation gate or prove free-tier accou
 eligibility. The actual SDK transaction/public-view writer is still absent; mock
 atomicity tests are not real database acceptance. No backend, secret, Rules or
 billing approval has been supplied.
+
+Limited owner authorization recorded, 2 November 2026: repository-only development
+and isolated mock/emulator tests using the existing Firebase/Vercel architecture,
+with zero additional spending. This permits the emulator-locked SDK transaction
+mapping and inactive publication command source. It does **not** approve actual
+schema, region, IAM, secrets, live access, Rules, infrastructure, billing, deployment
+or release. Existing decisions/approval gates above remain.
+
+Before the first real Service slice, explicitly settle actual server SDK/runtime
+identity and schema/index paths, actor eligibility/owner/publication permission
+records, publication/cursor snapshot consistency and revocation freshness, audit/
+receipt retention, and endpoint/rate-limit policies. Recommended low-cost default
+remains existing stack, bounded text-only operations, no new paid services and no
+large-scale infrastructure until measured need. The actual public read bridge and
+verified-token HTTP wiring are not yet supplied by the new mutation SDK adapter.

@@ -207,3 +207,35 @@ test('provider profile rejects invalid service and city identifiers', async () =
     ...base, cityId: 'Ahmedabad City', serviceIds: ['repairs']
   }));
 });
+
+// Actual modular SDK transactions against the existing isolated demo emulator.
+// Candidate collection names below are test fixtures, not an approved schema.
+test('isolated SDK Provider draft/publication transactions persist atomically without enabling client access',async()=>{
+ const sdk=await import('firebase/firestore');
+ const {createIsolatedFirebaseProviderRepository}=await import('../../scripts/firebase-provider-repository.mjs');
+ const {createProviderDraftTransaction}=await import('../../scripts/provider-draft-transaction.mjs');
+ const {createProviderPublicationTransaction}=await import('../../scripts/provider-publication-transaction.mjs');
+ const schema=Object.fromEntries(['actors','owners','identities','drafts','receipts','audits','permissions','publications','publicViews','generations'].map(k=>[k,'testProvider'+k[0].toUpperCase()+k.slice(1)]));
+ await env.withSecurityRulesDisabled(async context=>{
+  const db=context.firestore();
+  await sdk.setDoc(sdk.doc(db,schema.actors,'sdk-owner'),{uid:'sdk-owner',canWrite:true,suspended:false});
+  await sdk.setDoc(sdk.doc(db,schema.permissions,'sdk-owner'),{uid:'sdk-owner',canPublish:true,canWithdraw:true,suspended:false});
+  await sdk.setDoc(sdk.doc(db,schema.generations,'current'),{value:0});
+  const repository=createIsolatedFirebaseProviderRepository({enabled:true,firestore:db,sdk,schema});
+  const authenticate=()=>({uid:'sdk-owner'}),draft=createProviderDraftTransaction({enabled:true,authenticate,repository,providerIdForActor:()=> 'sdk-provider'});
+  const profile={displayName:'SDK sample',city:'Sample City',serviceArea:'Sample area',services:['Plumber'],available:true,experienceYears:2,description:'Sample only',languages:['en']};
+  const input={requestId:'sdk-draft',expectedRevision:0,profile};
+  const results=await Promise.all([draft.save(input),draft.save(input)]);assert.equal(results.filter(r=>r.status==='saved').length,1);assert.equal(results.filter(r=>r.status==='replayed').length,1);
+  const privateDoc=await sdk.getDoc(sdk.doc(db,schema.drafts,'sdk-provider'));assert.equal(privateDoc.data().revision,1);assert.ok(privateDoc.data().committedAt);
+  const publication=createProviderPublicationTransaction({enabled:true,authenticate,repository,catalog:{services:['Plumber'],localities:[{city:'Sample City',serviceArea:'Sample area'}]}});
+  const publish={requestId:'sdk-publish',expectedRevision:1,expectedGeneration:0,action:'publish'};
+  assert.equal((await publication.execute(publish)).generation,1);
+  const view=await sdk.getDoc(sdk.doc(db,schema.publicViews,'sdk-provider'));assert.equal(view.data().displayName,'SDK sample');assert.equal(Object.hasOwn(view.data(),'ownerUid'),false);assert.equal(Object.hasOwn(view.data(),'committedAt'),false);
+  assert.equal((await publication.execute(publish)).status,'replayed');
+  assert.equal((await publication.execute({requestId:'sdk-withdraw',expectedRevision:1,expectedGeneration:1,action:'withdraw'})).generation,2);
+  assert.equal((await sdk.getDoc(sdk.doc(db,schema.publicViews,'sdk-provider'))).exists(),false);
+  assert.equal((await sdk.getDoc(sdk.doc(db,schema.generations,'current'))).data().value,2);
+  assert.equal((await sdk.getDocs(sdk.collection(db,schema.audits))).size,3);
+ });
+ const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,schema.drafts,'sdk-provider')));await assertFails(sdk.getDoc(sdk.doc(guest,schema.publicViews,'sdk-provider')));
+});
