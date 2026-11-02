@@ -128,3 +128,23 @@ source/privacy **11/11**, static packaging **3/3**, locale catalogs **11/11**.
 The canonical remote model's Git blob hash matches the preserved file exactly.
 Admin **114/114**, Store **81/81** and Store browser **28/28** remain the unchanged
 paths from the earlier comprehensive sweep. New exact-source CI covers the merge.
+
+## Final exact commits and CI
+
+- `8c84279`: localized inbox UI, private local reply/detail lifecycle and proposal tests.
+- `cd588fa`: inactive Admin read cancellation/deadline hardening and feature matrix.
+- `0b919e37cea8f25e143839fd0f2f59ef927a575f`: safe integration with automation
+  `58356e2`, preserving its original model/tests and delegating domain transitions.
+
+After the branch-only normal push, exact combined source passed all workflows:
+- [Service emulator security 41426808414](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41426808414).
+- [Branch security 41426808421](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41426808421).
+- [Review safety 41426808518](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41426808518).
+
+These include new offline tests and existing isolated Firebase Emulator suites;
+no actual enquiry/backend/role enforcement or production acceptance is inferred.
+Vercel metadata lists zero deployments for exact source. Deployment-disabled
+configuration, all previous checkpoints and 37209fd remain preserved. No main,
+live Firebase/Rules, real messages/reviews, provider resources or costs changed.
+The working tree was clean after the integration push. This final evidence entry
+and historical-next-task clarification change documentation only.

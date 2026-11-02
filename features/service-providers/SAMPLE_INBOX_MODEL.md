@@ -29,7 +29,7 @@ features/service-providers/preview-inbox.test.mjs passed 6/6 on
 2 November 2026. Repository-wide CI and actual Firebase Emulator evidence
 for this new model are separate and must be verified after commit.
 
-Next safe task: wire an explicitly sample-only accessible inbox/status UI to
+Historical next task (now completed by the integration below): wire an explicitly sample-only accessible inbox/status UI to
 the existing Service preview with Gujarati/Hindi/English, 320px/200%-text and
 keyboard tests. Do not activate real send, persistence or reviews.
 
