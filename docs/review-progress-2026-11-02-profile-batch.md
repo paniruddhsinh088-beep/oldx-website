@@ -119,3 +119,19 @@ coverage using synthetic fixtures, while preserving the approved read-path
 gate. Broader app localization and remaining moderate development-tool advisories
 remain tracked separately. No deployments, main changes, live Firebase access,
 live rule changes, paid services or provider-account changes were performed.
+
+## Final verified checkpoint
+
+Exact combined checkpoint `e2d73b9a4af77eceaafef1152be984b61877bc4d`
+passed [review-safety CI 41396444284](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41396444284),
+including the 17 Store tests, 16 browser flows and isolated real Emulator steps.
+Vercel listed zero deployments for the Service, Store follow-up and documentation
+checkpoints. The working tree was clean after the push, and `37209fd` remains an
+unchanged ancestor. This final evidence update changes documentation only.
+
+Dependency follow-up: registry metadata confirms the installed Firebase CLI
+15.34.2 is current. Its graph uses glob 10.5.0 and minimatch 3/5/6/9; the registry
+fix lines glob 14.0.3 and minimatch 11.0.1 are major jumps for those consumers.
+Preserve the pinned tooling until a compatible upstream update or separately
+verified migration is available. Runtime audit remains zero; do not use a forced
+major override merely to suppress the development audit report.
