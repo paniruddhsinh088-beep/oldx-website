@@ -104,6 +104,9 @@ jobs:
       - name: Validate static browser asset package
         run: npm run test:static-build
 
+      - name: Test isolated privacy-safe Store catalogue model
+        run: npm run test:stores
+
       - name: Validate isolated Service preview source
         run: npm run test:service-preview
 
