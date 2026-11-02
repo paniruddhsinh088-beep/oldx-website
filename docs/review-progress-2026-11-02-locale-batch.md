@@ -144,3 +144,6 @@ The full audit still has 13 moderate development-tool advisories (0 high/critica
 while the runtime-only audit is clear. Local emulator downloads retain the
 previous network-policy block; CI supplies isolated emulator evidence. Release
 status remains HOLD/NO-GO, not a production acceptance claim.
+
+
+Next repository-only batch: [preview profiles and Store ordering](review-progress-2026-11-02-profile-batch.md).
