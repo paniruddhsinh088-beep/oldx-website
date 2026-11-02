@@ -107,3 +107,8 @@ portable ports, archive and latest Chat-window fix. Real provider/processor/rele
 delivery and complete UI/locale/device/security acceptance remain unimplemented or
 inactive. Android-compatible source separation is checked; no native package exists.
 All full-product P0 requirements remain and November 7 is conditional.
+
+Review/moderation sequencing does not waive agreed release requirements: no synthetic
+completion, receipt or CI pass grants real review eligibility, image moderation or
+launch approval. The actual policies, trusted enforcement and acceptance evidence
+remain unresolved alongside the P0 integration/media/localization/device gates.

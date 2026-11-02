@@ -87,3 +87,34 @@ and remaining full-journey UI/locale bindings. Still need operational owner choi
 (runtime/identity/schema/index/role/quota/cleanup/privacy/retention/media) and separate
 staging action/rollback approval. No live/provider/Rules/index/IAM/secrets/billing/Vercel/
 deployment/main/merge/migration/Full Reset action. HOLD/NO-GO and deny-all unchanged.
+
+## Verified exact-source CI checkpoint
+
+Executable source `d495220b2e5c19cfcd64ac7e7340f4f5c60d8511` passed all workflows:
+
+- [Branch security 41494208354](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41494208354)
+- [Service Provider Emulator 41494208371](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41494208371)
+- [Review safety 41494208348](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41494208348)
+
+The actual SDK/candidate Rules runtime suite now has 27 passing cases, including
+the durable media quota/attempt/idempotency/reconciliation/public-projection scenario.
+Existing enquiry and marketplace cases now additionally exercise the portable buyer
+create/read/cancel ports and archive behavior through actual isolated SDK persistence.
+Proofs, release authority and token adapters remain synthetic; no provider/real identity/
+byte-delivery evidence is claimed. Review safety passes the 70-case integration command
+and existing baseline Firestore/Storage/private Chat Emulator suites. Local 34-command
+sweep and counts above are separate from actual CI Emulator results. Final strict
+receipt/proof/lifetime-limit review was checked with affected tests after the sweep.
+
+Fresh remote remained `d1a49c4` before normal source commit/push. Original `37209fd`,
+canonical automation `58356e2`, `1b2f20c8`, `d1a49c4d` and all earlier ancestors are
+preserved. No concurrent change needed reconciliation, merge, overwrite or force-push.
+The unchanged branch deployment flag remains false. This final documentation follow-up
+changes no executable source after verified `d495220`.
+
+Remaining P0s include real processing/provider/proof/token/gateway implementation and
+acceptance, trusted moderation/public media-release materialization, full owner/buyer/
+Product/Store/Chat/Admin UI/locales, review eligibility/moderation policy and actual
+security/mobile/device acceptance. Synthetic confirmation/CI cannot waive any agreed
+review or moderation requirement. Source interfaces are not actual launch activation;
+minimum owner/staging approvals above remain. November 7 is conditional; HOLD/NO-GO.
