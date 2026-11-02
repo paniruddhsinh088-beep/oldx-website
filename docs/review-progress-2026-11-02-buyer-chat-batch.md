@@ -103,3 +103,28 @@ committing; no concurrent changes required reconciliation. Canonical automation
 `preview-inbox.mjs` remains untouched. Local official emulator binary download
 remains blocked by environment policy; exact-source GitHub results are recorded
 separately below, not substituted for local emulator evidence.
+
+## Pushed source and exact-source CI
+
+- `c4bddfb`: verified Chat fail-closed block state, disabled enquiry intent and
+  descriptor-safe Admin validator status; deterministic regression tests/contracts.
+- `5c5996373d83ef9cc7404f39084d16b0a06ad64e`: buyer lifecycle UI, shared controller,
+  gu/hi/en, browser/model/privacy tests, packaging and CI integration.
+- All 31 local commands passed (698 reported passing test cases across commands;
+  this is not a unique coverage measure). Buyer browser 6, provider browser 7,
+  Service browser 20, Store browser 28, Service model 166, Store model 81,
+  Admin 115 and Chat authorization/intent 19 all passed.
+- Exact-source GitHub runs on full source SHA above: [Branch Security
+  41433491956](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41433491956),
+  [Service Emulator 41433492046](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41433492046)
+  and [review safety 41433492143](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41433492143)
+  all completed successfully. CI Emulator validation is isolated existing Rules
+  evidence, not proof of future messaging/backend integration or live acceptance.
+- Fresh remote fetch matched the preserved base before committing and before
+  normal push. No force push or concurrent history reconciliation was needed.
+  Prior checkpoints and automation remain ancestors; working tree was clean.
+- Branch deployment flag remains false. Read-only Vercel metadata query returned
+  zero deployments for this exact source SHA. No deployment was initiated.
+
+This final evidence update is documentation-only; verified executable source is
+`5c59963`. Next task and approval gates above remain the continuation checkpoint.
