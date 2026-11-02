@@ -7,6 +7,7 @@ export function createSampleDiscoveryRepository({mode=()=> 'normal',withdrawn=()
  let publicationEpoch=1,lastWithdrawal=withdrawn();
  const generation=()=>{const current=withdrawn();if(current!==lastWithdrawal){publicationEpoch++;lastWithdrawal=current;}return publicationEpoch;};
  return createPublicProviderRepository({enabled:true,catalog:sampleDiscoveryCatalog,getPublicationEpoch:generation,
+  readCanonical:providerId=>{const p=demoProviders.find(p=>p.id===providerId);return p?{providerId:p.id,services:[...p.services],published:!(withdrawn()&&p.id==='p1'),publicationEpoch:generation()}:null;},
   readCursor:token=>cursors.get(token)??null,
   issueCursor:state=>{const token='sample_cursor_'+(++sequence);cursors.set(token,{...state});if(cursors.size>32)cursors.delete(cursors.keys().next().value);return token;},
   query:(plan,{signal})=>new Promise((resolve,reject)=>{

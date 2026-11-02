@@ -341,4 +341,6 @@ export default Object.freeze({
   "discovery.withdraw": "પ્રથમ નમૂનાની પ્રોફાઇલ પાછી ખેંચો",
   "discovery.results": "જાહેર નમૂનાના પરિણામો",
   "discovery.open": "મર્યાદિત શોધનો નમૂનો",
+  "discovery.detail": "જાહેર નમૂનાની પ્રોફાઇલ",
+  "discovery.retryDetail": "નમૂનાની પ્રોફાઇલ ફરી વાંચો",
 });

@@ -341,4 +341,6 @@ export default Object.freeze({
   "discovery.withdraw": "पहली नमूना प्रोफ़ाइल वापस लें",
   "discovery.results": "सार्वजनिक नमूना परिणाम",
   "discovery.open": "सीमित खोज का नमूना",
+  "discovery.detail": "सार्वजनिक नमूना प्रोफ़ाइल",
+  "discovery.retryDetail": "नमूना प्रोफ़ाइल फिर पढ़ें",
 });

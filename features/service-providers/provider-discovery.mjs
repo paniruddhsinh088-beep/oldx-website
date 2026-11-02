@@ -28,7 +28,7 @@ const deny=()=>({ok:false,code:'DISCOVERY_UNAVAILABLE'});
 // Default-disabled repository port. query must read only an approved public view;
 // getPublicationEpoch must change with ANY public mutation/revocation. No SDK here.
 // Cursor issuer/verifier is trusted server infrastructure, never client claims.
-export function createPublicProviderRepository({enabled=false,catalog,getPublicationEpoch,query,readCursor,issueCursor}={}){
+export function createPublicProviderRepository({enabled=false,catalog,getPublicationEpoch,query,readCursor,issueCursor,readCanonical}={}){
  const config=validCatalog(catalog)?{services:[...catalog.services],localities:catalog.localities.map(l=>({...l}))}:null;
  return Object.freeze({async discover(input,{signal}={}){
   if(enabled!==true||!config||![getPublicationEpoch,query,readCursor,issueCursor].every(f=>typeof f==='function'))return deny();
@@ -44,10 +44,9 @@ export function createPublicProviderRepository({enabled=false,catalog,getPublica
    if(signal?.aborted||!response||response.publicationEpoch!==generation||!Array.isArray(response.rows)||response.rows.length>plan.limit)return deny();
    const profiles=[];let previous=after;
    for(const raw of response.rows){
-    const row=record(raw,DISCOVERY_FIELDS);if(!row||row.published!==true||row.publicationEpoch!==generation||!id(row.id)||previous!==null&&row.id<=previous||
-      !Array.isArray(row.services)||row.services.some(s=>!config.services.includes(s))||r.category&&!row.services.includes(r.category)||
-      !config.localities.some(l=>l.city===row.city&&l.serviceArea===row.serviceArea)||r.locality&&row.serviceArea!==r.locality)return deny();
-    const projected=buildPublicProviderProfile(row);if(!projected.ok)return deny();previous=row.id;profiles.push(Object.freeze({...projected.profile,services:Object.freeze(projected.profile.services),languages:Object.freeze(projected.profile.languages)}));
+    const profile=projectPublicRow(raw,config,generation);
+    if(!profile||previous!==null&&profile.id<=previous||r.category&&!profile.services.includes(r.category)||r.locality&&profile.serviceArea!==r.locality)return deny();
+    previous=profile.id;profiles.push(profile);
    }
    if(signal?.aborted||await getPublicationEpoch({signal})!==generation||signal?.aborted)return deny();
    const items=profiles.slice(0,r.limit);let nextCursor=null;
@@ -55,7 +54,34 @@ export function createPublicProviderRepository({enabled=false,catalog,getPublica
    if(signal?.aborted||await getPublicationEpoch({signal})!==generation||signal?.aborted)return deny();
    return Object.freeze({ok:true,items:Object.freeze(items),nextCursor,publicationEpoch:generation});
   }catch{return deny();}
+ },async detail(input,{signal}={}){
+  if(enabled!==true||!config||![getPublicationEpoch,query,readCanonical].every(f=>typeof f==='function'))return deny();
+  try{
+   const r=record(input,['providerId','expectedGeneration']);
+   if(!r||!id(r.providerId)||r.expectedGeneration!==null&&!epoch(r.expectedGeneration)||signal?.aborted)return deny();
+   const generation=await getPublicationEpoch({signal});
+   if(!epoch(generation)||r.expectedGeneration!==null&&generation!==r.expectedGeneration||signal?.aborted)return deny();
+   const canonical=record(await readCanonical(r.providerId,{signal}),['providerId','services','published','publicationEpoch']);
+   if(!validCanonical(canonical,r.providerId,generation,config)||signal?.aborted)return deny();
+   canonical.services=Object.freeze([...canonical.services]);
+   const plan=Object.freeze({view:'public-provider-discovery-v1',fields:DISCOVERY_FIELDS,where:Object.freeze([Object.freeze(['id','==',r.providerId]),Object.freeze(['published','==',true])]),orderBy:Object.freeze(['id','asc']),limit:1,after:null,publicationEpoch:generation});
+   const response=record(await query(plan,{signal}),['publicationEpoch','rows']);
+   if(signal?.aborted||!response||response.publicationEpoch!==generation||!Array.isArray(response.rows)||response.rows.length!==1)return deny();
+   const profile=projectPublicRow(response.rows[0],config,generation);
+   if(!profile||profile.id!==r.providerId||JSON.stringify(profile.services)!==JSON.stringify(canonical.services))return deny();
+   const fresh=record(await readCanonical(r.providerId,{signal}),['providerId','services','published','publicationEpoch']);
+   if(!validCanonical(fresh,r.providerId,generation,config)||JSON.stringify(fresh)!==JSON.stringify(canonical)||signal?.aborted||await getPublicationEpoch({signal})!==generation||signal?.aborted)return deny();
+   return Object.freeze({ok:true,profile,publicationEpoch:generation});
+  }catch{return deny();}
  }});
 }
+function validCanonical(c,providerId,generation,catalog){return c&&c.providerId===providerId&&c.published===true&&c.publicationEpoch===generation&&Array.isArray(c.services)&&c.services.length>0&&c.services.length<=12&&c.services.every(s=>catalog.services.includes(s))&&normalizeServiceSelections(c.services).ok;}
+function projectPublicRow(raw,catalog,generation){
+ const row=record(raw,DISCOVERY_FIELDS);
+ if(!row||row.published!==true||row.publicationEpoch!==generation||!id(row.id)||!Array.isArray(row.services)||row.services.some(s=>!catalog.services.includes(s))||!catalog.localities.some(l=>l.city===row.city&&l.serviceArea===row.serviceArea))return null;
+ const result=buildPublicProviderProfile(row);if(!result.ok)return null;
+ return Object.freeze({...result.profile,services:Object.freeze(result.profile.services),languages:Object.freeze(result.profile.languages)});
+}
+export function createPublicProviderDetailRead({repository,...options}){return createBoundedRead({...options,read:(request,context)=>repository.detail(request,context),project:result=>result?.ok===true?result:null});}
 
 export function createPublicProviderDiscoveryRead({repository,...options}){return createBoundedRead({...options,read:(request,context)=>repository.discover(request,context),project:result=>result?.ok===true?result:null});}

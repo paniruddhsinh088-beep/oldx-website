@@ -339,4 +339,6 @@ export default Object.freeze({
   "discovery.withdraw": "Withdraw first sample profile",
   "discovery.results": "Public sample results",
   "discovery.open": "Bounded discovery preview",
+  "discovery.detail": "Public sample profile",
+  "discovery.retryDetail": "Retry sample profile",
 });
