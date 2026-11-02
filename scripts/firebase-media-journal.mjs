@@ -2,6 +2,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 import {validateProcessedImage} from './image-upload-contract-policy.mjs';
+import {mediaProofMatches} from './media-proof-binding.mjs';
 const roles=['assets','quotas','operations','audits'];
 export const MEDIA_JOURNAL_TEST_SCHEMA=Object.freeze({assets:'testOldxPhotoAssets',quotas:'testOldxMediaQuotas',operations:'testOldxMediaOperations',audits:'testOldxMediaAudits'});
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),int=v=>Number.isSafeInteger(v)&&v>=0,fail=code=>({ok:false,code});
@@ -54,14 +55,18 @@ export function createIsolatedMediaJournal({enabled=false,firestore,sdk,schema,p
       if(asset.state!=='reserved')return fail('CONFLICT');asset={...asset,state:'cancelled'};refund=true;
      }else if(['confirm-upload','reconcile-upload'].includes(op)){
       if(asset.state!=='uploading'||typeof verifyProof!=='function')return fail('DENIED');
-      const proof=await verifyProof(input.proof,{purpose:'upload',imageId:asset.imageId,nonce:asset.attemptNonce,publicId:asset.publicId,sourceDigest:asset.sourceDigest,expectedRevision:asset.revision},context);check();
+      const expectedProof=Object.freeze({purpose:'upload',imageId:asset.imageId,nonce:asset.attemptNonce,publicId:asset.publicId,sourceDigest:asset.sourceDigest,expectedRevision:asset.revision});
+      const proof=await verifyProof(input.proof,expectedProof,context);check();
+      if(!mediaProofMatches(proof,expectedProof))return {ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true};
       if(proof?.status==='present'&&proof.nonce===asset.attemptNonce&&proof.publicId===asset.publicId&&proof.sourceDigest===asset.sourceDigest&&safeId(proof.assetId)&&proof.deliveryType==='authenticated'&&proof.metadataStripped===true&&proof.contentScanned===true&&proof.byteSize<=asset.reservedBytes&&validateProcessedImage({surface:surface(asset),contentType:proof.contentType,byteSize:proof.byteSize,width:proof.width,height:proof.height,fileCount:1}).ok){asset={...asset,state:'quarantined',assetId:proof.assetId,processed:{contentType:proof.contentType,byteSize:proof.byteSize,width:proof.width,height:proof.height,metadataStripped:true,contentScanned:true},orphaned:!eligibility.owner||eligibility.parent?.revision!==asset.parentRevision};}
       else if(proof?.status==='absent'&&proof.nonce===asset.attemptNonce&&proof.publicId===asset.publicId&&proof.definitive===true&&proof.operationSettled===true){asset={...asset,state:'cancelled'};refund=true;}
       else return {ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true};
      }else if(['lease-delete','orphan-delete'].includes(op)){
       if(!['quarantined','attached'].includes(asset.state)||asset.references.length!==0)return fail('DENIED');const nonce=allocateId();if(!imageId(nonce))return fail('UNAVAILABLE');asset={...asset,state:'deleting',deleteNonce:nonce};
      }else if(['confirm-delete','reconcile-delete'].includes(op)){
-      if(asset.state!=='deleting'||asset.references.length!==0||typeof verifyProof!=='function')return fail('DENIED');const proof=await verifyProof(input.proof,{purpose:'delete',imageId:asset.imageId,nonce:asset.deleteNonce,publicId:asset.publicId,assetId:asset.assetId,expectedRevision:asset.revision},context);check();
+      if(asset.state!=='deleting'||asset.references.length!==0||typeof verifyProof!=='function')return fail('DENIED');const expectedProof=Object.freeze({purpose:'delete',imageId:asset.imageId,nonce:asset.deleteNonce,publicId:asset.publicId,assetId:asset.assetId,expectedRevision:asset.revision});
+      const proof=await verifyProof(input.proof,expectedProof,context);check();
+      if(!mediaProofMatches(proof,expectedProof))return {ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true};
       if(proof?.status!=='absent'||proof.nonce!==asset.deleteNonce||proof.publicId!==asset.publicId||proof.assetId!==asset.assetId||proof.definitive!==true||proof.operationSettled!==true)return {ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true};asset={...asset,state:'deleted'};refund=true;
      }else return fail('INVALID_REQUEST');
      asset={...asset,revision:asset.revision+1,operationCount:asset.operationCount+1};if(refund){quotaRows=await quotas(raw,asset);if(!quotaRows||quotaRows.some(({row})=>row.bytesReserved<asset.reservedBytes||row.imagesReserved<1))return fail('CONFLICT');}
