@@ -85,3 +85,20 @@ architecture choice is approved in principle, not D1/D2 runtime/account/region s
 D6 retention/privacy operations, D7/D8 IAM/secrets, D10 eligibility/moderation/role
 provisioning and D11/D12 staging/rollback/release actions remain unapproved. No live
 reads/writes, migration, billing, resource, Rules or deployment approval inferred.
+
+## Owner bootstrap ports and photo audit — 2 November 2026
+
+Repository-only approval permits the disabled owner-private HTTP/UI binding and
+mock-only image lifecycle preparation. It does not authorize actual owner endpoint,
+provider credentials, media runtime or changes to the existing unsigned Store preset.
+[Source audit/evaluation](docs/photo-storage-audit-and-inactive-adapter-2026-11-02.md)
+records Cloudinary Free as a candidate, not an approved replacement for existing
+storage or the previous R2 comparison. No photo migration or Service media policy
+approval. Existing images, staging deny-all and HOLD/NO-GO are preserved.
+
+Still require explicit decisions on image provider/account terms/free-tier/runtime
+eligibility, per-surface visibility, trusted processing/moderation, quota hard stops,
+private delivery/revocation, retention/deletion/backups, journal schema and migration.
+Any account/preset/secret/IAM/Rules/resource/deployment action remains separately gated.
+The approved Gujarat-first v1 design stays text-only; repository mocks do not prove
+live identity, authorization, spending controls or actual provider functionality.

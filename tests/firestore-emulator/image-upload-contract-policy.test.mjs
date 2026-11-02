@@ -48,3 +48,10 @@ test("grant rejects invalid surface and parent path", () => {
   assert.ok(result.errors.includes("unsupported_surface"));
   assert.ok(result.errors.includes("invalid_parent_id"));
 });
+
+ test("prototype names cannot bypass the media surface allowlist", () => {
+  for (const surface of ["__proto__", "constructor", "toString", null, {}]) {
+    assert.equal(getSurfacePolicy(surface), null);
+    assert.equal(validateProcessedImage({surface,contentType:"image/jpeg",byteSize:1,width:1,height:1}).ok,false);
+  }
+ });

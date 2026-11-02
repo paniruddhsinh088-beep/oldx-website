@@ -25,7 +25,7 @@ let publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
 })).filter(result => result.ok).map(result => result.profile);
 const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.icon]));
 
-let providerIntegration=null,providerIntegrationEnabled=false;
+let providerIntegration=null,providerIntegrationEnabled=false,restoredProviderLanguages=[];
 let translator = createTranslator("en");
 const t = (key, params) => translator.t(key, params);
 let currentProfile = null;
@@ -430,8 +430,16 @@ window.addEventListener('pageshow',event=>{if(event.persisted)resetSampleEnquiry
 export function configureProviderIntegration(options={}){
  providerIntegrationEnabled=options.enabled===true;
  providerIntegration=mountProviderUiIntegration({...options,root:document,translate:t,
-  readProfile:()=>{validated=true;const inspected=updatePreview();return inspected.ok?inspected.profile:null;},
-  clearPrivateForm:()=>{$('providerForm').reset();validated=false;updatePreview();},
+  readProfile:()=>{validated=true;const inspected=updatePreview();return inspected.ok?{...inspected.profile,languages:[...restoredProviderLanguages]}:null;},
+  clearPrivateForm:()=>{restoredProviderLanguages=[];document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());$('providerForm').reset();validated=false;updatePreview();},
+  restorePrivateForm:profile=>{
+   document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());
+   for(const [key,id] of Object.entries({displayName:'providerName',city:'providerCity',serviceArea:'providerArea',description:'providerDesc'}))$(id).value=profile[key];
+   $('providerExp').value=profile.experienceYears??'';$('providerAvailable').checked=profile.available;$('allowPhone').checked=$('allowWhatsapp').checked=false;restoredProviderLanguages=[...profile.languages];
+   const inputs=[...document.querySelectorAll('#serviceOptions input')];inputs.forEach(input=>input.checked=profile.services.includes(input.value));
+   for(const service of profile.services){if(inputs.some(input=>input.value===service))continue;const label=document.createElement('label');label.className='check';label.dataset.ownerRestored='true';const input=document.createElement('input');input.type='checkbox';input.value=service;input.checked=true;label.append(input,document.createTextNode(service));$('serviceOptions').append(label);}
+   validated=false;updatePreview();
+  },
   onPublicState:state=>{
    clearProfile(true);
    publicProfiles=state.status==='ready'?(state.items??[state.profile]):[];

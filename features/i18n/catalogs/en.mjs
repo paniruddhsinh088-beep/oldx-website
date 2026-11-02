@@ -366,4 +366,13 @@ export default Object.freeze({
   "integration.read_offline": "Offline. Public results cleared.",
   "integration.read_denied": "Public read not permitted.",
   "integration.read_unavailable": "Public read unavailable. Retry later.",
+  "owner.idle": "Owner recovery is not loaded.",
+  "owner.loading": "Loading owner-private state…",
+  "owner.ready": "Current owner-private state loaded.",
+  "owner.unresolved": "Receipt is still unknown. Do not replace the pending request.",
+  "owner.denied": "Owner read not permitted.",
+  "owner.unavailable": "Owner recovery unavailable. Retry later.",
+  "owner.offline": "Offline. Owner-private state cleared.",
+  "owner.load": "Load saved private draft (replaces edits)",
+  "integration.reconciled": "Prior request confirmed. Current state was reconciled.",
 });

@@ -109,3 +109,14 @@ records owner-approved Gujarat-first text-only design and unactivated versioned
 paths/indexes, one-owner opaque allocation and read-only private recovery. Design
 approval does not activate schema/runtime/IAM/Rules/migration/deployment or settle
 privacy/retention policy. Existing legacy and future media/review scope preserved.
+
+Latest [owner HTTP/UI + photo checkpoint](review-progress-2026-11-02-owner-photo-batch.md)
+connects the disabled v1 owner-private read to authenticated/rate-limited HTTP and
+existing form ports. Explicit restoration and current-counter receipt reconciliation
+remain separate from public UI; unknown receipts retain original request keys.
+No actual transport or live account integration is enabled. [Photo source audit and
+candidate contract](photo-storage-audit-and-inactive-adapter-2026-11-02.md) distinguishes
+Store unsigned Cloudinary uploads from Product/avatar/Chat Firestore data URLs and
+unimplemented Service photos. A test-only injected quarantine/delete lifecycle is
+source, not real Cloudinary integration, decoder, journal or media activation. Legacy
+images remain unchanged. Text-only launch and all owner gates remain the priority.

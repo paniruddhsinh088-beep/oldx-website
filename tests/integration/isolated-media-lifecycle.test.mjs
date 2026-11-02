@@ -1,0 +1,37 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createIsolatedMediaLifecycle} from '../../scripts/isolated-media-lifecycle.mjs';
+const imageId='sample_image_123456789012',request={requestId:'request-1',surface:'product',parentId:'product-1'},bytes=new Uint8Array([1,2,3]);
+function fixture(overrides={}){
+ const calls=[],leases=new Map();let allowed=true;
+ const journal={reserveUpload:input=>{if(leases.has(input.requestId)){const old=leases.get(input.requestId);return old.digest===input.digest?old:null;}const lease={...input,leaseId:'lease-1',imageId,publicId:'oldx/quarantine/'+imageId,quotaReserved:true,budgetKnown:true,state:'reserved'};leases.set(input.requestId,lease);return lease;},rejectLease:()=>{leases.get('request-1').state='rejected';},markUploadAttempt:()=>{const lease=leases.get('request-1');if(lease.state!=='reserved')return false;lease.state='uploading';return true;},attachQuarantined:()=>{leases.get('request-1').state='quarantined';return true;},reserveDelete:()=>({actorUid:'owner',imageId,leaseId:'delete-1',assetId:'asset-1',surface:'product',parentId:'product-1',publicId:'oldx/quarantine/'+imageId,managed:true,references:0,published:false,state:'deleting'}),confirmDeleteLease:()=>true,completeDelete:()=>true};
+ const processor={decodeAndReencode:()=>({bytes:new Uint8Array([9,8]),contentType:'image/jpeg',width:50,height:50,metadataStripped:true,contentScanned:true})};
+ const provider={uploadProcessed:input=>{calls.push(input);return {assetId:'asset-1'};},verifyUploadResult:()=>true,destroy:input=>{calls.push(input);return {result:'ok'};}};
+ const config={enabled:true,mode:'isolated-test',authenticate:()=>({uid:'owner'}),authorize:()=>allowed,journal,processor,provider,...overrides};return {config,journal,processor,provider,calls,leases,deny:()=>allowed=false,create:()=>createIsolatedMediaLifecycle(config)};
+}
+test('media lifecycle defaults disabled, refuses runtime modes and rejects browser ownership/URLs/unbounded or unsupported inputs',async()=>{
+ assert.equal((await createIsolatedMediaLifecycle().upload(request,bytes)).code,'UNAVAILABLE');const f=fixture({mode:'production'});assert.equal((await f.create().upload(request,bytes)).code,'UNAVAILABLE');f.config.mode='isolated-test';
+ for(const input of [{...request,ownerUid:'forged'},{...request,surface:'service'},{...request,surface:'__proto__'},{...request,parentId:'https://foreign/image'},{...request,requestId:''}])assert.equal((await f.create().upload(input,bytes)).code,'INVALID_IMAGE_REQUEST');assert.equal((await f.create().upload(request,new Uint8Array(3*1024*1024+1))).code,'INVALID_IMAGE_REQUEST');let evaluated=0;const getter={...request};Object.defineProperty(getter,'parentId',{enumerable:true,get(){evaluated++;throw new Error('private');}});assert.equal((await f.create().upload(getter,bytes)).code,'INVALID_IMAGE_REQUEST');assert.equal(evaluated,0);assert.equal((await f.create().upload({...request,[Symbol('extra')]:true},bytes)).code,'INVALID_IMAGE_REQUEST');assert.equal(f.calls.length,0);
+});
+test('upload reserves budget, processes bytes and privately quarantines once; replay cannot upload again or change bytes',async()=>{
+ const f=fixture(),adapter=f.create();const result=await adapter.upload(request,bytes);assert.deepEqual(result,{ok:true,state:'quarantined',imageId});assert.equal((await adapter.upload(request,bytes)).ok,true);assert.equal(f.calls.length,1);assert.equal(f.calls[0].deliveryType,'authenticated');assert.equal(f.calls[0].overwrite,false);assert.deepEqual([...f.calls[0].bytes],[9,8]);assert.equal(JSON.stringify(result).includes('asset-1'),false);assert.equal((await adapter.upload(request,new Uint8Array([7]))).code,'UPLOAD_NOT_AUTHORIZED');
+});
+test('authorization, quota, processor metadata, scan results and signed-result verification fail closed',async()=>{
+ const denied=fixture();denied.deny();assert.equal((await denied.create().upload(request,bytes)).code,'DENIED');assert.equal(denied.leases.size,0);
+ const quota=fixture();quota.journal.reserveUpload=()=>null;assert.equal((await quota.create().upload(request,bytes)).code,'UPLOAD_NOT_AUTHORIZED');assert.equal(quota.calls.length,0);
+ for(const field of ['metadataStripped','contentScanned']){const f=fixture();const original=f.processor.decodeAndReencode;f.processor.decodeAndReencode=()=>({...original(),[field]:false});assert.equal((await f.create().upload(request,bytes)).code,'IMAGE_REJECTED');assert.equal(f.calls.length,0);}
+ const revoked=fixture();const original=revoked.processor.decodeAndReencode;revoked.processor.decodeAndReencode=()=>{revoked.deny();return original();};assert.equal((await revoked.create().upload(request,bytes)).code,'DENIED');assert.equal(revoked.calls.length,0);
+ const forged=fixture();forged.provider.verifyUploadResult=()=>false;assert.equal((await forged.create().upload(request,bytes)).code,'OUTCOME_UNKNOWN');assert.equal((await forged.create().upload(request,bytes)).code,'OUTCOME_UNKNOWN');assert.equal(forged.calls.length,1);
+});
+test('lost acknowledgements and concurrent retries retain pending lease rather than creating orphan duplicates',async()=>{
+ const f=fixture();let release;f.provider.uploadProcessed=input=>{f.calls.push(input);return new Promise(r=>release=r);};const adapter=f.create(),task=adapter.upload(request,bytes);while(!release)await new Promise(r=>setImmediate(r));assert.equal((await adapter.upload(request,bytes)).code,'OUTCOME_UNKNOWN');release({assetId:'asset-1'});assert.equal((await task).ok,true);assert.equal(f.calls.length,1);
+ const lost=fixture();lost.journal.attachQuarantined=()=>{throw new Error('private credential');};assert.equal((await lost.create().upload(request,bytes)).code,'OUTCOME_UNKNOWN');assert.equal((await lost.create().upload(request,bytes)).code,'OUTCOME_UNKNOWN');assert.equal(lost.calls.length,1);
+});
+test('delete accepts managed unreferenced owner lease only, revalidates scope and never derives IDs from legacy URLs',async()=>{
+ const input={requestId:'delete-1',imageId};const f=fixture();assert.equal((await f.create().remove(input)).state,'deleted');assert.equal(f.calls[0].invalidate,true);
+ for(const patch of [{actorUid:'foreign'},{references:1},{published:true},{managed:false},{publicId:'legacy/foreign'}]){const g=fixture(),original=g.journal.reserveDelete;g.journal.reserveDelete=()=>({...original(),...patch});assert.equal((await g.create().remove(input)).code,'DENIED');assert.equal(g.calls.length,0);}
+ const changed=fixture();changed.journal.confirmDeleteLease=()=>false;assert.equal((await changed.create().remove(input)).code,'DENIED');assert.equal(changed.calls.length,0);assert.equal((await changed.create().remove({...input,url:'https://legacy/image'})).code,'INVALID_IMAGE_REQUEST');
+});
+test('deadline and cancellation fail safely before auth and retain ambiguous upload outcome after attempt',async()=>{
+ const f=fixture();const abort=new AbortController();abort.abort();assert.equal((await f.create().upload(request,bytes,{signal:abort.signal})).code,'CANCELLED');assert.equal(f.calls.length,0);
+ let expire,release;f.config.schedule=fn=>{expire=fn;return 1;};f.config.cancel=()=>{};f.provider.uploadProcessed=()=>new Promise(r=>release=r);const pending=f.create().upload(request,bytes);while(!release)await new Promise(r=>setImmediate(r));expire();assert.equal((await pending).code,'OUTCOME_UNKNOWN');release({assetId:'asset-1'});await Promise.resolve();assert.equal(f.leases.get('request-1').state,'uploading');
+});

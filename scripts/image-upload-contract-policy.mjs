@@ -8,7 +8,7 @@ const SURFACES = Object.freeze({
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export function getSurfacePolicy(surface) {
-  return SURFACES[surface] ?? null;
+  return typeof surface === "string" && Object.hasOwn(SURFACES, surface) ? SURFACES[surface] : null;
 }
 
 // Validates server-derived metadata after the trusted processor has decoded the bytes.

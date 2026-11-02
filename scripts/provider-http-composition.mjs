@@ -1,3 +1,5 @@
+import {createProviderOwnerBootstrap} from './provider-owner-bootstrap.mjs';
+import {validateOwnerBootstrapDto} from '../features/service-providers/owner-bootstrap-dto.mjs';
 import {parseBoundedJson} from './bounded-json.mjs';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {inspectProviderDraftRequest} from './provider-draft-preparation.mjs';
@@ -11,10 +13,10 @@ function copy(input,keys){try{if(!input||Object.getPrototypeOf(input)!==Object.p
 function requestHeaders(input){try{if(!input||Object.getPrototypeOf(input)!==Object.prototype||Reflect.ownKeys(input).length>32)return null;const out=Object.create(null);for(const key of Reflect.ownKeys(input)){const d=Object.getOwnPropertyDescriptor(input,key),lower=key.toLowerCase();if(!d||!Object.hasOwn(d,'value')||typeof d.value!=='string'||d.value.length>8192||Object.hasOwn(out,lower)||/[\r\n]/.test(d.value))return null;out[lower]=d.value;}return out;}catch{return null;}}
 // Default-disabled, framework-neutral function only. No route/listener/SDK/auth
 // provider is initialized. All roles, rates and identities are trusted injections.
-export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
+export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},bootstrap={},timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
  return Object.freeze({async handle(operation,request,{signal}={}){
   if(enabled!==true)return error(503,'UNAVAILABLE');
-  if(!['draft.save','publication.manage'].includes(operation))return error(404,'NOT_FOUND');
+  if(!['draft.save','publication.manage','owner.bootstrap'].includes(operation))return error(404,'NOT_FOUND');
   const r=copy(request,['method','headers','body']);if(!r)return error(400,'BAD_REQUEST');
   if(typeof r.method!=='string')return error(400,'BAD_REQUEST');
   if(r.method!=='POST')return error(405,'METHOD_NOT_ALLOWED',{Allow:'POST'});
@@ -23,6 +25,7 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   const parsed=parseBoundedJson(r.body);if(!parsed.ok)return error(parsed.code==='BODY_TOO_LARGE'?413:400,parsed.code);
   let input;
   if(operation==='draft.save')input=inspectProviderDraftRequest(parsed.value);
+  else if(operation==='owner.bootstrap'){input=copy(parsed.value,['operation','requestId']);if(input&&!(input.operation===null&&input.requestId===null||['draft.save','publication.manage'].includes(input.operation)&&id(input.requestId)))input=null;}
   else{input=copy(parsed.value,['requestId','expectedRevision','expectedGeneration','action']);if(input&&(!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!Number.isSafeInteger(input.expectedGeneration)||input.expectedGeneration<0||!['publish','withdraw'].includes(input.action)))input=null;}
   if(!input)return error(400,'INVALID_REQUEST');
   const token=/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(h.authorization??'')?.[1];
@@ -30,16 +33,18 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   if(![verifyFirebaseToken,resolveProviderRole,consumeRateLimit].every(fn=>typeof fn==='function'))return error(503,'ENFORCEMENT_UNAVAILABLE');
   const result=await runVerifiedOperation({credential:token,authenticate:(credential,context)=>verifyFirebaseToken(credential,{...context,checkRevoked:true}),signal,timeoutMs,now,schedule,cancel,run:async context=>{
    const role=copy(await resolveProviderRole(context.actorUid,{signal:context.signal,deadlineAt:context.deadlineAt}),['uid','role','active']);context.checkpoint();
-   if(!role||role.uid!==context.actorUid||role.active!==true||!(operation==='draft.save'?['member','provider']:['provider']).includes(role.role))return {ok:false,code:'DENIED'};
+   if(!role||role.uid!==context.actorUid||role.active!==true||!(operation==='publication.manage'?['provider']:['member','provider']).includes(role.role))return {ok:false,code:'DENIED'};
    const rate=copy(await consumeRateLimit({actorUid:context.actorUid,operation,requestId:input.requestId},{signal:context.signal,deadlineAt:context.deadlineAt}),['allowed','retryAfterSeconds']);context.checkpoint();
    if(!rate||typeof rate.allowed!=='boolean'||!Number.isInteger(rate.retryAfterSeconds)||rate.allowed&&rate.retryAfterSeconds!==0||!rate.allowed&&(rate.retryAfterSeconds<1||rate.retryAfterSeconds>3600))return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};
    if(!rate.allowed)return {ok:false,code:'RATE_LIMITED',retryAfterSeconds:rate.retryAfterSeconds};
    const shared={enabled:true,authenticate:()=>({uid:context.actorUid}),timeoutMs:Math.max(1,context.deadlineAt-now()),now,schedule,cancel};
+   if(operation==='owner.bootstrap')return createProviderOwnerBootstrap({...bootstrap,...shared}).load(input,{signal:context.signal});
    // Once dispatched, timeout may conceal an in-flight commit. The atomic port
    // remains responsible for current permission/ownership, receipt and audit.
    context.markMutationAttempted();
    return operation==='draft.save'?createProviderDraftTransaction({...draft,...shared}).save(input,{signal:context.signal}):createProviderPublicationTransaction({...publication,...shared}).execute(input,{signal:context.signal});
   }});
+  if(result?.ok===true&&operation==='owner.bootstrap'){const safe=validateOwnerBootstrapDto(result);return safe?reply(200,safe):error(503,'UNAVAILABLE');}
   if(result?.ok===true){
    const keys=operation==='draft.save'?['ok','status','providerId','revision']:['ok','status','providerId','action','generation'];const safe=copy(result,keys);
    if(!safe||!id(safe.providerId)||!(operation==='draft.save'?['saved','replayed']:['applied','replayed']).includes(safe.status)||!Number.isSafeInteger(operation==='draft.save'?safe.revision:safe.generation))return error(503,'UNAVAILABLE');

@@ -86,3 +86,14 @@ Products/Stores/Chat and gated media/review plans. First journey defaults remain
 existing stack and zero extra spend, one opaque-owner draft -> reviewed publication
 -> bounded public profile. Separate runtime/schema binding, eligibility/moderation/
 role and quota/retention choices plus staging transport/rollback acceptance remain.
+
+Owner bootstrap now has a disabled HTTP/private-form restoration binding with
+read-only receipt reconciliation. This reduces integration code work, not approval
+scope. Minimum first journey decisions remain: concrete runtime/region/zero-cost
+commercial eligibility and server identity; v1 cloud path/index binding and actual
+verified Auth/role/publication/quota enforcement; retention/revocation budgets;
+then separately approved isolated staging transport/Rules/rollback/deployment.
+Media is not required for that first journey. Cloudinary Free research and test-only
+quarantine/delete ports do not approve any account/preset/security/credential change,
+private Chat delivery, photo policy, migration or additional cost. See the
+[photo audit](photo-storage-audit-and-inactive-adapter-2026-11-02.md).

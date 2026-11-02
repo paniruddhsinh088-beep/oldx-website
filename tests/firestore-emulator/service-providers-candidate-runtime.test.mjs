@@ -269,6 +269,11 @@ test('versioned owner bootstrap reconciles actual SDK private writes and histori
   assert.equal((await owner.managePublication({requestId:'publish',expectedRevision:2,expectedGeneration:0,action:'publish'})).ok,true);assert.equal((await owner.managePublication({requestId:'withdraw',expectedRevision:2,expectedGeneration:1,action:'withdraw'})).ok,true);
   const withdrawn=await owner.bootstrap({operation:'publication.manage',requestId:'publish'});assert.equal(withdrawn.published,false);assert.equal(withdrawn.receipt.action,'publish');assert.equal(withdrawn.receipt.status,'committed');assert.equal(withdrawn.generation,2);assert.equal((await owner.bootstrap({operation:'draft.save',requestId:'not-present'})).receipt.status,'unknown');
   assert.equal((await sdk.getDoc(sdk.doc(db,schema.publicViews,withdrawn.providerId))).exists(),false);assert.equal((await sdk.getDocs(sdk.collection(db,schema.owners))).size,1);
+  const {createProviderHttpComposition}=await import('../../scripts/provider-http-composition.mjs');
+  const http=createProviderHttpComposition({enabled:true,verifyFirebaseToken:()=>({uid}),resolveProviderRole:()=>({uid,role:'provider',active:true}),consumeRateLimit:()=>({allowed:true,retryAfterSeconds:0}),bootstrap:{repository}});
+  const response=await http.handle('owner.bootstrap',{method:'POST',headers:{authorization:'Bearer isolated.test.token','content-type':'application/json'},body:JSON.stringify({operation:'draft.save',requestId:'create'})});
+  assert.equal(response.status,200);assert.match(response.headers['Cache-Control'],/no-store/);assert.equal(response.body.draft.description,'Owner-private draft');assert.equal(response.body.receipt.revision,1);assert.equal(response.body.revision,2);assert.equal(response.body.published,false);assert.equal(Object.hasOwn(response.body,'ownerUid'),false);
+
  });
  const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,schema.owners,'bootstrap-owner')));
 });

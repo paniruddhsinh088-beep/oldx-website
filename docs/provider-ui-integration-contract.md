@@ -80,3 +80,21 @@ is existing Firebase Auth/Firestore + existing Vercel architecture, one same-ori
 text-only journey, bounded reads, manual reviewed publication, no uploads/SMS/reviews
 or new infrastructure. If existing free quotas do not support it, stop; do not enable
 billing. Recommendations and repository tests are not these approvals.
+
+## Owner-private bootstrap binding
+
+`owner.load({operation,requestId},{signal,session})` returns the private HTTP
+`{status,body}` envelope; it is not a public discovery/read port. `owner.bootstrap`
+shares verified-token/role/rate enforcement and bounded POST JSON parsing but performs
+no allocation/write. Body cannot select an owner/provider/role. Response is no-store,
+strict v1 editable draft/current counters/capabilities and scoped receipt only.
+
+Existing form has an explicit disabled-by-default load/reconcile control. Same-session
+unknown command recovery asks about its original operation/key. Missing receipt stays
+unresolved and preserves original key/body; committed receipt clears pending command
+without inferring current publication from historical outcomes. Counters cannot regress.
+Private draft restoration uses a separate callback and never observer/public snapshots.
+Languages and multi-service authored content are preserved; contact consent is not
+restored from private draft. Session/page/scope/offline changes abort reads and reject
+late callbacks; logout clears restored form/extra service controls. No persistent draft
+or token storage, real endpoint or SDK binding is supplied by this integration.
