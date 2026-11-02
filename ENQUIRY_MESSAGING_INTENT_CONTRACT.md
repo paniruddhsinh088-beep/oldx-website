@@ -36,3 +36,8 @@ with this intent. It does not bundle privileged scripts or enable messaging.
 projector for already-trusted profile/enquiry/conversation snapshots. Its canonical
 fixture checks do not implement live token authentication, queries, pagination,
 transaction freshness or Rules. See the conversation progress acceptance checklist.
+
+The default-disabled `scripts/service-read-executor.mjs` composes injected token
+authentication and trusted snapshot reads with the existing projector under a
+bounded deadline/cancellation lifecycle. It never implements Firebase reads or
+proves freshness/authorization itself. Browser packaging excludes this executor.
