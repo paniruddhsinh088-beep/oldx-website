@@ -45,3 +45,11 @@ The framework-neutral handler now rejects malformed validator result shapes, acc
 Do not wire mutation endpoints or the legacy Admin UI until owner-approved operation contracts, complete schemas, and the trusted atomic commit adapter are implemented and tested.
 
 This document does not authorize any mutation operation. No Firebase, Vercel, staging, or Production resources are changed.
+
+Verified follow-up: the result's `ok` is now inspected through its own property
+descriptor and must be a data property equal to true. A truthy getter previously
+could execute and reach the mock commit; it now returns INVALID_MUTATION_INPUT
+without evaluating the getter. The throwing-getter test now expects the same safe
+400 validation rejection rather than an internal error. Positive data-property
+validators and all atomic commit/authorization gates remain unchanged. No mutation
+schema, endpoint or live operation is enabled.

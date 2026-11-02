@@ -134,8 +134,8 @@ test("validator status accessor never reaches atomic commit", async () => {
     validateMutationInput: async () => hostileResult,
     commitMutation: async () => { commitCalled = true; return { suspended: true }; }
   });
-  assert.equal(result.status, 500);
-  assert.equal(result.body.error.code, "INTERNAL_ERROR");
+  assert.equal(result.status, 400);
+  assert.equal(result.body.error.code, "INVALID_MUTATION_INPUT");
   assert.equal(JSON.stringify(result.body).includes("private status accessor"), false);
   assert.equal(commitCalled, false);
 });
@@ -404,4 +404,12 @@ test("mutation operation not allowlisted never invokes atomic commit adapter", a
   });
   assert.equal(result.status, 403);
   assert.equal(commitCalled, false);
+});
+
+test('a truthy validator status getter is rejected without evaluating it or committing',async()=>{
+ let getterCalls=0,commitCalls=0;
+ const result=await handleAdminRequest({...common,operation:'users.suspend',isMutation:true,request:{method:'POST',headers:{authorization:'Bearer admin-token'},body:{}},
+  validateMutationInput:async()=>Object.defineProperty({value:{uid:'user-b'}},'ok',{get(){getterCalls++;return true;}}),
+  commitMutation:async()=>{commitCalls++;return {};}});
+ assert.equal(result.status,400);assert.equal(getterCalls,0);assert.equal(commitCalls,0);
 });

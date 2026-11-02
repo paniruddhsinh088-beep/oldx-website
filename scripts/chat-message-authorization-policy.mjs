@@ -1,6 +1,6 @@
 const MESSAGE_ID = /^[A-Za-z0-9_-]{1,128}$/;
 
-export function authorizeChatMutation({ action, actorUid, senderUid, participants, targetUid, blocked = false, tombstoned = false }) {
+export function authorizeChatMutation({ action, actorUid, senderUid, participants, targetUid, blocked, tombstoned = false }) {
   if (typeof actorUid !== "string" || !actorUid ||
       !Array.isArray(participants) || participants.length !== 2 ||
       participants.some(uid => typeof uid !== "string" || !uid) ||
@@ -11,7 +11,9 @@ export function authorizeChatMutation({ action, actorUid, senderUid, participant
 
   if (action === "send") {
     if (senderUid !== actorUid) return { ok: false, error: "sender_mismatch" };
-    return blocked ? { ok: false, error: "blocked" } : { ok: true };
+    if (blocked === true) return { ok: false, error: "blocked" };
+    if (blocked !== false) return { ok: false, error: "block_state_unverified" };
+    return { ok: true };
   }
   if (action === "delete_for_everyone") {
     if (tombstoned) return { ok: false, error: "already_tombstoned" };

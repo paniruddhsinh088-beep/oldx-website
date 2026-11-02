@@ -28,7 +28,7 @@ test("sender UID spoofing is rejected before message send", () => {
     action: "send", actorUid: "synthetic-a", senderUid: "synthetic-b", participants
   }).error, "sender_mismatch");
   assert.deepEqual(authorizeChatMutation({
-    action: "send", actorUid: "synthetic-a", senderUid: "synthetic-a", participants
+    action: "send", actorUid: "synthetic-a", senderUid: "synthetic-a", participants, blocked: false
   }), { ok: true });
 });
 
@@ -121,4 +121,8 @@ test("invalid sender identity cannot authorize tombstone mutation", () => {
   assert.deepEqual(authorizeChatMutation({
     action: "delete_for_everyone", actorUid: "synthetic-a", senderUid: "", participants
   }), { ok: false, error: "invalid_sender" });
+});
+
+test('send fails closed until block state is explicitly verified false',()=>{
+ for(const blocked of [undefined,null,0,'false',{},[]])assert.deepEqual(authorizeChatMutation({action:'send',actorUid:'synthetic-a',senderUid:'synthetic-a',participants,blocked}),{ok:false,error:'block_state_unverified'});
 });
