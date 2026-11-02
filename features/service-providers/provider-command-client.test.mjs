@@ -69,3 +69,10 @@ test('HTTP authorization/conflict/rate failures do not expose backend text or pe
   assert.equal((await client.retryUnknown()).code,'NO_UNKNOWN_OUTCOME');assert.equal(JSON.stringify(states).includes('private-secret'),false);
  }
 });
+test('pre-dispatch session invalidation prevents transport calls and sparse arrays fail validation',async()=>{
+ let calls=0;const client=createProviderCommandClient({enabled:true,send:()=>{calls++;return success;}});
+ client.setSession('owner1');const pending=client.submit('draft.save',draft());client.setSession('owner2');
+ assert.equal((await pending).code,'STALE');assert.equal(calls,0);
+ const sparse=draft();sparse.profile.services=Array(2);sparse.profile.services[1]='Plumber';
+ assert.equal((await client.submit('draft.save',sparse)).code,'INVALID_REQUEST');assert.equal(calls,0);
+});
