@@ -1,0 +1,34 @@
+import {createHash} from 'node:crypto';
+import {runVerifiedOperation} from './verified-operation.mjs';
+import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
+const roles=['assets','associations','receipts','audits'];
+export const PHOTO_REFERENCE_TEST_SCHEMA=Object.freeze(Object.fromEntries(roles.map(k=>[k,'testOldxPhoto'+k[0].toUpperCase()+k.slice(1)])));
+const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),fail=code=>({ok:false,code}),int=v=>Number.isSafeInteger(v)&&v>=0;
+// Durable private reference transactions only. Upload bytes/credentials/provider
+// deletion, public media release and legacy migration remain unimplemented/off.
+export function createIsolatedPhotoReferenceRepository({enabled=false,firestore,sdk,schema,parentCollections,actorCollections,authenticate,now=Date.now,timeoutMs=5000}={}){
+ if(enabled!==true)return Object.freeze({apply:async()=>fail('UNAVAILABLE')});
+ const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
+ if(!copyRecord(parentCollections,['product','store','provider'])||Object.values(parentCollections).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated parent schema');const parents={...parentCollections};if(!copyRecord(actorCollections,['product','store','provider'])||Object.values(actorCollections).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated actor schema');const actors={...actorCollections};
+ const ref=(role,id)=>sdk.doc(db,c[role],id);
+ async function read(raw,r){const snap=await raw.get(r);if(!snap.exists())return null;const {committedAt,...data}=snap.data();return data;}
+ return Object.freeze({async apply(request,{credential,signal}={}){
+  const input=copyRecord(request,['requestId','kind','parentId','expectedParentRevision','expectedPhotoRevision','imageIds','service']);
+  if(!input||!safeId(input.requestId)||!['product','store','provider'].includes(input.kind)||!safeId(input.parentId)||!int(input.expectedParentRevision)||!int(input.expectedPhotoRevision)||!Array.isArray(input.imageIds)||input.imageIds.length>(input.kind==='store'?1:6)||input.imageIds.some(id=>typeof id!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(id))||new Set(input.imageIds).size!==input.imageIds.length||input.service!==null&&(input.kind!=='provider'||typeof input.service!=='string'||input.service.length<1||input.service.length>80))return fail('INVALID_REQUEST');
+  const snapshot=structuredClone(input);return runVerifiedOperation({authenticate,credential,signal,timeoutMs,now,run:async context=>{
+   const uid=context.actorUid,key=hash([uid,snapshot.requestId]),associationId=hash([snapshot.kind,snapshot.parentId,snapshot.service]),fingerprint=hash(snapshot);context.markMutationAttempted();
+   return sdk.runTransaction(db,async raw=>{
+    const check=()=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);check();const actor=await read(raw,sdk.doc(db,actors[snapshot.kind],uid));if(actor?.uid!==uid||actor.canWrite!==true||actor.suspended!==false)return fail('DENIED');const parentKey=snapshot.kind==='provider'?snapshot.parentId:snapshot.kind+'_'+snapshot.parentId,parentRef=sdk.doc(db,parents[snapshot.kind],parentKey),parent=await read(raw,parentRef),association=await read(raw,ref('associations',associationId)),receipt=await read(raw,ref('receipts',key)),audit=await read(raw,ref('audits',key));
+    if(!parent||parent.ownerUid!==uid||(snapshot.kind==='provider'?parent.providerId:parent.id)!==snapshot.parentId||!int(parent.revision)||snapshot.kind!=='provider'&&parent.kind!==snapshot.kind||snapshot.service!==null&&!parent.profile?.services?.includes(snapshot.service))return fail('DENIED');
+    if(association&&(!copyRecord(association,['kind','parentId','service','ownerUid','parentRevision','photoRevision','imageIds','visibility'])||association.kind!==snapshot.kind||association.parentId!==snapshot.parentId||association.service!==snapshot.service||association.ownerUid!==uid||!int(association.parentRevision)||!int(association.photoRevision)||association.visibility!=='private'||!Array.isArray(association.imageIds)||association.imageIds.length>6||association.imageIds.some(v=>typeof v!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(v))))return fail('CONFLICT');
+    if(receipt){if(receipt.actorUid!==uid||receipt.fingerprint!==fingerprint||receipt.associationId!==associationId||audit?.requestKey!==key||audit.actorUid!==uid||audit.photoRevision!==receipt.photoRevision||!association||association.ownerUid!==uid||association.photoRevision<receipt.photoRevision)return fail('IDEMPOTENCY_CONFLICT');return {ok:true,status:'replayed',photoRevision:receipt.photoRevision};}
+    if(parent.revision!==snapshot.expectedParentRevision||(association?.photoRevision??0)!==snapshot.expectedPhotoRevision||association&&association.ownerUid!==uid)return fail('REVISION_CONFLICT');
+    const ids=new Set([...(association?.imageIds??[]),...snapshot.imageIds]);if(ids.size>12)return fail('CONFLICT');const assets=new Map();
+    for(const imageId of ids){const asset=await read(raw,ref('assets',imageId));if(!asset||asset.imageId!==imageId||asset.ownerUid!==uid||asset.parentId!==snapshot.parentId||asset.kind!==snapshot.kind||asset.service!==snapshot.service||!['quarantined','attached'].includes(asset.state)||!Array.isArray(asset.references)||asset.references.length>12||asset.references.some(v=>!safeId(v))||(!int(asset.revision)||asset.revision===Number.MAX_SAFE_INTEGER))return fail('DENIED');assets.set(imageId,asset);}
+    const photoRevision=snapshot.expectedPhotoRevision+1;if(!Number.isSafeInteger(photoRevision))return fail('CONFLICT');check();
+    for(const [imageId,asset] of assets){const references=asset.references.filter(v=>v!==associationId);if(snapshot.imageIds.includes(imageId))references.push(associationId);if(references.length>12)throw new Error('Reference limit');raw.set(ref('assets',imageId),{...asset,state:references.length?'attached':'quarantined',references,revision:asset.revision+1,committedAt:sdk.serverTimestamp()});}
+    raw.set(ref('associations',associationId),{kind:snapshot.kind,parentId:snapshot.parentId,service:snapshot.service,ownerUid:uid,parentRevision:parent.revision,photoRevision,imageIds:[...snapshot.imageIds],visibility:'private',committedAt:sdk.serverTimestamp()});raw.set(ref('receipts',key),{actorUid:uid,fingerprint,associationId,photoRevision});raw.set(ref('audits',key),{requestKey:key,actorUid:uid,associationId,photoRevision,parentRevision:parent.revision,operation:'replace-private-photo-references'});check();return {ok:true,status:'saved',photoRevision};
+   },{maxAttempts:3});
+  }});
+ }});
+}

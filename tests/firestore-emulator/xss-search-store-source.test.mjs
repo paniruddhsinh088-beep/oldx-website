@@ -73,3 +73,17 @@ test('legacy partial product records cannot crash catalogue/autocomplete search 
   assert.match(source,/productMatchesSearch\(p, query, \['title', 'category'\]\)/);
   assert.match(source,/productMatchesSearch\(p, searchVal, \['title', 'location'\]\)/);
 });
+
+test('legacy Login and Signup preserve password bytes and credential failures do not distinguish registered accounts',async()=>{
+ const {runInNewContext}=await import('node:vm');const values={loginEmail:{value:' sample@example.invalid '},loginPassword:{value:'  secret sample  '},rememberMeCheckbox:{checked:false},signupEmail:{value:' sample@example.invalid '},signupPassword:{value:'  secret sample  '},signupConfirmPassword:{value:'  secret sample  '}};const captured=[],alerts=[];
+ const globals={document:{getElementById:id=>values[id]},firebase:{auth:{Auth:{Persistence:{LOCAL:'local',SESSION:'session'}}}},auth:{setPersistence:()=>Promise.resolve(),signInWithEmailAndPassword:(email,password)=>{captured.push({email,password});return Promise.reject({code:'auth/user-not-found'});},createUserWithEmailAndPassword:(email,password)=>{captured.push({email,password});return Promise.resolve({user:null});}},closeAuthModal(){},showCustomAlert:(...args)=>alerts.push(args)};
+ runInNewContext(section('function handleEmailLogin(e)', 'function togglePasswordVisibility(')+';handleEmailLogin({preventDefault(){}});handleEmailSignup({preventDefault(){}});',globals);await new Promise(r=>setImmediate(r));assert.equal(captured.length,2);assert.ok(captured.every(r=>r.password==='  secret sample  '&&r.email==='sample@example.invalid'));assert.ok(alerts.some(r=>r[1]==='Could not sign in. Check your email and password or reset your password.'));
+ assert.doesNotMatch(section('function handleEmailLogin(e)', 'function handleEmailSignup(e)'),/email is not registered|Incorrect password/);
+});
+
+test('essential locale markers do not relabel listing submit controls or replace authored content',()=>{
+ assert.equal((source.match(/data-i18n="market.login"/g)||[]).length,1);
+ assert.equal((source.match(/data-i18n="market.signup"/g)||[]).length,1);
+ assert.match(source,/src="features\/i18n\/marketplace.mjs"/);
+ assert.match(source,/for="loginPassword" data-i18n="market.password"/);
+});

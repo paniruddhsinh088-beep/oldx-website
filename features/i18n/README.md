@@ -2,8 +2,8 @@
 
 The isolated Service and Store previews support Gujarati (`gu`), English (`en`)
 and Hindi (`hi`). Tests enforce matching catalog keys and interpolation fields. Translations are draft preview copy;
-native-speaker review is still required before release. The main marketplace,
-authentication screens and account preferences are not wired to these modules.
+native-speaker review is still required before release. Essential marketplace Search/auth controls now use these modules. Remaining
+marketplace journeys and account preferences are not fully wired.
 
 ## Modules and boundaries
 
@@ -63,3 +63,9 @@ System Noto Gujarati/Devanagari fallbacks are named in CSS; no font API or new
 remote font download was added. Native shaping/terminology review, full app string
 inventory, offline application caching, first-launch/settings integration and
 owner-controlled private preference sync remain outstanding. Nothing is deployed.
+
+Essential marketplace binding now exists in `marketplace.mjs`/index.html for Search
+and auth labels/submit/toggle controls, using these same catalogs and allowlisted
+preference. It does not translate authored content or credentials. Remaining legacy
+listing/Store/Chat/Admin/settings and dynamic errors are not yet localized. Extracted
+actual-markup browser tests do not replace whole-app live/device/native-language QA.

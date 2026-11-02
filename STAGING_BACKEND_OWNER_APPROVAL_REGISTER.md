@@ -112,3 +112,12 @@ media migration or production actions. The approved Provider v1 stays text-only;
 future Provider media descriptors do not add fields to that schema. All agreed
 requirements remain in the [P0/P1 launch register](docs/launch-decision-register-2026-11-07.md).
 November 7 remains a target, with HOLD/NO-GO until evidence/approval gates are met.
+
+## Durable repository / essential locale preparation — 2 November 2026
+
+New demo/loopback SDK enquiry, Product/Store and private photo-association mappings
+are repository/isolated-test code only. `testOldx*` namespaces are test fixtures, not
+approved operational schemas; Provider v1 keys remain text-only. No runtime resource,
+Rules/index, IAM/secret, media provider, migration, billing, deployment or release
+approval inferred. Essential locale/control and password-byte fixes change repository
+UI source, not authentication configuration. All P0 requirements and HOLD/NO-GO remain.

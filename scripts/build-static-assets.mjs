@@ -10,7 +10,7 @@ export const BROWSER_ASSETS = Object.freeze([
     .map(name => `features/service-providers/${name}.mjs`),
   ...['store-preview', 'store-catalogue', 'preview-fixtures', 'preview-route', 'preview-load', 'preview-adapter', 'preview-detail', 'preview-share', 'preview-card']
     .map(name => `features/stores/${name}.mjs`),
-  ...['i18n', 'dom', 'preference', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
+  ...['i18n', 'dom', 'preference', 'marketplace', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
     .map(name => `features/i18n/${name}.mjs`)
 ]);
 

@@ -102,6 +102,12 @@
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-24">
+<div class="flex flex-wrap items-center gap-2 px-4 py-2 text-sm" id="marketplaceLocalePanel">
+<label for="marketplaceLocale" data-i18n="market.language">Language</label>
+<select id="marketplaceLocale" class="min-h-[44px] max-w-full rounded border px-2 bg-white text-gray-900"><option value="en">English</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option></select>
+<span id="marketplaceLocaleStatus" role="status" aria-live="polite" class="break-words"></span>
+</div>
+
 
     <!-- Header / Navbar -->
     <header class="sticky top-0 z-40 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm border-b border-gray-200/80 dark:border-gray-700/80">
@@ -151,7 +157,7 @@
 
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3 relative">
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base shrink-0"></i>
-                        <input type="text" id="searchInput" oninput="handleSearchInput()" placeholder="Find Cars, Mobiles, Bikes..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
+                        <input type="text" id="searchInput" data-i18n-aria-label="market.search" aria-label="Search products" data-i18n-placeholder="market.searchHint" oninput="handleSearchInput()" placeholder="Find Cars, Mobiles, Bikes..." class="w-full bg-transparent font-medium text-xs md:text-sm text-gray-800 dark:text-white placeholder-gray-400 focus:outline-none">
                         
                         <!-- Instant Search Autocomplete Dropdown Fixed -->
                         <div id="searchAutocompleteDropdown" style="display: none;" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[999] max-h-60 overflow-y-auto text-left p-2 space-y-1"></div>
@@ -739,14 +745,14 @@
             <!-- LOGIN FORM -->
             <form id="loginFormContainer" onsubmit="handleEmailLogin(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="loginEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    <label for="loginEmail" data-i18n="market.email" class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="loginEmail" autocomplete="email" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">Password</label>
+                    <label for="loginPassword" data-i18n="market.password" class="block font-bold mb-1">Password</label>
                     <div class="relative">
-                        <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <input type="password" id="loginPassword" autocomplete="current-password" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <button type="button" data-i18n-aria-label="market.showPassword" aria-label="Show or hide password" onclick="togglePasswordVisibility('loginPassword', 'loginEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
                             <i id="loginEyeIcon" class="fa-solid fa-eye"></i>
                         </button>
                     </div>
@@ -761,7 +767,7 @@
                     </button>
                 </div>
 
-                <button type="submit" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
+                <button type="submit" data-i18n="market.login" class="w-full bg-primary hover:bg-teal-900 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
                     Login to Account
                 </button>
             </form>
@@ -769,29 +775,29 @@
             <!-- SIGN UP FORM -->
             <form id="signupFormContainer" onsubmit="handleEmailSignup(event)" class="space-y-3 text-xs" style="display: none;">
                 <div>
-                    <label class="block font-bold mb-1">Email Address</label>
-                    <input type="email" id="signupEmail" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                    <label for="signupEmail" data-i18n="market.email" class="block font-bold mb-1">Email Address</label>
+                    <input type="email" id="signupEmail" autocomplete="email" required placeholder="name@domain.com" class="w-full px-3 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">Create New Password</label>
+                    <label for="signupPassword" data-i18n="market.newPassword" class="block font-bold mb-1">Create New Password</label>
                     <div class="relative">
-                        <input type="password" id="signupPassword" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        <button type="button" onclick="togglePasswordVisibility('signupPassword', 'signupEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <input type="password" id="signupPassword" autocomplete="new-password" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <button type="button" data-i18n-aria-label="market.showPassword" aria-label="Show or hide password" onclick="togglePasswordVisibility('signupPassword', 'signupEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
                             <i id="signupEyeIcon" class="fa-solid fa-eye"></i>
                         </button>
                     </div>
                 </div>
                 <div>
-                    <label class="block font-bold mb-1">Repeat New Password</label>
+                    <label for="signupConfirmPassword" data-i18n="market.confirmPassword" class="block font-bold mb-1">Repeat New Password</label>
                     <div class="relative">
-                        <input type="password" id="signupConfirmPassword" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
-                        <button type="button" onclick="togglePasswordVisibility('signupConfirmPassword', 'confirmEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
+                        <input type="password" id="signupConfirmPassword" autocomplete="new-password" required placeholder="••••••••" class="w-full px-3 py-2 pr-10 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+                        <button type="button" data-i18n-aria-label="market.showPassword" aria-label="Show or hide password" onclick="togglePasswordVisibility('signupConfirmPassword', 'confirmEyeIcon')" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer">
                             <i id="confirmEyeIcon" class="fa-solid fa-eye"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
+                <button type="submit" data-i18n="market.signup" class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl shadow transition cursor-pointer">
                     Create Account (Sign Up)
                 </button>
             </form>
@@ -3410,7 +3416,7 @@
         function handleEmailLogin(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
+            const password = document.getElementById('loginPassword').value;
             const rememberMe = document.getElementById('rememberMeCheckbox').checked;
 
             const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
@@ -3429,10 +3435,9 @@
                 closeAuthModal();
                 showCustomAlert("Success", "Login successful!", "success");
             }).catch((error) => {
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                    showCustomAlert("Login Error", "This email is not registered! Please go to the 'Sign Up' tab to create a new account first.", "error");
-                } else if (error.code === 'auth/wrong-password') {
-                    showCustomAlert("Login Error", "Incorrect password! Please check your password.", "error");
+                if (['auth/user-not-found', 'auth/invalid-credential', 'auth/wrong-password'].includes(error.code)) {
+                    showCustomAlert("Login Error", "Could not sign in. Check your email and password or reset your password.", "error");
+
                 } else {
                     showCustomAlert("Login Error", error.message, "error");
                 }
@@ -3442,8 +3447,8 @@
         function handleEmailSignup(e) {
             e.preventDefault();
             const email = document.getElementById('signupEmail').value.trim();
-            const password = document.getElementById('signupPassword').value.trim();
-            const confirmPassword = document.getElementById('signupConfirmPassword').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            const confirmPassword = document.getElementById('signupConfirmPassword').value;
 
             if (password !== confirmPassword) {
                 showCustomAlert("Password Mismatch", "Both passwords do not match! Please check.", "error");
@@ -5228,5 +5233,6 @@
             return card;
         }
     </script>
+<script type="module" src="features/i18n/marketplace.mjs"></script>
 </body>
 </html>

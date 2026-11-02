@@ -144,3 +144,14 @@ an unactivated future schema extension. Durable journal, actual decoder/moderati
 provider credentials/delivery, parent transactions and retention are still missing.
 Legacy Search now tolerates missing/non-string Product fields; no authored text or
 existing storage/Login/Store/Chat/Admin behavior was otherwise changed.
+
+[Durable SDK launch checkpoint](review-progress-2026-11-02-durable-launch-batch.md):
+Provider enquiries now have isolated actual SDK create/cancel/audit/receipt and fresh
+private participant snapshots, plus existing HTTP cancellation composition. Products/
+Stores have default-disabled SDK owner/public/private/publication/revision/pagination
+source and photo references have durable parent-scoped private transactions. Real
+SDK Emulator evidence is separate from mocks; operational runtime/UI/Rules remain
+inactive. Essential Search/Login controls in index.html now use gu/hi/en, with exact
+password-byte handling and generic credential-error fix. Whole-app localization,
+actual uploads/deletion/delivery, full trusted UI integration and P0 staging/device/
+security acceptance remain missing. No agreed requirement removed; HOLD/NO-GO.

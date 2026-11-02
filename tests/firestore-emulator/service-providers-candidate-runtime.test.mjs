@@ -277,3 +277,12 @@ test('versioned owner bootstrap reconciles actual SDK private writes and histori
  });
  const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,schema.owners,'bootstrap-owner')));
 });
+
+for (const [name,exportName] of [['durable enquiry authorization and cancellation','enquiryAcceptance'],['trusted Product Store writes and pagination','marketplaceAcceptance'],['durable private photo parent references','photoAcceptance']]) {
+ test('actual Firestore SDK '+name,async()=>{
+  const sdk=await import('firebase/firestore'),scenarios=await import('../integration/durable-acceptance.mjs');
+  await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await scenarios[exportName]({sdk,db,actualTransactions:true,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const snapshot=await sdk.getDoc(sdk.doc(db,collection,id));return snapshot.exists()?snapshot.data():null;}});});
+  const guest=env.unauthenticatedContext().firestore();
+  for(const [collection,id] of [['testOldxEnquiryEnquiries','durable-enquiry'],['testOldxMarketPrivateRecords','store_market-1'],['testOldxPhotoAssets','photo-image-1234567890123'],['testOldxMarketPublicViews','product_market-2']])await assertFails(sdk.getDoc(sdk.doc(guest,collection,id)));
+ });
+}

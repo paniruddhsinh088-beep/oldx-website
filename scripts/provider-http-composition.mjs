@@ -1,3 +1,4 @@
+import {createProviderEnquiryLifecycle} from './provider-enquiry-lifecycle.mjs';
 import {createProviderEnquiryTransaction,inspectProviderEnquiryRequest} from './provider-enquiry-transaction.mjs';
 import {createProviderOwnerBootstrap} from './provider-owner-bootstrap.mjs';
 import {validateOwnerBootstrapDto} from '../features/service-providers/owner-bootstrap-dto.mjs';
@@ -17,7 +18,7 @@ function requestHeaders(input){try{if(!input||Object.getPrototypeOf(input)!==Obj
 export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},bootstrap={},enquiry={},timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
  return Object.freeze({async handle(operation,request,{signal}={}){
   if(enabled!==true)return error(503,'UNAVAILABLE');
-  if(!['draft.save','publication.manage','owner.bootstrap','enquiry.create'].includes(operation))return error(404,'NOT_FOUND');
+  if(!['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel'].includes(operation))return error(404,'NOT_FOUND');
   const r=copy(request,['method','headers','body']);if(!r)return error(400,'BAD_REQUEST');
   if(typeof r.method!=='string')return error(400,'BAD_REQUEST');
   if(r.method!=='POST')return error(405,'METHOD_NOT_ALLOWED',{Allow:'POST'});
@@ -26,6 +27,7 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   const parsed=parseBoundedJson(r.body);if(!parsed.ok)return error(parsed.code==='BODY_TOO_LARGE'?413:400,parsed.code);
   let input;
   if(operation==='draft.save')input=inspectProviderDraftRequest(parsed.value);
+  else if(operation==='enquiry.cancel'){input=copy(parsed.value,['requestId','providerId','enquiryId','expectedRevision']);if(input&&(!id(input.requestId)||!id(input.providerId)||!id(input.enquiryId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0))input=null;}
   else if(operation==='enquiry.create')input=inspectProviderEnquiryRequest(parsed.value);
   else if(operation==='owner.bootstrap'){input=copy(parsed.value,['operation','requestId']);if(input&&!(input.operation===null&&input.requestId===null||['draft.save','publication.manage'].includes(input.operation)&&id(input.requestId)))input=null;}
   else{input=copy(parsed.value,['requestId','expectedRevision','expectedGeneration','action']);if(input&&(!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!Number.isSafeInteger(input.expectedGeneration)||input.expectedGeneration<0||!['publish','withdraw'].includes(input.action)))input=null;}
@@ -44,10 +46,12 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
    // Once dispatched, timeout may conceal an in-flight commit. The atomic port
    // remains responsible for current permission/ownership, receipt and audit.
    context.markMutationAttempted();
+   if(operation==='enquiry.cancel')return createProviderEnquiryLifecycle({...enquiry,...shared}).cancel(input,{signal:context.signal});
    if(operation==='enquiry.create')return createProviderEnquiryTransaction({...enquiry,...shared}).create(input,{signal:context.signal});
    return operation==='draft.save'?createProviderDraftTransaction({...draft,...shared}).save(input,{signal:context.signal}):createProviderPublicationTransaction({...publication,...shared}).execute(input,{signal:context.signal});
   }});
   if(result?.ok===true&&operation==='owner.bootstrap'){const safe=validateOwnerBootstrapDto(result);return safe?reply(200,safe):error(503,'UNAVAILABLE');}
+  if(result?.ok===true&&operation==='enquiry.cancel'){const safe=copy(result,['ok','status','enquiryId','revision']);return safe&&id(safe.enquiryId)&&['cancelled','replayed'].includes(safe.status)&&Number.isSafeInteger(safe.revision)&&safe.revision>0?reply(200,safe):error(503,'UNAVAILABLE');}
   if(result?.ok===true&&operation==='enquiry.create'){const safe=copy(result,['ok','status','enquiryId']);return safe&&id(safe.enquiryId)&&['created','replayed'].includes(safe.status)?reply(200,safe):error(503,'UNAVAILABLE');}
   if(result?.ok===true){
    const keys=operation==='draft.save'?['ok','status','providerId','revision']:['ok','status','providerId','action','generation'];const safe=copy(result,keys);
