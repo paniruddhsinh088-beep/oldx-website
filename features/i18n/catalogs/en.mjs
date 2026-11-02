@@ -385,4 +385,7 @@ export default Object.freeze({
   "market.login": "Log in",
   "market.signup": "Create account",
   "market.showPassword": "Show or hide password",
+  "market.chatEmpty": "No messages yet. Say hello!",
+  "market.chatDeleted": "This message was deleted",
+  "market.chatOptions": "Message options",
 });

@@ -2615,7 +2615,7 @@
                 db.collection('chats').doc(chatRoomId).collection('messages')
                   .where('senderUid', '!=', window.currentUser.uid)
                   .get().then(snapshot => {
-                      chronologicalChatDocuments(snapshot).forEach(doc => {
+                      snapshot.forEach(doc => {
                           doc.ref.update({ status: 'read' });
                       });
                   }).catch(err => console.warn('Read receipt update failed:', err));
@@ -2631,10 +2631,12 @@
                       const empty = document.createElement('p');
                       empty.className = 'text-center text-xs text-gray-400 py-4';
                       empty.textContent = 'No messages yet. Say hello!';
+                      empty.dataset.i18n = 'market.chatEmpty';
                       container.appendChild(empty);
+                      empty.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
                       return;
                   }
-                  snapshot.forEach(doc => {
+                  chronologicalChatDocuments(snapshot).forEach(doc => {
                       const msg = doc.data() || {};
                       const isMe = msg.senderUid === window.currentUser.uid;
                       if (Array.isArray(msg.hiddenFor) && msg.hiddenFor.includes(window.currentUser.uid)) return;
@@ -2674,7 +2676,10 @@
                           const deletedText = document.createElement('p');
                           deletedText.className = 'italic text-gray-400';
                           deletedText.textContent = 'This message was deleted';
+                          deletedText.dataset.i18n = 'market.chatDeleted';
                           card.appendChild(deletedText);
+                          // Translation runs after the card enters the document.
+
                       } else if (msg.text) {
                           const text = document.createElement('p');
                           text.className = 'font-medium';
@@ -2703,6 +2708,8 @@
                           action.className = 'text-[10px] opacity-60 hover:opacity-100 ml-2';
                           action.textContent = '⋯';
                           action.title = 'Message options';
+                          action.dataset.i18nAriaLabel = 'market.chatOptions';
+                          action.setAttribute('aria-label', 'Message options');
                           action.addEventListener('click', ev => {
                               ev.stopPropagation();
                               openMessageActions(doc.id, msg.senderUid);
@@ -2710,6 +2717,7 @@
                           card.appendChild(action);
                       }
                       container.appendChild(card);
+                      for (const node of card.querySelectorAll('[data-i18n], [data-i18n-aria-label]')) node.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
                   });
                   container.scrollTop = container.scrollHeight;
               }, error => console.error('Chat message listener failed:', error));

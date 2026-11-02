@@ -132,3 +132,13 @@ gateway, quota reset, retention worker or native app is approved or activated.
 Provider v1 remains unchanged/text-only; media stays in unactivated separate namespaces.
 All runtime, schema/index, identity/role/rate/quota/cleanup, consent/privacy/retention,
 media, IAM/secrets/resource/staging/deployment/migration/billing/release gates remain.
+
+## Trusted processing / atomic release preparation — 2 November 2026
+
+Pinned free/open-source sharp is an isolated DEV dependency, not paid infrastructure
+or deployment approval. Independent moderation and public-release permissions are
+synthetic private Emulator fixtures. No live role provisioning, provider/scanner,
+public image, migration, IAM/secret, billing, Vercel plan/config or runtime action is
+approved. Provider v1 remains unchanged/text-only; its public-media extension is not
+silently activated. Cloudinary preference is conditional on policy/quota/runtime;
+commercial Hobby eligibility remains unresolved. HOLD/NO-GO and all requirements remain.

@@ -387,4 +387,7 @@ export default Object.freeze({
   "market.login": "લૉગ ઇન કરો",
   "market.signup": "ખાતું બનાવો",
   "market.showPassword": "પાસવર્ડ બતાવો અથવા છુપાવો",
+  "market.chatEmpty": "હજુ કોઈ સંદેશ નથી. નમસ્તે કહો!",
+  "market.chatDeleted": "આ સંદેશ કાઢી નાખવામાં આવ્યો છે",
+  "market.chatOptions": "સંદેશના વિકલ્પો",
 });

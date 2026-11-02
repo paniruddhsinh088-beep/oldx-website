@@ -112,3 +112,15 @@ Review/moderation sequencing does not waive agreed release requirements: no synt
 completion, receipt or CI pass grants real review eligibility, image moderation or
 launch approval. The actual policies, trusted enforcement and acceptance evidence
 remain unresolved alongside the P0 integration/media/localization/device gates.
+
+[Processing/release checkpoint](review-progress-2026-11-02-processing-release-batch.md)
+adds real image codec validation/metadata removal and isolated atomic moderation /
+Product/Store release. Missing scan remains unapproved; no real media is published.
+Provider public-photo scope, real provider/proof/private delivery and full UI/locale /
+review/security acceptance remain P0 work. Commercial runtime eligibility is unresolved:
+Vercel Hobby's non-commercial restriction cannot be ignored to meet the date. No paid
+upgrade or runtime action is authorized. Cloudinary Free remains a conditional candidate.
+
+Owner target after website completion: Capacitor/Play submission November 14–19, 2026.
+That target remains conditional on website readiness and separately approved native,
+account/signing/testing/release gates; no native packaging is started or date guaranteed.

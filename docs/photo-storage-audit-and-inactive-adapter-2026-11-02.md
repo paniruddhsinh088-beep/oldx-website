@@ -143,3 +143,38 @@ managed upload or alternate persisted photo pipeline. Static category/fallback i
 use third-party URLs (for example Unsplash/Flaticon), outside OLDX ownership. The pure
 `provider-share-card.mjs` model can validate an optional allowlisted Cloudinary/Storage
 URL; it neither fetches nor uploads photos and is not an activated Service photo flow.
+
+## Refreshed feasibility evidence — 2 November 2026
+
+Cloudinary Free remains the preferred CANDIDATE, not an account/runtime approval.
+[Pricing](https://cloudinary.com/pricing) and [credit rules](https://cloudinary.com/documentation/billing_and_plans)
+still list 25 shared monthly credits: transformations/storage/delivery consume one
+pool (1,000 standard transformations, 1 GB storage or 1 GB image bandwidth per credit).
+Derivatives, hotlink traffic and abuse can consume it; journal byte quotas alone are
+not a provider credit monitor. No paid plan/add-on/upgrade is enabled or assumed.
+[Plan comparison](https://cloudinary.com/pricing/compare-plans) lists Free image uploads
+up to 10 MB; our candidate binary proxy/processor cap stays 3 MiB, with smaller
+surface output limits. Actual account/preset/format restrictions remain uninspected.
+[Free-plan FAQ](https://cloudinary.com/documentation/developer_onboarding_faq_free_plan)
+permits production within quota, subject to actual terms/account eligibility; no
+account/legal/SLA acceptance is inferred from public documentation.
+
+[Upload signatures](https://cloudinary.com/documentation/authentication_signatures)
+exclude file bytes and remain valid for an hour. A client-visible preset/signature
+is not ownership, byte validation, app-rate enforcement or a shorter replay window.
+Continue to prefer a bounded trusted byte processor/private quarantine and fixed
+approved derivatives; do not change the existing unsigned Store preset without
+separate authorization and compatibility planning. No Cloudinary API was called.
+
+Server feasibility is CONDITIONAL. Local Node 24 Linux sharp processing works; it
+does not establish commercial zero-cost hosting eligibility. [Vercel fair use](https://vercel.com/docs/limits/fair-use-guidelines)
+restricts Hobby to non-commercial personal use. An OLDX commercial marketplace cannot
+assume Hobby is eligible merely because listings are free. No existing account plan
+was inspected or changed. [Function payload limits](https://vercel.com/docs/functions/limitations)
+are 4.5 MB; use bounded binary bodies rather than oversized Base64 JSON. Owner must
+verify an existing eligible zero-additional-cost runtime/plan or retain HOLD; no paid
+upgrade, provisioning, Vercel configuration or deployment is proposed as authorized.
+
+[Current processing/release contract](trusted-processing-and-media-release-contract.md)
+records actual codec tests, independent SDK moderation/release and remaining scanning,
+provider-copy/delivery/credit/consent/runtime gates. Legacy images remain untouched.

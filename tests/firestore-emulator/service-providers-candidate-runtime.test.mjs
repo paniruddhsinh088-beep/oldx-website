@@ -292,3 +292,9 @@ test('actual SDK durable media journal quota retry reconciliation and trusted pu
  await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await durableMediaAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const snapshot=await sdk.getDoc(sdk.doc(db,collection,id));return snapshot.exists()?snapshot.data():null;}});});
  const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxMediaQuotas','global')));
 });
+
+test('actual SDK independent media moderation atomic publish private replacement revoke and withdrawal',async()=>{
+ const sdk=await import('firebase/firestore'),{mediaReleaseAcceptance}=await import('../integration/media-release-acceptance.mjs');
+ await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await mediaReleaseAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const snapshot=await sdk.getDoc(sdk.doc(db,collection,id));return snapshot.exists()?snapshot.data():null;}});});
+ const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxMediaReleasePermissions','release-moderator')));
+});

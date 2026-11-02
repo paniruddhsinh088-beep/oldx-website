@@ -165,3 +165,12 @@ legacy Chat now shows the latest 35 in chronological order. No provider/processo
 public release/byte gateway, service-worker cleanup, full UI/locale/native integration
 or operational readiness is claimed. All agreed requirements, HOLD/NO-GO and staging
 deny-all remain. New client logic is platform-neutral; native packaging is not started.
+
+[Processing/release checkpoint](review-progress-2026-11-02-processing-release-batch.md)
+adds real bounded codec sanitization and inactive independent SDK image moderation /
+atomic Product/Store media publication/withdrawal. Published references survive private
+edits and block deletion until revoked. Provider public photos, trusted scan/proof /
+real provider copies/private delivery, full UI/locale/review/device/runtime acceptance
+remain missing or inactive. Chat ordering is now tested by executing the actual render
+callback; dynamic Chat labels use gu/hi/en. No live images, migration, backend or native
+build is activated. All requirements and HOLD/NO-GO remain.
