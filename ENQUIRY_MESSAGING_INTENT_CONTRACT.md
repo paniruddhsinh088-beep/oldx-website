@@ -29,3 +29,10 @@ Never obtain these facts from browser flags. Actual isolated Rules/adapter tests
 must cover forged actors, blocks/revocation between checks/write, duplicate request
 IDs, private summaries, role changes and migration compatibility. D1–D12 and
 runtime/provider/schema/deployment approvals remain HOLD/NO-GO.
+
+The isolated conversation preview now shares only `features/chat/message-text.mjs`
+with this intent. It does not bundle privileged scripts or enable messaging.
+`scripts/service-integration-adapter.mjs` is a separate default-disabled response
+projector for already-trusted profile/enquiry/conversation snapshots. Its canonical
+fixture checks do not implement live token authentication, queries, pagination,
+transaction freshness or Rules. See the conversation progress acceptance checklist.

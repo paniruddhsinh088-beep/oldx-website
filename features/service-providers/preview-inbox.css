@@ -1,1 +1,3 @@
 #inboxReply{font:inherit;width:100%;max-width:100%;min-height:100px;padding:12px;border:1px solid #8395a1;border-radius:8px}.sample-note{white-space:pre-wrap;overflow-wrap:anywhere}#inboxActions{justify-content:flex-start}#inboxRows a{min-height:44px}#inboxFeedback{overflow-wrap:anywhere}
+
+#messageDraft{font:inherit;width:100%;max-width:100%;min-height:110px;padding:12px;border:1px solid #8395a1;border-radius:8px}#messages{padding-inline-start:24px}#messages li{margin-block:16px}#conversationFeedback{overflow-wrap:anywhere}
