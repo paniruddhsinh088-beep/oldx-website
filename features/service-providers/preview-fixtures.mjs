@@ -2,6 +2,7 @@
 export const demoProviders = [
   {
     id: "p1",
+    city: "અમદાવાદ",
     name: "રમેશભાઈ પટેલ",
     area: "અમદાવાદ · મણિનગર",
     services: ["સુથાર", "ફર્નિચર રિપેર"],
@@ -12,6 +13,7 @@ export const demoProviders = [
   },
   {
     id: "p2",
+    city: "અમદાવાદ",
     available: false,
     name: "ઇમરાન શેખ",
     area: "અમદાવાદ · જમાલપુર",
@@ -22,6 +24,7 @@ export const demoProviders = [
   },
   {
     id: "p3",
+    city: "અમદાવાદ",
     name: "મહેશભાઈ ચૌહાણ",
     area: "અમદાવાદ · વસ્ત્રાલ",
     services: ["ઇલેક્ટ્રિશિયન", "ફેન / લાઇટ"],
@@ -31,6 +34,7 @@ export const demoProviders = [
   },
   {
     id: "p4",
+    city: "અમદાવાદ",
     name: "કિરણભાઈ મકવાણા",
     area: "અમદાવાદ · નિકોલ",
     services: ["મિસ્ત્રી", "ટાઇલ્સ"],
@@ -40,6 +44,7 @@ export const demoProviders = [
   },
   {
     id: "p5",
+    city: "અમદાવાદ",
     name: "દીપકભાઈ રાઠોડ",
     area: "અમદાવાદ · બોપલ",
     services: ["પેઇન્ટર", "ઘર પેઇન્ટિંગ"],
@@ -49,6 +54,7 @@ export const demoProviders = [
   },
   {
     id: "p6",
+    city: "અમદાવાદ",
     name: "સલીમભાઈ મલેક",
     area: "અમદાવાદ · નારણપુરા",
     services: ["AC સર્વિસ", "ઇલેક્ટ્રિશિયન"],

@@ -9,9 +9,29 @@ export async function shareProviderProfile(profile, { share, writeText } = {}) {
   const prepared = buildProviderShareMetadata(profile);
   if (!prepared.ok) return prepared;
   const { title, description, url } = prepared.value;
+  return shareProviderLink({ title, text: description, url }, { share, writeText });
+}
+
+// Transport only: callers prepare a trusted public/preview link first. This
+// function never publishes a page or infers authorization from a URL.
+export async function shareProviderLink(input, { share, writeText } = {}) {
+  if (!input || typeof input !== 'object' || Array.isArray(input) ||
+      typeof input.title !== 'string' || input.title.length > 300 ||
+      typeof input.text !== 'string' || input.text.length > 2000 ||
+      typeof input.url !== 'string' || input.url.length > 2048) {
+    return { ok: false, code: 'INVALID_SHARE_DATA' };
+  }
+  const { title, text, url } = input;
+  try {
+    const parsed = new URL(url);
+    if (parsed.username || parsed.password || (parsed.protocol !== 'https:' &&
+        !(parsed.protocol === 'http:' && ['127.0.0.1', 'localhost', '[::1]'].includes(parsed.hostname)))) {
+      return { ok: false, code: 'INVALID_SHARE_DATA' };
+    }
+  } catch { return { ok: false, code: 'INVALID_SHARE_DATA' }; }
   if (typeof share === "function") {
     try {
-      await share({ title, text: description, url });
+      await share({ title, text, url });
       return { ok: true, method: "native" };
     } catch (error) {
       // A cancelled native share must not silently copy the URL.

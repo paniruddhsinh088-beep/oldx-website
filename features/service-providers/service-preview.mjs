@@ -1,4 +1,8 @@
 import { demoProviders } from "./preview-fixtures.mjs";
+import { buildPublicProviderProfile } from "./provider-public-profile.mjs";
+import { parseServicePreviewRoute, buildServicePreviewLink } from "./preview-route.mjs";
+import { shareProviderLink } from "./provider-mobile-share.mjs";
+
 import { inspectProviderPreviewDraft } from "./preview-draft.mjs";
 import {
   createTranslator,
@@ -10,6 +14,14 @@ import {
   readLocalePreference,
   writeLocalePreference,
 } from "../i18n/preference.mjs";
+
+// Only explicitly projected synthetic public data reaches rendering/share state.
+const publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
+  id: provider.id, displayName: provider.name, city: provider.city,
+  serviceArea: provider.area, description: provider.about, services: provider.services,
+  available: provider.available !== false, experienceYears: provider.experience
+})).filter(result => result.ok).map(result => result.profile);
+const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.icon]));
 
 let translator = createTranslator("en");
 const t = (key, params) => translator.t(key, params);
@@ -37,25 +49,25 @@ function render() {
       .normalize("NFC")
       .toLocaleLowerCase(translator.locale),
     sort = $("sort").value;
-  let rows = demoProviders.filter(
+  let rows = publicProfiles.filter(
     (p) =>
       (!$("availableOnly").checked || p.available !== false) &&
       (activeCategory === "બધી સેવાઓ" ||
         p.services.some((s) => s.includes(activeCategory))) &&
       (!q ||
-        (p.name + " " + p.services.join(" ") + " " + p.about)
+        (p.displayName + " " + p.services.join(" ") + " " + p.description)
           .normalize("NFC")
           .toLocaleLowerCase(translator.locale)
           .includes(q)) &&
       (!area ||
-        p.area
+        p.serviceArea
           .normalize("NFC")
           .toLocaleLowerCase(translator.locale)
           .includes(area)),
   );
-  if (sort === "experience") rows.sort((a, b) => b.experience - a.experience);
+  if (sort === "experience") rows.sort((a, b) => b.experienceYears - a.experienceYears);
   if (sort === "name")
-    rows.sort((a, b) => a.name.localeCompare(b.name, translator.locale));
+    rows.sort((a, b) => a.displayName.localeCompare(b.displayName, translator.locale));
   $("resultCount").textContent = t("resultCount", { count: rows.length });
   const results = $("results");
   results.replaceChildren();
@@ -73,13 +85,13 @@ function render() {
       const avatar = document.createElement("div");
       avatar.className = "avatar";
       avatar.setAttribute("aria-hidden", "true");
-      avatar.textContent = p.icon;
+      avatar.textContent = demoIcons.get(p.id) || "🧑‍🔧";
       const identity = document.createElement("div");
       const name = document.createElement("h3");
-      name.textContent = p.name;
+      name.textContent = p.displayName;
       const areaText = document.createElement("div");
       areaText.className = "meta";
-      areaText.textContent = p.area;
+      areaText.textContent = p.serviceArea;
       identity.append(name, areaText);
       top.append(avatar, identity);
       const tags = document.createElement("div");
@@ -92,7 +104,7 @@ function render() {
       });
       const meta = document.createElement("div");
       meta.className = "meta";
-      meta.textContent = t("experienceByProvider", { count: p.experience });
+      meta.textContent = t("experienceByProvider", { count: p.experienceYears });
       const availability = document.createElement("div");
       availability.className = "status";
       availability.textContent = t(
@@ -108,7 +120,7 @@ function render() {
       button.textContent = t("viewProfile");
       button.addEventListener("click", () => {
         returnToResult = button;
-        openProfile(p.id);
+        navigate("#provider/" + p.id);
       });
       foot.append(label, button);
       article.append(top, tags, meta, availability, foot);
@@ -116,8 +128,8 @@ function render() {
     });
   }
 }
-function show(id, restoreResult = false) {
-  for (const view of ["browseView", "profileView", "providerView"]) {
+function show(id, restoreResult = false, focus = true) {
+  for (const view of ["browseView", "profileView", "providerView", "notFoundView"]) {
     $(view).classList.toggle("active", view === id);
     $(view).hidden = view !== id;
   }
@@ -137,17 +149,16 @@ function show(id, restoreResult = false) {
             ? "pName"
             : id === "providerView"
               ? "providerHeading"
-              : "resultsHeading",
+              : id === "notFoundView" ? "notFoundHeading" : "resultsHeading",
         );
-  target.focus();
-  window.scrollTo({ top: 0, behavior: "instant" });
+  if (focus) { target.focus(); window.scrollTo({ top: 0, behavior: "instant" }); }
 }
-function openProfile(id) {
-  const p = demoProviders.find((x) => x.id === id);
-  if (!p) return;
+function openProfile(id, focus = true) {
+  const p = publicProfiles.find((x) => x.id === id);
+  if (!p) return false;
   currentProfile = p;
-  $("pName").textContent = p.name;
-  $("pArea").textContent = p.area;
+  $("pName").textContent = p.displayName;
+  $("pArea").textContent = p.serviceArea;
   const serviceTags = p.services.map((service) => {
     const tag = document.createElement("span");
     tag.className = "tag";
@@ -155,12 +166,14 @@ function openProfile(id) {
     return tag;
   });
   $("pServices").replaceChildren(...serviceTags);
-  $("pAbout").textContent = p.about;
+  $("pAbout").textContent = p.description;
   $("pExperience").textContent = t("profileExperienceSummary", {
-    count: p.experience,
-    area: p.area,
+    count: p.experienceYears,
+    area: p.serviceArea,
   });
-  show("profileView");
+  prepareProfileLink();
+  show("profileView", false, focus);
+  return true;
 }
 $("categories").addEventListener("click", (e) => {
   const b = e.target.closest("[data-cat]");
@@ -176,9 +189,9 @@ $("searchBtn").addEventListener("click", render);
 $("q").addEventListener("input", render);
 $("area").addEventListener("input", render);
 $("sort").addEventListener("change", render);
-$("browseTab").addEventListener("click", () => show("browseView"));
-$("providerTab").addEventListener("click", () => show("providerView"));
-$("backBtn").addEventListener("click", () => show("browseView", true));
+$("browseTab").addEventListener("click", () => navigate("#services"));
+$("providerTab").addEventListener("click", () => navigate("#my-services"));
+$("backBtn").addEventListener("click", () => navigate("#services", true));
 
 const fieldIds = {
   displayName: "providerName",
@@ -304,13 +317,73 @@ async function selectLocale(requested, persist = false) {
     ) || null;
   if (currentProfile) {
     $("pExperience").textContent = t("profileExperienceSummary", {
-      count: currentProfile.experience,
-      area: currentProfile.area,
+      count: currentProfile.experienceYears,
+      area: currentProfile.serviceArea,
     });
   }
+  if (feedbackKey) $("profileShareStatus").textContent = t(feedbackKey);
   updatePreview();
 }
 $("localeSelect").addEventListener("change", (event) =>
   selectLocale(event.target.value, true),
 );
+let renderedHash = null;
+let routeRevision = 0;
+let feedbackKey = null;
+function prepareProfileLink() {
+  const link = currentProfile && buildServicePreviewLink({
+    pageUrl: window.location.href, origin: window.location.origin, providerId: currentProfile.id
+  });
+  $("profileLink").value = link?.ok ? link.url : "";
+  $("copyProfileLink").disabled = $("shareProfileLink").disabled = !link?.ok;
+  if (!link?.ok) $("profileShareStatus").textContent = t("previewShareUnavailable");
+}
+function clearProfile(erase = false) {
+  currentProfile = null; feedbackKey = null;
+  $("profileLink").value = ""; $("profileShareStatus").textContent = "";
+  $("copyProfileLink").disabled = $("shareProfileLink").disabled = true;
+  if (erase) {
+    for (const id of ["pName", "pArea", "pAbout", "pExperience"]) $(id).textContent = "";
+    $("pServices").replaceChildren();
+  }
+}
+function syncRoute({ focus = true, restoreResult = false, force = false } = {}) {
+  if (!force && renderedHash === window.location.hash) return;
+  const previous = renderedHash;
+  renderedHash = window.location.hash; routeRevision++;
+  clearProfile();
+  const route = parseServicePreviewRoute(renderedHash);
+  if (route.view === "profile" && openProfile(route.providerId, focus)) return;
+  if (route.view === "browse") show("browseView", restoreResult || previous?.startsWith("#provider/"), focus);
+  else if (route.view === "provider") show("providerView", false, focus);
+  else { clearProfile(true); show("notFoundView", false, focus); }
+}
+function navigate(hash, restoreResult = false) {
+  if (window.location.hash !== hash) window.history.pushState(null, "", hash);
+  syncRoute({ restoreResult, force: true });
+}
+async function shareCurrentProfile(copyOnly) {
+  if (!currentProfile || !$("profileLink").value) return;
+  const revision = routeRevision;
+  const data = { title: t("previewShareTitle", { name: currentProfile.displayName }),
+    text: t("previewShareText"), url: $("profileLink").value };
+  $("copyProfileLink").disabled = $("shareProfileLink").disabled = true;
+  $("profileShareStatus").textContent = t("previewSharePending");
+  const result = await shareProviderLink(data, {
+    share: !copyOnly && typeof navigator.share === "function" ? value => navigator.share(value) : undefined,
+    writeText: navigator.clipboard && typeof navigator.clipboard.writeText === "function"
+      ? value => navigator.clipboard.writeText(value) : undefined
+  });
+  if (revision !== routeRevision || !currentProfile) return;
+  feedbackKey = result.ok ? (result.method === "clipboard" ? "previewLinkCopied" : "previewShareOpened")
+    : result.code === "SHARE_CANCELLED" ? "previewShareCancelled" : "previewShareUnavailable";
+  $("profileShareStatus").textContent = t(feedbackKey);
+  prepareProfileLink();
+}
+$("copyProfileLink").addEventListener("click", () => shareCurrentProfile(true));
+$("shareProfileLink").addEventListener("click", () => shareCurrentProfile(false));
+$("notFoundBack").addEventListener("click", () => navigate("#services"));
+window.addEventListener("popstate", () => syncRoute());
+window.addEventListener("hashchange", () => syncRoute());
 await selectLocale(readLocalePreference(preferenceStorage(), "gu"));
+syncRoute({ focus: false });

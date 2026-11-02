@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 // files other than the generated browser config, or server moderation modules.
 export const BROWSER_ASSETS = Object.freeze([
   'index.html', 'admin.html', 'service-preview.html', 'firebase-config-guard.js', 'firebase-env.js',
-  ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections']
+  ...['service-preview', 'preview-fixtures', 'preview-draft', 'provider-profile', 'service-selections', 'provider-public-profile', 'provider-public-card', 'preview-route', 'provider-mobile-share', 'provider-share']
     .map(name => `features/service-providers/${name}.mjs`),
   ...['i18n', 'dom', 'preference', 'catalogs/en', 'catalogs/gu', 'catalogs/hi']
     .map(name => `features/i18n/${name}.mjs`)

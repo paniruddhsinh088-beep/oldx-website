@@ -277,3 +277,85 @@ test('each language supports actual 200 percent text across all preview views', 
     await checkOverflow('onboarding');
   }
 });
+
+test('direct preview links reload, support history, and clear unknown profiles', async () => {
+  await page.goto(origin + '/service-preview.html#provider/p1');
+  await page.waitForFunction(() => document.querySelector('#profileView').hidden === false);
+  const name = await page.locator('#pName').textContent();
+  assert.ok(name.length > 0);
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#profileLink').value.endsWith('#provider/p1'));
+  assert.equal(await page.locator('#pName').textContent(), name);
+  await page.locator('#providerTab').click();
+  await page.goBack();
+  await page.waitForFunction(() => document.querySelector('#profileView').hidden === false);
+  assert.equal(await page.locator('#pName').textContent(), name);
+  await page.goForward();
+  await page.waitForFunction(() => document.querySelector('#providerView').hidden === false);
+  await page.evaluate(() => { location.hash = '#provider/missing'; });
+  await page.waitForFunction(() => document.querySelector('#notFoundView').hidden === false);
+  assert.equal(await page.locator('#pName').textContent(), '');
+  assert.equal(await page.locator('#profileLink').inputValue(), '');
+  assert.equal(await page.locator('#copyProfileLink').isDisabled(), true);
+  assert.equal(await page.locator('#notFoundHeading').evaluate(el => el === document.activeElement), true);
+  await page.locator('#notFoundBack').click();
+  assert.equal(await page.locator('#browseView').isVisible(), true);
+});
+
+test('copy shares only the synthetic profile link without query or draft data', async () => {
+  await page.goto(origin + '/service-preview.html?privateToken=secret#provider/p1');
+  await page.waitForFunction(() => document.querySelector('#profileLink').value !== '');
+  await page.evaluate(() => {
+    window.copies = [];
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async value => window.copies.push(value) } });
+  });
+  await page.locator('#copyProfileLink').click();
+  await page.waitForFunction(() => window.copies.length === 1 && !document.querySelector('#copyProfileLink').disabled);
+  assert.deepEqual(await page.evaluate(() => window.copies), [origin + '/service-preview.html#provider/p1']);
+  assert.equal(await page.locator('#profileLink').inputValue(), origin + '/service-preview.html#provider/p1');
+});
+
+test('native cancellation never copies and stale async copy cannot update another route', async () => {
+  await page.locator('#results article button').first().click();
+  await page.evaluate(() => {
+    window.copies = [];
+    Object.defineProperty(navigator, 'share', { configurable: true, value: async () => { throw new DOMException('Cancelled', 'AbortError'); } });
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async value => window.copies.push(value) } });
+  });
+  await page.locator('#shareProfileLink').click();
+  await page.waitForFunction(() => !document.querySelector('#shareProfileLink').disabled);
+  assert.deepEqual(await page.evaluate(() => window.copies), []);
+  assert.ok((await page.locator('#profileShareStatus').textContent()).length > 0);
+  await page.evaluate(() => { navigator.clipboard.writeText = () => new Promise(resolve => { window.finishCopy = resolve; }); });
+  await page.locator('#copyProfileLink').click();
+  await page.waitForFunction(() => typeof window.finishCopy === 'function');
+  await page.locator('#providerTab').click();
+  await page.evaluate(() => window.finishCopy());
+  assert.equal(await page.locator('#profileShareStatus').textContent(), '');
+  assert.equal(await page.locator('#copyProfileLink').isDisabled(), true);
+});
+
+test('denied clipboard keeps a selectable link and localized recovery in every language', async () => {
+  await page.locator('#results article button').first().click();
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async () => { throw new DOMException('Denied', 'NotAllowedError'); } } });
+  });
+  for (const locale of ['en', 'hi', 'gu']) {
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code => document.documentElement.lang === code, locale);
+    await page.locator('#copyProfileLink').focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => !document.querySelector('#copyProfileLink').disabled);
+    const catalog = (await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#profileShareStatus').textContent(), catalog.previewShareUnavailable);
+    assert.equal(await page.locator('#profileLink').inputValue(), origin + '/service-preview.html#provider/p1');
+  }
+  await page.evaluate(() => { location.hash = '#provider/unknown'; });
+  await page.waitForFunction(() => !document.querySelector('#notFoundView').hidden);
+  for (const locale of ['en', 'hi', 'gu']) {
+    await page.locator('#localeSelect').selectOption(locale);
+    await page.waitForFunction(code => document.documentElement.lang === code, locale);
+    const catalog = (await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#notFoundHeading').textContent(), catalog.previewNotFoundHeading);
+  }
+});
