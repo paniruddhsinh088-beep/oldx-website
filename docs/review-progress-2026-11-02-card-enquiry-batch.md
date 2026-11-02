@@ -124,3 +124,5 @@ zero deployments for the exact source. f52bd7a, earlier Service/Store/security
 checkpoints and 37209fd remain ancestors; no main/live data/Rules/resources/cost
 changes occurred. Working tree was clean after source commits. This final evidence
 entry changes documentation only.
+
+Continuation: [provider sample inbox and inactive Admin read lifecycle](review-progress-2026-11-02-inbox-admin-batch.md).

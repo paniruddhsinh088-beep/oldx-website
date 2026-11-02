@@ -29,3 +29,21 @@ The read executor now requires a trusted `enabledOperations` allowlist and passe
 **Not ready for Admin runtime integration, staging deployment, Capacitor packaging, or Play Store submission.** Continue source-level review and tests only. Keep all changes on `security-hardening-review`.
 
 Production branch `main`, Production Firebase project `oldx-1c983`, and `oldxbazar.in` remain out of scope and must remain untouched. No deployment, Rules publication, IAM/secret changes, billing changes, data migration, or collection scan is authorized by this review.
+
+## Inactive Admin client lifecycle hardening — 2 November 2026
+
+The source-only client now supports `request(operation, query, {signal})` and a
+bounded configurable 1–30,000ms deadline (default 10 seconds). Cancellation/deadline
+covers token acquisition, fixed same-origin fetch and response JSON parsing.
+Pre-aborted reads do not acquire credentials or start network work; a late token
+cannot start a cancelled fetch. Caller promises settle even when an injected
+transport/body ignores cancellation; late payloads/errors remain handled. Timers
+and abort listeners are removed. Token errors expose a generic code only.
+
+This is tested with injected mock token/fetch/body promises and fake clocks,
+without cloud access. It does not connect the legacy UI or deploy an endpoint.
+A future UI must abort reads and clear already rendered data on logout, role
+revocation or scope change; cancelling a request cannot retract data already
+received or stop an uncooperative server. Trusted authorization, server deadlines,
+operation-specific response schemas, audit and all readiness gates above remain.
+No automatic retries, writes or Firestore fallback were introduced.
