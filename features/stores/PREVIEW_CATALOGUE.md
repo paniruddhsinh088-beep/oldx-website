@@ -88,3 +88,22 @@ and show localized unavailable recovery; malformed responses show safe error/ret
 The same existing request controller protects catalogue-to-detail transitions,
 late results, timeouts, history and page-cache restores. See
 [detail contract and remaining approvals](DETAIL_READ_CONTRACT.md).
+
+## Share the sample Store
+
+An accepted public sample header now offers a labelled canonical Store URL,
+copy and native share. The URL is built from the current preview page/origin,
+validated sample Store ID and `#store/…` route; queries, product IDs and local
+filter state are excluded. Both catalogue and detail share the Store link.
+The caption and notice explicitly describe a sample, not a published real shop.
+
+Sharing reuses the existing Service transport. Native cancellation never silently
+copies; unavailable/denied clipboard access leaves a labelled read-only link for
+manual copying. All labels, pending/result feedback and recovery use gu/hi/en.
+A pending share disables repeated actions; loading, invalid/unavailable data,
+withdrawal and route/cache invalidation clear sharing state. Late completion may
+not restore old feedback. A URL already handed to the OS/clipboard cannot be
+retracted by a later revocation. Future server reads still require fresh policy.
+
+No production URL, poster/photo, QR export or dynamic Open Graph preview is added.
+Legacy Store sharing and the production application are unchanged.

@@ -22,4 +22,5 @@ test('static allowlist packages the preview and its stylesheet but no future ser
   assert.ok(BROWSER_ASSETS.includes('store-preview.html'));
   assert.ok(BROWSER_ASSETS.includes('features/stores/store-preview.css'));
   assert.equal(BROWSER_ASSETS.some(path => path.includes('public-data-contract')), false);
+  assert.equal(BROWSER_ASSETS.some(path => path.includes('/testing/') || path.includes('publication-fixtures')), false);
 });

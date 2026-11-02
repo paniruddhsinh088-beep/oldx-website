@@ -490,3 +490,65 @@ test('detail timeout, identity mismatch and retry never fall back to accepted ca
   await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
   assert.equal(await page.locator('#productTitle').evaluate(n=>n===document.activeElement),true);
 });
+
+test('Store copy uses a canonical sample link without query tokens, product IDs or filters', async () => {
+  await page.goto(origin+'/store-preview.html?token=PRIVATE#store/demo-shop/product/sample-1');
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  await page.evaluate(()=>{
+    window.storeCopies=[];
+    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>storeCopies.push(value)}});
+  });
+  await page.locator('#copyStoreLink').focus(); await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>storeCopies.length===1 && !document.querySelector('#copyStoreLink').disabled);
+  assert.deepEqual(await page.evaluate(()=>storeCopies),[origin+'/store-preview.html#store/demo-shop']);
+  assert.equal(await page.locator('#storeShareLink').inputValue(),origin+'/store-preview.html#store/demo-shop');
+  assert.equal((await page.locator('#storeShareStatus').textContent()).includes('PRIVATE'),false);
+});
+
+test('Store native sharing cancellation and clipboard denial have honest localized recovery', async () => {
+  const name=await page.locator('#shopName').textContent();
+  await page.evaluate(()=>{
+    window.storeCopies=[]; window.sharedData=[];
+    Object.defineProperty(navigator,'share',{configurable:true,value:async value=>{sharedData.push(value);throw new DOMException('Cancelled','AbortError');}});
+    Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async value=>storeCopies.push(value)}});
+  });
+  await language('en'); await page.locator('#shareStoreLink').click();
+  await page.waitForFunction(()=>!document.querySelector('#shareStoreLink').disabled);
+  assert.deepEqual(await page.evaluate(()=>storeCopies),[]);
+  assert.equal(await page.evaluate(()=>sharedData[0].url),origin+'/store-preview.html#store/demo-shop');
+  assert.equal(await page.evaluate(()=>sharedData[0].title),'OldX Store preview · '+name);
+  assert.match(await page.evaluate(()=>sharedData[0].text),/Demo only/);
+  const english=(await import('../../features/i18n/catalogs/en.mjs')).default;
+  assert.equal(await page.locator('#storeShareStatus').textContent(),english.previewShareCancelled);
+  await page.evaluate(()=>{navigator.clipboard.writeText=async()=>{throw new DOMException('Denied','NotAllowedError');};});
+  for(const locale of ['gu','hi','en']) {
+    await language(locale); await page.locator('#copyStoreLink').click();
+    await page.waitForFunction(()=>!document.querySelector('#copyStoreLink').disabled);
+    const catalog=(await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#storeShareStatus').textContent(),catalog.previewShareUnavailable);
+    assert.equal(await page.locator('#shopName').textContent(),name);
+    assert.equal(await page.locator('#storeShareLink').inputValue(),origin+'/store-preview.html#store/demo-shop');
+    assert.equal(await page.locator('#storeShareLink').evaluate(n=>n.readOnly && n.labels.length>0),true);
+  }
+});
+
+test('Store sharing is disabled during loading/withdrawal and late copy feedback cannot revive it', async () => {
+  await controlledAdapter();
+  assert.equal(await page.locator('#copyStoreLink').isDisabled(),true);
+  assert.equal(await page.locator('#storeShareLink').inputValue(),'');
+  await finishRequest(0); await ready();
+  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:()=>new Promise(resolve=>{window.finishStoreCopy=resolve;})}}));
+  await page.locator('#copyStoreLink').click();
+  await page.waitForFunction(()=>typeof finishStoreCopy==='function');
+  await page.locator('#responseMode').selectOption('revoked');
+  assert.equal(await page.locator('#storeShareLink').inputValue(),'');
+  await page.evaluate(()=>finishStoreCopy());
+  assert.equal(await page.locator('#storeShareStatus').textContent(),'');
+  assert.equal(await page.locator('#copyStoreLink').isDisabled(),true);
+  await page.locator('#responseMode').selectOption('normal');
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  assert.equal(await page.locator('#shareStoreLink').isDisabled(),true);
+  await finishRequest(1); await ready();
+  assert.equal(await page.locator('#shareStoreLink').isEnabled(),true);
+  assert.equal(await page.locator('#storeShareStatus').textContent(),'');
+});

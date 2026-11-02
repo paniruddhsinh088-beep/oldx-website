@@ -139,3 +139,5 @@ checkpoints including `37209fd`, 0ab408d, 632fe83, 23c226d and a6955a7 remain
 unchanged ancestors. Normal branch-only pushes succeeded and the working tree
 was clean after each source commit. No deployments, live data/rules, main,
 provider resources or paid services were changed. This final entry is docs only.
+
+Continuation: [publication fixtures and Store sharing](review-progress-2026-11-02-publication-sharing-batch.md).

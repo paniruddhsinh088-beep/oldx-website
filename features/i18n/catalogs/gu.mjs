@@ -210,4 +210,11 @@ export default Object.freeze({
   "store.readError": "નમૂનો સુરક્ષિત રીતે લોડ થઈ શક્યો નથી. અગાઉની વસ્તુઓ અને વિગતો દૂર કરવામાં આવી છે. નમૂનો ફરી લોડ કરો.",
   "store.detailUnavailable": "નમૂનાની વસ્તુ ઉપલબ્ધ નથી",
   "store.detailUnavailableText": "નમૂનાનો સ્ટોર અથવા વસ્તુ હવે ઉપલબ્ધ નથી. અગાઉની વિગતો દૂર કરવામાં આવી છે.",
+  "store.shareHeading": "નમૂનાનો સ્ટોર શેર કરો",
+  "store.shareNotice": "આ લિંક માત્ર નમૂનાનો સ્ટોર ખોલે છે. વાસ્તવિક સ્ટોર જાહેર થયો નથી.",
+  "store.shareLinkLabel": "નમૂનાના સ્ટોરની લિંક",
+  "store.copyLink": "સ્ટોરની પ્રિવ્યૂ લિંક કૉપી કરો",
+  "store.shareLink": "સ્ટોરનો નમૂનો શેર કરો",
+  "store.shareTitle": "OldX સ્ટોર પ્રિવ્યૂ · {name}",
+  "store.shareText": "માત્ર નમૂનો: આ OldX સ્ટોરની નમૂનાની વસ્તુઓ જુઓ. આ વાસ્તવિક દુકાન નથી.",
 });

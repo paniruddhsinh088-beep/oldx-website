@@ -1,3 +1,5 @@
+import { buildStorePreviewLink } from './preview-share.mjs';
+import { shareProviderLink } from '../service-providers/provider-mobile-share.mjs';
 import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
 import { sampleStores } from './preview-fixtures.mjs';
 import { projectSyntheticDetail } from './preview-detail.mjs';
@@ -23,6 +25,7 @@ for (const category of STORE_CATEGORY_IDS) {
 let translator = createTranslator('en');
 const t = (key, params) => translator.t(key, params);
 let activeRecords = [], snapshot = null, selectedStoreId = null;
+let shareRevision = 0, sharePending = false, shareFeedback = null;
 let loadState = { status: 'idle' }, focusAfterLoad = false, restoreAfterLoad = false;
 let localeRequest = 0, page = 1, currentStore = null, renderedHash = null, returnProductId = null;
 function storage() { try { return window.localStorage; } catch { return null; } }
@@ -146,6 +149,7 @@ const loader = createStoreLoadController({
     ? projectSyntheticDetail(response, { storeUid: scope.storeUid, productId: scope.productId })
     : projectPreviewSnapshot(response, scope.storeUid),
   onChange(state) {
+  shareRevision++; sharePending = false; shareFeedback = null;
   loadState = state;
   snapshot = state.snapshot ?? null; activeRecords = snapshot?.records ?? [];
   renderLoadState();
@@ -181,6 +185,7 @@ function renderLoadState() {
     if (unavailable && focusAfterLoad && document.activeElement === $('loadStatus')) { $('notFoundHeading').focus(); focusAfterLoad = false; }
     if (failed && focusAfterLoad && [$('loadStatus'), $('resultsHeading')].includes(document.activeElement)) { $('loadError').focus(); focusAfterLoad = false; }
   }
+  renderStoreShare();
 }
 function requestRoute(focus = false, restoreResult = false) {
   const route = parseStorePreviewRoute(window.location.hash);
@@ -206,6 +211,34 @@ window.addEventListener('pagehide', () => loader.clear());
 window.addEventListener('pageshow', event => { if (event.persisted) requestRoute(); });
 $('responseMode').addEventListener('change', () => requestRoute());
 $('retryRead').addEventListener('click', () => requestRoute(true));
+
+
+function renderStoreShare() {
+  const link = loadState.status === 'ready' && snapshot?.store && !$('shopHeader').hidden
+    ? buildStorePreviewLink({ pageUrl: window.location.href, origin: window.location.origin, storeUid: snapshot.store.id }) : null;
+  $('storeShareLink').value = link?.ok ? link.url : '';
+  $('copyStoreLink').disabled = $('shareStoreLink').disabled = !link?.ok || sharePending;
+  $('storeShareStatus').textContent = link?.ok
+    ? (sharePending ? t('previewSharePending') : shareFeedback ? t(shareFeedback) : '') : '';
+}
+async function shareStorePreview(copyOnly) {
+  if (loadState.status !== 'ready' || !snapshot?.store || !$('storeShareLink').value || sharePending) return;
+  const revision = shareRevision;
+  const data = {title:t('store.shareTitle',{name:snapshot.store.name}), text:t('store.shareText'), url:$('storeShareLink').value};
+  sharePending = true; renderStoreShare();
+  const result = await shareProviderLink(data, {
+    share: !copyOnly && typeof navigator.share === 'function' ? value => navigator.share(value) : undefined,
+    writeText: navigator.clipboard && typeof navigator.clipboard.writeText === 'function' ? value => navigator.clipboard.writeText(value) : undefined
+  });
+  if (revision !== shareRevision) return;
+  sharePending = false;
+  shareFeedback = result.ok ? (result.method === 'clipboard' ? 'previewLinkCopied' : 'previewShareOpened')
+    : result.code === 'SHARE_CANCELLED' ? 'previewShareCancelled' : 'previewShareUnavailable';
+  renderStoreShare();
+}
+$('copyStoreLink').addEventListener('click', () => shareStorePreview(true));
+$('shareStoreLink').addEventListener('click', () => shareStorePreview(false));
+
 await selectLocale(readLocalePreference(storage(), 'gu'));
 requestRoute();
 renderedHash = window.location.hash;

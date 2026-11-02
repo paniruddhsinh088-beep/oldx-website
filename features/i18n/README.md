@@ -1,7 +1,7 @@
 # Review-only locale foundation
 
-The isolated Service preview supports Gujarati (`gu`), English (`en`) and Hindi
-(`hi`). Each catalog has 103 matching keys. Translations are draft preview copy;
+The isolated Service and Store previews support Gujarati (`gu`), English (`en`)
+and Hindi (`hi`). Tests enforce matching catalog keys and interpolation fields. Translations are draft preview copy;
 native-speaker review is still required before release. The main marketplace,
 authentication screens and account preferences are not wired to these modules.
 

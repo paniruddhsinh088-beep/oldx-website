@@ -37,3 +37,78 @@ highest-value safe UI step. Existing Service share transport will be reused;
 real OG metadata, route/media/poster work remains separately gated.
 
 Final source commits, tests, CI and next task follow after verification.
+
+## Implemented Store sharing
+
+Added canonical same-origin Store preview link construction, stripping query
+parameters and unrelated product/filter state. The public sample header offers
+copy/native share and manual copy fallback. Existing Service transport and generic
+localized share feedback are reused; no duplicate OS/clipboard implementation,
+new dependency, production route or Service rewrite is introduced.
+
+Sharing is available only for an accepted public sample. Loading, invalid or
+unavailable detail, withdrawal and cache/route changes disable controls and clear
+URL/status state. Revision checks ignore late share feedback. Native cancellation
+does not copy; denied clipboard shows honest manual recovery. A URL already sent
+to OS/clipboard cannot be retracted later; this is not a freshness guarantee.
+
+Added seven matching Store keys in gu/hi/en and corrected the locale README's
+stale Service-only/key-count description. Updated the feature matrix to mark this
+preview behavior complete, retaining real route/OG/media/poster approval gaps.
+
+Focused checks passed `test:stores` **76/76**, all retained **22** Store browser
+flows and three new sharing integration cases. The cases cover canonical links
+without query tokens, keyboard copy, cancellation, all-locale clipboard denial,
+unchanged authored Store names, pending/withdrawn controls and late feedback.
+All prior 320px/200%-text and labels/touch-control checks include the new controls.
+The full combined regression sweep is recorded below after completion.
+
+Remaining gates: D1–D12, real backend/public schema, trusted role and Store/seller
+resolution, consistent publication/freshness, sanitized public/private separation,
+indexes/actual Rules/compatibility tests, native-language review and deployment.
+No live reads, main, Rules, secrets, provider resources, billing or paid API changed.
+
+Next high-value safe task: a clearly synthetic Store share-card preview/export
+using the canonical sample URL and existing safe rendering helpers; keep actual
+shop photos, real QR/canonical routes and crawler metadata separately gated.
+
+## Combined local regression evidence
+
+All 29 available non-emulator script commands passed. Policy/source checks are
+not actual Firebase Rules execution; no local emulator run is claimed.
+
+| Command (`npm run …`) | Passed |
+| --- | ---: |
+| test:emulator:safety | 78 |
+| test:profile-migration | 11 |
+| test:admin-backend | 108 |
+| test:firebase-config | 6 |
+| test:product-migration | 11 |
+| test:product-category | 8 |
+| test:product-image-classifier | 9 |
+| test:image-upload-contract | 7 |
+| test:image-lifecycle | 8 |
+| test:image-upload-abuse | 12 |
+| test:inbox-summary | 5 |
+| test:chat-read-receipt | 5 |
+| test:chat-message-authorization | 15 |
+| test:account-deletion | 7 |
+| test:privacy-policy | 12 |
+| test:data-requests | 7 |
+| test:chat-privacy | 9 |
+| test:chat-block-policy | 12 |
+| test:chat-private-user-state | 9 |
+| test:service-providers | 146 |
+| test:emulator:guard | 10 |
+| test:service-preview | 8 |
+| test:service-preview:browser | 16 |
+| test:static-build | 3 |
+| test:i18n | 11 |
+| test:toolchain | 2 |
+| test:stores | 76 |
+| test:stores:browser | 25 |
+| test:stores:preview | 3 |
+
+`git diff --check` passed. No dependency versions, overrides or lockfile changed;
+unchanged expensive dependency investigations were intentionally not repeated.
+Actual CI and commit evidence follows after the combined push.

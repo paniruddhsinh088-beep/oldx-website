@@ -14,7 +14,11 @@
 <label for="responseMode" data-i18n="store.responseMode">Sample response</label><select id="responseMode"><option value="normal" data-i18n="store.normal">Normal</option><option value="delayed" data-i18n="store.delayed">Delayed</option><option value="error" data-i18n="store.simulateError">Error</option><option value="invalid" data-i18n="store.invalidResponse">Invalid sample</option><option value="revoked" data-i18n="store.simulateRevoked">Withdrawn</option></select>
 <button id="retryRead" type="button" data-i18n="store.retry">Reload sample</button></section>
 <p id="loadStatus" role="status" tabindex="-1"></p><p id="loadError" role="alert" tabindex="-1" hidden></p>
-<section id="shopHeader" class="panel"><p class="eyebrow" data-i18n="store.eyebrow">સ્થાનિક સ્ટોરનું નમૂનું</p><h1 id="shopName"></h1><p id="shopCity"></p><p id="shopDescription"></p><p class="muted" data-i18n="store.contactNotice">સંપર્ક અને ખરીદી આ પ્રિવ્યૂમાં ઉપલબ્ધ નથી.</p></section>
+<section id="shopHeader" class="panel"><p class="eyebrow" data-i18n="store.eyebrow">સ્થાનિક સ્ટોરનું નમૂનું</p><h1 id="shopName"></h1><p id="shopCity"></p><p id="shopDescription"></p><p class="muted" data-i18n="store.contactNotice">સંપર્ક અને ખરીદી આ પ્રિવ્યૂમાં ઉપલબ્ધ નથી.</p><div aria-labelledby="storeShareHeading"><h2 id="storeShareHeading" data-i18n="store.shareHeading">નમૂનાના સ્ટોરની લિંક શેર કરો</h2>
+<p class="muted" data-i18n="store.shareNotice">આ લિંક માત્ર નમૂનાનો સ્ટોર ખોલે છે. વાસ્તવિક સ્ટોર જાહેર થયો નથી.</p>
+<label for="storeShareLink" data-i18n="store.shareLinkLabel">નમૂનાના સ્ટોરની લિંક</label><input id="storeShareLink" type="url" readonly>
+<div class="actions"><button id="copyStoreLink" type="button" disabled data-i18n="store.copyLink">લિંક કૉપી કરો</button><button id="shareStoreLink" type="button" disabled data-i18n="store.shareLink">નમૂનો શેર કરો</button></div>
+<p id="storeShareStatus" class="muted" role="status"></p></div></section>
 <section id="catalogueView"><form id="filters" class="panel" novalidate>
 <div class="fields"><div><label for="query" data-i18n="store.searchLabel">વસ્તુ શોધો</label><input id="query" aria-describedby="catalogueError" type="search" maxlength="80" data-i18n-placeholder="store.searchPlaceholder"></div>
 <div><label for="category" data-i18n="store.category">શ્રેણી</label><select id="category"><option value="all" data-i18n="store.all">બધી વસ્તુઓ</option></select></div>

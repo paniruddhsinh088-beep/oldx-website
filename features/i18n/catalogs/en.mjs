@@ -208,4 +208,11 @@ export default Object.freeze({
   "store.readError": "The sample could not be loaded safely. Previous products and details have been cleared. Try reloading the sample.",
   "store.detailUnavailable": "Sample product unavailable",
   "store.detailUnavailableText": "The sample Store or product is no longer available. Previous details have been cleared.",
+  "store.shareHeading": "Share the sample Store",
+  "store.shareNotice": "This link opens a sample Store only. No real Store has been published.",
+  "store.shareLinkLabel": "Sample Store link",
+  "store.copyLink": "Copy Store preview link",
+  "store.shareLink": "Share Store preview",
+  "store.shareTitle": "OldX Store preview · {name}",
+  "store.shareText": "Demo only: browse this sample OldX Store. This is not a live shop.",
 });
