@@ -128,6 +128,9 @@ jobs:
       - name: Check isolated sample service conversations
         run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-conversation:browser
 
+      - name: Check bounded public provider discovery preview
+        run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-discovery:browser
+
       - name: Verify loopback-only emulator test plans
         run: npm run test:emulator:guard
 

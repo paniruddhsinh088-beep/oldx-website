@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {BROWSER_ASSETS} from '../../scripts/build-static-assets.mjs';
+test('discovery preview packages no signing secrets, SDK or privileged repository and has no network/persistence sinks',async()=>{
+ const html=await readFile(new URL('../../service-discovery-preview.html',import.meta.url),'utf8');assert.match(html,/form-action 'none'/);assert.doesNotMatch(html,/https?:\/\/|firebase-env|firebase-config/);
+ const source=(await Promise.all(['provider-discovery','preview-discovery-repository','preview-discovery-controller'].map(name=>readFile(new URL('../../features/service-providers/'+name+'.mjs',import.meta.url),'utf8')))).join('\n');
+ assert.doesNotMatch(source,/\bfetch\s*\(|XMLHttpRequest|WebSocket\s*\(|sendBeacon|\.setItem\s*\(|indexedDB|sessionStorage|\.innerHTML\s*=|console\./);
+ assert.ok(BROWSER_ASSETS.includes('service-discovery-preview.html'));assert.equal(BROWSER_ASSETS.some(p=>p.includes('provider-discovery-cursor')||p.startsWith('functions/')||p.startsWith('scripts/')),false);
+});
