@@ -88,3 +88,26 @@ SDK dependency, endpoint or browser integration was activated. Exact commands:
 | `npm run test:service-conversation:browser` | 7 |
 | `npm run test:service-discovery:browser` | 6 |
 | `npm run test:provider-draft:transaction` | 31 |
+
+## Verified executable source / CI
+
+Source `820b4868b891c0786b5b283344e4003ba139acb8` passed all exact-source workflows:
+- [Branch security 41461015799](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41461015799)
+- [Service Providers Emulator 41461015410](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41461015410)
+- [Review safety 41461015455](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41461015455)
+
+The 22-case Service runtime suite includes actual SDK command composition with mock
+identity/rate adapters, two separately published Provider rows at different stored
+generations, server-only discovery/pagination/detail, withdrawal invalidating old
+cursors and fresh discovery preserving the older unchanged row. It executes solely
+inside a privileged isolated Emulator context; no real token/IAM/rate acceptance
+or changed/deployed Rules is claimed. All 34 local commands passed; new combined
+transaction/HTTP/SDK/read tests 31, Service models 183, Admin 115 and existing browser
+regressions all passed. Official local emulator binaries remain blocked.
+
+Fresh remote was unchanged at `1082539` before commit/push. Normal branch push only,
+all prior checkpoints and canonical automation preserved. Deployment flag remained
+false; read-only Vercel metadata showed no deployment for exact source. No live
+Firebase, Rules, deployment, secrets/IAM, billing, paid resource, main/merge or Full
+Reset action. This evidence-only follow-up changes no verified executable source.
+Owner gates, staging deny-all, HOLD/NO-GO and continuation above remain current.
