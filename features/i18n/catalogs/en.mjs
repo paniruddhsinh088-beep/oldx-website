@@ -206,4 +206,6 @@ export default Object.freeze({
   "store.loading": "Loading sample Store…",
   "store.revoked": "This sample is withdrawn. Previous products and details have been cleared.",
   "store.readError": "The sample could not be loaded safely. Previous products and details have been cleared. Try reloading the sample.",
+  "store.detailUnavailable": "Sample product unavailable",
+  "store.detailUnavailableText": "The sample Store or product is no longer available. Previous details have been cleared.",
 });

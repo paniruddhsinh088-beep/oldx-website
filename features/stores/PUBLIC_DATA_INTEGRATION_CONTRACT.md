@@ -152,3 +152,7 @@ Future real adapters must choose approved deadlines and cache policies and test
 actual browser page-cache/visibility behavior against trusted revocation. The
 synthetic PageTransitionEvent regression proves the handler contract only, not
 network authorization, server freshness or cross-browser cache guarantees.
+
+Independent synthetic detail reads now have a separate
+[bounded identity/publication contract](DETAIL_READ_CONTRACT.md). Catalogue
+publication and pagination do not authorize detail reads. No backend is activated.

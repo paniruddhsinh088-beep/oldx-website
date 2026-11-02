@@ -27,7 +27,8 @@ export function projectPreviewSnapshot(input, storeUid) {
       isSold: row.isSold, createdAt: Object.freeze({ seconds: row.createdAt.seconds, nanoseconds: row.createdAt.nanoseconds }) }))) });
 }
 
-export function createStoreLoadController({ read, onChange, timeoutMs = 5000,
+export function createStoreLoadController({ read, onChange,
+  project = (response, request) => projectPreviewSnapshot(response, request.storeUid), timeoutMs = 5000,
   schedule = setTimeout, cancel = clearTimeout }) {
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30000) throw new TypeError('Invalid preview deadline');
   let revision = 0, pending = null, timer = null;
@@ -52,7 +53,7 @@ export function createStoreLoadController({ read, onChange, timeoutMs = 5000,
         });
         const response = await Promise.race([read(request, { signal: controller.signal }), deadline]);
         if (version !== revision) return;
-        const snapshot = projectPreviewSnapshot(response, request.storeUid);
+        const snapshot = project(response, request);
         emit(snapshot ? { status: snapshot.status, snapshot: snapshot.status === 'ready' ? snapshot : null }
           : { status: 'error', code: 'INVALID_PREVIEW_RESPONSE' });
       } catch {

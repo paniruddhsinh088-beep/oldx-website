@@ -218,17 +218,27 @@ async function controlledAdapter() {
   await page.route('**/features/stores/preview-adapter.mjs', request => request.fulfill({ contentType: 'text/javascript', body: `
     import { sampleStores, sampleListings } from './preview-fixtures.mjs';
     window.sampleRequests = [];
-    export function readSyntheticStore(scope, { signal }) {
+    function requestSample(scope, { signal }, detail = false) {
       return new Promise((resolve, reject) => window.sampleRequests.push({scope, signal,
         finish(kind = 'ready') {
           if (kind === 'error') return reject(new Error('PRIVATE MOCK ERROR'));
           if (kind === 'invalid') return resolve({status:'published',store:{},records:['PRIVATE']});
           if (kind === 'revoked') return resolve({status:'revoked'});
+          if (detail) {
+            const store = sampleStores.find(s=>s.id===scope.storeUid);
+            const row = sampleListings.find(r=>r.id===scope.productId);
+            return resolve({status:'published',
+              store:kind==='store-removed'?null:{...store,sellerUid:store.id,publicationStatus:kind==='store-suspended'?'suspended':kind==='store-unpublished'?'unpublished':'published'},
+              listing:kind==='removed'?null:{...row,id:kind==='wrong-id'?'other-product':row?.id,
+                sellerUid:kind==='wrong-owner'?'other-seller':row?.sellerUid,publicationStatus:kind==='listing-revoked'?'suspended':'published'}});
+          }
           resolve({status:'published',store:sampleStores.find(s=>s.id===scope.storeUid),
             records:sampleListings.filter(r=>r.sellerUid===scope.storeUid && !(kind==='removed' && r.id===scope.productId)).map((r,i)=>({...r,publicationStatus:kind==='listing-revoked' && i===0?'suspended':'published'}))});
         }
       }));
-    }` }));
+    }
+    export const readSyntheticStore = (scope, options) => requestSample(scope, options);
+    export const readSyntheticDetail = (scope, options) => requestSample(scope, options, true);` }));
   await page.reload();
   await page.waitForFunction(() => window.sampleRequests?.length === 1);
 }
@@ -367,7 +377,7 @@ test('withdrawn listing payloads fail closed and removed product detail recovers
   await page.locator('#retryRead').click();
   await page.waitForFunction(()=>sampleRequests.length===3);
   await finishRequest(2,'listing-revoked'); await ready();
-  assert.equal(await page.locator('#loadError').isVisible(), true);
+  assert.equal(await page.locator('#notFoundView').isVisible(), true);
   assert.equal(await page.locator('#productTitle').textContent(), '');
   assert.equal(await page.locator('#productPrice').textContent(), '');
   await page.locator('#retryRead').click();
@@ -408,4 +418,75 @@ test('document cache lifecycle clears pending data and requires a fresh mock rea
   assert.equal(await page.locator('#results article').count(), 0);
   await finishRequest(2); await ready();
   assert.equal(await page.locator('#results article').count(), 6);
+});
+
+test('independent detail publication checks clear a previously listed product in every mobile locale', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.setViewportSize({width:320,height:900});
+  await page.locator('#results a').first().click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  assert.equal(await page.evaluate(()=>sampleRequests[1].scope.view), 'product');
+  await finishRequest(1,'store-suspended'); await ready();
+  assert.equal(await page.locator('#productTitle').textContent(),'');
+  assert.equal(await page.locator('#shopName').textContent(),'');
+  assert.equal(await page.locator('#notFoundHeading').evaluate(n=>n===document.activeElement),true);
+  for(const locale of ['gu','hi','en']) {
+    await language(locale);
+    const catalog=(await import(`../../features/i18n/catalogs/${locale}.mjs`)).default;
+    assert.equal(await page.locator('#notFoundHeading').textContent(),catalog['store.detailUnavailable']);
+    assert.equal(await page.locator('#notFoundDescription').textContent(),catalog['store.detailUnavailableText']);
+    await page.evaluate(()=>{
+      const nodes=[...document.querySelectorAll('body *')], sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));
+      nodes.forEach((n,i)=>n.style.fontSize=sizes[i]*2+'px');
+    });
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+    await page.evaluate(()=>document.querySelectorAll('body *').forEach(n=>n.style.removeProperty('font-size')));
+    assert.equal(await page.evaluate(()=>sampleRequests.length),2,'locale does not repeat publication reads');
+  }
+});
+
+test('out-of-order direct details and history never reuse another product or its publication claim', async () => {
+  await controlledAdapter(); await finishRequest(0); await ready();
+  await page.evaluate(()=>{location.hash='#store/demo-shop/product/sample-1';});
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await page.evaluate(()=>{location.hash='#store/demo-shop/product/sample-2';});
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  await finishRequest(2);
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  const title=await page.locator('#productTitle').textContent();
+  await finishRequest(1,'wrong-id');
+  assert.equal(await page.locator('#productTitle').textContent(),title);
+  assert.equal(await page.locator('#loadError').isVisible(),false);
+  await page.goBack();
+  await page.waitForFunction(()=>sampleRequests.length===4);
+  assert.equal(await page.locator('#productTitle').textContent(),'');
+  await finishRequest(3,'store-unpublished'); await ready();
+  assert.equal(await page.locator('#notFoundView').isVisible(),true);
+  await page.goForward();
+  await page.waitForFunction(()=>sampleRequests.length===5);
+  await finishRequest(4);
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  assert.equal(await page.locator('#productTitle').textContent(),title);
+  assert.equal(await page.locator('#productTitle').evaluate(n=>n===document.activeElement),true);
+});
+
+test('detail timeout, identity mismatch and retry never fall back to accepted catalogue content', async () => {
+  await page.clock.install(); await controlledAdapter(); await finishRequest(0); await ready();
+  await page.locator('#results a').first().click();
+  await page.waitForFunction(()=>sampleRequests.length===2);
+  await page.clock.fastForward(5001);
+  await page.waitForFunction(()=>!document.querySelector('#loadError').hidden);
+  assert.equal(await page.locator('#productTitle').textContent(),'');
+  await finishRequest(1);
+  assert.equal(await page.locator('#productTitle').textContent(),'');
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===3);
+  await finishRequest(2,'wrong-owner'); await ready();
+  assert.equal(await page.locator('#loadError').isVisible(),true);
+  assert.equal(await page.locator('#productPrice').textContent(),'');
+  await page.locator('#retryRead').click();
+  await page.waitForFunction(()=>sampleRequests.length===4);
+  await finishRequest(3);
+  await page.waitForFunction(()=>document.querySelector('#productTitle').textContent.length>0);
+  assert.equal(await page.locator('#productTitle').evaluate(n=>n===document.activeElement),true);
 });

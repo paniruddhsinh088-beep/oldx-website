@@ -126,3 +126,5 @@ deployment-disabled setting was verified before pushing. `37209fd`, 0ab408d,
 632fe83, 910744e and earlier checkpoints remain unchanged ancestors. Branch-only
 normal pushes succeeded; the working tree was clean after the source commits.
 This final evidence entry changes documentation only.
+
+Continuation: [independent Store detail contract batch](review-progress-2026-11-02-store-detail-batch.md).

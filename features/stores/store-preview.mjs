@@ -1,7 +1,8 @@
 import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
 import { sampleStores } from './preview-fixtures.mjs';
-import { createStoreLoadController } from './preview-load.mjs';
-import { readSyntheticStore } from './preview-adapter.mjs';
+import { projectSyntheticDetail } from './preview-detail.mjs';
+import { createStoreLoadController, projectPreviewSnapshot } from './preview-load.mjs';
+import { readSyntheticStore, readSyntheticDetail } from './preview-adapter.mjs';
 import { parseStorePreviewRoute } from './preview-route.mjs';
 import { createTranslator, loadTranslator, SUPPORTED_LOCALES } from '../i18n/i18n.mjs';
 import { applyCatalog } from '../i18n/dom.mjs';
@@ -78,8 +79,7 @@ function displayRoute(focus = false, restoreResult = false) {
   let product = null;
   if (!store) view = 'not-found';
   if (store && view === 'product') {
-    const publicPage = catalogue({ query: '', category: 'all', availableOnly: false, page: 1, pageSize: 24 });
-    product = publicPage.ok && publicPage.items.find(item => item.id === route.productId);
+    product = snapshot?.product?.id === route.productId ? snapshot.product : null;
     if (!product) view = 'not-found';
   }
   for (const link of document.querySelectorAll('.samples a')) {
@@ -101,7 +101,7 @@ function displayRoute(focus = false, restoreResult = false) {
   } else if (view === 'product') {
     $('productTitle').textContent = product.title;
     $('productCategory').textContent = t('store.category.' + product.category);
-    $('productPrice').textContent = product.priceLabel;
+    $('productPrice').textContent = '₹' + translator.number(product.price, { maximumFractionDigits: 0 });
     $('productAvailability').textContent = t(product.available ? 'store.available' : 'store.sold');
     $('backToCatalogue').href = '#store/' + store.id;
     returnProductId = product.id; target = $('productTitle');
@@ -140,7 +140,12 @@ async function selectLocale(requested, persist = false) {
   renderLoadState();
 }
 $('localeSelect').addEventListener('change', event => selectLocale(event.target.value, true));
-const loader = createStoreLoadController({ read: readSyntheticStore, onChange(state) {
+const loader = createStoreLoadController({
+  read: (scope, options) => scope.view === 'product' ? readSyntheticDetail(scope, options) : readSyntheticStore(scope, options),
+  project: (response, scope) => scope.view === 'product'
+    ? projectSyntheticDetail(response, { storeUid: scope.storeUid, productId: scope.productId })
+    : projectPreviewSnapshot(response, scope.storeUid),
+  onChange(state) {
   loadState = state;
   snapshot = state.snapshot ?? null; activeRecords = snapshot?.records ?? [];
   renderLoadState();
@@ -159,6 +164,9 @@ function renderLoadState() {
   $('catalogueView').setAttribute('aria-busy', String(busy));
   $('productView').setAttribute('aria-busy', String(busy));
   $('loadStatus').textContent = busy ? t('store.loading') : '';
+  const unavailable = loadState.status === 'unavailable';
+  $('notFoundHeading').textContent = t(unavailable ? 'store.detailUnavailable' : 'store.notFound');
+  $('notFoundDescription').textContent = t(unavailable ? 'store.detailUnavailableText' : 'store.notFoundText');
   const failed = ['error', 'revoked'].includes(loadState.status);
   $('loadError').hidden = !failed;
   $('loadError').textContent = failed ? t(loadState.status === 'revoked' ? 'store.revoked' : 'store.readError') : '';
@@ -169,7 +177,8 @@ function renderLoadState() {
     clearDisplayedData();
     const route = parseStorePreviewRoute(window.location.hash);
     for (const [id, visible] of [['catalogueView', route.view === 'catalogue'], ['productView', route.view === 'product'], ['notFoundView', route.view === 'not-found' || loadState.status === 'idle']]) $(id).hidden = !visible;
-    if (loadState.status === 'idle') { $('catalogueView').hidden = $('productView').hidden = true; }
+    if (loadState.status === 'idle' || unavailable) { $('catalogueView').hidden = $('productView').hidden = true; $('notFoundView').hidden = false; }
+    if (unavailable && focusAfterLoad && document.activeElement === $('loadStatus')) { $('notFoundHeading').focus(); focusAfterLoad = false; }
     if (failed && focusAfterLoad && [$('loadStatus'), $('resultsHeading')].includes(document.activeElement)) { $('loadError').focus(); focusAfterLoad = false; }
   }
 }

@@ -80,3 +80,11 @@ Page-hide clears accepted/pending state; a persisted page-show requests a fresh
 sample instead of trusting browser back/forward-cache publication state. The
 cache-lifecycle browser regression dispatches deterministic PageTransitionEvents;
 it does not claim coverage of every engine's real cache implementation.
+
+Product routes now use an independent single-product mock read with fresh Store
+and listing publication/identity checks. They do not look up a card within the
+first 24 catalogue results. Withdrawn or removed samples clear all detail fields
+and show localized unavailable recovery; malformed responses show safe error/retry.
+The same existing request controller protects catalogue-to-detail transitions,
+late results, timeouts, history and page-cache restores. See
+[detail contract and remaining approvals](DETAIL_READ_CONTRACT.md).
