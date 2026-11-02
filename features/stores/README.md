@@ -12,6 +12,10 @@ legacy Store page, Firebase, Admin, a deployment or a real seller account.
   images, private attributes, moderation data or client verification claims.
 - Uses numeric `basePrice` rather than parsing legacy `finalPriceStr` HTML
   entities (`&#8377;`), which can produce incorrect price ordering.
+- `availableOnly: true` filters sold listings before local pagination; default
+  `false` preserves the existing mixed-availability catalogue. Accepts booleans only.
+- Optional `locale` is restricted to `gu`, `hi`, `en` (default `en`) for Indian
+  numeric price formatting. Authored titles and numeric sort values are preserved.
 - Supports title search with Unicode NFC normalization, category filtering,
   deterministic sorting (including Firestore sub-millisecond timestamp precision),
   and bounded pagination *within the supplied batch*.

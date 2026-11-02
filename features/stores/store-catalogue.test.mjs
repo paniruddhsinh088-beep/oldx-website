@@ -150,3 +150,38 @@ test("newest retains Firestore sub-millisecond precision and mixed timestamp ord
     assert.equal(Object.hasOwn(result.items[0], "createdAt"), false);
   }
 });
+
+test("availability filter composes with category/search before bounded pagination", () => {
+  const records = [
+    listing("sold", { title: "Desk sold", isSold: true }),
+    listing("desk-a", { title: "Desk available A" }),
+    listing("phone", { title: "Desk phone", category: "mobiles" }),
+    listing("desk-b", { title: "Desk available B" })
+  ];
+  const options = { availableOnly: true, category: "furniture", query: "desk", pageSize: 1 };
+  const first = view(records, options);
+  assert.equal(first.matchedCount, 2);
+  assert.equal(first.hasMoreInBatch, true);
+  assert.deepEqual(first.items.map(p => p.id), ["desk-a"]);
+  assert.deepEqual(view(records, { ...options, page: 2 }).items.map(p => p.id), ["desk-b"]);
+  assert.equal(view(records).matchedCount, 4, "default preserves all listing availability states");
+  for (const availableOnly of ["false", 1, null, {}]) {
+    assert.deepEqual(view(records, { availableOnly }), { ok: false, code: "INVALID_CATALOGUE_INPUT" });
+  }
+});
+
+test("supported interface locales format numeric prices without translating authored titles", () => {
+  const title = "કિરણનું Desk कुर्सी";
+  for (const locale of ["gu", "hi", "en"]) {
+    const result = view([listing("p1", { title, basePrice: 123456.4 })], { locale });
+    assert.equal(result.ok, true);
+    assert.equal(result.items[0].title, title);
+    assert.equal(result.items[0].price, 123456);
+    assert.equal(result.items[0].priceLabel, "₹" + new Intl.NumberFormat(locale + "-IN", { maximumFractionDigits: 0 }).format(123456));
+    assert.deepEqual(Object.keys(result.items[0]).sort(), ["id", "title", "category", "price", "priceLabel", "available"].sort());
+  }
+  for (const locale of ["fr", "gu-IN", "__proto__", "", null, {}]) {
+    assert.deepEqual(view([], { locale }), { ok: false, code: "INVALID_CATALOGUE_INPUT" });
+  }
+  assert.deepEqual(view([listing("p1")]), view([listing("p1")], { locale: "en", availableOnly: false }));
+});

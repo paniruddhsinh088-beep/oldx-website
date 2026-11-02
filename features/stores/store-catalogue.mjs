@@ -17,7 +17,8 @@ const MAX_BATCH = 100;
 const MAX_PAGE_SIZE = 24;
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/u;
 const FORBIDDEN_TEXT = /[<>\u0000-\u001f\u007f-\u009f]/u;
-const priceFormatter = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 });
+const priceFormatters = new Map(["gu", "hi", "en"].map(locale =>
+  [locale, new Intl.NumberFormat(locale + "-IN", { maximumFractionDigits: 0 })]));
 
 function plainRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value) &&
@@ -40,7 +41,7 @@ function timestampOrder(value) {
   return Number.isSafeInteger(millis) ? { millis, nanos: value.nanoseconds % 1e6 } : null;
 }
 
-function projectListing(value, storeUid) {
+function projectListing(value, storeUid, priceFormatter) {
   if (!plainRecord(value) || value.sellerUid !== storeUid ||
       typeof value.id !== "string" || !ID_PATTERN.test(value.id) ||
       !CATEGORY_IDS.has(value.category) || typeof value.isSold !== "boolean" ||
@@ -67,8 +68,9 @@ function projectListing(value, storeUid) {
 export function buildStoreCataloguePage(options = {}) {
   if (!plainRecord(options)) return { ok: false, code: "INVALID_CATALOGUE_INPUT" };
   const { storeUid, listings, query = "", category = "all", sort = "newest",
-    page = 1, pageSize = 12 } = options;
-  if (typeof storeUid !== "string" || !ID_PATTERN.test(storeUid) ||
+    page = 1, pageSize = 12, availableOnly = false, locale = "en" } = options;
+  if (typeof availableOnly !== "boolean" || !priceFormatters.has(locale) ||
+      typeof storeUid !== "string" || !ID_PATTERN.test(storeUid) ||
       !Array.isArray(listings) || listings.length > MAX_BATCH ||
       !Number.isInteger(page) || page < 1 || page > MAX_BATCH ||
       !Number.isInteger(pageSize) || pageSize < 1 || pageSize > MAX_PAGE_SIZE ||
@@ -82,12 +84,13 @@ export function buildStoreCataloguePage(options = {}) {
   const seenIds = new Set();
   let skippedCount = 0;
   for (const record of listings) {
-    const projected = projectListing(record, storeUid);
+    const projected = projectListing(record, storeUid, priceFormatters.get(locale));
     if (!projected || seenIds.has(projected.card.id)) {
       skippedCount++;
       continue;
     }
     seenIds.add(projected.card.id);
+    if (availableOnly && !projected.card.available) continue;
     if (category !== "all" && projected.card.category !== category) continue;
     if (search && !projected.card.title.toLocaleLowerCase("en").normalize("NFC").includes(search)) continue;
     accepted.push(projected);
