@@ -88,3 +88,24 @@ again (12 tests). No unchanged expensive suites repeated. `git diff --check` pas
 | `npm run test:service-conversation:browser` | 7 |
 | `npm run test:service-discovery:browser` | 6 |
 | `npm run test:provider-draft:transaction` | 12 |
+
+## Exact-source checkpoint and CI
+
+Executable source `e1c560a67d6f99df073c783f9c31e9e10160d056` adds the inactive atomic
+Provider private-draft adapter, shared verified-operation boundary, fake transaction
+integration tests and updated launch gates. All exact-source workflows succeeded:
+- [Branch security 41453825311](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41453825311)
+- [Service Providers Emulator 41453825090](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41453825090)
+- [Review safety 41453825258](https://github.com/paniruddhsinh088-beep/oldx-website/actions/runs/41453825258)
+
+Local results include transaction/helper 12, existing Chat/integration 32, Service
+183, Admin 115 and all prior Store/Service/mobile/browser suites. CI's isolated
+Rules Emulator tests are actual CI evidence for existing candidate Rules, not real
+acceptance of the unimplemented transaction SDK adapter or permission to deploy.
+
+Fresh remote remained `64a4429` before source commit/push. All history/canonical
+automation preserved; normal push only, no concurrent reconciliation needed. Branch
+deployment flag remained false; read-only Vercel metadata showed no deployments for
+source SHA. No live Firebase/Rules/resources/secrets/billing/main/merge/deployment/
+Full Reset or paid action occurred. This documentation-only follow-up changes no
+verified executable source. HOLD/NO-GO and owner approvals above remain unchanged.
