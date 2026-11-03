@@ -256,3 +256,14 @@ and final focused 10/10 passed; actual new exact-source Emulator CI pending revi
 See [emergency checkpoint](review-progress-2026-11-03-provider-emergency-checkpoint.md).
 No live/staging or release completion claim; Provider public-host orchestration and
 remaining media/Chat/Admin/privacy acceptance remain P0.
+
+3 November Provider public-page follow-up: existing directory/category/locality,
+bounded next-page read, independently fresh multi-service detail, safe preview
+share links and private enquiry command/callback now share the existing disabled
+ports and route controller. Local focused 46/46 plus final host/browser 14/14 pass.
+Back/forward/refresh, offline/withdrawal, gu/hi/en and 320/375px doubled-text evidence
+are recorded in [public-page checkpoint](review-progress-2026-11-03-provider-public-page.md).
+Base 816ec80 exact-source CI is verified 3/3 successful, superseding the pending
+note above. This is source integration, not active Firebase or launch acceptance.
+Private conversation DOM/handoff, complete cross-page host, mandatory photos,
+Chat/Admin/privacy/runtime and real staging acceptance remain P0. HOLD/NO-GO.

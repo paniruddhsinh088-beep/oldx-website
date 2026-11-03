@@ -25,7 +25,7 @@ let publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
 })).filter(result => result.ok).map(result => result.profile);
 const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.icon]));
 
-let providerIntegration=null,providerIntegrationEnabled=false,restoredProviderLanguages=[];
+let providerIntegration=null,providerIntegrationEnabled=false,restoredProviderLanguages=[],trustedCatalog=null,trustedCursor=null,trustedPublicationEpoch=0,discoveryTimer=null,trustedOptions={};
 let translator = createTranslator("en");
 const t = (key, params) => translator.t(key, params);
 let currentProfile = null;
@@ -64,7 +64,7 @@ function render() {
           .toLocaleLowerCase(translator.locale)
           .includes(q)) &&
       (!area ||
-        p.serviceArea
+        (p.serviceArea+' '+(providerIntegrationEnabled?p.city:''))
           .normalize("NFC")
           .toLocaleLowerCase(translator.locale)
           .includes(area)),
@@ -190,7 +190,7 @@ $("categories").addEventListener("click", (e) => {
   });
   render();
 });
-$("searchBtn").addEventListener("click", render);
+$("searchBtn").addEventListener("click",()=>providerIntegrationEnabled?refreshDiscovery():render());
 $("q").addEventListener("input", render);
 $("area").addEventListener("input", render);
 $("sort").addEventListener("change", render);
@@ -346,6 +346,7 @@ function prepareProfileLink() {
   if (!link?.ok) $("profileShareStatus").textContent = t("previewShareUnavailable");
 }
 function clearProfile(erase = false) {
+  if(providerIntegrationEnabled){$('trustedEnquiryLink').hidden=true;$('trustedEnquiryStatus').textContent='';}
   resetSampleEnquiry(true);
   currentProfile = null; feedbackKey = null;
   $("profileLink").value = ""; $("profileShareStatus").textContent = "";
@@ -357,20 +358,21 @@ function clearProfile(erase = false) {
 }
 function syncRoute({ focus = true, restoreResult = false, force = false } = {}) {
   if (!force && renderedHash === window.location.hash) return;
+  clearTimeout(discoveryTimer);
   const previous = renderedHash;
   renderedHash = window.location.hash; routeRevision++;
-  providerIntegration?.model.changeScope();
+  providerIntegration?.changeScope();
   clearProfile(providerIntegrationEnabled);
   const route = parseServicePreviewRoute(renderedHash);
-  if(providerIntegrationEnabled&&route.view==='profile'){show("profileView",false,focus);providerIntegration.model.detail({providerId:route.providerId,expectedGeneration:null});return;}
+  if(providerIntegrationEnabled&&route.view==='profile'){show("profileView",false,focus);return providerIntegration.model.detail({providerId:route.providerId,expectedGeneration:null});}
   if (route.view === "profile" && openProfile(route.providerId, focus)) return;
-  if (route.view === "browse") show("browseView", restoreResult || previous?.startsWith("#provider/"), focus);
+  if (route.view === "browse") {show("browseView", restoreResult || previous?.startsWith("#provider/"), focus);if(providerIntegrationEnabled)return refreshDiscovery();}
   else if (route.view === "provider") show("providerView", false, focus);
   else { clearProfile(true); show("notFoundView", false, focus); }
 }
 function navigate(hash, restoreResult = false) {
   if (window.location.hash !== hash) window.history.pushState(null, "", hash);
-  syncRoute({ restoreResult, force: true });
+  return syncRoute({ restoreResult, force: true });
 }
 async function shareCurrentProfile(copyOnly) {
   if (!currentProfile || !$("profileLink").value) return;
@@ -415,7 +417,7 @@ function resetSampleEnquiry(removeOptions=false) {
   renderSampleEnquiry();
 }
 $('sampleEnquiryForm').addEventListener('submit',event=>{
-  event.preventDefault();enquiryValidated=true;
+  event.preventDefault();if(providerIntegrationEnabled){if(!currentProfile||trustedPublicationEpoch<1)return;const state=providerIntegration.buyer.snapshot();if(state.canRetry||state.status==='loading')return;providerIntegration.buyer.select({providerId:currentProfile.id,services:[...currentProfile.services],publicationGeneration:trustedPublicationEpoch});providerIntegration.buyer.create(readSampleEnquiry());return;}enquiryValidated=true;
   const result=inspectSampleEnquiry(currentProfile,readSampleEnquiry());
   enquiryPreview=result.ok?result.value:null;renderSampleEnquiry();
   if(result.ok)$('enquirySummary').focus();
@@ -426,10 +428,24 @@ $('cancelSampleEnquiry').addEventListener('click',()=>{resetSampleEnquiry();$('e
 window.addEventListener('pagehide',()=>resetSampleEnquiry());
 window.addEventListener('pageshow',event=>{if(event.persisted)resetSampleEnquiry();});
 
+function refreshDiscovery(cursor=null){
+ if(!providerIntegrationEnabled)return;clearTimeout(discoveryTimer);const raw=$('area').value.trim();let locality=raw;
+ if(raw&&trustedCatalog?.localities){const exact=trustedCatalog.localities.filter(l=>l.serviceArea===raw),city=trustedCatalog.localities.filter(l=>l.city===raw);if(exact.length===1)locality=exact[0].serviceArea;else if(city.length===1)locality=city[0].serviceArea;else {providerIntegration.changeScope();publicProfiles=[];clearProfile(true);render();$('providerPublicStatus').textContent=t('market.provider.chooseArea');return;}}
+ const typed=$('q').value.trim(),category=trustedCatalog?.services?.includes(typed)?typed:activeCategory==='બધી સેવાઓ'?'':activeCategory;
+ return providerIntegration.model.discover({category,locality,limit:12,cursor});
+}
+function queueDiscovery(){if(!providerIntegrationEnabled)return;clearTimeout(discoveryTimer);if(parseServicePreviewRoute(location.hash).view==='browse')discoveryTimer=setTimeout(()=>{if(parseServicePreviewRoute(location.hash).view==='browse')refreshDiscovery();},180);}
+$('nextProviderPage').addEventListener('click',()=>trustedCursor&&refreshDiscovery(trustedCursor));
+$('retryProviderRead').addEventListener('click',()=>syncRoute({force:true}));
+$('retryTrustedEnquiry').addEventListener('click',()=>providerIntegration?.buyer.retry());
+$('trustedEnquiryLink').addEventListener('click',event=>{if(providerIntegrationEnabled){event.preventDefault();const state=providerIntegration.buyer.snapshot();if(currentProfile&&state.enquiryId)trustedOptions.openPrivateEnquiry?.({providerId:currentProfile.id,enquiryId:state.enquiryId});}});
+window.addEventListener('pagehide',()=>clearTimeout(discoveryTimer));
 // Future approved host supplies ports/session; default mounts disabled only.
 export function configureProviderIntegration(options={}){
- providerIntegrationEnabled=options.enabled===true;
- providerIntegration=mountProviderUiIntegration({...options,root:document,translate:t,
+ trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
+ $('providerPublicStatus').hidden=$('trustedProviderPublicControls').hidden=$('trustedEnquiryStatus').hidden=$('retryTrustedEnquiry').hidden=!providerIntegrationEnabled;
+ if(providerIntegrationEnabled){publicProfiles=[];clearProfile(true);$('results').replaceChildren();if(trustedCatalog?.services){$('categories').replaceChildren();for(const service of ['બધી સેવાઓ',...trustedCatalog.services]){const button=document.createElement('button');button.type='button';button.className='chip';button.dataset.cat=service;button.textContent=service==='બધી સેવાઓ'?t('serviceAll'):(options.categoryLabel?.(service,translator.locale)??service);button.setAttribute('aria-pressed',String(service===activeCategory));$('categories').append(button);}}}
+ providerIntegration=mountProviderUiIntegration({...options,root:document,managedRoutes:true,translate:t,onSearchScope:queueDiscovery,buyer:{...options.buyer,onChange:state=>{if(providerIntegrationEnabled){$('trustedEnquiryStatus').textContent=t('market.provider.enquiry_'+state.status);$('retryTrustedEnquiry').disabled=!state.canRetry;$('enquiryDescription').readOnly=state.canRetry||state.status==='loading';$('sampleEnquiryForm').querySelector('button[type=submit]').disabled=state.canRetry||state.status==='loading';$('trustedEnquiryLink').hidden=state.status!=='created'||typeof options.openPrivateEnquiry!=='function';if(state.status==='created')$('trustedEnquiryLink').href='#inbox/'+currentProfile?.id+'/enquiry/'+state.enquiryId;}options.buyer?.onChange?.(state);}},
   readProfile:()=>{validated=true;const inspected=updatePreview();return inspected.ok?{...inspected.profile,languages:[...restoredProviderLanguages]}:null;},
   clearPrivateForm:()=>{restoredProviderLanguages=[];document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());$('providerForm').reset();validated=false;updatePreview();},
   restorePrivateForm:profile=>{
@@ -441,12 +457,12 @@ export function configureProviderIntegration(options={}){
    validated=false;updatePreview();
   },
   onPublicState:state=>{
-   clearProfile(true);
+   clearProfile(true);trustedCursor=state.nextCursor??null;trustedPublicationEpoch=state.publicationEpoch??0;$('nextProviderPage').disabled=!trustedCursor;$('providerPublicStatus').textContent=t('integration.read_'+state.status);
    publicProfiles=state.status==='ready'?(state.items??[state.profile]):[];
    if(state.status==='ready'&&state.profile){openProfile(state.profile.id,false);return;}
    render();if(state.status!=='ready'){const message=document.createElement('p');message.setAttribute('role','status');message.textContent=t('integration.read_'+state.status);$('results').replaceChildren(message);$('profileShareStatus').textContent=message.textContent;}
   }
- });return providerIntegration;
+ });const binding=providerIntegration;return Object.freeze({...binding,setSession(value){binding.setSession(value);if(providerIntegrationEnabled)syncRoute({force:true,focus:false});},restoreRoute:()=>syncRoute({force:true}),discover:()=>navigate('#services'),detail:request=>navigate('#provider/'+request.providerId),async openEnquiry(providerId){await navigate('#provider/'+providerId);if(currentProfile?.id===providerId)$('enquiryService').focus();},changeScope:()=>binding.changeScope()});
 }
 configureProviderIntegration();
 await selectLocale(readLocalePreference(preferenceStorage(), "gu"));

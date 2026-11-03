@@ -1,0 +1,30 @@
+import test,{before,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright-core';
+import {startPreviewServer} from './preview-server.mjs';
+import {fakeFirestoreSdk} from '../integration/fake-firestore-sdk.mjs';
+import {providerJourneyFixture} from '../integration/provider-journey-acceptance.mjs';
+let server,browser,origin;
+before(async()=>{server=await startPreviewServer(['service-preview.html']);origin='http://127.0.0.1:'+server.address().port;browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});});
+after(async()=>{await browser?.close();await new Promise(r=>server.close(r));});
+for(const locale of ['gu','hi','en'])test('existing public Provider page discovery/detail/private enquiry/withdrawal '+locale,async()=>{
+ const context=await browser.newContext({viewport:{width:locale==='gu'?320:375,height:850}});
+ try{
+ const remote=[];await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){remote.push(route.request().url());return route.abort();}return route.continue();});
+ const fake=fakeFirestoreSdk(),f=await providerJourneyFixture({sdk:fake.sdk,db:fake.db,seed:(...a)=>fake.seed(...a)});
+ await f.owner.saveDraft({requestId:'public-draft',expectedRevision:0,profile:f.profile});const owned=await f.owner.bootstrap({operation:null,requestId:null});await f.owner.managePublication({requestId:'public-publish',expectedRevision:1,expectedGeneration:0,action:'publish'});f.uid('journey-buyer');
+ const page=await context.newPage();await page.exposeFunction('publicDiscover',r=>f.publicReads.discover(r));await page.exposeFunction('publicDetail',r=>f.publicReads.detail(r));await page.exposeFunction('privateExecute',(op,body)=>f.execute(op,body));
+ async function boot(){await page.evaluate(async locale=>{const {configureProviderIntegration}=await import('/features/service-providers/service-preview.mjs');window.openedEnquiry=null;window.binding=configureProviderIntegration({enabled:true,catalog:{services:['Plumber','Repair'],localities:[{city:'Ahmedabad',serviceArea:'Sample area'}]},reads:{discover:r=>publicDiscover(r),detail:r=>publicDetail(r)},buyer:{commands:{execute:(op,body)=>privateExecute(op,body)}},openPrivateEnquiry:value=>window.openedEnquiry=value});binding.setSession({uid:'journey-buyer',sessionId:'buyer',revision:0,generation:0});document.querySelector('#localeSelect').value=locale;document.querySelector('#localeSelect').dispatchEvent(new Event('change'));},locale);}
+ await page.goto(origin+'/service-preview.html#services');await boot();await page.waitForFunction(()=>document.querySelector('#results [data-provider-id]'));
+ await page.locator('#categories [data-cat="Repair"]').click();await page.locator('#area').fill('Ahmedabad');await page.locator('#searchBtn').click();await page.waitForFunction(()=>document.querySelector('#results [data-provider-id]'));
+ await page.evaluate(async providerId=>{const {createMarketplaceNavigation}=await import('/features/marketplace/navigation-integration.mjs');window.navigation=createMarketplaceNavigation({enabled:true,providers:binding});if(!await navigation.go('provider',providerId))throw new Error('Provider route failed');},owned.providerId);await page.waitForFunction(()=>document.querySelector('#pName').textContent==='મૂળ Provider');assert.equal(await page.locator('#pServices').textContent().then(s=>s.includes('Repair')&&s.includes('Plumber')),true);
+ assert.equal((await page.locator('#profileLink').inputValue()).endsWith('#provider/'+owned.providerId),true);
+ await page.evaluate(id=>navigation.go('enquiry',id),owned.providerId);assert.equal(await page.locator('#enquiryService').evaluate(n=>n===document.activeElement),true);await page.locator('#enquiryService').selectOption('Repair');await page.locator('#enquiryDescription').fill('ખાનગી buyer note');await page.locator('#sampleEnquiryForm button[type=submit]').click();await page.waitForFunction(()=>!document.querySelector('#trustedEnquiryLink').hidden);await page.locator('#trustedEnquiryLink').click();assert.equal((await page.evaluate(()=>openedEnquiry)).providerId,owned.providerId);assert.equal(await page.locator('#results').textContent().then(s=>s.includes('ખાનગી')),false);
+ await page.reload();await boot();await page.waitForFunction(()=>document.querySelector('#pName').textContent==='મૂળ Provider');assert.equal(await page.locator('#enquiryDescription').inputValue(),'');
+ await page.goBack();await page.waitForFunction(()=>document.querySelector('#results [data-provider-id]'));await page.goForward();await page.waitForFunction(()=>document.querySelector('#pName').textContent==='મૂળ Provider');
+ await page.evaluate(()=>window.dispatchEvent(new Event('offline')));await page.waitForFunction(()=>document.querySelector('#pName').textContent==='');await page.evaluate(()=>window.dispatchEvent(new Event('online')));await page.locator('#retryProviderRead').focus();await page.keyboard.press('Enter');await page.waitForFunction(()=>document.querySelector('#pName').textContent==='મૂળ Provider');
+ await page.evaluate(()=>{const nodes=[...document.querySelectorAll('body *')],sizes=nodes.map(n=>parseFloat(getComputedStyle(n).fontSize));nodes.forEach((n,i)=>n.style.fontSize=sizes[i]*2+'px');});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+ f.uid('journey-provider');await f.owner.managePublication({requestId:'public-withdraw',expectedRevision:1,expectedGeneration:1,action:'withdraw'});f.uid('journey-buyer');await page.evaluate(()=>binding.restoreRoute());await page.waitForFunction(()=>document.querySelector('#pName').textContent==='');assert.equal(await page.locator('#copyProfileLink').isDisabled(),true);
+ await page.evaluate(()=>binding.setSession(null));assert.equal(await page.locator('#enquiryDescription').inputValue(),'');assert.deepEqual(remote,[]);
+ }finally{await context.close();}
+});

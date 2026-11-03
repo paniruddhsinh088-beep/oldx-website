@@ -30,7 +30,7 @@
     "test:service-providers:rules": "node scripts/run-emulator-tests.mjs service-providers",
     "test:emulator:guard": "node --test scripts/emulator-test-plan.test.mjs",
     "test:service-preview": "node --test tests/service/*.test.mjs",
-    "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs tests/browser/marketplace-locale.test.mjs tests/browser/product-integration.test.mjs tests/browser/store-integration.test.mjs tests/browser/provider-private-integration.test.mjs",
+    "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs tests/browser/marketplace-locale.test.mjs tests/browser/product-integration.test.mjs tests/browser/store-integration.test.mjs tests/browser/provider-private-integration.test.mjs tests/browser/provider-public-integration.test.mjs",
     "test:static-build": "node --test scripts/build-static-assets.test.mjs",
     "test:i18n": "node --test features/i18n/*.test.mjs",
     "test:toolchain": "node --test scripts/toolchain-compat.test.mjs",
