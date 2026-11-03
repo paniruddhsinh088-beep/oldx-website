@@ -105,3 +105,29 @@ private scope. Two new regressions were added; valid stale-read fixtures were al
 strengthened. Final focused Product/browser/static run: **17/17 pass**; final full
 private transaction integration command: **92/92 pass**. These are additional focused
 checks after the earlier 867-execution sweep, not a repeated unchanged broad sweep.
+
+## Verified GitHub delivery
+
+- Main implementation: `4501d4aa6ff1dab27ce328d73fba6eb5824141d9`.
+  First-attempt successes: Branch Security **41640746986**, Review-safety
+  **41640746997**, Service Emulator **41640746884** (actual SDK/Rules **30/30**).
+- Final executable source: `a5022836fb31de91818e8bab2b6413ef1a66df8a`
+  (acknowledgement scope binding plus two regressions).
+  Exact-source Review-safety **41641209311** and Service Emulator **41641209303**
+  both passed on attempt **1**. Service modules **196**, actual SDK/Rules **30/30**,
+  including the original forced-overlap enquiry race and three separate repeated
+  full enquiry scenarios. The same repeated cases passed on the preceding source
+  without a CI retry. The exact old failure's exception remains unproven; no claim
+  is made that finite repetitions prove absence of all concurrency issues.
+- Branch Security is path-filtered and did not run for the narrow final follow-up;
+  its prior implementation result is not mislabeled as final exact-source evidence.
+  Final Review-safety includes Admin/chat and the new UI/browser/integration checks
+  plus actual isolated baseline Firestore/Storage/private-Chat Rules suites.
+- No real provider, deployment or live Firebase was touched. The final checkpoint
+  commit below updates documentation only; executable CI evidence remains `a502283`.
+
+Next P0 source batch: owner-private bootstrap/revision recovery after reload and
+full existing-history/deep-link restoration, then scoped inbox pagination and Store/
+Provider existing-UI reuse. Keep image delivery/whole-app gu-hi-en/mobile/privacy/
+reviews/Admin acceptance mandatory. Preserve the new approved visual-design target
+`22ba218`; no fake verification, reviews, messages or commercial claims may be added.
