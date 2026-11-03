@@ -101,6 +101,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="features/marketplace/integration.css">
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-24">
     <p id="productPortStatus" hidden role="status" aria-live="polite" tabindex="-1" class="fixed top-0 inset-x-0 z-[250] bg-white text-gray-900 border p-2 text-sm break-words"></p>
@@ -363,6 +364,7 @@
                     <h4 class="text-sm font-extrabold text-gray-800 dark:text-gray-100">All chats</h4>
                     <span class="text-[11px] font-semibold text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/30 px-3 py-1.5 rounded-full">Unread first</span>
                 </div>
+                <button type="button" id="productInboxNext" hidden data-i18n="market.product.next">Next page</button>
                 <div id="inboxConversationsList" class="flex-1 min-h-0 overflow-y-auto space-y-3 pb-5"></div>
             </div>
         </div>
@@ -506,6 +508,14 @@
         <div class="bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm p-5 md:p-7">
           <h3 class="text-xl font-black text-gray-900 dark:text-white">Create Your Store</h3>
           <p class="text-xs text-gray-500 mt-1 mb-5">Enter your store details to create your own public store link.</p>
+          <div id="trustedStoreControls" hidden class="border rounded-xl p-3 space-y-3">
+            <label for="trustedStoreDescription" data-i18n="market.store.description">Store description</label><textarea id="trustedStoreDescription" maxlength="5000" class="w-full border rounded-xl p-3"></textarea>
+            <label for="trustedStoreLocality" data-i18n="market.store.locality">Public city / locality</label><input id="trustedStoreLocality" maxlength="160" class="w-full border rounded-xl p-3">
+            <button type="button" id="trustedStoreLoad" data-i18n="market.product.reload">Reload private draft</button>
+            <button type="button" id="trustedStorePublish" data-i18n="market.store.publish">Publish Store</button>
+            <button type="button" id="trustedStoreWithdraw" data-i18n="market.product.withdraw">Withdraw</button>
+            <button type="button" id="trustedStoreRetry" data-i18n="market.product.retry">Retry same request</button>
+          </div>
           <form id="createStoreForm" onsubmit="saveStoreDetails(event)" class="space-y-4">
             <div><label class="block text-xs font-bold mb-1">Shop Name *</label><input id="storeShopName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Store Name"></div>
             <div><label class="block text-xs font-bold mb-1">Owner Name *</label><input id="storeOwnerName" required maxlength="100" class="w-full border rounded-xl p-3 text-sm dark:bg-gray-700 dark:border-gray-600" placeholder="Owner Name"></div>
@@ -522,6 +532,8 @@
           </form>
         </div>
       </div>
+      <p id="trustedStoreStatus" hidden role="status" aria-live="polite" class="p-3 text-sm break-words"></p>
+      <button type="button" id="trustedStoreNext" hidden data-i18n="market.product.next">Next page</button>
       <div id="storePublicWrap" class="max-w-5xl mx-auto p-4 md:p-6" style="display:none"></div>
     </section>
 
@@ -962,6 +974,7 @@
             </div>
         </div>
 
+        <button type="button" id="productHistoryNext" hidden data-i18n="market.product.moreHistory">Next messages</button>
         <div id="fullChatMessages" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
 
         <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs shrink-0">
@@ -1146,6 +1159,7 @@
                     <fieldset id="productIntegrationPanel" hidden class="border rounded-xl p-3 space-y-3 min-w-0">
                         <legend data-i18n="market.product.controls">Trusted Product controls</legend>
                         <div class="flex flex-wrap gap-2">
+                            <button type="button" id="productReloadOwner" hidden data-i18n="market.product.reload">Reload private draft</button>
                             <button type="button" id="productSaveDraft" data-i18n="market.product.save">Save private draft</button>
                             <button type="button" id="productWithdraw" data-i18n="market.product.withdraw">Withdraw</button>
                             <button type="button" id="productRemove" data-i18n="market.product.remove">Remove</button>
@@ -1221,6 +1235,7 @@
                     </button>
                 </div>
 
+                <button type="button" id="productStoreLink" hidden data-i18n="market.store.open">Open Store</button>
                 <button type="button" id="productEnquire" hidden data-i18n="market.product.enquire">Private enquiry</button>
                 <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
                 

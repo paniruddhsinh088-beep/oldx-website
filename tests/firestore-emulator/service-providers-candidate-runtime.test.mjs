@@ -309,3 +309,14 @@ test('repeat forced-overlap Service enquiry transaction concurrency in independe
  const sdk=await import('firebase/firestore'),{enquiryAcceptance}=await import('../integration/durable-acceptance.mjs');
  for(const namespace of ['RaceOne','RaceTwo','RaceTri'])await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await enquiryAcceptance({sdk,db,actualTransactions:true,namespace,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v),get:async(c,id)=>{const s=await sdk.getDoc(sdk.doc(db,c,id));return s.exists()?s.data():null;}});});
 });
+
+test('actual SDK Product owner recovery receipt snapshots scoped inbox and private history restoration',async()=>{
+ const sdk=await import('firebase/firestore'),{productRecoveryAcceptance}=await import('../integration/product-recovery-acceptance.mjs');
+ await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await productRecoveryAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v),get:async(c,id)=>{const s=await sdk.getDoc(sdk.doc(db,c,id));return s.exists()?s.data():null;}});});
+ const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxRecoveryMarketprivateRecords','product_recover-1')));
+});
+
+test('actual SDK Store existing-UI owner recovery publication catalogue and withdrawal',async()=>{
+ const sdk=await import('firebase/firestore'),{storeUiAcceptance}=await import('../integration/store-ui-acceptance.mjs');
+ await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await storeUiAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v)});});
+});

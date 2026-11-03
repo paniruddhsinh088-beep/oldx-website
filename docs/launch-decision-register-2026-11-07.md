@@ -159,3 +159,13 @@ same portable ports for Store/Provider. Real image delivery, complete search,
 privacy/Admin/review and staging acceptance gates remain mandatory. See the
 [Product UI checkpoint](review-progress-2026-11-03-product-ui-batch.md) for limits
 and Service concurrency evidence; no historical flake root cause is invented.
+
+### Recovery batch update — 3 November
+
+Implemented disabled owner draft/receipt reload, actual Product/private Chat history
+restoration and bounded inbox pagination; Store owner/public catalogue UI ports now
+reuse the existing SDK. Browser history stores pending request metadata only;
+operational session-scope/retention and trusted cursor-signing choices need approval.
+Exact seller Product Unicode is preserved everywhere changed. Remaining ordered P0
+and per-feature evidence are in the [recovery checkpoint](review-progress-2026-11-03-product-store-recovery-batch.md).
+No runtime/schema/Rules/index/media/deployment approval is implied. HOLD/NO-GO.

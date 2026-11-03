@@ -55,7 +55,7 @@ test("supports Unicode NFC search without rewriting source title", () => {
   const source = listing("p1", { title: "Cafe\u0301 ખુરશી" });
   const result = view([source], { query: "Café" });
   assert.equal(result.matchedCount, 1);
-  assert.equal(result.items[0].title, "Café ખુરશી");
+  assert.equal(result.items[0].title, source.title);
   assert.equal(source.title, "Cafe\u0301 ખુરશી");
 });
 
@@ -133,7 +133,7 @@ test("rejects non-record options without throwing", () => {
 test("does not mutate the input records or array", () => {
   const source = Object.freeze(listing("p1", { title: "  Chair  " }));
   const records = Object.freeze([source]);
-  assert.equal(view(records).items[0].title, "Chair");
+  assert.equal(view(records).items[0].title, source.title);
   assert.equal(source.title, "  Chair  ");
 });
 
@@ -185,3 +185,5 @@ test("supported interface locales format numeric prices without translating auth
   }
   assert.deepEqual(view([listing("p1")]), view([listing("p1")], { locale: "en", availableOnly: false }));
 });
+
+ test('seller Unicode and whitespace remain exact in every locale and normalized search matches without rewriting',()=>{const title='  મૂળ हिन्दी Cafe\u0301  ';for(const locale of ['gu','hi','en']){const result=view([listing('authored',{title})],{locale,query:'Café'});assert.equal(result.items[0].title,title);}});

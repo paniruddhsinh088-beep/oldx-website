@@ -26,10 +26,9 @@ function plainRecord(value) {
     (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
 }
 
-function normalizedText(value, max) {
+function authoredText(value, max) {
   if (typeof value !== "string") return null;
-  const text = value.normalize("NFC").trim();
-  return text.length > 0 && text.length <= max && !FORBIDDEN_TEXT.test(text) ? text : null;
+  return value.trim().length > 0 && value.length <= max && !FORBIDDEN_TEXT.test(value) ? value : null;
 }
 
 function timestampOrder(value) {
@@ -49,7 +48,7 @@ function projectListing(value, storeUid, priceFormatter) {
       typeof value.basePrice !== "number" || !Number.isFinite(value.basePrice) ||
       value.basePrice < 0 || value.basePrice > 1_000_000_000) return null;
 
-  const title = normalizedText(value.title, 120);
+  const title = authoredText(value.title, 120);
   if (!title) return null;
   const price = Math.round(value.basePrice);
   return {

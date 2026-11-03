@@ -218,3 +218,15 @@ and Service Emulator **41641209303** passed on first attempts, actual SDK/Rules
 also passed all three workflows. Final acknowledgement-scope regression tests reject
 foreign Product/thread replies and retain retry keys. Historical concurrency failure
 cause is not invented; see the checkpoint for evidence and remaining boundaries.
+
+## Product/Store recovery batch — 3 November
+
+Default-disabled owner-private receipt/revision recovery, actual Product/edit/Chat
+hash refresh/back/forward, participant metadata, bounded history and scoped inbox
+pagination are implemented. Existing Store form/public wrapper now has injected
+owner/edit/publish/withdraw/catalogue/share ports. Exact Product Unicode survives
+Store projection and UI language changes. No real endpoint/Auth/photo/deployment is
+active. Full Store directory/multi-category compatibility, Provider orchestration,
+Chat/Admin/media and real acceptance remain P0. See
+[recovery batch evidence](review-progress-2026-11-03-product-store-recovery-batch.md)
+for per-area status and exact local/CI distinctions; no percentage is inferred.

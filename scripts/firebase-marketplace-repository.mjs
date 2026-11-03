@@ -6,17 +6,17 @@ import {STORE_CATEGORY_IDS} from '../features/stores/store-catalogue.mjs';
 const roles=['actors','privateRecords','publicViews','owners','generations','receipts','audits'];
 export const MARKETPLACE_TEST_SCHEMA=Object.freeze(Object.fromEntries(roles.map(k=>[k,'testOldxMarket'+k[0].toUpperCase()+k.slice(1)])));
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),integer=v=>Number.isSafeInteger(v)&&v>=0,fail=code=>({ok:false,code});
-const text=(v,max)=>typeof v==='string'&&v.length<=max&&v.trim().length>0&&!/[<>\u0000-\u001f\u007f]/u.test(v);
+const text=(v,max,multiline=false)=>typeof v==='string'&&v.length<=max&&v.trim().length>0&&!(multiline?/[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u:/[<>\u0000-\u001f\u007f]/u).test(v);
 function inspectProfile(kind,input){
  const keys=kind==='product'?['title','description','category','locationLabel','basePrice','isSold','storeId','photos']:['name','description','category','locationLabel','photos'];const p=copyRecord(input,keys);
- if(!p||!text(p[kind==='product'?'title':'name'],120)||!text(p.description,5000)||!text(p.locationLabel,160)||!STORE_CATEGORY_IDS.includes(p.category)||!preparePhotoReferences(kind,p.photos).ok||kind==='product'&&(!Number.isFinite(p.basePrice)||p.basePrice<0||p.basePrice>1e9||typeof p.isSold!=='boolean'||p.storeId!==null&&!safeId(p.storeId))||Buffer.byteLength(JSON.stringify(p))>700000)return null;
+ if(!p||!text(p[kind==='product'?'title':'name'],120)||!text(p.description,5000,true)||!text(p.locationLabel,160)||!STORE_CATEGORY_IDS.includes(p.category)||!preparePhotoReferences(kind,p.photos).ok||kind==='product'&&(!Number.isFinite(p.basePrice)||p.basePrice<0||p.basePrice>1e9||typeof p.isSold!=='boolean'||p.storeId!==null&&!safeId(p.storeId))||Buffer.byteLength(JSON.stringify(p))>700000)return null;
  return structuredClone(p);
 }
 function publicProfile(kind,id,profile,revision){const {photos,...fields}=profile;return {id,kind,revision,...fields};}
 // Actual SDK transaction/query mapping, demo/loopback only. No legacy collection
 // access, browser import, app creation, credential or production-enable mode.
 export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
- if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE')});
+ if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE'),owner:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const ref=(role,key)=>{if(!safeId(key))throw new Error('Invalid record identity');return sdk.doc(db,c[role],key);},recordKey=(kind,id)=>kind+'_'+id;
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
@@ -30,6 +30,17 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
  }
  async function bounded(work,options={}){return runVerifiedOperation({authenticate:()=>({uid:'public-read'}),credential:null,signal:options.signal,timeoutMs,now,run:work});}
  return Object.freeze({
+  async owner(request,{credential,signal}={}){
+   const input=copyRecord(request,['kind','id','requestId']);if(!input||!['product','store'].includes(input.kind)||input.id!==null&&!safeId(input.id)||input.requestId!==null&&!safeId(input.requestId)||input.kind==='product'&&input.id===null&&input.requestId===null)return fail('INVALID_REQUEST');
+   return runVerifiedOperation({authenticate,credential,signal,timeoutMs,now,run:context=>sdk.runTransaction(db,async raw=>{
+    check(context);const actor=await read(raw,ref('actors',context.actorUid));if(actor?.uid!==context.actorUid||actor.canWrite!==true||actor.suspended!==false)return fail('DENIED');
+    let id=input.id,receipt=null;if(input.requestId!==null){const key=hash([context.actorUid,input.kind,input.requestId]),r=await read(raw,ref('receipts',key)),a=await read(raw,ref('audits',key));if(!r)return fail('RECEIPT_UNKNOWN');if(r.actorUid!==context.actorUid||!safeId(r.id)||id!==null&&r.id!==id||a?.requestKey!==key||a.actorUid!==context.actorUid||a.id!==r.id||a.kind!==input.kind||a.toRevision!==r.revision)return fail('DENIED');id=r.id;receipt={requestId:input.requestId,revision:r.revision,status:'committed'};}
+    if(input.kind==='store'){const binding=await read(raw,ref('owners',hash(['store',context.actorUid])));if(binding?.ownerUid!==context.actorUid||!safeId(binding.id)||id!==null&&id!==binding.id)return fail('DENIED');id=binding.id;}
+    if(!safeId(id))return fail('DENIED');const stored=await read(raw,ref('privateRecords',recordKey(input.kind,id))),profile=inspectProfile(input.kind,stored?.profile);
+    if(!stored||stored.ownerUid!==context.actorUid||stored.id!==id||stored.kind!==input.kind||stored.archived===true||!integer(stored.revision)||stored.revision<1||!profile||typeof stored.published!=='boolean'||!integer(stored.publicationRevision)||stored.publicationRevision>stored.revision||receipt&&(!integer(receipt.revision)||receipt.revision<1||receipt.revision>stored.revision))return fail('DENIED');check(context);
+    return {ok:true,id,revision:stored.revision,profile,published:stored.published,publicationRevision:stored.publicationRevision,receipt};
+   },{maxAttempts:3})});
+  },
   async save(kind,request,{credential,signal}={}){
    const input=copyRecord(request,['requestId','id','expectedRevision','publication','profile']),profile=inspectProfile(kind,input?.profile);
    if(!['product','store'].includes(kind)||!input||!profile||!safeId(input.requestId)||input.id!==null&&!safeId(input.id)||!integer(input.expectedRevision)||input.expectedRevision===Number.MAX_SAFE_INTEGER||!['draft','publish','withdraw'].includes(input.publication))return fail('INVALID_REQUEST');

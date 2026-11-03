@@ -23,7 +23,7 @@ export function projectPreviewSnapshot(input, storeUid) {
   return Object.freeze({ status: 'ready', store: Object.freeze({ id: storeUid,
     name: input.store.name, city: input.store.city, description: input.store.description }),
     records: Object.freeze(input.records.map(row => Object.freeze({ id: row.id, sellerUid: storeUid,
-      title: row.title.normalize('NFC').trim(), category: row.category, basePrice: row.basePrice,
+      title: row.title, category: row.category, basePrice: row.basePrice,
       isSold: row.isSold, createdAt: Object.freeze({ seconds: row.createdAt.seconds, nanoseconds: row.createdAt.nanoseconds }) }))) });
 }
 

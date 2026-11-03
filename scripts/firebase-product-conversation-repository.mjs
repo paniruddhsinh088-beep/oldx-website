@@ -11,8 +11,8 @@ export const productConversationBlockKey=(from,to)=>hash([from,to]);
 const fail=code=>({ok:false,code}),revision=v=>Number.isSafeInteger(v)&&v>0&&v<10000;
 // Server-only, default off, demo-project/loopback locked. No SDK initialization,
 // endpoint, credential handling, persistence in the browser or production mode.
-export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,timeoutMs=5000,now=Date.now}={}){
- if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
+export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
+ if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox','inboxPage','thread'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles}),{collections:m}=isolatedFirestoreContext({firestore,sdk,schema:marketplaceSchema,roles:marketRoles});
  if(Object.values(c).some(v=>Object.values(m).includes(v)))throw new Error('Overlapping private chat mapping');
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid identity');return sdk.doc(db,paths[role],id);};
@@ -56,12 +56,24 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
    return {ok:true,status:'sent',thread:dto(next,context.actorUid)};
   },{maxAttempts:3});});
  }
+ async function readInbox(request,options,paged){
+  const input=copyRecord(request,paged?['role','limit','cursor']:['role','limit']);if(!input||!['buyer','seller'].includes(input.role)||!Number.isInteger(input.limit)||input.limit<1||input.limit>20||paged&&input.cursor!==null&&(typeof input.cursor!=='string'||input.cursor.length<1||input.cursor.length>1024))return fail('INVALID_REQUEST');
+  if(paged&&![readCursor,issueCursor].every(f=>typeof f==='function'))return fail('UNAVAILABLE');
+  return bounded(options,async context=>{const scope=hash(['product-inbox-v1',context.actorUid,input.role,input.limit]);let anchor=null;
+   if(paged&&input.cursor!==null){anchor=copyRecord(await readCursor(input.cursor),['scope','after','revision']);check(context);if(!anchor||anchor.scope!==scope||!safeId(anchor.after)||!revision(anchor.revision))return fail('CURSOR_INVALID');}
+   const snapshot=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.threads),sdk.where(input.role+'Uid','==',context.actorUid),sdk.orderBy('id','asc'),...(anchor?[sdk.startAfter(anchor.after)]:[]),sdk.limit(input.limit+(paged?1:0))));check(context);
+   if(snapshot.metadata?.fromCache!==false||snapshot.metadata?.hasPendingWrites!==false||snapshot.docs.length>input.limit+(paged?1:0))return fail('UNAVAILABLE');
+   const result=await sdk.runTransaction(db,async raw=>{if(anchor){const a=await get(raw,ref(c,'threads',anchor.after));if(a?.revision!==anchor.revision||a[input.role+'Uid']!==context.actorUid||!await authority(raw,a,context.actorUid))return fail('CURSOR_INVALID');}
+    const items=[];let previous=anchor?.after??null;for(const row of snapshot.docs){const value=await get(raw,ref(c,'threads',row.id));if(value?.id!==row.id||previous!==null&&value.id<=previous||value[input.role+'Uid']!==context.actorUid||!await authority(raw,value,context.actorUid))return fail('DENIED');previous=value.id;items.push(dto(value,context.actorUid));}check(context);return {ok:true,items};},{maxAttempts:3});
+   if(!result.ok)return result;const items=result.items.slice(0,input.limit);let nextCursor=null;if(paged&&result.items.length>input.limit){const last=items.at(-1);nextCursor=await issueCursor({scope,after:last.id,revision:last.revision});check(context);if(typeof nextCursor!=='string'||nextCursor.length<1||nextCursor.length>1024)return fail('UNAVAILABLE');}return {ok:true,items,bounded:true,...(paged?{nextCursor}:{} )};
+  });
+ }
  return Object.freeze({open:(r,o)=>mutate('open',r,o),send:(r,o)=>mutate('send',r,o),
   async read(request,options){const input=copyRecord(request,['threadId','expectedRevision','afterSequence','limit']);if(!input||!safeId(input.threadId)||!revision(input.expectedRevision)||!Number.isInteger(input.afterSequence)||input.afterSequence<0||input.afterSequence>=input.expectedRevision||!Number.isInteger(input.limit)||input.limit<1||input.limit>20)return fail('INVALID_REQUEST');
    return bounded(options,context=>sdk.runTransaction(db,async raw=>{check(context);const thread=await get(raw,ref(c,'threads',input.threadId));if(!await authority(raw,thread,context.actorUid))return fail('DENIED');if(thread.revision!==input.expectedRevision)return fail('REVISION_CONFLICT');const messages=[];for(let n=input.afterSequence+1;n<=Math.min(thread.messageCount,input.afterSequence+input.limit);n++){const msg=await get(raw,ref(c,'messages',hash([thread.id,n])));if(msg?.threadId!==thread.id||msg.sequence!==n||![thread.buyerUid,thread.sellerUid].includes(msg.senderUid)||normalizeMessageDraft(msg.text)!==msg.text)return fail('UNAVAILABLE');messages.push({sequence:n,senderRole:msg.senderUid===thread.buyerUid?'buyer':'seller',text:msg.text});}check(context);return {ok:true,thread:dto(thread,context.actorUid),messages,hasMore:input.afterSequence+messages.length<thread.messageCount};},{maxAttempts:3}));
   },
-  async inbox(request,options){const input=copyRecord(request,['role','limit']);if(!input||!['buyer','seller'].includes(input.role)||!Number.isInteger(input.limit)||input.limit<1||input.limit>20)return fail('INVALID_REQUEST');
-   return bounded(options,async context=>{const snapshot=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.threads),sdk.where(input.role+'Uid','==',context.actorUid),sdk.orderBy('id','asc'),sdk.limit(input.limit)));check(context);if(snapshot.metadata?.fromCache!==false||snapshot.metadata?.hasPendingWrites!==false||snapshot.docs.length>input.limit)return fail('UNAVAILABLE');return sdk.runTransaction(db,async raw=>{const items=[];for(const row of snapshot.docs){const thread=await get(raw,ref(c,'threads',row.id));if(thread?.id!==row.id||thread[input.role+'Uid']!==context.actorUid||!await authority(raw,thread,context.actorUid))return fail('DENIED');items.push(dto(thread,context.actorUid));}check(context);return {ok:true,items,bounded:true};},{maxAttempts:3});});
-  }
+  inbox:(request,options)=>readInbox(request,options,false),inboxPage:(request,options)=>readInbox(request,options,true),
+  async thread(request,options){const input=copyRecord(request,['threadId']);if(!input||!safeId(input.threadId))return fail('INVALID_REQUEST');return bounded(options,context=>sdk.runTransaction(db,async raw=>{check(context);const value=await get(raw,ref(c,'threads',input.threadId));if(value?.id!==input.threadId||!await authority(raw,value,context.actorUid))return fail('DENIED');check(context);return {ok:true,thread:dto(value,context.actorUid)};},{maxAttempts:3}));}
+
  });
 }
