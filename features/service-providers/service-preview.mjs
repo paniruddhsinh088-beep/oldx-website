@@ -329,7 +329,10 @@ async function selectLocale(requested, persist = false) {
   if (feedbackKey) $("profileShareStatus").textContent = t(feedbackKey);
   renderSampleEnquiry();
   updatePreview();
+  const enquiry=providerIntegrationEnabled&&currentProfile?{providerId:currentProfile.id,...readSampleEnquiry()}:null;
   providerIntegration?.render();
+  if(enquiry&&currentProfile?.id===enquiry.providerId){$('enquiryService').value=enquiry.service;$('enquiryDescription').value=enquiry.description;$('enquiryTiming').value=enquiry.timing;renderSampleEnquiry();}
+  if(providerIntegrationEnabled)$('trustedEnquiryStatus').textContent=t('market.provider.enquiry_'+providerIntegration.buyer.snapshot().status);
 }
 $("localeSelect").addEventListener("change", (event) =>
   selectLocale(event.target.value, true),

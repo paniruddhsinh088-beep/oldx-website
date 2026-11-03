@@ -64,3 +64,10 @@ IAM/secrets, provider account, billing, main, merge, migration, spending or depl
 Existing Products/Stores/Chat/Admin and authored Unicode retained. Platform-neutral
 ports stay suitable for later Capacitor; native-device acceptance remains untested.
 November 7 is a conditional target; HOLD/NO-GO remains unchanged.
+
+Saved implementation milestone: 00fd7ec3ca2a263ea503fe67d3d61476f1364e96,
+pushed without concurrent changes. Final locale follow-up preserves the private
+in-memory enquiry fields only when the same validated public profile remains
+selected during catalog repaint; scope/session/offline cleanup still clears them.
+Updated three-language browser regression passes 3/3, including language changes
+with an authored Gujarati buyer note. Log: /tmp/provider-public-locale.log.
