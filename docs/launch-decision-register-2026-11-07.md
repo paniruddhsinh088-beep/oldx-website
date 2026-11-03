@@ -182,3 +182,15 @@ See [exact-source ledger](review-progress-2026-11-03-private-conversation-host-l
 Runtime/Auth/schema/indexes/Rules/IAM/secrets, privacy/media policy and actual
 staging/deployment approvals remain required. No new operational approval inferred.
 HOLD/NO-GO and every agreed full-website requirement remain unchanged.
+
+## 3 November Service two-way text foundation
+
+Disabled participant-scoped read/send and existing conversation UI now support both
+buyer/provider text messages, atomic idempotent writes, bounded private paging and
+revocation-aware reads using the existing enquiry transaction. Local selected final
+groups: 262 passing executions; actual SDK CI is tracked in the
+[messaging ledger](review-progress-2026-11-03-service-messaging-ledger.md).
+This completes a repository-only messaging foundation, not runtime activation or
+Chat receipts/deletion/retention. Mandatory photos remain P0. Operational runtime,
+Auth/rate enforcement, schemas/Rules/indexes/IAM/secrets, text/media privacy policy
+and staging/deployment acceptance still require owner approval. HOLD/NO-GO.
