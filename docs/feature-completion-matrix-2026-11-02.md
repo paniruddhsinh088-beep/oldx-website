@@ -197,5 +197,5 @@ into flat frozen descriptor-value snapshots, binding operation/image/nonce/path/
 revision/source or asset identity before journal transitions. PR #10 was inspected,
 not merged. Legacy Base64/Cloudinary data is retained, not newly exposed.
 
-Evidence and exact-source CI: see the P0 Product/media progress checkpoint.
+Evidence and exact-source CI: [P0 Product/media checkpoint](review-progress-2026-11-03-p0-product-media-batch.md). Corrected `adb70f1`: Review-safety 41636421806 and Service Emulator 41636421754 attempt 2 passed; 29 actual Service/SDK cases. The first-attempt Service enquiry concurrency failure remains documented.
 All production/staging, Rules, media-provider and release gates remain unchanged.

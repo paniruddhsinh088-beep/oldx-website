@@ -84,3 +84,33 @@ withdrawn row to preserve this separation. No authorization/assertion was relaxe
 New test collections remain guest-denied. Focused Product cases: 4/4 pass.
 Review-safety 41636079956 was still running when this correction was prepared.
 Final corrected exact-source CI evidence follows after verification.
+
+## Verified delivery and exact-source evidence
+
+- Implementation: `033e9762934cd74dea8c5c4a36634b630d4ce332`.
+- Corrected executable acceptance checkpoint:
+  `adb70f145fa27b1560ee8d4d2a816983301763d2` (test namespace isolation only).
+- Exact-source Review-safety **41636421806**, success: local-browser/model suites
+  plus actual baseline Firestore **8**, Storage **7**, Chat private-state Rules
+  **10**. Integration **83**. No deployed Rules were changed.
+- Exact-source Service Emulator **41636421754**, attempt **2**, success: Provider
+  module **196**, actual Service/SDK/Rules **29/29** including the new Product
+  journey and strengthened media scenarios. Attempt 1 passed the Product/media
+  cases but failed the unchanged Service enquiry concurrency replay assertion;
+  attempt 2 passed without source changes. This observed concurrency flake remains
+  a test/repository diagnostic follow-up, not a hidden success or skipped test.
+- Branch Security **41636079769**, success at implementation commit `033e976`.
+  This path-filtered workflow did not run at test-only `adb70f1`; do not call it
+  three exact-source workflows at the corrected checkpoint. Review-safety covers
+  the same Admin/chat checks at `adb70f1`.
+- Initial failed Service run **41636079826** remains recorded above. No failures
+  were suppressed. No deployment, paid provider or live Firebase action occurred.
+- Remote re-fetched at completion: `adb70f1`, no concurrent changes. The following
+  checkpoint commit changes documentation only; executable evidence remains the
+  exact SHA above. Working tree is left clean after the authorized normal push.
+
+Next highest-impact batch: wire the existing Product form/discovery/private Chat UI
+through these disabled trusted ports, reuse existing session/read cancellation and
+locale helpers, retain idempotency keys across unknown outcomes, and add extracted
+real-markup mobile acceptance. Diagnose the Service enquiry concurrency flake with
+sanitized result-code assertions before any additional runtime activation claim.
