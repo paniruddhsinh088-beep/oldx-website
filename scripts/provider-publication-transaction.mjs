@@ -8,7 +8,7 @@ const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),fail=
 function copy(input,keys){try{if(!input||Object.getPrototypeOf(input)!==Object.prototype||Reflect.ownKeys(input).sort().join(',')!==[...keys].sort().join(','))return null;return Object.fromEntries(keys.map(k=>{const d=Object.getOwnPropertyDescriptor(input,k);if(!d||!Object.hasOwn(d,'value'))throw new Error('Invalid record');return [k,d.value];}));}catch{return null;}}
 // INACTIVE publication command. Independent permission + ownership + approved
 // content checked inside transaction. Never publishes caller-supplied fields.
-export function createProviderPublicationTransaction({enabled=false,authenticate,repository,catalog,timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
+export function createProviderPublicationTransaction({enabled=false,authenticate,repository,catalog,mandatoryPhotos=false,timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
  const approvedCatalog=planPublicProviderQuery({category:'',locality:'',limit:1,cursor:null},catalog,{publicationEpoch:0})?{services:[...catalog.services],localities:catalog.localities.map(l=>({...l}))}:null;
  return Object.freeze({async execute(request,{credential,signal}={}){
   if(enabled!==true)return fail('UNAVAILABLE');
@@ -48,6 +48,7 @@ export function createProviderPublicationTransaction({enabled=false,authenticate
      if(canonical.status==='published'&&prior?.published!==true||canonical.status==='draft'&&prior?.published===true)return fail('CONFLICT');
      let profile=null,services;
      if(r.action==='publish'){
+      if(mandatoryPhotos&&(typeof tx.checkPublicationPhotos!=='function'||await tx.checkPublicationPhotos({kind:'provider',parentId:providerId,ownerUid:actorUid,parentRevision:canonical.revision})!==true))return fail('PHOTOS_REQUIRED');
       const source=copy(draft.profile,['id','displayName','city','serviceArea','services','available','experienceYears','description','languages']);
       const projected=buildPublicProviderProfile(source);
       if(!source||source.id!==providerId||!projected.ok||!approvedCatalog.localities.some(l=>l.city===projected.profile.city&&l.serviceArea===projected.profile.serviceArea)||projected.profile.services.some(category=>!planPublicProviderQuery({category,locality:projected.profile.serviceArea,limit:1,cursor:null},approvedCatalog,{publicationEpoch:0})))return fail('INVALID_PUBLIC_PROFILE');

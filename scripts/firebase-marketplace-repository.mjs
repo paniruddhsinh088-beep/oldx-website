@@ -16,7 +16,7 @@ function inspectProfile(kind,input){
 function publicProfile(kind,id,profile,revision){const {photos,...fields}=profile;return {id,kind,revision,...fields};}
 // Actual SDK transaction/query mapping, demo/loopback only. No legacy collection
 // access, browser import, app creation, credential or production-enable mode.
-export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
+export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,mandatoryPhotos=false,photoPolicy,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
  if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE'),owner:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const ref=(role,key)=>{if(!safeId(key))throw new Error('Invalid record identity');return sdk.doc(db,c[role],key);},recordKey=(kind,id)=>kind+'_'+id;
@@ -57,6 +57,7 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
      if(previous?previous.archived===true||previous.ownerUid!==context.actorUid||previous.kind!==kind||previous.id!==id:input.id!==null)return expected=fail('DENIED');
      if((previous?.revision??0)!==input.expectedRevision||!previous&&input.expectedRevision!==0||kind==='store'&&(owner?owner.ownerUid!==context.actorUid||owner.id!==id:previous!==null))return expected=fail('REVISION_CONFLICT');
      if(kind==='product'&&profile.storeId!==null){const shop=await read(raw,ref('privateRecords',recordKey('store',profile.storeId)));if(shop?.ownerUid!==context.actorUid||input.publication==='publish'&&shop.published!==true)return expected=fail('DENIED');}
+     if(mandatoryPhotos&&input.publication==='publish'&&(!previous||typeof photoPolicy?.check!=='function'||await photoPolicy.check(raw,{kind,parentId:id,ownerUid:context.actorUid,parentRevision:previous.revision})!==true))return expected=fail('PHOTOS_REQUIRED');
      const revision=input.expectedRevision+1,published=input.publication==='publish'||input.publication==='draft'&&previous?.published===true,view=input.publication==='draft'?previous?.publicProfile??null:published?publicProfile(kind,id,profile,revision):null,nextGeneration=generation.value+(input.publication==='draft'?0:1);
      const stored={id,kind,ownerUid:context.actorUid,revision,profile,published,publicationRevision:view?.revision??0,publicProfile:view};check(context);
      raw.set(target,{...stored,committedAt:sdk.serverTimestamp()});if(kind==='store'&&!owner)raw.set(ref('owners',ownerKey),{ownerUid:context.actorUid,id});

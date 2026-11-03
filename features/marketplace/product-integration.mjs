@@ -1,3 +1,4 @@
+import {isManagedPhoto} from '../media/mandatory-photos.mjs';
 import {createBoundedRead} from '../shared/bounded-read.mjs';
 import {normalizeMessageDraft} from '../chat/message-text.mjs';
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v),rev=v=>Number.isSafeInteger(v)&&v>0;
@@ -33,7 +34,7 @@ export function createProductIntegration({enabled=false,ports={},onChange=()=>{}
    if(result.ok){let valid=false;if(envelope.operation==='save'||envelope.operation==='archive'){valid=id(result.id)&&result.revision===envelope.body.expectedRevision+1&&(envelope.body.id===null||result.id===envelope.body.id);if(valid){owner={id:result.id,revision:result.revision};if(envelope.operation==='archive'||envelope.body.publication!=='draft')clearReads();}}
     else {const t=thread(result.thread);valid=!!t&&(envelope.operation==='open'?t.productId===envelope.body.productId&&t.productRevision===envelope.body.expectedProductRevision&&t.revision===1&&t.role==='buyer':t.id===envelope.body.threadId&&t.revision===envelope.body.expectedRevision+1&&t.productId===envelope.scope?.productId&&t.productRevision===envelope.scope?.productRevision&&t.role===envelope.scope?.role);if(valid){privateThread=t;}}
     if(!valid){command={status:'unknown',canRetry:true};emit();return;}pending=null;command={status:'saved',canRetry:false};
-   }else{pending=null;command={status:result.code==='DENIED'||result.code==='AUTH_REQUIRED'?'denied':result.code==='REVISION_CONFLICT'?'conflict':'unavailable',canRetry:false};onPrivate(null);privateThread=null;}
+   }else{pending=null;command={status:result.code==='DENIED'||result.code==='AUTH_REQUIRED'?'denied':result.code==='REVISION_CONFLICT'?'conflict':result.code==='PHOTOS_REQUIRED'?'photosUnavailable':'unavailable',canRetry:false};onPrivate(null);privateThread=null;}
    emit();}});return commandRead.load({});
  }
  function write(operation,body){if(enabled&&!session){command={status:'denied',canRetry:false};emit();return Promise.resolve();}if(!enabled||!session||!online||pending||typeof ports[operation]!=='function')return Promise.resolve();let key;try{key=makeRequestId();}catch{return Promise.resolve();}if(!id(key))return Promise.resolve();pending={operation,scope:privateThread&&{...privateThread},body:{...structuredClone(body),requestId:key},dispatched:false};return dispatch();}
@@ -43,7 +44,7 @@ export function createProductIntegration({enabled=false,ports={},onChange=()=>{}
   pendingReceipt(){return pending?.operation==='save'?{id:pending.body.id,requestId:pending.body.requestId}:null;},
   loadOwner(productId,{requestId=null}={}){if(!session){command={status:'denied',canRetry:false};onOwnerDraft(null);emit();return Promise.resolve();}if(pending||productId!==null&&!id(productId)||requestId!==null&&!id(requestId))return Promise.resolve();clearReads();command={status:'idle',canRetry:false};return load('owner',{kind:'product',id:productId,requestId},r=>{
    if(!exact(r,['ok','id','revision','profile','published','publicationRevision','receipt'])||r.ok!==true||!id(r.id)||productId!==null&&r.id!==productId||!rev(r.revision)||typeof r.published!=='boolean'||!Number.isSafeInteger(r.publicationRevision)||r.publicationRevision<0||r.publicationRevision>r.revision||!exact(r.profile,['title','description','category','locationLabel','basePrice','isSold','storeId','photos']))return null;
-   const {photos,...fields}=r.profile;if(!projectProduct({id:r.id,kind:'product',revision:r.revision,...fields})||!Array.isArray(photos)||photos.length>6||photos.some(v=>typeof v!=='string'||v.length>700000))return null;
+   const {photos,...fields}=r.profile;if(!projectProduct({id:r.id,kind:'product',revision:r.revision,...fields})||!Array.isArray(photos)||photos.length>6||photos.some(v=>typeof v==='string'?v.length>700000:!isManagedPhoto(v)))return null;
    if(requestId===null?r.receipt!==null:!exact(r.receipt,['requestId','revision','status'])||r.receipt.requestId!==requestId||r.receipt.status!=='committed'||!rev(r.receipt.revision)||r.receipt.revision>r.revision)return null;return structuredClone(r);
   });},
   async restoreThread(threadId){if(!session){command={status:'denied',canRetry:false};onPrivate(null);emit();return;}if(!id(threadId))return;clearReads();const version=epoch;await load('thread',{threadId},r=>{const t=thread(r?.thread);return r?.ok===true&&t?.id===threadId?{thread:t}:null;});if(version===epoch&&privateThread?.id===threadId)await this.loadThread(privateThread);},

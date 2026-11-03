@@ -5,7 +5,7 @@ const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(value);
 const digest=values=>createHash('sha256').update(JSON.stringify(values)).digest('hex');
 // Actual modular Firebase transaction API, injection only. No SDK initialization,
 // environment credentials, network construction or production-enable mode.
-export function createIsolatedFirebaseProviderRepository({enabled=false,firestore,sdk,schema,now=Date.now}={}){
+export function createIsolatedFirebaseProviderRepository({enabled=false,firestore,sdk,schema,photoPolicy,now=Date.now}={}){
  const unavailable=()=>{throw new Error('Isolated Provider repository unavailable');};
  if(enabled!==true)return Object.freeze({runTransaction:unavailable});
  const {db,collections}=getIsolatedProviderSdkContext({firestore,sdk,schema});
@@ -18,6 +18,7 @@ export function createIsolatedFirebaseProviderRepository({enabled=false,firestor
    async function get(reference){check();if(!cache.has(reference.path)){const snapshot=await raw.get(reference);check();const data=snapshot.exists()?snapshot.data():null;if(data){const {committedAt,...facts}=data;cache.set(reference.path,facts);}else cache.set(reference.path,null);}return cache.get(reference.path);}
    const fields=async(reference,keys)=>{const data=await get(reference);return data===null?null:Object.fromEntries(keys.map(k=>[k,data[k]]));};
    const tx={
+    checkPublicationPhotos:claims=>typeof photoPolicy?.check==='function'?photoPolicy.check(raw,claims):Promise.resolve(false),
     getActorState:uid=>fields(ref('actors',uid),['uid','canWrite','suspended']),
     getOwnedProvider:uid=>fields(ref('owners',uid),['providerId','ownerUid','revision','status']),
     getProviderIdentity:providerId=>fields(ref('identities',providerId),['providerId','ownerUid']),

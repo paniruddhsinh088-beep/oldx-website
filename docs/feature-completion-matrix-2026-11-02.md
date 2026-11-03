@@ -289,3 +289,12 @@ See [messaging checkpoint](review-progress-2026-11-03-service-messaging.md).
 This advances general Service text messaging beyond the enquiry journal; receipts,
 deletion/retention, mandatory photos, real runtime/Auth/Admin and staging acceptance
 remain P0. No integration is activated. HOLD/NO-GO.
+
+4 November mandatory photos: default-disabled reusable selection/private preview/
+progress/retry/remove/replace in existing Product/Store/Provider forms, UID-derived
+upload bridge and transaction-level independent photo eligibility are implemented.
+No automatic legacy migration/unpublication. Public media release/materialization,
+Provider public photo DTO/delivery, actual scanner/provider/runtime and staging
+acceptance remain P0; a private/quarantined photo is not a public gallery or proof
+of automated moderation. See [photo checkpoint](review-progress-2026-11-04-mandatory-photos.md).
+HOLD/NO-GO; all operational approvals remain required.
