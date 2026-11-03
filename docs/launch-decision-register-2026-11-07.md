@@ -194,3 +194,15 @@ This completes a repository-only messaging foundation, not runtime activation or
 Chat receipts/deletion/retention. Mandatory photos remain P0. Operational runtime,
 Auth/rate enforcement, schemas/Rules/indexes/IAM/secrets, text/media privacy policy
 and staging/deployment acceptance still require owner approval. HOLD/NO-GO.
+
+## 4 November mandatory-photo source milestone
+
+Existing Product/Store/Provider forms have an explicit default-disabled shared
+private selection/preview/progress/retry/remove/replace workflow. A verified-owner
+upload bridge and opt-in transactional independent-photo publication gate exist;
+legacy images/listings are preserved. Selected local groups pass 277 executions,
+with targeted follow-up evidence in the [photo ledger](review-progress-2026-11-04-mandatory-photos-ledger.md).
+Public media materialization/delivery (especially Provider), actual scanner/provider,
+privacy/moderation/retention, Auth/runtime/Storage/Rules/IAM/secrets and real staging
+acceptance remain P0 approval gates. No automated moderation or deployed gallery is
+claimed. No existing image is migrated or automatically unpublished. HOLD/NO-GO.
