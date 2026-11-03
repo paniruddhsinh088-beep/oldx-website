@@ -5,11 +5,14 @@ import {createTranslator,loadTranslator,SUPPORTED_LOCALES} from '../i18n/i18n.mj
 import {applyCatalog} from '../i18n/dom.mjs';
 import {readLocalePreference,writeLocalePreference} from '../i18n/preference.mjs';
 const $=id=>document.getElementById(id);let translator=createTranslator('en'),localeVersion=0,scopeKey=null,route=null,feedback=null,state={status:'idle'},pageActive=true,refreshRevision=0;
+const trusted=()=>document.documentElement.dataset.providerConversation==='true';
+document.addEventListener('oldx:provider-conversation-mode',event=>{if(event.detail?.enabled===true){refreshRevision++;reader.clear();clearPrivate();}});
 const t=key=>translator.t(key),storage=()=>{try{return localStorage;}catch{return null;}};
 function clearDraft(){ $('messageDraft').value='';$('draftPreview').textContent='';$('draftPreview').hidden=true;feedback=null;$('messageDraft').setAttribute('aria-invalid','false');$('conversationFeedback').textContent='';}
 function clearPrivate(){clearDraft();$('messages').replaceChildren();$('conversationService').textContent='';}
 const reader=createConversationRead({read:createMockConversationRead({mode:()=>$('sampleReadMode').value,unavailable:()=>$('sampleBlocked').checked||$('sampleWithdrawn').checked}),timeoutMs:700,onChange:next=>{state=next;if(next.status!=='ready')clearPrivate();render();}});
 function render(focus=false){
+ if(trusted())return;
  const view=state.snapshot,ready=state.status==='ready';
  $('conversation').hidden=!ready;$('conversationUnavailable').hidden=!['unavailable','error'].includes(state.status);
  $('conversationLoading').hidden=state.status!=='loading';$('conversation').setAttribute('aria-busy',String(state.status==='loading'));
@@ -26,6 +29,7 @@ function render(focus=false){
  if(focus)$(ready?'conversationHeading':'conversationUnavailableHeading').focus();
 }
 function refresh(focus=false){
+ if(trusted())return;
  const version=++refreshRevision;clearPrivate();route=parseSampleConversationRoute(location.hash);scopeKey=route?JSON.stringify(route):'invalid';
  if(!pageActive||!route||$('sampleBlocked').checked||$('sampleWithdrawn').checked){reader.revoke();if(focus)render(true);return;}
  // Loading is announced without stealing focus. Completion focuses the heading
@@ -36,7 +40,7 @@ window.addEventListener('hashchange',()=>refresh(true));window.addEventListener(
 $('sampleRole').addEventListener('change',()=>{clearPrivate();location.hash='#conversation/'+$('sampleRole').value+'/'+(route?.providerId??'p1')+'/'+(route?.enquiryId??'p1-sample-3');});
 for(const id of ['sampleBlocked','sampleWithdrawn','sampleReadMode'])$(id).addEventListener('change',()=>refresh(false));
 $('retryConversation').addEventListener('click',()=>refresh(true));
-$('draftForm').addEventListener('submit',event=>{event.preventDefault();
+$('draftForm').addEventListener('submit',event=>{event.preventDefault();if(trusted())return;
  // Re-read the URL and publication/block facts at action time, not captured view.
  if(JSON.stringify(parseSampleConversationRoute(location.hash))!==scopeKey||state.status!=='ready'||$('sampleBlocked').checked||$('sampleWithdrawn').checked){refresh(true);return;}
  const text=normalizeMessageDraft($('messageDraft').value);const checked={ok:state.snapshot.canDraft&&text!==null,text};

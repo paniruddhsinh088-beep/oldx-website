@@ -267,3 +267,14 @@ Base 816ec80 exact-source CI is verified 3/3 successful, superseding the pending
 note above. This is source integration, not active Firebase or launch acceptance.
 Private conversation DOM/handoff, complete cross-page host, mandatory photos,
 Chat/Admin/privacy/runtime and real staging acceptance remain P0. HOLD/NO-GO.
+
+3 November private conversation/shared-host batch: existing public enquiry callback
+can hand off to the participant-safe inbox and existing conversation markup. The
+conversation displays canonical enquiry note/reply/status history with bounded
+revision-pinned windows and provider-only reply commands; it is not a claim that
+full buyer/provider Chat messaging is implemented. Shared main-page routing now
+uses the existing parsers with one listener owner and preserves standalone mode.
+See [batch checkpoint](review-progress-2026-11-03-private-conversation-host.md) for
+focused mock/browser and subsequent exact-source CI evidence. All transports stay
+default-disabled; mandatory photos, Chat/Admin/privacy/runtime/native-device and
+real staging acceptance still block release. HOLD/NO-GO.

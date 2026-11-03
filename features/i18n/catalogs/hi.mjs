@@ -436,4 +436,7 @@ export default Object.freeze({
   "market.provider.enquiry_unavailable": "अनुपलब्ध। फिर आज़माएँ या लोड करें।",
   "market.provider.enquiry_offline": "ऑफ़लाइन। निजी जानकारी हटाई गई।",
   "market.provider.enquiry_disabled": "इंटीग्रेशन बंद है।",
+  "market.provider.reply": "पूछताछ का उत्तर दें",
+  "market.provider.privateHistory": "निजी पूछताछ का इतिहास",
+  "market.provider.reloadHistory": "पूछताछ फिर लोड करें",
 });

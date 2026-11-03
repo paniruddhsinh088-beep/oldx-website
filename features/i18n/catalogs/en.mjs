@@ -434,4 +434,7 @@ export default Object.freeze({
   "market.provider.enquiry_unavailable": "Unavailable. Retry or reload.",
   "market.provider.enquiry_offline": "Offline. Private content cleared.",
   "market.provider.enquiry_disabled": "Integration disabled.",
+  "market.provider.reply": "Reply to enquiry",
+  "market.provider.privateHistory": "Private enquiry history",
+  "market.provider.reloadHistory": "Reload enquiry",
 });

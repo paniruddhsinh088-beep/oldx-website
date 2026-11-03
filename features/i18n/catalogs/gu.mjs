@@ -436,4 +436,7 @@ export default Object.freeze({
   "market.provider.enquiry_unavailable": "ઉપલબ્ધ નથી. ફરી અજમાવો અથવા લોડ કરો.",
   "market.provider.enquiry_offline": "ઑફલાઇન. ખાનગી વિગતો સાફ થઈ.",
   "market.provider.enquiry_disabled": "ઇન્ટિગ્રેશન બંધ છે.",
+  "market.provider.reply": "પૂછપરછનો જવાબ આપો",
+  "market.provider.privateHistory": "ખાનગી પૂછપરછનો ઇતિહાસ",
+  "market.provider.reloadHistory": "પૂછપરછ ફરી લોડ કરો",
 });
