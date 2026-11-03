@@ -16,9 +16,10 @@ function inspectProfile(kind,input){
 function publicProfile(kind,id,profile,revision){const {photos,...fields}=profile;return {id,kind,revision,...fields};}
 // Actual SDK transaction/query mapping, demo/loopback only. No legacy collection
 // access, browser import, app creation, credential or production-enable mode.
-export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,mandatoryPhotos=false,photoPolicy,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
+export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,mandatoryPhotos=false,photoPolicy,atomicPhotos,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
  if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE'),owner:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
+ if(atomicPhotos&&Object.keys(c).some(k=>atomicPhotos.marketplaceCollections?.[k]!==c[k]))throw new Error('Atomic media parent mapping mismatch');
  const ref=(role,key)=>{if(!safeId(key))throw new Error('Invalid record identity');return sdk.doc(db,c[role],key);},recordKey=(kind,id)=>kind+'_'+id;
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
  async function read(raw,reference){const snap=await raw.get(reference);if(!snap.exists())return null;const {committedAt,...data}=snap.data();return data;}
@@ -60,7 +61,8 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
      if(mandatoryPhotos&&input.publication==='publish'&&(!previous||typeof photoPolicy?.check!=='function'||await photoPolicy.check(raw,{kind,parentId:id,ownerUid:context.actorUid,parentRevision:previous.revision})!==true))return expected=fail('PHOTOS_REQUIRED');
      const revision=input.expectedRevision+1,published=input.publication==='publish'||input.publication==='draft'&&previous?.published===true,view=input.publication==='draft'?previous?.publicProfile??null:published?publicProfile(kind,id,profile,revision):null,nextGeneration=generation.value+(input.publication==='draft'?0:1);
      const stored={id,kind,ownerUid:context.actorUid,revision,profile,published,publicationRevision:view?.revision??0,publicProfile:view};check(context);
-     raw.set(target,{...stored,committedAt:sdk.serverTimestamp()});if(kind==='store'&&!owner)raw.set(ref('owners',ownerKey),{ownerUid:context.actorUid,id});
+     let media=null;if(atomicPhotos&&input.publication!=='draft'){media=await atomicPhotos.prepare(raw,{kind,previous,next:stored,actorUid:context.actorUid,requestKey:key,fingerprint,action:input.publication});check(context);if(media?.ok!==true)return expected=fail(media?.code??'UNAVAILABLE');}
+     media?.commit();raw.set(target,{...stored,committedAt:sdk.serverTimestamp()});if(kind==='store'&&!owner)raw.set(ref('owners',ownerKey),{ownerUid:context.actorUid,id});
      if(input.publication!=='draft'){if(view)raw.set(ref('publicViews',recordKey(kind,id)),view);else raw.delete(ref('publicViews',recordKey(kind,id)));raw.set(ref('generations','current'),{value:nextGeneration});}
      raw.set(ref('receipts',key),{actorUid:context.actorUid,fingerprint,id,revision,generation:nextGeneration});raw.set(ref('audits',key),{requestKey:key,actorUid:context.actorUid,id,kind,fromRevision:input.expectedRevision,toRevision:revision,publication:input.publication});check(context);return expected={ok:true,status:'saved',id,revision,generation:nextGeneration};
     },{maxAttempts:3});if(JSON.stringify(expected)!==JSON.stringify(result))throw new Error('Invalid marketplace acknowledgement');return result;
@@ -73,6 +75,7 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
     if(actor?.uid!==context.actorUid||actor.canWrite!==true||actor.canPublish!==true||actor.suspended!==false||stored?.ownerUid!==context.actorUid||stored.id!==input.id||stored.kind!==kind)return fail('DENIED');
     if(receipt){if(receipt.actorUid!==context.actorUid||receipt.fingerprint!==fingerprint||receipt.id!==input.id||receipt.revision!==input.expectedRevision+1||audit?.requestKey!==key||audit.actorUid!==context.actorUid||audit.toRevision!==receipt.revision||stored.archived!==true||stored.revision<receipt.revision)return fail('IDEMPOTENCY_CONFLICT');return {ok:true,status:'replayed',id:input.id,revision:receipt.revision,generation:receipt.generation};}
     if(audit||stored.archived===true||stored.revision!==input.expectedRevision||!generation||!integer(generation.value)||generation.value===Number.MAX_SAFE_INTEGER)return fail('REVISION_CONFLICT');const revision=stored.revision+1,next=generation.value+1;check(context);
+    if(atomicPhotos){const media=await atomicPhotos.prepare(raw,{kind,previous:stored,next:{...stored,revision,published:false,publicProfile:null,publicationRevision:0,archived:true},actorUid:context.actorUid,requestKey:key,fingerprint,action:'archive'});check(context);if(media?.ok!==true)return fail(media?.code??'UNAVAILABLE');media.commit();}
     raw.set(target,{...stored,revision,published:false,publicProfile:null,publicationRevision:0,archived:true,committedAt:sdk.serverTimestamp()});raw.delete(ref('publicViews',recordKey(kind,input.id)));raw.set(ref('generations','current'),{value:next});raw.set(ref('receipts',key),{actorUid:context.actorUid,fingerprint,id:input.id,revision,generation:next});raw.set(ref('audits',key),{requestKey:key,actorUid:context.actorUid,id:input.id,kind,fromRevision:stored.revision,toRevision:revision,operation:'archive'});check(context);return {ok:true,status:'archived',id:input.id,revision,generation:next};
    },{maxAttempts:3});}});
   },
