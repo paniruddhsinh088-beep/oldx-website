@@ -1,3 +1,4 @@
+import {createServiceConversationIntegration} from './conversation-integration.mjs';
 import {createProviderPrivateIntegration} from './private-integration.mjs';
 import {parseSampleConversationRoute} from './preview-conversation.mjs';
 import {loadTranslator} from '../i18n/i18n.mjs';
@@ -6,10 +7,11 @@ const mounts=new WeakMap();
 // Existing enquiry journal rendered in the existing conversation page. This is
 // not a new Chat sender: provider replies reuse the canonical enquiry command.
 // Session/audience cancel presentation; only the injected server authorizes it.
-export function mountProviderConversation({root=document,enabled=false,audience='buyer',translate=key=>key,openInbox,...options}={}){
+export function mountProviderConversation({root=document,enabled=false,audience='buyer',translate=key=>key,openInbox,messaging={},...options}={}){
  mounts.get(root)?.destroy();
  if(enabled!==true)return Object.freeze({destroy(){}});
  if(!['buyer','provider'].includes(audience))throw new TypeError('Invalid conversation audience');
+ const textMessaging=messaging.enabled===true;
  const $=id=>root.getElementById(id),view=root.defaultView,listeners=[];
  let model,selected=null,session=null,localeRevision=0,active=true;
  const listen=(node,type,fn)=>{node?.addEventListener(type,fn,true);listeners.push(()=>node?.removeEventListener(type,fn,true));};
@@ -19,9 +21,9 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  root.dispatchEvent(new view.CustomEvent('oldx:provider-conversation-mode',{detail:{enabled:true}}));
  const rehearsal=$('sampleRole').closest('section'),wasHidden=rehearsal.hidden;rehearsal.hidden=true;
  $('trustedConversationControls').hidden=false;$('recoverConversation').hidden=true;
- $('messageDraft').maxLength=400;
+ $('messageDraft').maxLength=textMessaging?2000:400;
  function clear(){selected=null;$('messages').replaceChildren();$('conversationService').textContent='';$('messageDraft').value='';$('draftPreview').textContent='';$('draftPreview').hidden=true;}
- function history(value){$('messages').replaceChildren();for(const event of value.events){const li=root.createElement('li'),actor=root.createElement('strong'),text=root.createElement('p');actor.textContent=translate('conversation.'+event.actor);text.textContent=event.text??translate('inbox.state.'+event.status.replaceAll('-','_'));li.append(actor,text);$('messages').append(li);}}
+ function history(value){$('messages').replaceChildren();for(const event of (textMessaging?value.messages.map(m=>({actor:m.role,text:m.text})):value.events)){const li=root.createElement('li'),actor=root.createElement('strong'),text=root.createElement('p');actor.textContent=translate('conversation.'+event.actor);text.textContent=event.text??translate('inbox.state.'+event.status.replaceAll('-','_'));li.append(actor,text);$('messages').append(li);}}
  function render(state){
   const busy=state.status==='loading',ready=!!selected;
   $('conversation').hidden=!ready;$('conversationLoading').hidden=!busy;
@@ -31,28 +33,28 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('conversationError').textContent='';
   $('conversationHistoryNext').disabled=!state.selection?.hasMore||busy||state.canRetry;
   $('conversationRetryCommand').disabled=!state.canRetry||busy;
-  const writable=ready&&audience==='provider'&&!['completed','cancelled','declined','disputed'].includes(selected.detail.status);
+  const writable=textMessaging?ready&&selected.thread.canSend:ready&&audience==='provider'&&!['completed','cancelled','declined','disputed'].includes(selected.detail.status);
   $('draftForm').hidden=!writable;$('conversationClosed').hidden=writable;
   $('messageDraft').readOnly=busy||state.mutationBlocked;$('previewDraft').disabled=!writable||busy||state.mutationBlocked;
-  $('previewDraft').textContent=translate('market.provider.reply');
-  $('conversationHeading').textContent=translate('market.provider.privateHistory');
+  $('previewDraft').textContent=translate(textMessaging?'market.provider.sendMessage':'market.provider.reply');
+  $('conversationHeading').textContent=translate(textMessaging?'market.provider.messages':'market.provider.privateHistory');if(textMessaging){root.querySelector('label[for=messageDraft]').textContent=translate('market.provider.messageDraft');root.querySelector('#main > p.notice').textContent=translate('market.provider.messageNotice');}
   $('inboxLink').textContent=translate('conversation.back');if(selected)history(selected);
  }
- model=createProviderPrivateIntegration({...options,enabled,onChange:render,onPrivate:value=>{
-  clear();if(!value)return;selected=value;
-  $('conversationService').textContent=value.detail.service+' · '+value.enquiryId;
+ model=(textMessaging?createServiceConversationIntegration:createProviderPrivateIntegration)({...options,...(textMessaging?messaging:{}),enabled,onChange:render,onPrivate:value=>{
+  clear();if(!value)return;selected=value;const thread=textMessaging?value.thread:value;
+  $('conversationService').textContent=(textMessaging?thread.service:value.detail.service)+' · '+thread.enquiryId;
   history(value);
-  $('conversationEmpty').hidden=value.events.length!==0;
+  $('conversationEmpty').hidden=(textMessaging?value.messages:value.events).length!==0;
  }});
  async function restore(){
   clear();const current=route();model.changeScope();
   if(!active||!session||!current){render(model.snapshot());return;}
   model.select(current.providerId,audience);
   $('inboxLink').href='./service-inbox-preview.html#inbox/'+current.providerId+'/enquiry/'+current.enquiryId;
-  await model.detail(current.enquiryId);if(active&&session&&selected?.enquiryId===current.enquiryId&&selected?.providerId===current.providerId&&route()?.enquiryId===current.enquiryId)$('conversationHeading').focus();
+  await model.detail(current.enquiryId);if(active&&session&&(textMessaging?selected?.thread:selected)?.enquiryId===current.enquiryId&&(textMessaging?selected?.thread:selected)?.providerId===current.providerId&&route()?.enquiryId===current.enquiryId)$('conversationHeading').focus();
  }
  async function afterMutation(work){const current=route();await work();if(model.snapshot().status==='saved'&&current&&route()?.enquiryId===current.enquiryId&&route()?.providerId===current.providerId)await model.detail(current.enquiryId);}
- listen($('draftForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();if(!session||!selected||!route()||selected.enquiryId!==route().enquiryId)return;afterMutation(()=>model.change('reply',$('messageDraft').value));});
+ listen($('draftForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();if(!session||!selected||!route()||(textMessaging?selected.thread:selected).enquiryId!==route().enquiryId)return;afterMutation(()=>textMessaging?model.send($('messageDraft').value):model.change('reply',$('messageDraft').value));});
  listen($('cancelDraft'),'click',event=>{event.stopImmediatePropagation();if(!model.snapshot().canRetry){$('messageDraft').value='';$('messageDraft').focus();}});
  listen($('conversationRetryCommand'),'click',()=>afterMutation(()=>model.retry()));
  for(const id of ['retryConversation','conversationReload'])listen($(id),'click',()=>restore());

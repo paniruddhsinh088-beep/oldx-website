@@ -437,4 +437,8 @@ export default Object.freeze({
   "market.provider.reply": "Reply to enquiry",
   "market.provider.privateHistory": "Private enquiry history",
   "market.provider.reloadHistory": "Reload enquiry",
+  "market.provider.sendMessage": "Send message",
+  "market.provider.messages": "Private messages",
+  "market.provider.messageDraft": "Your message",
+  "market.provider.messageNotice": "Isolated messaging integration. No live transport is enabled.",
 });

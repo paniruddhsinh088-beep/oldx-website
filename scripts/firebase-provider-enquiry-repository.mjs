@@ -8,10 +8,12 @@ const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 export const enquiryBlockKey=(blockerUid,blockedUid)=>hash([blockerUid,blockedUid]);
 // Durable transaction mapping, isolated demo + loopback only. Production paths,
 // Firebase initialization, authentication and browser execution are not supplied.
-export function createIsolatedProviderEnquiryRepository({enabled=false,firestore,sdk,providerSchema,schema,catalog,now=Date.now}={}){
+export function createIsolatedProviderEnquiryRepository({enabled=false,firestore,sdk,providerSchema,schema,conversationSchema,catalog,now=Date.now}={}){
  if(enabled!==true)return Object.freeze({runTransaction:async()=>{throw new Error('Enquiry repository disabled');}});
  const {collections:p}=getIsolatedProviderSdkContext({firestore,sdk,schema:providerSchema});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
+ const chat=conversationSchema?isolatedFirestoreContext({firestore,sdk,schema:conversationSchema,roles:['threads','messages','receipts','audits']}).collections:null;
+ if(chat&&Object.values(chat).some(path=>[...Object.values(p),...Object.values(c)].includes(path)))throw new Error('Overlapping conversation mapping');
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid canonical identity');return sdk.doc(db,paths[role],id);};
  const receipt=(uid,key,operation)=>ref(c,'receipts',hash([uid,operation,key]));
  return Object.freeze({async findEnquiryIds({providerId,actorUid,role,after,limit},context){
@@ -20,7 +22,7 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
  },async runTransaction(work,{signal,deadlineAt}={}){
   const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
   return sdk.runTransaction(db,async raw=>{
-   const cache=new Map();let mutation=null,update=false;check();
+   const cache=new Map();let mutation=null,update=false,conversationMutation=null;check();
    async function get(reference){check();if(!cache.has(reference.path)){const snap=await raw.get(reference);check();const value=snap.exists()?snap.data():null;if(value){const {committedAt,...facts}=value;cache.set(reference.path,facts);}else cache.set(reference.path,null);}return cache.get(reference.path);}
    const actor=uid=>get(ref(c,'actors',uid));
    async function provider(providerId){
@@ -37,7 +39,10 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
     stageEnquiry:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;},
     stageEnquiryUpdate:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;update=true;}
    };
-   const result=await work(Object.freeze(tx));check();if(!mutation)return result;if(result?.ok!==true)throw new Error('Denied enquiry cannot write');
+   if(chat)Object.assign(tx,{getConversation:id=>get(ref(chat,'threads',id)),getConversationMessage:(id,n)=>get(ref(chat,'messages',hash([id,n]))),getConversationReceipt:(uid,key)=>get(ref(chat,'receipts',hash([uid,key]))),getConversationAudit:(uid,key)=>get(ref(chat,'audits',hash([uid,key]))),stageConversation:value=>{if(conversationMutation)throw new Error('Duplicate conversation mutation');conversationMutation=value;}});
+   const result=await work(Object.freeze(tx));check();
+   if(conversationMutation){if(mutation||result?.ok!==true)throw new Error('Invalid conversation mutation');const m=conversationMutation,id=m.thread.enquiryId,threadRef=ref(chat,'threads',id),old=await get(threadRef),messageRef=ref(chat,'messages',hash([id,m.thread.revision])),key=hash([m.receipt.actorUid,m.receipt.requestId]),receiptRef=ref(chat,'receipts',key),auditRef=ref(chat,'audits',key);if((old?.revision??0)!==m.expectedRevision||m.thread.revision!==m.expectedRevision+1||await get(messageRef)||await get(receiptRef)||await get(auditRef))throw new Error('Conversation precondition conflict');check();for(const [r,v] of [[threadRef,m.thread],[messageRef,m.message],[receiptRef,m.receipt],[auditRef,m.audit]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});check();return result;}
+   if(!mutation)return result;if(result?.ok!==true)throw new Error('Denied enquiry cannot write');
    const m=mutation,rowRef=ref(c,'enquiries',m.record.id),old=await get(rowRef),receiptRef=receipt(m.receipt.actorUid,m.receipt.requestId,m.receipt.operation),auditRef=ref(c,'audits',m.audit.id);
    if(await get(receiptRef)!==null||await get(auditRef)!==null||m.record.id!==m.receipt.enquiryId||m.record.id!==m.audit.enquiryId||m.record.providerId!==m.receipt.providerId||m.record.providerId!==m.audit.providerId||(update?(!old||old.revision!==m.record.revision-1||old.buyerUid!==m.record.buyerUid||old.providerUid!==m.record.providerUid||old.providerId!==m.record.providerId||old.service!==m.record.service):old!==null))throw new Error('Enquiry precondition conflict');
    const historyRef=ref(c,'history',hash([m.record.id,m.record.revision]));if(await get(historyRef)!==null)throw new Error('History conflict');

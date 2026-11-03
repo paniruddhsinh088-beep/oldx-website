@@ -439,4 +439,8 @@ export default Object.freeze({
   "market.provider.reply": "पूछताछ का उत्तर दें",
   "market.provider.privateHistory": "निजी पूछताछ का इतिहास",
   "market.provider.reloadHistory": "पूछताछ फिर लोड करें",
+  "market.provider.sendMessage": "संदेश भेजें",
+  "market.provider.messages": "निजी संदेश",
+  "market.provider.messageDraft": "आपका संदेश",
+  "market.provider.messageNotice": "अलग परीक्षण का मैसेजिंग इंटीग्रेशन। लाइव ट्रांसपोर्ट सक्रिय नहीं है।",
 });

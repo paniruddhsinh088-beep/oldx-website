@@ -278,3 +278,14 @@ See [batch checkpoint](review-progress-2026-11-03-private-conversation-host.md) 
 focused mock/browser and subsequent exact-source CI evidence. All transports stay
 default-disabled; mandatory photos, Chat/Admin/privacy/runtime/native-device and
 real staging acceptance still block release. HOLD/NO-GO.
+
+3 November Service two-way text foundation: disabled participant-scoped transactional
+read/send now reuses canonical enquiry ownership/publication/blocks plus existing
+Chat intent and verified HTTP boundaries. Both buyer/provider can send, exact
+retries do not duplicate, and existing conversation markup supports original Unicode,
+gu/hi/en and narrow-screen recovery. Five selected local groups pass 262 executions
+(after fixing a test failure-injection fixture); actual SDK CI is recorded separately.
+See [messaging checkpoint](review-progress-2026-11-03-service-messaging.md).
+This advances general Service text messaging beyond the enquiry journal; receipts,
+deletion/retention, mandatory photos, real runtime/Auth/Admin and staging acceptance
+remain P0. No integration is activated. HOLD/NO-GO.

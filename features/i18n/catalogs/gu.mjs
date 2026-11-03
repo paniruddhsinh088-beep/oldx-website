@@ -439,4 +439,8 @@ export default Object.freeze({
   "market.provider.reply": "પૂછપરછનો જવાબ આપો",
   "market.provider.privateHistory": "ખાનગી પૂછપરછનો ઇતિહાસ",
   "market.provider.reloadHistory": "પૂછપરછ ફરી લોડ કરો",
+  "market.provider.sendMessage": "સંદેશ મોકલો",
+  "market.provider.messages": "ખાનગી સંદેશાઓ",
+  "market.provider.messageDraft": "તમારો સંદેશ",
+  "market.provider.messageNotice": "અલગ પરીક્ષણનું મેસેજિંગ ઇન્ટિગ્રેશન. લાઇવ ટ્રાન્સપોર્ટ સક્રિય નથી.",
 });
