@@ -124,3 +124,27 @@ upgrade or runtime action is authorized. Cloudinary Free remains a conditional c
 Owner target after website completion: Capacitor/Play submission November 14–19, 2026.
 That target remains conditional on website readiness and separately approved native,
 account/signing/testing/release gates; no native packaging is started or date guaranteed.
+
+## 3 November P0 implementation delta
+
+- Public-photo approval bypass and proof check/read mismatch are fixed in inactive
+  source. Independent moderation/publication/active-authority checks are mandatory;
+  no legacy flag enables operational public delivery. Adversarial proof tests
+  preserve quota/state when verification is inconsistent or bound to another image.
+- Product SDK publish/discover now composes with private buyer enquiry, seller
+  inbox and response through a disabled verified HTTP port. It enforces participant,
+  listing revision, block and suspension checks atomically with receipt/audit writes.
+  Bounded private snapshots omit raw UIDs. This does not bind legacy Login/forms/
+  Chat to an approved runtime and does not complete the mandatory-photo journey.
+- Next source task: opt-in existing Product form/discovery/Chat binding to these
+  ports, abort/clear on session/navigation changes, preserve retry keys, and run
+  extracted real-markup 320px/gu-hi-en/large-text browser acceptance. Then add scoped
+  inbox pagination and remaining Chat lifecycle features; no new demo page.
+- Before staging: owner must approve concrete operational namespace/schema and
+  compatibility plan, verified identity/eligibility and block bootstrap policies,
+  retention/privacy, same-origin runtime/rate enforcement, index/Rules candidates,
+  image provider/processor/moderation/quota arrangement and staging acceptance.
+  Recommendations are not approvals; deployment, credentials and billing remain
+  separately forbidden. Existing Firebase architecture with bounded reads and no
+  new paid infrastructure remains the recommended baseline. No guaranteed free-tier
+  capacity or November 7 launch claim. HOLD/NO-GO and future Android gates remain.

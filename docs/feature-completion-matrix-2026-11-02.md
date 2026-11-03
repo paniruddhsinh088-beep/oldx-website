@@ -174,3 +174,28 @@ real provider copies/private delivery, full UI/locale/review/device/runtime acce
 remain missing or inactive. Chat ordering is now tested by executing the actual render
 callback; dynamic Chat labels use gu/hi/en. No live images, migration, backend or native
 build is activated. All requirements and HOLD/NO-GO remain.
+
+## 3 November: Product private conversation integration and media P0 fixes
+
+The existing isolated Marketplace SDK now composes with an inactive Product
+conversation SDK and HTTP port: verified seller creates/publishes, buyer discovers
+curated Product data, buyer opens a private thread, seller reads a bounded inbox
+and responds, buyer reads revision-bound history. Atomic receipt/message/audit
+writes reconcile a lost acknowledgement without duplicate delivery. Current
+listing publication/owner eligibility, participant eligibility, bidirectional
+blocks and Store ownership are revalidated. Private notes/UIDs are absent from
+public discovery; private HTTP responses are no-store and strictly projected.
+This is injected SDK integration, NOT a live endpoint or Login/UI acceptance.
+Existing legacy forms and Chat remain intact; their opt-in trusted transport and
+session/UI lifecycle binding remain the next integration gap. Inbox is a bounded
+first window, not a complete paginated inbox. No completion/review grant exists.
+
+Operational public-photo reads now require the independent release schema and
+fresh publication/review/moderator/publisher authority. Legacy self-asserted asset
+approval cannot authorize delivery. Verified provider proofs are normalized once
+into flat frozen descriptor-value snapshots, binding operation/image/nonce/path/
+revision/source or asset identity before journal transitions. PR #10 was inspected,
+not merged. Legacy Base64/Cloudinary data is retained, not newly exposed.
+
+Evidence and exact-source CI: see the P0 Product/media progress checkpoint.
+All production/staging, Rules, media-provider and release gates remain unchanged.
