@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';
 import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';
 import {productConversationAcceptance} from './product-conversation-acceptance.mjs';
 import {createIsolatedProductConversationRepository} from '../../scripts/firebase-product-conversation-repository.mjs';
-test('Product create publish discover private enquiry seller inbox response and withdrawal through injected SDK',async()=>{const f=fakeFirestoreSdk();await productConversationAcceptance({sdk:f.sdk,db:f.db,seed:(...a)=>f.seed(...a),get:(...a)=>f.get(...a)});});
+test('Product create publish discover private enquiry seller inbox response and withdrawal through injected SDK',async()=>{const f=fakeFirestoreSdk();f.seed('testOldxMarketPublicViews','product_withdrawn',{id:'withdrawn',kind:'product',category:'cars'});await productConversationAcceptance({sdk:f.sdk,db:f.db,seed:(...a)=>f.seed(...a),get:(...a)=>f.get(...a)});});
 test('Product conversation defaults off and rejects production binding',async()=>{assert.equal((await createIsolatedProductConversationRepository().open()).code,'UNAVAILABLE');assert.throws(()=>createIsolatedProductConversationRepository({enabled:true,firestore:{app:{options:{projectId:'oldx-1c983'}}},sdk:{}}));});
 import {createProductConversationHttp} from '../../scripts/product-conversation-http.mjs';
 const wire=(body={role:'seller',limit:5})=>({method:'POST',headers:{authorization:'Bearer isolated.test.token','content-type':'application/json'},body:JSON.stringify(body)});

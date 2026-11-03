@@ -71,3 +71,16 @@ No recommendation is approval. No live Firebase/Cloudinary, deployment, Rules/in
 IAM/secrets, Vercel, billing, migration, main/merge or paid resource action occurred.
 Legacy images are untouched. HOLD/NO-GO remains. November 7 web and conditional
 November 14–19 Android targets remain targets; no native packaging started.
+
+## First CI correction
+
+Source commit 033e9762934cd74dea8c5c4a36634b630d4ce332 passed Branch Security
+41636079769. Service Emulator 41636079826 ran 29 actual cases: 28 passed, the new
+Product journey failed at discovery because an earlier shared Marketplace fixture
+intentionally retains a withdrawn Store's Product row. The repository correctly
+failed closed for that row. The journey scenario now uses its own isolated
+Marketplace namespace; a local regression seeds the foreign namespace with a
+withdrawn row to preserve this separation. No authorization/assertion was relaxed.
+New test collections remain guest-denied. Focused Product cases: 4/4 pass.
+Review-safety 41636079956 was still running when this correction was prepared.
+Final corrected exact-source CI evidence follows after verification.

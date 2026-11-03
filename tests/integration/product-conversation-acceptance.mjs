@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import {createProductConversationHttp} from '../../scripts/product-conversation-http.mjs';
-import {createIsolatedMarketplaceRepository,MARKETPLACE_TEST_SCHEMA as m} from '../../scripts/firebase-marketplace-repository.mjs';
+import {createIsolatedMarketplaceRepository,MARKETPLACE_TEST_SCHEMA} from '../../scripts/firebase-marketplace-repository.mjs';
 import {createIsolatedProductConversationRepository,PRODUCT_CONVERSATION_TEST_SCHEMA as c,productConversationBlockKey} from '../../scripts/firebase-product-conversation-repository.mjs';
+// Separate namespace: preceding Emulator cases intentionally leave withdrawn rows.
+const m=Object.freeze(Object.fromEntries(Object.keys(MARKETPLACE_TEST_SCHEMA).map(k=>[k,'testOldxProductJourney'+k[0].toUpperCase()+k.slice(1)])));
 export async function productConversationAcceptance({sdk,db,seed,get}){
  let uid='journey-seller';const authenticate=()=>uid?{uid}:null;
  await seed(m.actors,uid,{uid,canWrite:true,canPublish:true,suspended:false});await seed(m.generations,'current',{value:0});

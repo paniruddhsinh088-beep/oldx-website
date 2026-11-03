@@ -302,5 +302,5 @@ test('actual SDK independent media moderation atomic publish private replacement
  test('actual SDK Product create publish discover private enquiry seller response and withdrawal',async()=>{
  const sdk=await import('firebase/firestore'),{productConversationAcceptance}=await import('../integration/product-conversation-acceptance.mjs');
  await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await productConversationAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const s=await sdk.getDoc(sdk.doc(db,collection,id));return s.exists()?s.data():null;}});});
- const guest=env.unauthenticatedContext().firestore();for(const collection of ['testOldxProductChatThreads','testOldxProductChatMessages','testOldxProductChatReceipts'])await assertFails(sdk.getDoc(sdk.doc(guest,collection,'sample')));
+ const guest=env.unauthenticatedContext().firestore();for(const collection of ['testOldxProductChatThreads','testOldxProductChatMessages','testOldxProductChatReceipts','testOldxProductJourneyPrivateRecords'])await assertFails(sdk.getDoc(sdk.doc(guest,collection,'sample')));
  });
