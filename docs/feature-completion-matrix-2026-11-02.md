@@ -309,3 +309,11 @@ for exact source/CI. This supersedes the Product/Store separate-publication-wind
 gap above; real provider/byte delivery and Provider public-photo integration remain
 P0. Legacy listings/images are unchanged; no automated moderation or runtime is
 activated. HOLD/NO-GO; operational/staging approvals remain required.
+
+4 November small Provider-photo batch: default-disabled read-only sidecar contract
+now validates canonical Provider ownership/publication plus existing approved media
+facts and returns only one profile-image descriptor. Provider v1 DTOs unchanged.
+Focused 10/10 pass; [exact-source ledger](review-progress-2026-11-04-provider-photo-ledger.md).
+This is a synthetic-tested contract, not an implemented atomic Provider SDK reader,
+release writer, actual image URL/gateway or activated media integration. Those still
+need the stated design/runtime/privacy/staging approvals. HOLD/NO-GO.
