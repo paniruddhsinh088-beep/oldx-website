@@ -421,4 +421,5 @@ export default Object.freeze({
   "market.store.browse": "સ્ટોર જુઓ",
   "market.store.noStores": "આ શ્રેણીમાં કોઈ સ્ટોર નથી.",
   "market.store.allCategories": "બધી શ્રેણીઓ",
+  "market.product.offline": "ઇન્ટરનેટ બંધ છે. ખાનગી માહિતી દૂર કરી છે.",
 });

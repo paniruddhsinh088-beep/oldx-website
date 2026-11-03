@@ -6,3 +6,7 @@
 .oldx-public-card:focus-visible, #productIntegrationPanel button:focus-visible, #trustedStoreControls button:focus-visible { outline:3px solid #bd5100; outline-offset:3px; }
 body[data-oldx-product] #sellWizardPage :is(input,textarea,select), body[data-oldx-store] #storePage :is(input,textarea,select) { min-width:0; max-width:100%; font-size:16px; }
 body[data-oldx-product] #fullChatPage { padding-bottom:max(12px,env(safe-area-inset-bottom)); }
+
+html[data-provider-private] #trustedProviderControls { display:flex; flex-wrap:wrap; gap:8px; border:1px solid #b9cceb; border-radius:12px; padding:12px; background:#f5f8ff; }
+html[data-provider-private] #trustedProviderControls button { min-height:44px; padding:10px; background:#163866; color:white; border-radius:10px; }
+html[data-provider-private] #trustedProviderControls[hidden] { display:none; }

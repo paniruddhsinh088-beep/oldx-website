@@ -16,7 +16,9 @@ function option(value,label){const node=document.createElement('option');node.va
 if(buyerMode)for(const id of SAMPLE_BUYERS)$('sampleBuyer').append(option(id,id));
 for(const provider of demoProviders)$('sampleProvider').append(option(provider.id,provider.name));
 function clearDetail(){for(const id of ['detailHeading','detailStatus','detailNote','detailReply'])$(id).textContent='';$('inboxReply').value='';$('inboxActions').replaceChildren();$('inboxBack').removeAttribute('href');$('conversationLink').removeAttribute('href');$('buyerConfirmation')?.setAttribute('hidden','');$('sampleHistory')?.replaceChildren();}
+let trustedPrivateMode=document.documentElement.dataset.providerPrivate==='true';document.addEventListener('oldx:provider-private-mode',event=>{trustedPrivateMode=event.detail?.enabled===true;if(trustedPrivateMode){context=null;replyDraft='';history=[];clearDetail();}});
 function render(focus=false,restore=false){
+ if(trustedPrivateMode)return;
  const route=parseRoute(location.hash),previousEnquiry=enquiryId;
  if(providerId!==route?.providerId || buyerMode&&buyerId!==route?.buyerId || !context){buyerId=route?.buyerId??null;history=[];pendingConfirmation=null;context=buyerMode?(SAMPLE_BUYERS.includes(buyerId)?createSampleBuyerInbox(route?.providerId):null):createSampleInbox(route?.providerId);providerId=route?.providerId??null;replyDraft='';enquiryId=null;$('inboxStatus').value='all';$('inboxService').replaceChildren();}
  if(context)context.provider.published=!withdrawn.has(providerId);

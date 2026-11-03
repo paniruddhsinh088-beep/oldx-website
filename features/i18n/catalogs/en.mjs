@@ -419,4 +419,5 @@ export default Object.freeze({
   "market.store.browse": "Browse Stores",
   "market.store.noStores": "No Stores match this category.",
   "market.store.allCategories": "All categories",
+  "market.product.offline": "Offline. Private content cleared.",
 });

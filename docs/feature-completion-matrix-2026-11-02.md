@@ -248,3 +248,11 @@ Review-safety **41652006446** and Service Emulator **41652006386** passed first
 attempt (32 actual SDK/Rules cases). Initial OR-query grouping failure and corrected
 real-SDK regression are recorded in the directory checkpoint. Provider session
 fanout is preparation; full Provider inbox/reply/host wiring remains P0, not live.
+
+Emergency Provider save (3 November): disabled canonical provider reply/status,
+atomic private history, scoped inbox/history HTTP/UI and existing-markup recovery,
+plus shared Product/Store host source implemented. Selected local 636 executions
+and final focused 10/10 passed; actual new exact-source Emulator CI pending review.
+See [emergency checkpoint](review-progress-2026-11-03-provider-emergency-checkpoint.md).
+No live/staging or release completion claim; Provider public-host orchestration and
+remaining media/Chat/Admin/privacy acceptance remain P0.

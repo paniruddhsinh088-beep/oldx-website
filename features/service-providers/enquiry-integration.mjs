@@ -1,3 +1,4 @@
+import {createProviderPrivateIntegration} from './private-integration.mjs';
 import {createBoundedRead} from '../shared/bounded-read.mjs';
 import {inspectSampleEnquiry} from './preview-enquiry.mjs';
 import {SAMPLE_ENQUIRY_STATES,isSampleReply} from './preview-inbox-model.mjs';
@@ -44,7 +45,8 @@ export function createBuyerEnquiryIntegration({enabled=false,commands,reads,make
 }
 // One session lifecycle for existing owner and buyer ports. All production/network
 // bindings remain caller-injected and default off; no competing owner state model.
-export function createProviderJourneyIntegration({buyer={},...options}={}){
+export function createProviderJourneyIntegration({buyer={},privateEnquiries={},...options}={}){
  const owner=createProviderUiIntegration(options),client=createBuyerEnquiryIntegration({...buyer,enabled:options.enabled===true});
- return Object.freeze({owner,buyer:client,setSession(value){owner.setSession(value);client.setSession(value?{uid:value.uid,sessionId:value.sessionId}:null);},clear(){owner.clear();client.clear();},setOnline(value){owner.setOnline(value);client.setOnline(value);},changeScope(){owner.changeScope();client.select(null);}});
+ const inbox=createProviderPrivateIntegration({...privateEnquiries,enabled:options.enabled===true});
+ return Object.freeze({owner,buyer:client,inbox,setSession(value){owner.setSession(value);client.setSession(value?{uid:value.uid,sessionId:value.sessionId}:null);inbox.setSession(value?{uid:value.uid,sessionId:value.sessionId}:null);},clear(){owner.clear();client.clear();inbox.clear();},setOnline(value){owner.setOnline(value);client.setOnline(value);inbox.setOnline(value);},changeScope(){owner.changeScope();client.select(null);inbox.changeScope();}});
 }

@@ -320,3 +320,7 @@ test('actual SDK Store existing-UI owner recovery publication catalogue and with
  const sdk=await import('firebase/firestore'),{storeUiAcceptance}=await import('../integration/store-ui-acceptance.mjs');
  await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await storeUiAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v)});});
 });
+
+test('actual SDK Provider owner multi-service discovery buyer enquiry inbox reply and private history',async()=>{
+ const sdk=await import('firebase/firestore'),{providerJourneyAcceptance}=await import('../integration/provider-journey-acceptance.mjs');await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await providerJourneyAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v)});});const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxProviderJourneyhistory','private-event')));
+});

@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 import {getIsolatedProviderSdkContext} from './firebase-provider-repository.mjs';
 import {isolatedFirestoreContext,safeId,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 import {projectPublicRow} from '../features/service-providers/provider-discovery.mjs';
-const roles=['actors','blocks','enquiries','receipts','audits'];
+const roles=['actors','blocks','enquiries','receipts','audits','history'];
 export const ENQUIRY_TEST_SCHEMA=Object.freeze(Object.fromEntries(roles.map(k=>[k,'testOldxEnquiry'+k[0].toUpperCase()+k.slice(1)])));
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 export const enquiryBlockKey=(blockerUid,blockedUid)=>hash([blockerUid,blockedUid]);
@@ -14,7 +14,10 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid canonical identity');return sdk.doc(db,paths[role],id);};
  const receipt=(uid,key,operation)=>ref(c,'receipts',hash([uid,operation,key]));
- return Object.freeze({async runTransaction(work,{signal,deadlineAt}={}){
+ return Object.freeze({async findEnquiryIds({providerId,actorUid,role,after,limit},context){
+  if(!safeId(providerId)||!safeId(actorUid)||!['buyer','provider'].includes(role)||after!==null&&!safeId(after)||!Number.isInteger(limit)||limit<1||limit>21)throw new Error('Invalid bounded inbox');
+  isolatedTransactionCheck(context.signal,context.deadlineAt,now);const result=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.enquiries),sdk.where('providerId','==',providerId),sdk.where(role==='provider'?'providerUid':'buyerUid','==',actorUid),sdk.orderBy('id','asc'),...(after?[sdk.startAfter(after)]:[]),sdk.limit(limit)));isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.metadata?.fromCache!==false||result.metadata?.hasPendingWrites!==false||result.docs.length>limit)throw new Error('Untrusted inbox snapshot');return result.docs.map(doc=>doc.id);
+ },async runTransaction(work,{signal,deadlineAt}={}){
   const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
   return sdk.runTransaction(db,async raw=>{
    const cache=new Map();let mutation=null,update=false;check();
@@ -29,14 +32,16 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
    }
    const tx={getEnquiryActor:actor,getPublishedProvider:provider,
     async getParticipantBlocks(buyerUid,providerUid){const a=await get(ref(c,'blocks',enquiryBlockKey(buyerUid,providerUid))),b=await get(ref(c,'blocks',enquiryBlockKey(providerUid,buyerUid)));return a?.blockerUid===buyerUid&&a.blockedUid===providerUid&&typeof a.blocked==='boolean'&&b?.blockerUid===providerUid&&b.blockedUid===buyerUid&&typeof b.blocked==='boolean'?{buyerBlocked:a.blocked,providerBlocked:b.blocked}:null;},
+    async getEnquiryHistory(id,after,limit){const events=[];for(let revision=after+1;revision<=after+limit;revision++){const event=await get(ref(c,'history',hash([id,revision])));if(!event)break;events.push(event);}return events;},
     getEnquiryReceipt:(uid,key,operation='create-provider-private-enquiry')=>get(receipt(uid,key,operation)),getEnquiryAudit:id=>get(ref(c,'audits',id)),getEnquiry:id=>get(ref(c,'enquiries',id)),
     stageEnquiry:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;},
     stageEnquiryUpdate:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;update=true;}
    };
    const result=await work(Object.freeze(tx));check();if(!mutation)return result;if(result?.ok!==true)throw new Error('Denied enquiry cannot write');
    const m=mutation,rowRef=ref(c,'enquiries',m.record.id),old=await get(rowRef),receiptRef=receipt(m.receipt.actorUid,m.receipt.requestId,m.receipt.operation),auditRef=ref(c,'audits',m.audit.id);
-   if(await get(receiptRef)!==null||await get(auditRef)!==null||m.record.id!==m.receipt.enquiryId||m.record.id!==m.audit.enquiryId||m.record.providerId!==m.receipt.providerId||m.record.providerId!==m.audit.providerId||(update?(!old||old.revision!==m.record.revision-1||old.buyerUid!==m.record.buyerUid||old.providerUid!==m.record.providerUid||old.providerId!==m.record.providerId):old!==null))throw new Error('Enquiry precondition conflict');
-   check();raw.set(rowRef,{...m.record,committedAt:sdk.serverTimestamp()});raw.set(receiptRef,{...m.receipt,committedAt:sdk.serverTimestamp()});raw.set(auditRef,{...m.audit,committedAt:sdk.serverTimestamp()});check();return result;
+   if(await get(receiptRef)!==null||await get(auditRef)!==null||m.record.id!==m.receipt.enquiryId||m.record.id!==m.audit.enquiryId||m.record.providerId!==m.receipt.providerId||m.record.providerId!==m.audit.providerId||(update?(!old||old.revision!==m.record.revision-1||old.buyerUid!==m.record.buyerUid||old.providerUid!==m.record.providerUid||old.providerId!==m.record.providerId||old.service!==m.record.service):old!==null))throw new Error('Enquiry precondition conflict');
+   const historyRef=ref(c,'history',hash([m.record.id,m.record.revision]));if(await get(historyRef)!==null)throw new Error('History conflict');
+   check();raw.set(historyRef,{enquiryId:m.record.id,providerId:m.record.providerId,buyerUid:m.record.buyerUid,providerUid:m.record.providerUid,revision:m.record.revision,actorUid:m.audit.actorUid,status:m.record.status,text:update?(m.audit.action==='reply'?m.record.reply:null):m.record.note});raw.set(rowRef,{...m.record,committedAt:sdk.serverTimestamp()});raw.set(receiptRef,{...m.receipt,committedAt:sdk.serverTimestamp()});raw.set(auditRef,{...m.audit,committedAt:sdk.serverTimestamp()});check();return result;
   },{maxAttempts:3});
  }});
 }

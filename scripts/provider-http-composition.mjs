@@ -1,3 +1,5 @@
+import {createProviderEnquiryReads} from './provider-enquiry-reads.mjs';
+import {projectProviderPrivateDto} from '../features/service-providers/enquiry-private-dto.mjs';
 import {createProviderEnquiryLifecycle} from './provider-enquiry-lifecycle.mjs';
 import {createProviderEnquiryTransaction,inspectProviderEnquiryRequest} from './provider-enquiry-transaction.mjs';
 import {createProviderOwnerBootstrap} from './provider-owner-bootstrap.mjs';
@@ -18,7 +20,7 @@ function requestHeaders(input){try{if(!input||Object.getPrototypeOf(input)!==Obj
 export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},bootstrap={},enquiry={},timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
  return Object.freeze({async handle(operation,request,{signal}={}){
   if(enabled!==true)return error(503,'UNAVAILABLE');
-  if(!['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel'].includes(operation))return error(404,'NOT_FOUND');
+  if(!['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel','enquiry.change','enquiry.detail','enquiry.inbox'].includes(operation))return error(404,'NOT_FOUND');
   const r=copy(request,['method','headers','body']);if(!r)return error(400,'BAD_REQUEST');
   if(typeof r.method!=='string')return error(400,'BAD_REQUEST');
   if(r.method!=='POST')return error(405,'METHOD_NOT_ALLOWED',{Allow:'POST'});
@@ -26,7 +28,10 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(h['content-type']??'')||h['content-encoding']&&h['content-encoding']!=='identity')return error(415,'UNSUPPORTED_MEDIA_TYPE');
   const parsed=parseBoundedJson(r.body);if(!parsed.ok)return error(parsed.code==='BODY_TOO_LARGE'?413:400,parsed.code);
   let input;
-  if(operation==='draft.save')input=inspectProviderDraftRequest(parsed.value);
+  if(operation==='enquiry.change'){input=copy(parsed.value,['providerId','enquiryId','expectedRevision','requestId','action','reply']);if(input&&(!id(input.providerId)||!id(input.enquiryId)||!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0))input=null;}
+  else if(operation==='enquiry.detail'){input=copy(parsed.value,['providerId','enquiryId','expectedRevision','afterRevision','limit']);if(input&&(!id(input.providerId)||!id(input.enquiryId)||input.expectedRevision!==null&&(!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0)||!Number.isInteger(input.afterRevision)||input.afterRevision< -1||!Number.isInteger(input.limit)||input.limit<1||input.limit>20))input=null;}
+  else if(operation==='enquiry.inbox'){input=copy(parsed.value,['providerId','role','limit','cursor']);if(input&&(!id(input.providerId)||!['buyer','provider'].includes(input.role)||!Number.isInteger(input.limit)||input.limit<1||input.limit>20||input.cursor!==null&&(typeof input.cursor!=='string'||input.cursor.length>1024)))input=null;}
+  else if(operation==='draft.save')input=inspectProviderDraftRequest(parsed.value);
   else if(operation==='enquiry.cancel'){input=copy(parsed.value,['requestId','providerId','enquiryId','expectedRevision']);if(input&&(!id(input.requestId)||!id(input.providerId)||!id(input.enquiryId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0))input=null;}
   else if(operation==='enquiry.create')input=inspectProviderEnquiryRequest(parsed.value);
   else if(operation==='owner.bootstrap'){input=copy(parsed.value,['operation','requestId']);if(input&&!(input.operation===null&&input.requestId===null||['draft.save','publication.manage'].includes(input.operation)&&id(input.requestId)))input=null;}
@@ -37,7 +42,7 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   if(![verifyFirebaseToken,resolveProviderRole,consumeRateLimit].every(fn=>typeof fn==='function'))return error(503,'ENFORCEMENT_UNAVAILABLE');
   const result=await runVerifiedOperation({credential:token,authenticate:(credential,context)=>verifyFirebaseToken(credential,{...context,checkRevoked:true}),signal,timeoutMs,now,schedule,cancel,run:async context=>{
    const role=copy(await resolveProviderRole(context.actorUid,{signal:context.signal,deadlineAt:context.deadlineAt}),['uid','role','active']);context.checkpoint();
-   if(!role||role.uid!==context.actorUid||role.active!==true||!(operation==='publication.manage'?['provider']:['member','provider']).includes(role.role))return {ok:false,code:'DENIED'};
+   if(!role||role.uid!==context.actorUid||role.active!==true||!(['publication.manage','enquiry.change'].includes(operation)?['provider']:['member','provider']).includes(role.role))return {ok:false,code:'DENIED'};
    const rate=copy(await consumeRateLimit({actorUid:context.actorUid,operation,requestId:input.requestId},{signal:context.signal,deadlineAt:context.deadlineAt}),['allowed','retryAfterSeconds']);context.checkpoint();
    if(!rate||typeof rate.allowed!=='boolean'||!Number.isInteger(rate.retryAfterSeconds)||rate.allowed&&rate.retryAfterSeconds!==0||!rate.allowed&&(rate.retryAfterSeconds<1||rate.retryAfterSeconds>3600))return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};
    if(!rate.allowed)return {ok:false,code:'RATE_LIMITED',retryAfterSeconds:rate.retryAfterSeconds};
@@ -45,13 +50,16 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
    if(operation==='owner.bootstrap')return createProviderOwnerBootstrap({...bootstrap,...shared}).load(input,{signal:context.signal});
    // Once dispatched, timeout may conceal an in-flight commit. The atomic port
    // remains responsible for current permission/ownership, receipt and audit.
+   if(operation==='enquiry.inbox'||operation==='enquiry.detail'){const reads=createProviderEnquiryReads({...enquiry,...shared});return reads[operation==='enquiry.inbox'?'inbox':'detail'](input,{signal:context.signal});}
    context.markMutationAttempted();
+   if(operation==='enquiry.change')return createProviderEnquiryLifecycle({...enquiry,...shared}).change(input,{signal:context.signal});
    if(operation==='enquiry.cancel')return createProviderEnquiryLifecycle({...enquiry,...shared}).cancel(input,{signal:context.signal});
    if(operation==='enquiry.create')return createProviderEnquiryTransaction({...enquiry,...shared}).create(input,{signal:context.signal});
    return operation==='draft.save'?createProviderDraftTransaction({...draft,...shared}).save(input,{signal:context.signal}):createProviderPublicationTransaction({...publication,...shared}).execute(input,{signal:context.signal});
   }});
   if(result?.ok===true&&operation==='owner.bootstrap'){const safe=validateOwnerBootstrapDto(result);return safe?reply(200,safe):error(503,'UNAVAILABLE');}
-  if(result?.ok===true&&operation==='enquiry.cancel'){const safe=copy(result,['ok','status','enquiryId','revision']);return safe&&id(safe.enquiryId)&&['cancelled','replayed'].includes(safe.status)&&Number.isSafeInteger(safe.revision)&&safe.revision>0?reply(200,safe):error(503,'UNAVAILABLE');}
+  if(result?.ok===true&&['enquiry.inbox','enquiry.detail'].includes(operation)){const safe=projectProviderPrivateDto(operation,result);return safe?reply(200,safe):error(503,'UNAVAILABLE');}
+  if(result?.ok===true&&['enquiry.cancel','enquiry.change'].includes(operation)){const safe=copy(result,['ok','status','enquiryId','revision']);return safe&&id(safe.enquiryId)&&(operation==='enquiry.change'?['changed','replayed']:['cancelled','replayed']).includes(safe.status)&&Number.isSafeInteger(safe.revision)&&safe.revision>0?reply(200,safe):error(503,'UNAVAILABLE');}
   if(result?.ok===true&&operation==='enquiry.create'){const safe=copy(result,['ok','status','enquiryId']);return safe&&id(safe.enquiryId)&&['created','replayed'].includes(safe.status)?reply(200,safe):error(503,'UNAVAILABLE');}
   if(result?.ok===true){
    const keys=operation==='draft.save'?['ok','status','providerId','revision']:['ok','status','providerId','action','generation'];const safe=copy(result,keys);
@@ -60,7 +68,7 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   }
   if(result?.code==='OUTCOME_UNKNOWN')return reply(202,{ok:false,error:{code:'OUTCOME_UNKNOWN'},retrySameRequest:true});
   if(result?.code==='RATE_LIMITED')return error(429,'RATE_LIMITED',{'Retry-After':String(result.retryAfterSeconds)});
-  const status={AUTH_REQUIRED:401,DENIED:403,INVALID_REQUEST:400,INVALID_PUBLIC_PROFILE:400,REVISION_CONFLICT:409,PUBLICATION_CONFLICT:409,IDEMPOTENCY_CONFLICT:409,CONFLICT:409,DEADLINE_EXCEEDED:504,CANCELLED:408,ENFORCEMENT_UNAVAILABLE:503}[result?.code]??503;
+  const status={CURSOR_INVALID:409,AUTH_REQUIRED:401,DENIED:403,INVALID_REQUEST:400,INVALID_PUBLIC_PROFILE:400,REVISION_CONFLICT:409,PUBLICATION_CONFLICT:409,IDEMPOTENCY_CONFLICT:409,CONFLICT:409,DEADLINE_EXCEEDED:504,CANCELLED:408,ENFORCEMENT_UNAVAILABLE:503}[result?.code]??503;
   return error(status,status===503?'ENFORCEMENT_UNAVAILABLE':result.code);
  }});
 }

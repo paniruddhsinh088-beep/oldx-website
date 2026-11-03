@@ -23,5 +23,5 @@ export function mountProviderUiIntegration({root=document,enabled=false,readProf
  listen($('categories'),'click',()=>journey.changeScope());listen($('resetSearch'),'click',()=>journey.changeScope());
  listen(window,'offline',()=>journey.setOnline(false));listen(window,'online',()=>journey.setOnline(true));
  listen(window,'pagehide',()=>{journey.clear();if(enabled)clearPrivateForm();});
- const api=Object.freeze({model,buyer:journey.buyer,setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;journey.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());journey.clear();bindings.delete(root);}});bindings.set(root,api);return api;
+ const api=Object.freeze({model,buyer:journey.buyer,inbox:journey.inbox,setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;journey.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());journey.clear();bindings.delete(root);}});bindings.set(root,api);return api;
 }

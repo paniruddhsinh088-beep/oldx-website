@@ -421,4 +421,5 @@ export default Object.freeze({
   "market.store.browse": "स्टोर देखें",
   "market.store.noStores": "इस श्रेणी में कोई स्टोर नहीं है।",
   "market.store.allCategories": "सभी श्रेणियाँ",
+  "market.product.offline": "इंटरनेट बंद है। निजी जानकारी हटा दी गई है।",
 });
