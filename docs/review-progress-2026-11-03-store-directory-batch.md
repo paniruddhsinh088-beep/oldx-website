@@ -48,3 +48,11 @@ privacy/retention, media provider/scanner/quota and separate staging/deployment.
 No live Firebase/Cloudinary, Rules/index, IAM/secrets, billing, provider activation,
 migration, paid service, native packaging or deployment occurred. **HOLD/NO-GO**.
 Source SHA and exact CI are recorded after successful authorized push.
+
+Milestone pushed: `e6cf42f635bf4b9b02f9dff6040aa4dcad3251b7`.
+Installed Firebase SDK construction check then reproduced an OR-query API error:
+composite filters must be nested under `and(...)`, rather than combined as separate
+top-level where/or arguments. Corrected grouping preserves both authorization and
+category predicates. Added a real-SDK construction regression with ALL reads mocked
+and demo/loopback configuration; no Emulator/live read occurs locally. Corrected
+Store/durable/session focused cases: 9/9 pass. CI for the corrected SHA follows.
