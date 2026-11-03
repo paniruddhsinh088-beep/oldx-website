@@ -199,3 +199,15 @@ not merged. Legacy Base64/Cloudinary data is retained, not newly exposed.
 
 Evidence and exact-source CI: [P0 Product/media checkpoint](review-progress-2026-11-03-p0-product-media-batch.md). Corrected `adb70f1`: Review-safety 41636421806 and Service Emulator 41636421754 attempt 2 passed; 29 actual Service/SDK cases. The first-attempt Service enquiry concurrency failure remains documented.
 All production/staging, Rules, media-provider and release gates remain unchanged.
+
+## Product existing-UI integration checkpoint, 3 November
+
+Default-off Product controller/DOM binding now joins existing form, discovery,
+public detail and private inbox/Chat to injected Marketplace SDK and verified HTTP
+ports. Isolated existing-markup browser journeys cover save/edit/publish, selected
+photo preview, buyer enquiry and seller response at 320/375/768/1280px, gu/hi/en,
+large text and uncertain-write/session recovery. Legacy decimal price validation
+was corrected. This is not real Login, an active endpoint, public photo delivery,
+global indexed search, owner bootstrap after reload or live acceptance. Store,
+Service, Admin, reviews and all mandatory-photo requirements remain in scope.
+See [Product UI evidence](review-progress-2026-11-03-product-ui-batch.md).

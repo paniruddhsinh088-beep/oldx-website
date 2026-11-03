@@ -53,6 +53,7 @@
             to { transform: translateY(0); }
         }
 
+        #productIntegrationPanel button, #productEnquire { min-height:44px; padding:8px; max-width:100%; overflow-wrap:anywhere; }
         #fullChatMessages {
             background-color: #efeae2;
             background-image: radial-gradient(#d1d7db 0.75px, transparent 0.75px);
@@ -102,6 +103,8 @@
     </script>
 </head>
 <body class="bg-gray-50 text-gray-800 dark:bg-darkBg dark:text-gray-100 transition-colors duration-300 min-h-screen pb-24">
+    <p id="productPortStatus" hidden role="status" aria-live="polite" tabindex="-1" class="fixed top-0 inset-x-0 z-[250] bg-white text-gray-900 border p-2 text-sm break-words"></p>
+
 <div class="flex flex-wrap items-center gap-2 px-4 py-2 text-sm" id="marketplaceLocalePanel">
 <label for="marketplaceLocale" data-i18n="market.language">Language</label>
 <select id="marketplaceLocale" class="min-h-[44px] max-w-full rounded border px-2 bg-white text-gray-900"><option value="en">English</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option></select>
@@ -278,6 +281,7 @@
                 </div>
                 
                 <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6"></div>
+                <button type="button" id="productNext" hidden data-i18n="market.product.next" class="p-3 border rounded-xl">Next page</button>
                 
                 <!-- INFINITE SCROLL SENTINEL CONTAINER -->
                 <div id="scrollSentinel" class="h-12 w-full flex items-center justify-center pt-4">
@@ -1069,7 +1073,7 @@
                     <div class="grid grid-cols-3 gap-2">
                         <div>
                             <label class="block font-bold mb-1 text-xs">MRP Price (&#8377;) *</label>
-                            <input type="number" id="adMrpPrice" required placeholder="e.g. 1000" oninput="calculatePrices('mrp')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                            <input type="number" id="adMrpPrice" min="0" max="1000000000" step="0.01" required placeholder="e.g. 1000" oninput="calculatePrices('mrp')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
                         </div>
                         <div>
                             <label class="block font-bold mb-1 text-xs">Discount (%)</label>
@@ -1077,7 +1081,7 @@
                         </div>
                         <div>
                             <label class="block font-bold mb-1 text-xs">Final Price (&#8377;) *</label>
-                            <input type="number" id="adPrice" required placeholder="e.g. 800" oninput="calculatePrices('final')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
+                            <input type="number" id="adPrice" min="0" max="1000000000" step="0.01" required placeholder="e.g. 800" oninput="calculatePrices('final')" class="w-full px-2.5 py-2 border rounded-xl dark:bg-gray-700 dark:border-gray-600 focus:outline-none text-xs">
                         </div>
                     </div>
 
@@ -1139,6 +1143,17 @@
                         <p class="text-[10px] text-gray-600 dark:text-gray-300">Get your ad featured on the homepage banner for faster selling.</p>
                     </div>
 
+                    <fieldset id="productIntegrationPanel" hidden class="border rounded-xl p-3 space-y-3 min-w-0">
+                        <legend data-i18n="market.product.controls">Trusted Product controls</legend>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" id="productSaveDraft" data-i18n="market.product.save">Save private draft</button>
+                            <button type="button" id="productWithdraw" data-i18n="market.product.withdraw">Withdraw</button>
+                            <button type="button" id="productRemove" data-i18n="market.product.remove">Remove</button>
+                            <button type="button" id="productRetry" data-i18n="market.product.retry">Retry same request</button>
+                            <button type="button" id="productDiscover" data-i18n="market.product.discover">Browse products</button>
+                            <button type="button" id="productOwnerInbox" data-i18n="market.product.inbox">Seller inbox</button>
+                        </div>
+                    </fieldset>
                     <button type="submit" id="adSubmitBtn" class="w-full bg-amber-500 hover:bg-amber-600 text-primary font-black py-3.5 rounded-xl text-base shadow cursor-pointer">
                         Post Now (Publish Ad)
                     </button>
@@ -1206,6 +1221,7 @@
                     </button>
                 </div>
 
+                <button type="button" id="productEnquire" hidden data-i18n="market.product.enquire">Private enquiry</button>
                 <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
                 
                 <div class="flex items-baseline gap-2 mt-2">

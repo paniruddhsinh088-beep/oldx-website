@@ -148,3 +148,14 @@ account/signing/testing/release gates; no native packaging is started or date gu
   separately forbidden. Existing Firebase architecture with bounded reads and no
   new paid infrastructure remains the recommended baseline. No guaranteed free-tier
   capacity or November 7 launch claim. HOLD/NO-GO and future Android gates remain.
+
+### Product UI dependency-path update, 3 November
+
+Existing-UI Product draft/edit/publish/discover/detail/private enquiry/response is
+now bound to disabled injected ports and isolated browser acceptance. No endpoint
+or real Auth binding is enabled. Next source work: owner-private revision/bootstrap
+recovery after reload, full history/deep-link and inbox pagination, then reuse the
+same portable ports for Store/Provider. Real image delivery, complete search,
+privacy/Admin/review and staging acceptance gates remain mandatory. See the
+[Product UI checkpoint](review-progress-2026-11-03-product-ui-batch.md) for limits
+and Service concurrency evidence; no historical flake root cause is invented.

@@ -304,3 +304,8 @@ test('actual SDK independent media moderation atomic publish private replacement
  await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await productConversationAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),get:async(collection,id)=>{const s=await sdk.getDoc(sdk.doc(db,collection,id));return s.exists()?s.data():null;}});});
  const guest=env.unauthenticatedContext().firestore();for(const collection of ['testOldxProductChatThreads','testOldxProductChatMessages','testOldxProductChatReceipts','testOldxProductJourneyPrivateRecords'])await assertFails(sdk.getDoc(sdk.doc(guest,collection,'sample')));
  });
+
+test('repeat forced-overlap Service enquiry transaction concurrency in independent namespaces',async()=>{
+ const sdk=await import('firebase/firestore'),{enquiryAcceptance}=await import('../integration/durable-acceptance.mjs');
+ for(const namespace of ['RaceOne','RaceTwo','RaceTri'])await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await enquiryAcceptance({sdk,db,actualTransactions:true,namespace,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v),get:async(c,id)=>{const s=await sdk.getDoc(sdk.doc(db,c,id));return s.exists()?s.data():null;}});});
+});
