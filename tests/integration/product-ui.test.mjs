@@ -16,7 +16,7 @@ test('pending uncertain commands retain original request/body, prevent duplicate
  const calls=[];let fail=true,keys=0;const ui=createProductIntegration({enabled:true,makeRequestId:()=> 'key-'+(++keys),ports:{save:async body=>{calls.push(body);return fail?{ok:false,code:'OUTCOME_UNKNOWN'}:{ok:true,id:'product',revision:1};}}});ui.setSession(identity('seller'));await ui.save(profile);await ui.save({...profile,title:'Different'});assert.equal(calls.length,1);fail=false;await ui.retry();assert.deepEqual(calls[0],calls[1]);assert.equal(keys,1);ui.setSession(identity('foreign'));assert.equal(ui.snapshot().owner,null);await ui.retry();assert.equal(calls.length,2);
 });
 test('out-of-order detail/history cannot survive search, session, offline or page scope cancellation',async()=>{
- const deferred=[];let aborted=0;const ui=createProductIntegration({enabled:true,ports:{detail:(r,{signal})=>new Promise(resolve=>{signal.addEventListener('abort',()=>aborted++);deferred.push(()=>resolve({ok:true,profile:{id:r.id,kind:'product',revision:1,...profile,photos:undefined}}));}),list:async()=>({ok:true,items:[],nextCursor:null})}});
+ const deferred=[];let aborted=0;const ui=createProductIntegration({enabled:true,ports:{detail:(r,{signal})=>new Promise(resolve=>{signal.addEventListener('abort',()=>aborted++);deferred.push(()=>resolve({ok:true,profile:{id:r.id,kind:'product',revision:1,...Object.fromEntries(Object.entries(profile).filter(([key])=>key!=='photos'))}}));}),list:async()=>({ok:true,items:[],nextCursor:null})}});
  ui.setSession(identity('buyer'));const old=ui.openProduct('old');await Promise.resolve();await ui.discover();await old;deferred[0]();assert.equal(aborted,1);assert.equal(ui.snapshot().detail,null);ui.setOnline(false);assert.deepEqual(ui.snapshot().items,[]);ui.clear();
 });
 test('defaults off, rejects private public fields, malformed history and guest mutations',async()=>{
@@ -27,4 +27,10 @@ test('bounded pagination resets on search scope and malformed private history fa
 });
 test('read deadline clears stale detail and a subsequent read can recover',async()=>{
  let wait=true;const base={id:'p',kind:'product',revision:1,...profile};delete base.photos;const ui=createProductIntegration({enabled:true,timeoutMs:5,ports:{detail:async()=>wait?new Promise(()=>{}):{ok:true,profile:base}}});await ui.openProduct('p');assert.equal(ui.snapshot().statuses.detail,'error');assert.equal(ui.snapshot().detail,null);wait=false;await ui.openProduct('p');assert.equal(ui.snapshot().detail.id,'p');
+});
+test('write acknowledgements cannot switch the requested Product or private conversation scope',async()=>{
+ let calls=0;const ui=createProductIntegration({enabled:true,ports:{save:async()=>++calls===1?{ok:true,id:'owned',revision:1}:{ok:true,id:'foreign',revision:2}}});ui.setSession(identity('seller'));await ui.save(profile);await ui.save(profile);assert.equal(ui.snapshot().command.status,'unknown');assert.equal(ui.snapshot().owner.id,'owned');assert.equal(ui.snapshot().command.canRetry,true);
+});
+test('an enquiry acknowledgement for another Product cannot become the active private thread',async()=>{
+ const row={id:'wanted',kind:'product',revision:1,...profile};delete row.photos;const ui=createProductIntegration({enabled:true,ports:{detail:async()=>({ok:true,profile:row}),open:async()=>({ok:true,status:'sent',thread:{id:'t',productId:'foreign',productRevision:1,revision:1,role:'buyer'}})}});ui.setSession(identity('buyer'));await ui.openProduct('wanted');await ui.enquire('Private request');assert.equal(ui.snapshot().thread,null);assert.equal(ui.snapshot().command.status,'unknown');
 });

@@ -93,3 +93,15 @@ build **3**. Logs: `/workspace/work/product-ui-integration-regression/`; runner:
 including decimal price validity. The older browser process was stopped after
 that failure because its loaded source could not include the fix; corrected
 focused and full sweeps passed. No failing assertion was skipped or weakened.
+
+## Acknowledgement scope follow-up
+
+A focused adversarial test reproduced a UI bug: an update acknowledgement naming
+a different Product was accepted as saved. The controller now binds saved/archive
+IDs and revision increments to the exact pending body; enquiry/reply acknowledgements
+must match the requested Product/thread/participant role and revision. Invalid
+acknowledgements preserve the original retry key in unknown state and cannot switch
+private scope. Two new regressions were added; valid stale-read fixtures were also
+strengthened. Final focused Product/browser/static run: **17/17 pass**; final full
+private transaction integration command: **92/92 pass**. These are additional focused
+checks after the earlier 867-execution sweep, not a repeated unchanged broad sweep.
