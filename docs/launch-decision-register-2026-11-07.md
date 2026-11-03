@@ -169,3 +169,16 @@ operational session-scope/retention and trusted cursor-signing choices need appr
 Exact seller Product Unicode is preserved everywhere changed. Remaining ordered P0
 and per-feature evidence are in the [recovery checkpoint](review-progress-2026-11-03-product-store-recovery-batch.md).
 No runtime/schema/Rules/index/media/deployment approval is implied. HOLD/NO-GO.
+
+## 3 November private enquiry and shared-host source checkpoint
+
+Disabled existing-page public enquiry -> private inbox -> canonical enquiry
+conversation/reply/history is now integrated in isolated fixtures, with participant
+checks, idempotent same-scope retry, revision-pinned paging, cleanup, gu/hi/en and
+320/375px evidence. Existing Product/Store/Provider host navigation delegates to
+existing route parsers and supports refresh/back/deep-link restoration. This does
+not complete general two-way Chat messaging, mandatory photos or real staging.
+See [exact-source ledger](review-progress-2026-11-03-private-conversation-host-ledger.md).
+Runtime/Auth/schema/indexes/Rules/IAM/secrets, privacy/media policy and actual
+staging/deployment approvals remain required. No new operational approval inferred.
+HOLD/NO-GO and every agreed full-website requirement remain unchanged.
