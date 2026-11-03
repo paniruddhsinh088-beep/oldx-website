@@ -230,3 +230,9 @@ active. Full Store directory/multi-category compatibility, Provider orchestratio
 Chat/Admin/media and real acceptance remain P0. See
 [recovery batch evidence](review-progress-2026-11-03-product-store-recovery-batch.md)
 for per-area status and exact local/CI distinctions; no percentage is inferred.
+
+Recovery/Store source `347da399d629c4a15805c50ecd3e86219bd3c10d` passed all three
+exact-source workflows first attempt: Review **41647604145**, Branch Security
+**41647604146**, Service Emulator **41647604198** (32 actual SDK/Rules cases).
+Local 34-script sweep: 878 test executions; additional final targeted checks are
+listed in the checkpoint. No real staging/live acceptance or completion percentage.

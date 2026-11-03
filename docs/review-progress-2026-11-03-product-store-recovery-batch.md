@@ -87,3 +87,26 @@ secrets, deployment, migration, main/merge, billing or paid action. **HOLD/NO-GO
 November 7 web and November 14–19 conditional Android remain targets, not guarantees.
 
 Exact implementation SHA and GitHub CI evidence follow after verified delivery.
+
+## Exact-source verified delivery
+
+Implementation: `347da399d629c4a15805c50ecd3e86219bd3c10d`.
+All three workflows passed on first attempts:
+
+- Review-safety **41647604145**: browser/integration/security and isolated baseline
+  Firestore/Storage/private-Chat Rules workflow completed successfully.
+- Branch Security **41647604146**: Admin/Chat/Service/locale checks completed.
+- Service Emulator **41647604198**, job **125956955178**, attempt **1**:
+  Service modules **196/196**, actual SDK/candidate-Rules **32/32**, including new
+  Product owner receipt/history/inbox recovery and Store UI SDK acceptance.
+
+Remote re-fetched before the documentation checkpoint: unchanged `347da39`;
+working tree clean after source push. Open draft PRs #1–#8/#10 inspected; none
+merged/cherry-picked or treated as canonical acceptance. The final checkpoint
+changes documentation only; executable evidence remains the implementation SHA.
+
+Observable state: this coherent repository batch is complete; no background Codex
+work or live readiness is asserted. Next P0 order is the Store directory/category/
+navigation gap, Provider session orchestration, remaining Chat/Admin/media/privacy/
+whole-app acceptance, then separately approved staging. This follows the owner
+monitoring rule without percentages or invented activity. **7 Nov: HOLD/NO-GO**.
