@@ -298,3 +298,14 @@ Provider public photo DTO/delivery, actual scanner/provider/runtime and staging
 acceptance remain P0; a private/quarantined photo is not a public gallery or proof
 of automated moderation. See [photo checkpoint](review-progress-2026-11-04-mandatory-photos.md).
 HOLD/NO-GO; all operational approvals remain required.
+
+4 November Product/Store atomic photos: default-disabled parent publication now
+commits approved photo selection, next parent/association revision, derivative
+release metadata, references, media generation and audit in the existing parent
+transaction. Private edits preserve the approved former public version; replacement,
+withdrawal/archive revoke references atomically. Focused 10/10 and related regression
+21/21 pass. See [atomic ledger](review-progress-2026-11-04-atomic-photos-ledger.md)
+for exact source/CI. This supersedes the Product/Store separate-publication-window
+gap above; real provider/byte delivery and Provider public-photo integration remain
+P0. Legacy listings/images are unchanged; no automated moderation or runtime is
+activated. HOLD/NO-GO; operational/staging approvals remain required.

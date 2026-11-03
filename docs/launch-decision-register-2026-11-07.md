@@ -206,3 +206,15 @@ Public media materialization/delivery (especially Provider), actual scanner/prov
 privacy/moderation/retention, Auth/runtime/Storage/Rules/IAM/secrets and real staging
 acceptance remain P0 approval gates. No automated moderation or deployed gallery is
 claimed. No existing image is migrated or automatically unpublished. HOLD/NO-GO.
+
+## 4 November atomic Product/Store photo-publication source milestone
+
+Existing default-disabled parent SDK transactions can atomically materialize
+approved Product/Store media references and derivative metadata with publication,
+replacement, withdrawal/archive, generations and audit. No independent review is
+rewritten, and incomplete/failed writes roll back. Existing public media contracts
+can consume the accepted revision without a separate rebind/release window.
+Exact evidence: [atomic ledger](review-progress-2026-11-04-atomic-photos-ledger.md).
+Provider public-image/byte delivery, actual storage/moderation/runtime, privacy/
+retention, Auth/rates/Rules/IAM/secrets, Chat/Admin and real staging/device acceptance
+remain P0. No account action or operational approval inferred. HOLD/NO-GO.
