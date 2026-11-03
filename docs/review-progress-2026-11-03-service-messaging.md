@@ -82,3 +82,18 @@ Owner approvals remain runtime/schema/Rules/indexes/IAM/secrets, privacy/retenti
 media provider, staging/deployment and launch. No live/staging Firebase/Cloudinary,
 real data, main/merge, deployed Rules/indexes, IAM/secrets, billing, storage/media
 activation, migration, deployment or spending. HOLD/NO-GO. November 7 is a target.
+
+Actual SDK follow-up (do not erase failed evidence): initial Service run
+41692982753 on 6350ca1 passed 33/34; the duplicate-race response did not contain the
+expected replay status. Diagnostic assertion metadata was added in 2c5ebb8;
+Service run 41693597423 then passed, so a single rerun was not treated as a fix.
+Review identified a genuine staging race path: a sequence/receipt precondition
+conflict threw a generic exception before Firestore could verify its read set and
+retry the transaction. It now returns a known conflict without staging any writes,
+allowing normal SDK read-version verification/retry. There is no application retry
+loop or relaxed idempotency assertion. A local orphan-sequence fixture proves 409
+with zero partial writes. Focused Service/client group 7/7 passes after this change.
+Three independent actual-SDK forced-first-write-overlap cases are added using the
+existing barrier; the original exact sent/replayed assertion is retained. Final
+source and CI evidence are recorded in the following ledger; do not count the
+initial failed run as successful or infer live acceptance from any Emulator test.
