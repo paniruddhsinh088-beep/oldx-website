@@ -242,3 +242,9 @@ bounded multi-category SDK support now preserve old single-category records. Sha
 session fanout includes the existing Provider bootstrap scope; Provider full inbox/
 reply integration remains incomplete. See [milestone evidence](review-progress-2026-11-03-store-directory-batch.md).
 No live or staging functionality, media activation or release completion is claimed.
+
+Verified Store directory source `0679ea63d1c3e0b97dba7aa2cd418ef8da694777`:
+Review-safety **41652006446** and Service Emulator **41652006386** passed first
+attempt (32 actual SDK/Rules cases). Initial OR-query grouping failure and corrected
+real-SDK regression are recorded in the directory checkpoint. Provider session
+fanout is preparation; full Provider inbox/reply/host wiring remains P0, not live.

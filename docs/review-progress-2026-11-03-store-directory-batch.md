@@ -56,3 +56,26 @@ top-level where/or arguments. Corrected grouping preserves both authorization an
 category predicates. Added a real-SDK construction regression with ALL reads mocked
 and demo/loopback configuration; no Emulator/live read occurs locally. Corrected
 Store/durable/session focused cases: 9/9 pass. CI for the corrected SHA follows.
+
+## Verified durable checkpoint
+
+- Main milestone: `e6cf42f635bf4b9b02f9dff6040aa4dcad3251b7`.
+- Corrected executable source: `0679ea63d1c3e0b97dba7aa2cd418ef8da694777`.
+- Exact-source Review-safety **41652006446**, success, attempt 1.
+- Exact-source Service Emulator **41652006386**, job **125972324568**, success,
+  attempt 1: Service modules **196**, actual SDK/Rules **32/32**.
+- Branch Security **41651716410** passed on `e6cf42f`; path filter did not run it
+  on the narrow SDK follow-up. Do not call this three final exact-source workflows.
+- Initial Service Emulator **41651717161**: **31 pass/1 fail**, Store query syntax;
+  corrected source passed. No failure was hidden and no unchanged job retried.
+- Local final focused SDK/Store/session **9/9** includes real query construction
+  with mocked reads. Selected broader checkpoint was **627** executions, not a
+  repeated entire 34-script sweep. Final CI additionally covers current source.
+
+The following commit updates documentation only; exact executable evidence remains
+`0679ea6`. Remote rechecked without concurrent changes. Next unfinished work remains
+Provider trusted inbox/reply and complete owner/buyer host/session/deep-link wiring,
+plus full shared Store/Product navigation and operational compatibility acceptance.
+Product, Chat, Admin, mandatory photos, reviews, language and Android requirements
+are retained. No staged/live acceptance: **7 Nov HOLD/NO-GO**. No background Codex
+activity or inferred completion percentage is claimed after this batch ends.
