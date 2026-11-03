@@ -236,3 +236,9 @@ exact-source workflows first attempt: Review **41647604145**, Branch Security
 **41647604146**, Service Emulator **41647604198** (32 actual SDK/Rules cases).
 Local 34-script sweep: 878 test executions; additional final targeted checks are
 listed in the checkpoint. No real staging/live acceptance or completion percentage.
+
+Store directory milestone: default-off existing-grid discovery/filter/pagination and
+bounded multi-category SDK support now preserve old single-category records. Shared
+session fanout includes the existing Provider bootstrap scope; Provider full inbox/
+reply integration remains incomplete. See [milestone evidence](review-progress-2026-11-03-store-directory-batch.md).
+No live or staging functionality, media activation or release completion is claimed.

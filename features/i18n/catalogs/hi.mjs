@@ -418,4 +418,7 @@ export default Object.freeze({
   "market.store.locality": "सार्वजनिक शहर / क्षेत्र",
   "market.store.publish": "स्टोर प्रकाशित करें",
   "market.store.open": "स्टोर खोलें",
+  "market.store.browse": "स्टोर देखें",
+  "market.store.noStores": "इस श्रेणी में कोई स्टोर नहीं है।",
+  "market.store.allCategories": "सभी श्रेणियाँ",
 });

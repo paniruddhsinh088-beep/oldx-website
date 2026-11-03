@@ -416,4 +416,7 @@ export default Object.freeze({
   "market.store.locality": "Public city / locality",
   "market.store.publish": "Publish Store",
   "market.store.open": "Open Store",
+  "market.store.browse": "Browse Stores",
+  "market.store.noStores": "No Stores match this category.",
+  "market.store.allCategories": "All categories",
 });
