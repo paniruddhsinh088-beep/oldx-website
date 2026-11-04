@@ -3217,7 +3217,14 @@
 
         async function handleEditAdSubmit(e) {
             e.preventDefault();
+            const editingUser = window.currentUser;
+            if (!editingUser) {
+                showCustomAlert('Login Required', 'Please login first to edit an ad.', 'error');
+                return;
+            }
+            const sameSession = () => window.currentUser === editingUser;
             const btn = document.getElementById('editSubmitBtn');
+            if (btn?.disabled) return;
             const originalButtonText = btn ? btn.innerText : 'Save Changes';
             if (btn) { btn.innerText = 'Updating...'; btn.disabled = true; }
 
@@ -3250,6 +3257,7 @@
                 let p = products.find(item => item.docId === docId) || window.currentEditingProduct;
                 if (!p || !Array.isArray(p.images)) {
                     const snap = await db.collection('products').doc(docId).get();
+                    if (!sameSession()) return;
                     if (!snap.exists) throw new Error('Product not found.');
                     p = { docId: snap.id, ...snap.data() };
                 }
@@ -3263,17 +3271,20 @@
                     const replacementImages = [];
                     for (let i = 0; i < newImgInput.files.length; i++) {
                         const compressed = await compressImage(newImgInput.files[i]);
+                        if (!sameSession()) return;
                         replacementImages.push(compressed);
                     }
                     updatedImages = replacementImages;
                 }
 
                 const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
+                if (!sameSession()) return;
                 await db.collection('products').doc(docId).update({
                     title, basePrice, discountPercent, finalPriceStr, phone, location, desc,
                     images: updatedImages
                 });
 
+                if (!sameSession()) return;
                 const cachedIndex = products.findIndex(item => item.docId === docId);
                 const updatedProduct = { ...p, title, basePrice, discountPercent, finalPriceStr, phone, location, desc, images: updatedImages };
                 if (cachedIndex >= 0) products[cachedIndex] = updatedProduct;
@@ -3298,7 +3309,8 @@
                 closeEditAdPage();
                 showCustomAlert('Success!', 'Ad Updated Successfully!', 'success');
             } catch (err) {
-                console.error('Error updating ad:', err);
+                if (!sameSession()) return;
+                console.warn('[OLDX] Ad update failed.');
                 showCustomAlert('Error', 'Ad update thai shakyo nathi. Internet/permissions check kari fari try karo.', 'error');
             } finally {
                 if (btn) { btn.innerText = originalButtonText; btn.disabled = false; }
@@ -4984,7 +4996,12 @@
                 return;
             }
 
+            const publishingUser = window.currentUser;
+            const actorUid = publishingUser.uid;
+            const actorName = publishingUser.displayName || 'Seller';
+            const sameSession = () => window.currentUser === publishingUser;
             const btn = document.getElementById('adSubmitBtn');
+            if (btn.disabled) return;
             btn.innerText = 'Publishing...'; btn.disabled = true;
 
             let publishStage = 'prepare';
@@ -4998,6 +5015,7 @@
                     console.log("IP fetch error on ad post:", ipErr);
                 }
 
+                if (!sameSession()) return;
                 const title = document.getElementById('adTitle').value;
                 const desc = document.getElementById('adDesc').value;
                 const basePrice = parseFloat(document.getElementById('adPrice').value);
@@ -5024,14 +5042,15 @@
                 if (imgInput.files && imgInput.files.length > 0) {
                     for (let i = 0; i < imgInput.files.length; i++) {
                         const compressed = await compressImage(imgInput.files[i]);
+                        if (!sameSession()) return;
                         images.push(compressed);
                     }
                 }
 
                 publishStage = 'prepare';
                 const adData = {
-                    sellerUid: window.currentUser.uid,
-                    sellerName: window.currentUser.displayName || 'Seller',
+                    sellerUid: actorUid,
+                    sellerName: actorName,
                     userIp: userIp,
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
@@ -5050,12 +5069,13 @@
                 if (!legacyProductFitsWriteBudget(adData)) {
                     throw Object.assign(new Error('Product exceeds local write budget'), { code: 'invalid-argument' });
                 }
+                if (!sameSession()) return;
                 publishStage = 'write';
                 await db.collection('products').add(adData);
-                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                if (!sameSession()) return;
                 document.getElementById('successAdModal').style.display = 'flex';
             } catch (err) {
-                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
+                if (!sameSession()) return;
                 const messageKey = productPublishErrorKey(err, publishStage);
                 console.warn('[OLDX] Ad publication failed:', messageKey);
                 showCustomAlert('Ad publication', 'Could not confirm publication. Your form is unchanged. Check My Ads before retrying.', 'error');
@@ -5066,6 +5086,8 @@
                     // Avoid relabeling an unrelated alert during a later locale change.
                     delete node.dataset.i18n;
                 }
+            } finally {
+                btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
             }
         }
 

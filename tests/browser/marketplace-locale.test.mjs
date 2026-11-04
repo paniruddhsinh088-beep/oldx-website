@@ -27,6 +27,15 @@ test('Product publication errors use real locale binding at 320/375px without le
    await page.evaluate(()=>handleFinalAdSubmit({preventDefault(){}}));const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
    assert.equal(await page.locator('#customAlertDesc').textContent(),catalog['market.publishDenied']);assert.equal(await page.locator('#adTitle').inputValue(),'મૂળ Cafe\u0301 हिन्दी');assert.equal(await page.locator('#adSubmitBtn').evaluate(n=>n.disabled),false);assert.equal((await page.locator('body').textContent()).includes('private-token-DO-NOT-DISPLAY'),false);
    await page.evaluate(()=>document.body.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
-  }assert.deepEqual(remote,[]);
+  }
+  await page.evaluate(async()=>{
+   window.crossSessionWrites=0;
+   window.db.collection=()=>({add:async()=>{crossSessionWrites++;}});
+   window.fetch=async()=>{window.currentUser={uid:'replacement'};return {json:async()=>({ip:'sample'})};};
+   await handleFinalAdSubmit({preventDefault(){}});
+  });
+  assert.equal(await page.evaluate(()=>crossSessionWrites),0);
+  assert.equal(await page.locator('#adSubmitBtn').evaluate(n=>n.disabled),false);
+  assert.deepEqual(remote,[]);
  }finally{await context.close();}
 });
