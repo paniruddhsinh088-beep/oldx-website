@@ -251,3 +251,10 @@ Raw signatures must never reach browser clients because they do not bind file by
 See [Cloudinary checkpoint](review-progress-2026-11-04-cloudinary-ledger.md) for exact
 local evidence, legacy unsigned migration and required staging/security decisions.
 HOLD/NO-GO remains; mandatory photos and real acceptance are not complete.
+
+4 November follow-up: inactive mocked multipart upload/receipt verification now
+composes with the existing media journal. Source `0b4a4097dd2f329675569ff50ca91e1e95303f7d`
+passed 38 focused local cases and all three exact-source CI workflows. No real
+provider call or public delivery activation. See
+[bridge handoff](review-progress-2026-11-04-cloudinary-bridge-ledger.md) for evidence,
+independent byte-attestation requirements and remaining signed-delete/runtime gates.

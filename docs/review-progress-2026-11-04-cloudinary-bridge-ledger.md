@@ -46,3 +46,15 @@ inspection contract; never derive remote asset identity from legacy URLs. Real t
 independent inspection, runtime/credential access, quota/retention/moderation policy and
 staging isolation/rollback acceptance remain blockers. Account/credential changes,
 deployment, public activation and unsigned-preset retirement require separate approval.
+
+## Verified handoff
+
+Implementation/source SHA: `0b4a4097dd2f329675569ff50ca91e1e95303f7d`.
+Exact-source CI: Branch Security **41804175434 success**, Service Providers Emulator
+**41804175272 success**, Review Safety **41804175436 success**. The latter includes
+the new multipart suite, existing mobile/locale browser regressions and isolated
+Rules suites. These do not establish live Cloudinary or staging acceptance.
+Fresh remote was unchanged before the source push; remote SHA matched afterward.
+Final checkpoint is the ledger-only commit returned by
+`git log -1 --format=%H -- docs/review-progress-2026-11-04-cloudinary-bridge-ledger.md`.
+Stop safely here; retain default-disabled bindings and next-task/approval gates above.
