@@ -1,5 +1,6 @@
 // Fixed local test plans. Never accept arbitrary CLI options or project names.
 export const EMULATOR_TEST_PLANS = Object.freeze({
+  'admin-runtime': Object.freeze({service:'firestore',project:'demo-oldx-admin-runtime',config:'firebase.admin-runtime-emulator.json',rules:'tests/firestore-emulator/deny-all.rules',port:8088,authPort:9098,tests:['tests/firestore-emulator/admin-runtime-native.test.mjs']}),
   baseline: Object.freeze({
     service: 'firestore', project: 'demo-oldx-emulator', config: 'firebase.emulator.json',
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8080,
@@ -34,10 +35,11 @@ export function validateEmulatorTestPlan(name, config, env = {}) {
     && Object.keys(record).sort().join(',') === [...keys].sort().join(',');
   if (!sameKeys(config, [plan.service, 'emulators']) ||
       !sameKeys(config[plan.service], ['rules']) || config[plan.service].rules !== plan.rules ||
-      !sameKeys(config.emulators, [plan.service, 'ui', 'singleProjectMode']) ||
+      !sameKeys(config.emulators, [plan.service, ...(plan.authPort?['auth']:[]), 'ui', 'singleProjectMode']) ||
       !sameKeys(config.emulators[plan.service], ['host', 'port']) ||
       config.emulators[plan.service].host !== '127.0.0.1' ||
       config.emulators[plan.service].port !== plan.port ||
+      plan.authPort && (!sameKeys(config.emulators.auth,['host','port']) || config.emulators.auth.host!=='127.0.0.1' || config.emulators.auth.port!==plan.authPort) ||
       !sameKeys(config.emulators.ui, ['enabled']) || config.emulators.ui.enabled !== false ||
       config.emulators.singleProjectMode !== true) {
     throw new Error('Emulator config must match the isolated loopback-only test plan.');
@@ -50,9 +52,10 @@ export function validateEmulatorTestPlan(name, config, env = {}) {
       throw new Error('Non-loopback or mismatched emulator host refused.');
     }
   }
+  if(env.FIREBASE_AUTH_EMULATOR_HOST&&(!plan.authPort||env.FIREBASE_AUTH_EMULATOR_HOST!==`127.0.0.1:${plan.authPort}`))throw new Error('Non-loopback Auth emulator refused.');
   return {
     ...plan,
-    args: ['emulators:exec', '--only', plan.service, '--project', plan.project,
+    args: ['emulators:exec', '--only', plan.authPort?'firestore,auth':plan.service, '--project', plan.project,
       '--config', plan.config, `node --test ${plan.tests.join(' ')}`]
   };
 }

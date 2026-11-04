@@ -28,6 +28,7 @@
     "test:chat-private-user-state:rules": "node scripts/run-emulator-tests.mjs chat-private-state",
     "test:service-providers": "node --test features/service-providers/*.test.mjs",
     "test:service-providers:rules": "node scripts/run-emulator-tests.mjs service-providers",
+    "test:admin-runtime:emulator": "node scripts/run-emulator-tests.mjs admin-runtime",
     "test:product-drafts:rules": "node scripts/run-emulator-tests.mjs product-drafts",
     "test:emulator:guard": "node --test scripts/emulator-test-plan.test.mjs",
     "test:service-preview": "node --test tests/service/*.test.mjs",
@@ -48,6 +49,7 @@
     "node": ">=24.12.0"
   },
   "dependencies": {
+    "firebase-admin": "14.5.0",
     "qrcode": "1.5.4"
   },
   "devDependencies": {

@@ -10,7 +10,7 @@ for (const [name, plan] of Object.entries(EMULATOR_TEST_PLANS)) {
   test(`${name} only launches its demo project, isolated rules and tests`, () => {
     const result = validateEmulatorTestPlan(name, config);
     assert.equal(result.project.startsWith('demo-oldx-'), true);
-    assert.deepEqual(result.args.slice(0, 7), ['emulators:exec', '--only', plan.service, '--project', plan.project, '--config', plan.config]);
+    assert.deepEqual(result.args.slice(0, 7), ['emulators:exec', '--only', plan.authPort?'firestore,auth':plan.service, '--project', plan.project, '--config', plan.config]);
   });
   test(`${name} refuses live project/remote host and unsafe config before CLI startup`, () => {
     for (const env of [

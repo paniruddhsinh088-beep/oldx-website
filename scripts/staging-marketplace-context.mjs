@@ -4,8 +4,10 @@ export const STAGING_RATE_COLLECTION='marketplaceRateLimits_v1';
 const bindings=new WeakSet();
 // Native Admin API normalization only; never initializes an app/credential/client.
 // Existing demo SDK context remains unchanged and never accepts this binding.
-export function createStagingMarketplaceBinding({adminFirestore,FieldValue,deploymentEnvironment,projectId}={}){
- const check=()=>{if(deploymentEnvironment!=='preview'||projectId!=='oldx-staging'||adminFirestore?.projectId!=='oldx-staging'||typeof adminFirestore.collection!=='function'||typeof adminFirestore.runTransaction!=='function'||typeof FieldValue?.serverTimestamp!=='function')throw Error('Staging binding unavailable');};check();
+function binding({adminFirestore,FieldValue,deploymentEnvironment,projectId}={},emulator=false){
+ const expected=emulator?'demo-oldx-admin-runtime':'oldx-staging';
+ const check=()=>{if(emulator?(process.env.FIRESTORE_EMULATOR_HOST!=='127.0.0.1:8088'||adminFirestore?._settings?.servicePath!=='127.0.0.1'||adminFirestore?._settings?.port!==8088||adminFirestore?._settings?.ssl!==false):(!!process.env.FIRESTORE_EMULATOR_HOST||!!process.env.FIREBASE_AUTH_EMULATOR_HOST))throw Error('Unsafe SDK transport');
+ if(deploymentEnvironment!=='preview'||projectId!==expected||adminFirestore?.projectId!==expected||typeof adminFirestore.collection!=='function'||typeof adminFirestore.runTransaction!=='function'||typeof FieldValue?.serverTimestamp!=='function')throw Error('Staging binding unavailable');};check();
  const allowed=new Set([...Object.values(STAGING_MARKETPLACE_COLLECTIONS),STAGING_RATE_COLLECTION]);
  const references=new WeakMap(),db=adminFirestore;
  const native=ref=>{check();const value=references.get(ref);if(!value)throw Error('Unbound staging reference');return value;};
@@ -19,3 +21,6 @@ export function createStagingMarketplaceBinding({adminFirestore,FieldValue,deplo
  const binding=Object.freeze({db,sdk,collections:STAGING_MARKETPLACE_COLLECTIONS,check});bindings.add(binding);return binding;
 }
 export function requireStagingMarketplaceBinding(value){if(!bindings.has(value))throw Error('Unverified staging binding');value.check();return value;}
+
+export const createStagingMarketplaceBinding=options=>binding(options);
+export const createEmulatorMarketplaceBinding=options=>binding(options,true);
