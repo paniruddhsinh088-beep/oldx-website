@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
@@ -14,11 +15,9 @@ function inspectProfile(kind,input){
  return structuredClone(p);
 }
 function publicProfile(kind,id,profile,revision){const {photos,...fields}=profile;return {id,kind,revision,...fields};}
-// Actual SDK transaction/query mapping, demo/loopback only. No legacy collection
-// access, browser import, app creation, credential or production-enable mode.
-export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk,schema,authenticate,mandatoryPhotos=false,photoPolicy,atomicPhotos,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}){
- if(enabled!==true)return Object.freeze({save:async()=>fail('UNAVAILABLE'),list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE'),archive:async()=>fail('UNAVAILABLE'),owner:async()=>fail('UNAVAILABLE')});
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
+// Shared transaction/query core; separate constructors enforce demo or staging scope.
+// No legacy collection access, browser import, app initialization or Production mode.
+function marketplaceCore({sdk,authenticate,mandatoryPhotos=false,photoPolicy,atomicPhotos,allocateId=randomUUID,readCursor,issueCursor,timeoutMs=5000,now=Date.now}={}, {db,collections:c}){
  if(atomicPhotos&&Object.keys(c).some(k=>atomicPhotos.marketplaceCollections?.[k]!==c[k]))throw new Error('Atomic media parent mapping mismatch');
  const ref=(role,key)=>{if(!safeId(key))throw new Error('Invalid record identity');return sdk.doc(db,c[role],key);},recordKey=(kind,id)=>kind+'_'+id;
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
@@ -96,3 +95,20 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
 
 // Shared server DTO validation; does not initialize an SDK or read any document.
 export const validateMarketplaceProfile=(kind,value)=>['product','store'].includes(kind)?inspectProfile(kind,value):null;
+
+const disabledMarketplace=()=>Object.freeze(Object.fromEntries(['save','list','detail','archive','owner'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
+export function createIsolatedMarketplaceRepository(options={}){
+ if(options.enabled!==true)return disabledMarketplace();
+ return marketplaceCore(options,isolatedFirestoreContext({...options,roles}));
+}
+// Separate staging constructor. No public query API or automatic operational enablement.
+export function createStagingMarketplaceRepository(options={}){
+ if(options.enabled!==true)return disabledMarketplace();
+ const binding=requireStagingMarketplaceBinding(options.binding);
+ const core=marketplaceCore({...options,sdk:binding.sdk,mandatoryPhotos:true},binding);
+ const atomicReady=typeof options.photoPolicy?.check==='function'&&typeof options.atomicPhotos?.prepare==='function'&&typeof options.atomicPhotos?.verifyReplay==='function';
+ return Object.freeze({owner:core.owner,save(kind,request,context){
+  if(request?.publication==='publish'&&(options.publicationEnabled!==true||!atomicReady)||request?.publication==='withdraw'&&!atomicReady)return Promise.resolve(fail('ENFORCEMENT_UNAVAILABLE'));
+  return core.save(kind,request,context);
+ },archive:(...args)=>atomicReady?core.archive(...args):Promise.resolve(fail('ENFORCEMENT_UNAVAILABLE'))});
+}

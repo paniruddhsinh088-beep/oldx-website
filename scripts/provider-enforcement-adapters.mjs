@@ -1,8 +1,8 @@
 // SERVER ONLY. No SDK initialization/JWKS/network implementation. The injected
 // Admin Auth must perform actual cryptographic Firebase verification/revocation.
-export function createIsolatedProviderEnforcement({enabled=false,projectId,adminAuth,readMembership,consumeAtomicQuota,now=Date.now}={}){
+function enforcement({enabled=false,projectId,adminAuth,readMembership,consumeAtomicQuota,now=Date.now}={},staging=false){
  const deny=()=>{throw new Error('Provider enforcement unavailable');};
- const configured=enabled===true&&typeof projectId==='string'&&/^demo-oldx-[a-z0-9-]{1,60}$/.test(projectId)&&adminAuth?.app?.options?.projectId===projectId;
+ const configured=enabled===true&&typeof projectId==='string'&&(staging?projectId==='oldx-staging':/^demo-oldx-[a-z0-9-]{1,60}$/.test(projectId))&&adminAuth?.app?.options?.projectId===projectId;
  return Object.freeze({
   async verifyFirebaseToken(token,context={}){
    if(!configured||typeof adminAuth?.verifyIdToken!=='function'||context.checkRevoked!==true||context.signal?.aborted||typeof token!=='string'||token.length>8192||!/^[-A-Za-z0-9_]+\.[-A-Za-z0-9_]+\.[-A-Za-z0-9_]+$/.test(token))deny();
@@ -15,3 +15,6 @@ export function createIsolatedProviderEnforcement({enabled=false,projectId,admin
   async consumeRateLimit(key,context){if(!configured||typeof consumeAtomicQuota!=='function'||context?.signal?.aborted)deny();return consumeAtomicQuota(key,context);}
  });
 }
+
+export const createIsolatedProviderEnforcement=options=>enforcement(options);
+export const createStagingMarketplaceEnforcement=options=>enforcement({...options,projectId:'oldx-staging'},true);

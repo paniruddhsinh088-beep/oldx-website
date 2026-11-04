@@ -1,5 +1,5 @@
 {
-  "approvalStatus": "PROPOSAL_ONLY_NOT_LOADED_BY_RUNTIME",
+  "approvalStatus": "SOURCE_TARGET_APPROVED_RUNTIME_NOT_ACTIVATED",
   "projectId": "oldx-staging",
   "productionProjectForbidden": "oldx-1c983",
   "runtime": "existing Vercel Preview server, separate activation approval required",
@@ -39,7 +39,19 @@
     "signatures": "server-only",
     "activationApproved": false,
     "credentialBinding": null,
-    "independentAssetInspectionRequired": true
+    "independentAssetInspectionRequired": true,
+    "requiredUploadBindings": [
+      "server-only getCredentials",
+      "sendMultipart with 16 KiB normalized response cap",
+      "independent inspectAsset identity/version/digest proof",
+      "trusted parent/lease/quota authorization"
+    ],
+    "requiredDeliveryBindings": [
+      "authenticated approved derivative/version reader with streaming cap",
+      "atomic global/edge rate quota",
+      "fresh publication and approval snapshot"
+    ],
+    "currentBridgeMode": "isolated-test; reviewed staging provider binding still required"
   },
   "policyDecisionsRequired": [
     "real account quota caps",
@@ -67,5 +79,21 @@
     "global and edge atomic quotas",
     "no URL/signature/secret in response",
     "no-store/nosniff image response"
-  ]
+  ],
+  "runtimeBindingModule": "functions/staging-marketplace/runtime.mjs",
+  "proposedRateCollection": "marketplaceRateLimits_v1",
+  "nonSecretEnvironmentDefaults": {
+    "OLDX_STAGING_COMMANDS_ENABLED": "false",
+    "OLDX_STAGING_PUBLICATION_ENABLED": "false",
+    "VERCEL_ENV": "preview",
+    "OLDX_FIREBASE_ENV": "staging",
+    "OLDX_FIREBASE_PROJECT_ID": "oldx-staging",
+    "OLDX_RATE_WINDOW_MS": "60000",
+    "OLDX_RATE_ACTOR_LIMIT": "10",
+    "OLDX_RATE_GLOBAL_LIMIT": "60"
+  },
+  "rollbackRuntimeOptions": {
+    "enabled": false,
+    "publicationEnabled": false
+  }
 }
