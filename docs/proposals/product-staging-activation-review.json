@@ -1,0 +1,29 @@
+{
+  "approvalStatus": "PROPOSAL_ONLY_NOT_LOADED_BY_RUNTIME",
+  "projectId": "oldx-staging",
+  "productionProjectForbidden": "oldx-1c983",
+  "runtime": "existing Vercel Preview server, separate activation approval required",
+  "proposedPrivatePostRoutes": [
+    "/api/staging/marketplace/save",
+    "/api/staging/marketplace/owner",
+    "/api/staging/marketplace/archive"
+  ],
+  "proposedMarketplaceCollections": {
+    "actors": "marketplaceActors_v1",
+    "privateRecords": "marketplacePrivate_v1",
+    "publicViews": "marketplacePublic_v1",
+    "owners": "marketplaceOwners_v1",
+    "generations": "marketplaceGenerations_v1",
+    "receipts": "marketplaceReceipts_v1",
+    "audits": "marketplaceAudit_v1"
+  },
+  "clientRulesCandidate": "tests/firestore-emulator/deny-all.rules",
+  "directClientWrites": false,
+  "legacyCollectionsUnchanged": true,
+  "requiredRepositoryBindings": ["verified Firebase identity", "mandatoryPhotos=true", "photoPolicy", "atomicPhotos", "bounded cursor codec", "atomic actor/global rate enforcement"],
+  "existingPreviewWebConfig": { "OLDX_FIREBASE_ENV": "staging", "OLDX_FIREBASE_PROJECT_ID": "oldx-staging" },
+  "serverCredentialBinding": "owner must identify existing scoped identity and secure manager; no values in chat/repository",
+  "cloudinary": { "cloudName": "tfizvbzc", "plan": "Free", "signatures": "server-only", "activationApproved": false, "credentialBinding": null, "independentAssetInspectionRequired": true },
+  "policyDecisionsRequired": ["real account quota caps", "quarantine and independent review", "explicit-content detection mechanism", "retention and authorized orphan cleanup", "privacy/consent"],
+  "rollbackPrerequisites": ["current Rules release and source hash", "prior runtime/config version", "verified staging-only access", "exact synthetic data/media manifest", "authorized operator and rollback rehearsal"]
+}

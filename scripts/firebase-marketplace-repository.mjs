@@ -93,3 +93,6 @@ export function createIsolatedMarketplaceRepository({enabled=false,firestore,sdk
   }
  });
 }
+
+// Shared server DTO validation; does not initialize an SDK or read any document.
+export const validateMarketplaceProfile=(kind,value)=>['product','store'].includes(kind)?inspectProfile(kind,value):null;

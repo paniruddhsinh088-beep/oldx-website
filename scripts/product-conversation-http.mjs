@@ -26,10 +26,10 @@ export function createPrivateConversationHttp({enabled=false,verifyFirebaseToken
   const result=await runVerifiedOperation({authenticate:(credential,context)=>verifyFirebaseToken(credential,{...context,checkRevoked:true}),credential:token,signal,timeoutMs,now,run:async context=>{
    const rate=copyRecord(await consumeRateLimit({actorUid:context.actorUid,operation:contract.prefix+operation},{signal:context.signal,deadlineAt:context.deadlineAt}),['allowed']);context.checkpoint();if(!rate||typeof rate.allowed!=='boolean')return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};if(!rate.allowed)return {ok:false,code:'RATE_LIMITED'};
    const repository=createRepository({authenticate:()=>({uid:context.actorUid}),timeoutMs:Math.max(1,context.deadlineAt-now())});context.checkpoint();if(typeof repository?.[operation]!=='function')return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};
-   if(['open','send'].includes(operation))context.markMutationAttempted();return repository[operation](input,{signal:context.signal});
+   if((contract.mutations??['open','send']).includes(operation))context.markMutationAttempted();return repository[operation](input,{signal:context.signal});
   }});
   if(result?.ok===true){const dto=projection(operation,result);return dto?reply(200,dto):failure(503,'UNAVAILABLE');}
-  const code=result?.code,known={CURSOR_INVALID:409,INVALID_REQUEST:400,AUTH_REQUIRED:401,DENIED:403,REVISION_CONFLICT:409,IDEMPOTENCY_CONFLICT:409,LIMIT_REACHED:409,RATE_LIMITED:429,ENFORCEMENT_UNAVAILABLE:503,CANCELLED:408,DEADLINE_EXCEEDED:504,UNAVAILABLE:503,OUTCOME_UNKNOWN:202};return failure(known[code]??503,Object.hasOwn(known,code)?code:'UNAVAILABLE',code==='OUTCOME_UNKNOWN');
+  const code=result?.code,known={PHOTOS_REQUIRED:409,RECEIPT_UNKNOWN:409,CONFLICT:409,CURSOR_INVALID:409,INVALID_REQUEST:400,AUTH_REQUIRED:401,DENIED:403,REVISION_CONFLICT:409,IDEMPOTENCY_CONFLICT:409,LIMIT_REACHED:409,RATE_LIMITED:429,ENFORCEMENT_UNAVAILABLE:503,CANCELLED:408,DEADLINE_EXCEEDED:504,UNAVAILABLE:503,OUTCOME_UNKNOWN:202};return failure(known[code]??503,Object.hasOwn(known,code)?code:'UNAVAILABLE',code==='OUTCOME_UNKNOWN');
  }});
 }
 
