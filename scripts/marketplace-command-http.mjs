@@ -20,7 +20,7 @@ function project(kind,operation,result){
 export function createMarketplaceCommandHttp({createRepository,...options}={}){
  return Object.freeze({async handle(operation,request,context={}){
   let kind=null;
-  const handler=createPrivateConversationHttp({...options,contract:{prefix:'marketplace.',keys,mutations:['save','archive'],projection:(op,value)=>project(kind,op,value)},createRepository:scope=>{
+  const handler=createPrivateConversationHttp({...options,contract:{prefix:'marketplace.',maxBodyBytes:32768,keys,mutations:['save','archive'],projection:(op,value)=>project(kind,op,value)},createRepository:scope=>{
    const repo=typeof createRepository==='function'?createRepository(scope):null;
    return Object.fromEntries(Object.keys(keys).map(op=>[op,async(input,ctx)=>{
     if(!['product','store'].includes(input.kind))return {ok:false,code:'INVALID_REQUEST'};kind=input.kind;

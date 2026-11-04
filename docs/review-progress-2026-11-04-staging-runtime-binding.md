@@ -74,3 +74,14 @@ Next safe source task: actual pinned Admin SDK Emulator validation/packaging, th
 native media namespace/atomic binding and approved provider transport. No broad Rules
 relaxation or public publication to make the legacy Post Now bypass this integration.
 HOLD/NO-GO; November 7 remains a target, not verified real-world acceptance.
+
+## Unicode request-budget follow-up
+
+Runtime implementation checkpoint: b3db580d23a718bfecb94055c87ed681d872712e,
+pushed and remote verified. Found a concrete integration mismatch: a schema-valid
+Gujarati/Hindi maximum-length profile with six managed IDs serializes to 16,738 bytes,
+above shared HTTP's 16 KiB default. Marketplace-only body budget is now 32 KiB, still
+bounded; other callers retain 16 KiB. New test accepts that legitimate profile and
+rejects >32 KiB body. No private schema expansion or upload bytes in JSON introduced.
+Follow-up related suite **26/26 pass**, build **3/3 pass**. No UI/locale strings or
+provider operations changed. Exact-source push CI must be checked separately.

@@ -50,3 +50,9 @@ test('existing Product controller drives verified HTTP draft recovery/edit/archi
  await ui.save({...profile,title:'Authored ગુજરાતી हिन्दी update'},'publish');assert.equal(f.get(m.privateRecords,'product_product-1').published,false);
  await ui.archive();assert.equal(f.get(m.privateRecords,'product_product-1').archived,true);ui.setSession(null);assert.equal(ui.snapshot().owner,null);
 });
+
+test('bounded HTTP body accommodates valid Gujarati/Hindi text and six managed references, rejects oversized bodies',async()=>{
+ const {http}=fixture();const large={...profile,title:'અ'.repeat(120),description:'अ'.repeat(5000),locationLabel:'અ'.repeat(160),photos:Array.from({length:6},(_,i)=>({kind:'managed',imageId:'image_'+'a'.repeat(73)+i}))};
+ const body={...save,profile:large};assert.ok(Buffer.byteLength(JSON.stringify(body))>16384);assert.equal((await http.handle('save',request(body))).status,200);
+ assert.equal((await http.handle('save',request({...save,profile:{...profile,description:'x'.repeat(33000)}}))).status,413);
+});
