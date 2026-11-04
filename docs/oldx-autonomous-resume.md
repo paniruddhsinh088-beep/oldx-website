@@ -10,10 +10,13 @@ before and after reading, separate private resolver, and NO public fallback.
 Generated Vercel route artifacts package their transitive server/shared model imports
 in an offline temporary directory; no API route is installed in the repository.
 
-Latest pushed executable source: **ecab23e6bfa7700d9e3393478498a18c048ee049**.
-Exact-source CI: Review **41888471585**, Security **41888471582**, Service Emulator
-**41888471544** — all SUCCESS. Current private delivery/packaging milestone will
-replace this source pointer after push and CI verification. To find the ledger's
+Latest pushed executable source: **10bab307343a7a67cdd134dcc6f23cc153cd4848**.
+Exact-source CI: Review **41889287323**, Security **41889287445**, Service Emulator
+**41889287525** — all SUCCESS. Actual native Admin/Auth/Firestore Emulator **7/7**
+passed again in Review CI. Vercel Preview status SUCCESS for this source.
+First implementation checkpoint **ecab23e6bfa7700d9e3393478498a18c048ee049** also
+had all three workflows pass (Review 41888471585, Security 41888471582, Service
+Emulator 41888471544). This final ledger-only checkpoint changes no executable code. To find the ledger's
 own checkpoint commit, use `git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
 
 Tests: first HTTP/bridge focused **39/39 PASS**; related transaction integration
