@@ -84,3 +84,22 @@ acceptance; authoritative quota caps against Free account limits (not assumed un
 moderation/quarantine/privacy/retention/Admin decisions. No automated moderation claimed.
 Then prove ownership/size/count/duplicate/withdrawal and gu/hi/en/mobile flows in staging.
 No launch readiness claim until these and remaining Auth/Chat/Admin acceptance gates pass.
+
+## Verified source and final handoff
+
+Implementation: `c3ae69d5daec6cf52f4523b4586db6f2c06f0cd6`; pushed ONLY to
+`security-hardening-review`, remote SHA matched. Fresh pre-push fetch confirmed the
+baseline unchanged; no concurrent changes overwritten.
+
+Exact-source GitHub CI on that SHA: Branch Security **41801839427 success**;
+Service Providers Emulator **41801839380 success**; Review Safety
+**41801839487 success**. These include isolated Firebase/Rules validation, not real
+staging acceptance or Cloudinary tests. The new six-case signer/HTTP suite runs in
+Review Safety's `test:provider-draft:transaction` step. This final ledger-only commit
+does not change executable source; its SHA can be obtained with
+`git log -1 --format=%H -- docs/review-progress-2026-11-04-cloudinary-ledger.md`.
+
+Stop at this checkpoint. Next: mocked multipart/response-verification bridge into
+existing lifecycle, followed by separately authorized credential/runtime readiness
+and actual isolated staging acceptance. Do not enable UI transports, signed browser
+grants, unsigned-preset migration, real deletion or any deployment automatically.
