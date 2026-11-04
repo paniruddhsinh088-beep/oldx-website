@@ -51,3 +51,36 @@ composition using existing ports, then approved synthetic photo/publication acce
 All Product/Store/Provider/Chat/Admin/location/sharing/locale/Android requirements remain.
 Increased rollout risk acceptance does not authorize secret/Rules/main/production actions.
 HOLD/NO-GO; no guaranteed November 7 completion or real end-to-end acceptance claimed.
+
+## Verified command milestone and delivery follow-up
+
+Command source `2381ab50acfa6b225534a9dc034d7ef89c136eed` pushed/remote verified.
+Exact-source Branch Security 41870491410, Service Emulator 41870491020 and Review
+41870491301 all SUCCESS. These do not establish staging or Cloudinary acceptance.
+
+Added inactive Product/Store approved-byte gateway, reusing publicPhotos contract
+rather than inventing another publication reader. It requires fail-closed atomic
+rate port, selects an exact approved image/derivative/version, caps response bytes,
+checks MIME/magic, snapshots bytes and REVALIDATES publication/photo identity after
+provider retrieval before returning no-store/nosniff bytes. No URL/signature/credentials
+leave this adapter. Provider remains behind its canonical v1 sidecar; Chat/private
+images are rejected, never public fallback. Trusted provider reader must authenticate
+and enforce streaming byte cap, not echo untrusted metadata. Signature/magic alone
+is not decoding, moderation or independent stored-byte inspection.
+
+Delivery regression sweep: **27/27 pass**, including 6 new byte-gateway cases,
+6 HTTP/controller cases and existing media release/approval, signed multipart/journal,
+private tokens and atomic publication. Build **3/3 pass**. Actual Cloudinary tests
+ZERO; actual staging tests ZERO. All new transports remain default-disabled/no routes.
+Current observed environment has zero identity/secret bindings and enforced policy
+excludes Firebase Rules and Cloudinary API hosts. Do not bypass that restriction.
+
+Exact specific operator actions: securely attach existing oldx-staging identity and
+Cloudinary connection with required API policy access; approve the JSON proposal's
+runtime/collection/route bindings (not Production); separately approve any secret/IAM
+provisioning if no existing access; approve actual signed media operations and quota/
+retention/moderation policy, current Rules/rollback artifact and the synthetic photo
+acceptance manifest. None of these operations is performed by this source push.
+Next: implement and review staging-locked SDK/runtime binding and actual authenticated
+provider byte reader before enabling Product ports; passing this gateway's mocks does
+not remove that gate. Keep deny-all client Rules and all release HOLD/NO-GO gates.

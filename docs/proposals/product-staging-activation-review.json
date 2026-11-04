@@ -20,10 +20,52 @@
   "clientRulesCandidate": "tests/firestore-emulator/deny-all.rules",
   "directClientWrites": false,
   "legacyCollectionsUnchanged": true,
-  "requiredRepositoryBindings": ["verified Firebase identity", "mandatoryPhotos=true", "photoPolicy", "atomicPhotos", "bounded cursor codec", "atomic actor/global rate enforcement"],
-  "existingPreviewWebConfig": { "OLDX_FIREBASE_ENV": "staging", "OLDX_FIREBASE_PROJECT_ID": "oldx-staging" },
+  "requiredRepositoryBindings": [
+    "verified Firebase identity",
+    "mandatoryPhotos=true",
+    "photoPolicy",
+    "atomicPhotos",
+    "bounded cursor codec",
+    "atomic actor/global rate enforcement"
+  ],
+  "existingPreviewWebConfig": {
+    "OLDX_FIREBASE_ENV": "staging",
+    "OLDX_FIREBASE_PROJECT_ID": "oldx-staging"
+  },
   "serverCredentialBinding": "owner must identify existing scoped identity and secure manager; no values in chat/repository",
-  "cloudinary": { "cloudName": "tfizvbzc", "plan": "Free", "signatures": "server-only", "activationApproved": false, "credentialBinding": null, "independentAssetInspectionRequired": true },
-  "policyDecisionsRequired": ["real account quota caps", "quarantine and independent review", "explicit-content detection mechanism", "retention and authorized orphan cleanup", "privacy/consent"],
-  "rollbackPrerequisites": ["current Rules release and source hash", "prior runtime/config version", "verified staging-only access", "exact synthetic data/media manifest", "authorized operator and rollback rehearsal"]
+  "cloudinary": {
+    "cloudName": "tfizvbzc",
+    "plan": "Free",
+    "signatures": "server-only",
+    "activationApproved": false,
+    "credentialBinding": null,
+    "independentAssetInspectionRequired": true
+  },
+  "policyDecisionsRequired": [
+    "real account quota caps",
+    "quarantine and independent review",
+    "explicit-content detection mechanism",
+    "retention and authorized orphan cleanup",
+    "privacy/consent"
+  ],
+  "rollbackPrerequisites": [
+    "current Rules release and source hash",
+    "prior runtime/config version",
+    "verified staging-only access",
+    "exact synthetic data/media manifest",
+    "authorized operator and rollback rehearsal"
+  ],
+  "proposedPublicMediaGetRoute": "/api/staging/media/{kind}/{parentId}/{imageId}",
+  "publicMediaKinds": [
+    "product",
+    "store"
+  ],
+  "trustedByteReaderRequirements": [
+    "authenticated exact derivative/version fetch",
+    "3 MiB streaming cap",
+    "current publication/photo approval recheck",
+    "global and edge atomic quotas",
+    "no URL/signature/secret in response",
+    "no-store/nosniff image response"
+  ]
 }
