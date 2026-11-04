@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
@@ -6,15 +7,13 @@ export const PHOTO_REFERENCE_TEST_SCHEMA=Object.freeze(Object.fromEntries(roles.
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),fail=code=>({ok:false,code}),int=v=>Number.isSafeInteger(v)&&v>=0;
 // Durable private reference transactions only. Upload bytes/credentials/provider
 // deletion, public media release and legacy migration remain unimplemented/off.
-export function createIsolatedPhotoReferenceRepository({enabled=false,firestore,sdk,schema,parentCollections,actorCollections,authenticate,now=Date.now,timeoutMs=5000}={}){
- if(enabled!==true)return Object.freeze({apply:async()=>fail('UNAVAILABLE')});
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
- if(!copyRecord(parentCollections,['product','store','provider'])||Object.values(parentCollections).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated parent schema');const parents={...parentCollections};if(!copyRecord(actorCollections,['product','store','provider'])||Object.values(actorCollections).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated actor schema');const actors={...actorCollections};
+function referenceCore({sdk,parentCollections,actorCollections,authenticate,now=Date.now,timeoutMs=5000}={}, {db,collections:c},nativeScope=false){
+ if(!copyRecord(parentCollections,['product','store','provider'])||Object.values(parentCollections).some(v=>typeof v!=='string'||(!nativeScope&&!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v))))throw new Error('Unactivated parent schema');const parents={...parentCollections};if(!copyRecord(actorCollections,['product','store','provider'])||Object.values(actorCollections).some(v=>typeof v!=='string'||(!nativeScope&&!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v))))throw new Error('Unactivated actor schema');const actors={...actorCollections};
  const ref=(role,id)=>sdk.doc(db,c[role],id);
  async function read(raw,r){const snap=await raw.get(r);if(!snap.exists())return null;const {committedAt,...data}=snap.data();return data;}
  return Object.freeze({async apply(request,{credential,signal}={}){
   const input=copyRecord(request,['requestId','kind','parentId','expectedParentRevision','expectedPhotoRevision','imageIds','service']);
-  if(!input||!safeId(input.requestId)||!['product','store','provider'].includes(input.kind)||!safeId(input.parentId)||!int(input.expectedParentRevision)||!int(input.expectedPhotoRevision)||!Array.isArray(input.imageIds)||input.imageIds.length>(input.kind==='store'?1:6)||input.imageIds.some(id=>typeof id!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(id))||new Set(input.imageIds).size!==input.imageIds.length||input.service!==null&&(input.kind!=='provider'||typeof input.service!=='string'||input.service.length<1||input.service.length>80))return fail('INVALID_REQUEST');
+  if(!input||!safeId(input.requestId)||!(nativeScope?['product','store']:['product','store','provider']).includes(input.kind)||!safeId(input.parentId)||!int(input.expectedParentRevision)||!int(input.expectedPhotoRevision)||!Array.isArray(input.imageIds)||input.imageIds.length>(input.kind==='store'?1:6)||input.imageIds.some(id=>typeof id!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(id))||new Set(input.imageIds).size!==input.imageIds.length||input.service!==null&&(input.kind!=='provider'||typeof input.service!=='string'||input.service.length<1||input.service.length>80))return fail('INVALID_REQUEST');
   const snapshot=structuredClone(input);return runVerifiedOperation({authenticate,credential,signal,timeoutMs,now,run:async context=>{
    const uid=context.actorUid,key=hash([uid,snapshot.requestId]),associationId=hash([snapshot.kind,snapshot.parentId,snapshot.service]),fingerprint=hash(snapshot);context.markMutationAttempted();
    return sdk.runTransaction(db,async raw=>{
@@ -31,4 +30,12 @@ export function createIsolatedPhotoReferenceRepository({enabled=false,firestore,
    },{maxAttempts:3});
   }});
  }});
+}
+
+export function createIsolatedPhotoReferenceRepository(options={}){
+ if(options.enabled!==true)return Object.freeze({apply:async()=>fail('UNAVAILABLE')});return referenceCore(options,isolatedFirestoreContext({...options,roles}));
+}
+export function createStagingPhotoReferenceRepository(options={}){
+ if(options.enabled!==true)return Object.freeze({apply:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(options.binding);
+ return referenceCore({...options,sdk:b.sdk,parentCollections:{product:b.collections.privateRecords,store:b.collections.privateRecords,provider:'unsupportedProvider'},actorCollections:{product:b.collections.actors,store:b.collections.actors,provider:'unsupportedProvider'}},{db:b.db,collections:b.referenceCollections},true);
 }

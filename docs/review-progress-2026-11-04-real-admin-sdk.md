@@ -28,3 +28,28 @@ No credentials, live Firebase/Cloudinary, Rules/indexes, IAM/billing/main/produc
 changes. New SDK and server modules remain excluded from static browser assets.
 HOLD/NO-GO. Next: native media namespace/policy binding and inactive deployable API
 handler templates, followed by separately approved access/operational acceptance.
+
+## Actual Emulator diagnostic and native media milestone
+
+First source f9b75a38a395417422dc7ad94f2a6b178b9c7adc: Security/Service Emulator
+passed; Review 41880014580 FAILED its new real Admin suite. The first actual Auth
+Emulator token is unsigned (trailing empty signature), rejected by signed-token HTTP
+syntax before verification; dependent cases consequently failed. Fixed ONLY the
+explicit demo/loopback runtime/verifier to accept Emulator token syntax. Real/staging
+HTTP defaults still reject it, and real staging bindings reject Emulator environment
+variables. No assertion or SDK revocation check weakened. New negative regression
+checks the real HTTP default rejects unsigned tokens.
+
+Native media namespace bindings now reuse existing journal/reference/mandatory-photo/
+atomic-parent/public-snapshot implementations through the branded Admin facade.
+Product/Store only; Provider remains on its canonical separate path. Exact proposed
+namespaces added to the owner review JSON, not live configuration. Existing isolated
+constructors still validate demo/loopback/test namespaces. No public operation enabled.
+
+Seven actual Admin/Auth/Firestore Emulator cases now include native quota reservation,
+proof-less upload rejection, private attachment, independent synthetic approval,
+atomic photo publication metadata and withdrawal/read revocation. Synthetic approval
+rows are fixture data, NOT real scanning/moderation/provider acceptance. Real Cloudinary
+operations remain ZERO. Local related mocks/source integration 38/38 and build 3/3
+passed; actual new native suite result must come from exact-source CI because the
+local official Firestore binary download remains blocked.

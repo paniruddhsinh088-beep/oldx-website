@@ -1,19 +1,16 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {isolatedFirestoreContext,safeId,copyRecord} from './isolated-firestore-context.mjs';
 import {preparePhotoReferences} from './photo-reference-contract.mjs';
-import {createIsolatedMandatoryPhotoPolicy} from './mandatory-photo-policy.mjs';
+import {createIsolatedMandatoryPhotoPolicy,createStagingMandatoryPhotoPolicy} from './mandatory-photo-policy.mjs';
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 const int=v=>Number.isSafeInteger(v)&&v>=0&&v<Number.MAX_SAFE_INTEGER;
 const roles=['assets','associations','reviews','publications','permissions','generations','receipts','audits'];
 const fail=code=>({ok:false,code});
 // Server-only prepare/commit hook for the EXISTING parent transaction. All reads
 // finish before any writes. No own transaction, bytes, provider, credentials or URL.
-export function createIsolatedAtomicPhotoPublication({enabled=false,firestore,sdk,schema,marketplaceSchema}={}){
- if(enabled!==true)return Object.freeze({prepare:async()=>fail('UNAVAILABLE')});
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
- const {collections:m}=isolatedFirestoreContext({firestore,sdk,schema:marketplaceSchema,roles:['actors','privateRecords','publicViews','owners','generations','receipts','audits']});
+function atomicPhotoPublication(sdk,{db,collections:c},m,policy){
  if(Object.values(c).some(v=>Object.values(m).includes(v)))throw new Error('Overlapping parent/media mapping');
- const policy=createIsolatedMandatoryPhotoPolicy({enabled:true,firestore,sdk,schema});
  return Object.freeze({marketplaceCollections:m,async verifyReplay(raw,{kind,parentId,actorUid,requestKey,fingerprint,parentRevision,action}){
   const key=hash(['atomic-parent-media',actorUid,kind,parentId,requestKey]),fields=['actorUid','requestKey','fingerprint','kind','parentId','parentRevision','photoRevision','releaseRevision','generation','action'];
   const read=async role=>{const snap=await raw.get(sdk.doc(db,c[role],key));if(!snap.exists())return null;const {committedAt,...value}=snap.data();return copyRecord(value,fields);};
@@ -42,4 +39,14 @@ export function createIsolatedAtomicPhotoPublication({enabled=false,firestore,sd
    raw.set(ref('generations','current'),{value:newGeneration});const record={actorUid,requestKey,fingerprint,kind,parentId:next.id,parentRevision:next.revision,photoRevision:association?.photoRevision??old?.photoRevision??0,releaseRevision:revision,generation:newGeneration,action};raw.set(ref('receipts',key),record);raw.set(ref('audits',key),record);
   }});
  }});
+}
+
+export function createIsolatedAtomicPhotoPublication({enabled=false,firestore,sdk,schema,marketplaceSchema}={}){
+ if(enabled!==true)return Object.freeze({prepare:async()=>fail('UNAVAILABLE')});
+ const media=isolatedFirestoreContext({firestore,sdk,schema,roles}),market=isolatedFirestoreContext({firestore,sdk,schema:marketplaceSchema,roles:['actors','privateRecords','publicViews','owners','generations','receipts','audits']});
+ return atomicPhotoPublication(sdk,media,market.collections,createIsolatedMandatoryPhotoPolicy({enabled:true,firestore,sdk,schema}));
+}
+export function createStagingAtomicPhotoPublication({enabled=false,binding}={}){
+ if(enabled!==true)return Object.freeze({prepare:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(binding);
+ return atomicPhotoPublication(b.sdk,{db:b.db,collections:b.mediaCollections},b.collections,createStagingMandatoryPhotoPolicy({enabled:true,binding}));
 }

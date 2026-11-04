@@ -56,3 +56,7 @@ test('bounded HTTP body accommodates valid Gujarati/Hindi text and six managed r
  const body={...save,profile:large};assert.ok(Buffer.byteLength(JSON.stringify(body))>16384);assert.equal((await http.handle('save',request(body))).status,200);
  assert.equal((await http.handle('save',request({...save,profile:{...profile,description:'x'.repeat(33000)}}))).status,413);
 });
+
+test('real HTTP default never accepts an unsigned Emulator token',async()=>{
+ const {http}=fixture();const r=request(save);r.headers.authorization='Bearer fake.test.';assert.equal((await http.handle('save',r)).status,401);
+});

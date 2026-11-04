@@ -1,13 +1,10 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {isolatedFirestoreContext,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 // Bounded atomic snapshot for the separate public projection contract; no provider
 // URLs, tokens, network construction, private Chat query or public activation.
-export function createIsolatedPublicMediaRead({enabled=false,firestore,sdk,schema,releaseSchema,parentCollections,publicCollections,actorCollections,now=Date.now}={}){
- if(enabled!==true)return async()=>null;
- if(!releaseSchema)throw new Error('Independent media publication schema required');
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles:['assets','associations','receipts','audits']});
- const release=releaseSchema?isolatedFirestoreContext({firestore,sdk,schema:releaseSchema,roles:['assets','associations','reviews','publications','permissions','generations','receipts','audits']}).collections:null;if(release&&(release.assets!==c.assets||release.associations!==c.associations))throw new Error('Mismatched release schema');
- for(const mapping of [parentCollections,publicCollections,actorCollections])if(!copyRecord(mapping,['product','store'])||Object.values(mapping).some(v=>typeof v!=='string'||!/^testOldx[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated public media mapping');
+function publicMediaRead({sdk,now=Date.now}, {db,collections:c},release,parents,views,actors){
+ const parentCollections=parents,publicCollections=views,actorCollections=actors;
  return async(request,context)=>sdk.runTransaction(db,async raw=>{
   const check=()=>isolatedTransactionCheck(context.signal,context.deadlineAt,now),read=async ref=>{check();const snapshot=await raw.get(ref);check();if(!snapshot.exists())return null;const {committedAt,...facts}=snapshot.data();return facts;};check();
   if(!['product','store'].includes(request.kind)||typeof request.parentId!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(request.parentId))return null;
@@ -18,4 +15,17 @@ export function createIsolatedPublicMediaRead({enabled=false,firestore,sdk,schem
   if(release){const publication=await read(sdk.doc(db,release.publications,scopeId));if(!publication||publication.kind!==request.kind||publication.parentId!==parent.id||publication.ownerUid!==parent.ownerUid||publication.published!==true||publication.parentRevision!==parent.publicationRevision||publication.photoRevision!==request.expectedPhotoRevision||!Array.isArray(publication.photos)||publication.photos.length>(request.kind==='store'?1:6)||new Set(publication.photos.map(p=>p.imageId)).size!==publication.photos.length||typeof publication.referenceId!=='string')return null;const assets=[],reviews=[],moderators=[];const publisher=await read(sdk.doc(db,release.permissions,parent.ownerUid));if(publisher?.uid!==parent.ownerUid||publisher.canRelease!==true||publisher.suspended!==false)return null;const generation=await read(sdk.doc(db,release.generations,'current'));if(!generation||!Number.isSafeInteger(generation.value)||generation.value<publication.generation)return null;for(const photo of publication.photos){if(typeof photo.imageId!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(photo.imageId))return null;const asset=await read(sdk.doc(db,c.assets,photo.imageId)),review=await read(sdk.doc(db,release.reviews,photo.imageId));if(!review||review.decision!=='approved'||review.imageId!==photo.imageId||review.ownerUid!==parent.ownerUid||review.moderatorUid===parent.ownerUid||review.revision!==photo.reviewRevision||review.processedDigest!==photo.processedDigest||asset?.processedDigest!==photo.processedDigest||asset.publicRelease?.derivativeId!==photo.derivativeId||asset.publicRelease?.version!==photo.version||typeof review.moderatorUid!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(review.moderatorUid))return null;const moderator=await read(sdk.doc(db,release.permissions,review.moderatorUid));if(moderator?.uid!==review.moderatorUid||moderator.canModerate!==true||moderator.suspended!==false)return null;assets.push(asset);reviews.push(review);moderators.push(moderator);}check();return {publication,reviews,moderators,publisher,generation:generation.value,parent:{kind:parent.kind,id:parent.id,ownerUid:parent.ownerUid,publicationRevision:parent.publicationRevision,published:true,actorActive:true},association:{associationId:publication.referenceId,kind:publication.kind,parentId:publication.parentId,service:null,ownerUid:publication.ownerUid,parentRevision:publication.parentRevision,photoRevision:publication.photoRevision,imageIds:publication.photos.map(p=>p.imageId)},assets};}
   return null;
  },{maxAttempts:3});
+}
+
+export function createIsolatedPublicMediaRead(options={}){
+ const {enabled=false,firestore,sdk,schema,releaseSchema,parentCollections,publicCollections,actorCollections}=options;
+ if(enabled!==true)return async()=>null;if(!releaseSchema)throw Error('Independent media publication schema required');
+ const ctx=isolatedFirestoreContext({firestore,sdk,schema,roles:['assets','associations','receipts','audits']}),release=isolatedFirestoreContext({firestore,sdk,schema:releaseSchema,roles:['assets','associations','reviews','publications','permissions','generations','receipts','audits']}).collections;
+ if(release.assets!==ctx.collections.assets||release.associations!==ctx.collections.associations)throw Error('Mismatched release schema');
+ for(const mapping of [parentCollections,publicCollections,actorCollections])if(!copyRecord(mapping,['product','store'])||Object.values(mapping).some(v=>typeof v!=='string'||!/^testOldx[A-Za-z0-9]{1,48}$/.test(v)))throw Error('Unactivated public media mapping');
+ return publicMediaRead(options,ctx,release,parentCollections,publicCollections,actorCollections);
+}
+export function createStagingPublicMediaRead({enabled=false,binding,now=Date.now}={}){
+ if(enabled!==true)return async()=>null;const b=requireStagingMarketplaceBinding(binding);
+ return publicMediaRead({sdk:b.sdk,now},{db:b.db,collections:b.referenceCollections},b.mediaCollections,{product:b.collections.privateRecords,store:b.collections.privateRecords},{product:b.collections.publicViews,store:b.collections.publicViews},{product:b.collections.actors,store:b.collections.actors});
 }

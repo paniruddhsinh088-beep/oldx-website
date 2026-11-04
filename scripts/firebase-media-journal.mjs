@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {snapshotVerifiedMediaProof} from './media-proof-snapshot.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
@@ -11,10 +12,9 @@ const kinds=['product','store','provider'],surface=a=>a.kind==='provider'?'profi
 const imageId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v);
 // Actual SDK durable journal only. No image provider client, bytes, signing keys,
 // decoder, network calls or production/browser mode. All effects are Emulator-only.
-export function createIsolatedMediaJournal({enabled=false,firestore,sdk,schema,parentCollections,actorCollections,authenticate,verifyProof,authorizeOrphan,allocateId=randomUUID,now=Date.now,timeoutMs=5000,orphanRetentionMs=86400000}={}){
- if(enabled!==true)return Object.freeze({reserve:async()=>fail('UNAVAILABLE'),transition:async()=>fail('UNAVAILABLE')});
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
- for(const mapping of [parentCollections,actorCollections])if(!copyRecord(mapping,kinds)||Object.values(mapping).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated media scope');
+function journalCore({sdk,parentCollections,actorCollections,authenticate,verifyProof,authorizeOrphan,allocateId=randomUUID,now=Date.now,timeoutMs=5000,orphanRetentionMs=86400000}={}, {db,collections:c},nativeScope=false){
+ const allowedKinds=nativeScope?['product','store']:kinds;
+ for(const mapping of [parentCollections,actorCollections])if(!copyRecord(mapping,kinds)||Object.values(mapping).some(v=>typeof v!=='string'||(!nativeScope&&!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v))))throw new Error('Unactivated media scope');
  const parents={...parentCollections},actors={...actorCollections};if(!int(orphanRetentionMs)||orphanRetentionMs<60000)throw new Error('Invalid orphan policy');
  const ref=(role,key)=>sdk.doc(db,c[role],key);
  async function read(raw,r){const snapshot=await raw.get(r);if(!snapshot.exists())return null;const {committedAt,...data}=snapshot.data();return data;}
@@ -45,7 +45,7 @@ export function createIsolatedMediaJournal({enabled=false,firestore,sdk,schema,p
      if(!quotaRows||quotaRows.some(({row})=>row.bytesReserved+asset.reservedBytes>row.maxBytes||row.imagesReserved+1>row.maxImages||row.reservationsUsed>=row.maxReservations))return fail('QUOTA_UNAVAILABLE');
      const parentQuota=quotaRows.at(-1).row,maxAttached=input.kind==='store'||input.kind==='provider'&&input.service===null?1:6;if(parentQuota.imagesReserved>=maxAttached+1)return fail('QUOTA_UNAVAILABLE');
     }else{
-     asset=await read(raw,ref('assets',input.imageId));if(!asset||asset.imageId!==input.imageId||asset.ownerUid!==uid||!kinds.includes(asset.kind)||!imageId(asset.imageId)||!safeId(asset.parentId)||!int(asset.parentRevision)||!int(asset.revision)||asset.revision!==input.expectedRevision||asset.revision===Number.MAX_SAFE_INTEGER||!int(asset.operationCount)||asset.operationCount>=12||!Array.isArray(asset.references)||asset.references.length>12||!int(asset.reservedBytes)||asset.reservedBytes<1||asset.publicId!=='oldx/quarantine/'+asset.imageId)return fail('CONFLICT');
+     asset=await read(raw,ref('assets',input.imageId));if(!asset||asset.imageId!==input.imageId||asset.ownerUid!==uid||!allowedKinds.includes(asset.kind)||!imageId(asset.imageId)||!safeId(asset.parentId)||!int(asset.parentRevision)||!int(asset.revision)||asset.revision!==input.expectedRevision||asset.revision===Number.MAX_SAFE_INTEGER||!int(asset.operationCount)||asset.operationCount>=12||!Array.isArray(asset.references)||asset.references.length>12||!int(asset.reservedBytes)||asset.reservedBytes<1||asset.publicId!=='oldx/quarantine/'+asset.imageId)return fail('CONFLICT');
      const eligibility=await scope(raw,asset,uid);check();const owner=eligibility.owner;
      if(['orphan-delete','orphan-cancel'].includes(op)){if(!await cleanupAllowed(asset,uid,eligibility.parent,context))return fail('DENIED');}
      else if(!owner){if(!(op.startsWith('reconcile-')||op==='confirm-delete')||!await cleanupAllowed(asset,uid,eligibility.parent,context))return fail('DENIED');}
@@ -73,7 +73,16 @@ export function createIsolatedMediaJournal({enabled=false,firestore,sdk,schema,p
   }});
  }
  return Object.freeze({
-  reserve(request,options){const r=copyRecord(request,['requestId','kind','parentId','service','expectedParentRevision','sourceDigest','reservedBytes']);if(!r||!safeId(r.requestId)||!kinds.includes(r.kind)||!safeId(r.parentId)||r.service!==null&&(r.kind!=='provider'||typeof r.service!=='string'||r.service.length<1||r.service.length>80)||!int(r.expectedParentRevision)||typeof r.sourceDigest!=='string'||!/^[a-f0-9]{64}$/.test(r.sourceDigest)||!int(r.reservedBytes)||r.reservedBytes<1||r.reservedBytes>(r.kind==='provider'?2:3)*1024*1024)return Promise.resolve(fail('INVALID_REQUEST'));return operation('reserve',structuredClone(r),options);},
+  reserve(request,options){const r=copyRecord(request,['requestId','kind','parentId','service','expectedParentRevision','sourceDigest','reservedBytes']);if(!r||!safeId(r.requestId)||!allowedKinds.includes(r.kind)||!safeId(r.parentId)||r.service!==null&&(r.kind!=='provider'||typeof r.service!=='string'||r.service.length<1||r.service.length>80)||!int(r.expectedParentRevision)||typeof r.sourceDigest!=='string'||!/^[a-f0-9]{64}$/.test(r.sourceDigest)||!int(r.reservedBytes)||r.reservedBytes<1||r.reservedBytes>(r.kind==='provider'?2:3)*1024*1024)return Promise.resolve(fail('INVALID_REQUEST'));return operation('reserve',structuredClone(r),options);},
   transition(op,request,options){const r=copyRecord(request,['requestId','imageId','expectedRevision','proof']);if(!['attempt','cancel','confirm-upload','reconcile-upload','lease-delete','confirm-delete','reconcile-delete','orphan-delete','orphan-cancel'].includes(op)||!r||!safeId(r.requestId)||!imageId(r.imageId)||!int(r.expectedRevision)||r.proof!==null&&(typeof r.proof!=='string'||!/^[A-Za-z0-9_.-]{1,2048}$/.test(r.proof)))return Promise.resolve(fail('INVALID_REQUEST'));return operation(op,structuredClone(r),options);}
  });
+}
+
+export function createIsolatedMediaJournal(options={}){
+ if(options.enabled!==true)return Object.freeze({reserve:async()=>fail('UNAVAILABLE'),transition:async()=>fail('UNAVAILABLE')});
+ return journalCore(options,isolatedFirestoreContext({...options,roles}));
+}
+export function createStagingMediaJournal(options={}){
+ if(options.enabled!==true)return Object.freeze({reserve:async()=>fail('UNAVAILABLE'),transition:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(options.binding);
+ return journalCore({...options,sdk:b.sdk,parentCollections:{product:b.collections.privateRecords,store:b.collections.privateRecords,provider:'unsupportedProvider'},actorCollections:{product:b.collections.actors,store:b.collections.actors,provider:'unsupportedProvider'}},{db:b.db,collections:b.journalCollections},true);
 }

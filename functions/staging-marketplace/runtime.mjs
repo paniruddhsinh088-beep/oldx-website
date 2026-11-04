@@ -1,6 +1,6 @@
 import {createStagingMarketplaceBinding,createEmulatorMarketplaceBinding} from '../../scripts/staging-marketplace-context.mjs';
 import {createStagingMarketplaceRepository} from '../../scripts/firebase-marketplace-repository.mjs';
-import {createStagingMarketplaceEnforcement,createIsolatedProviderEnforcement} from '../../scripts/provider-enforcement-adapters.mjs';
+import {createStagingMarketplaceEnforcement,createEmulatorMarketplaceEnforcement} from '../../scripts/provider-enforcement-adapters.mjs';
 import {createStagingMarketplaceRate} from '../../scripts/staging-marketplace-rate.mjs';
 import {createMarketplaceCommandHttp} from '../../scripts/marketplace-command-http.mjs';
 const routes=Object.freeze({'/api/staging/marketplace/save':'save','/api/staging/marketplace/owner':'owner','/api/staging/marketplace/archive':'archive'});
@@ -15,9 +15,9 @@ function runtime({enabled=false,projectId,deploymentEnvironment,adminFirestore,a
   if(adminAuth?.app?.options?.projectId!==expected)throw Error('Wrong Auth scope');
   const binding=(emulator?createEmulatorMarketplaceBinding:createStagingMarketplaceBinding)({projectId,deploymentEnvironment,adminFirestore,FieldValue});
   const consumeAtomicQuota=createStagingMarketplaceRate({binding,policy:ratePolicy,now});
-  const enforcement=(emulator?createIsolatedProviderEnforcement:createStagingMarketplaceEnforcement)({enabled:true,projectId:expected,adminAuth,consumeAtomicQuota,now});
+  const enforcement=(emulator?createEmulatorMarketplaceEnforcement:createStagingMarketplaceEnforcement)({enabled:true,projectId:expected,adminAuth,consumeAtomicQuota,now});
   const media=typeof createMediaBindings==='function'?createMediaBindings(binding):null;
-  const http=createMarketplaceCommandHttp({enabled:true,now,timeoutMs,verifyFirebaseToken:enforcement.verifyFirebaseToken,consumeRateLimit:enforcement.consumeRateLimit,createRepository:({authenticate,timeoutMs})=>createStagingMarketplaceRepository({enabled:true,binding,authenticate,timeoutMs,now,photoPolicy:media?.photoPolicy,atomicPhotos:media?.atomicPhotos,publicationEnabled})});
+  const http=createMarketplaceCommandHttp({enabled:true,emulatorTokenSyntax:emulator,now,timeoutMs,verifyFirebaseToken:enforcement.verifyFirebaseToken,consumeRateLimit:enforcement.consumeRateLimit,createRepository:({authenticate,timeoutMs})=>createStagingMarketplaceRepository({enabled:true,binding,authenticate,timeoutMs,now,photoPolicy:media?.photoPolicy,atomicPhotos:media?.atomicPhotos,publicationEnabled})});
   return Object.freeze({handle(path,request,context){return typeof path==='string'&&Object.hasOwn(routes,path)?http.handle(routes[path],request,context):Promise.resolve(failure(404));}});
  }catch{return Object.freeze({handle:async()=>failure(503)});}
 }

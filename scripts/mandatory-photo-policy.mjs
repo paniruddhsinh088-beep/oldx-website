@@ -1,12 +1,11 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {isolatedFirestoreContext,safeId} from './isolated-firestore-context.mjs';
 import {validateProcessedImage} from './image-upload-contract-policy.mjs';
 // Server-only transaction hook, not standalone authorization. The caller must
 // derive owner/parent/revision inside the SAME trusted parent transaction.
 // A valid quarantine/reference is not a public release or automated moderation.
-export function createIsolatedMandatoryPhotoPolicy({enabled=false,firestore,sdk,schema}={}){
- if(enabled!==true)return Object.freeze({check:async()=>false});
- const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles:['assets','associations','reviews','publications','permissions','generations','receipts','audits']});
+function mandatoryPhotoPolicy(sdk,{db,collections:c}){
  const get=async(tx,role,key)=>{const s=await tx.get(sdk.doc(db,c[role],key));if(!s.exists())return null;const {committedAt,...value}=s.data();return value;};
  return Object.freeze({async check(tx,{kind,parentId,ownerUid,parentRevision}={}){
   if(!['product','store','provider'].includes(kind)||!safeId(parentId)||!safeId(ownerUid)||!Number.isSafeInteger(parentRevision)||parentRevision<1)return false;
@@ -17,4 +16,13 @@ export function createIsolatedMandatoryPhotoPolicy({enabled=false,firestore,sdk,
    const moderator=await get(tx,'permissions',review.moderatorUid);if(moderator?.uid!==review.moderatorUid||moderator.canModerate!==true||moderator.suspended!==false)return false;
   }return true;
  }});
+}
+
+export function createIsolatedMandatoryPhotoPolicy({enabled=false,firestore,sdk,schema}={}){
+ if(enabled!==true)return Object.freeze({check:async()=>false});
+ return mandatoryPhotoPolicy(sdk,isolatedFirestoreContext({firestore,sdk,schema,roles:['assets','associations','reviews','publications','permissions','generations','receipts','audits']}));
+}
+export function createStagingMandatoryPhotoPolicy({enabled=false,binding}={}){
+ if(enabled!==true)return Object.freeze({check:async()=>false});const b=requireStagingMarketplaceBinding(binding);
+ return mandatoryPhotoPolicy(b.sdk,{db:b.db,collections:b.mediaCollections});
 }

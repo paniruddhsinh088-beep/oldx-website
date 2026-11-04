@@ -95,5 +95,20 @@
   "rollbackRuntimeOptions": {
     "enabled": false,
     "publicationEnabled": false
+  },
+  "proposedNativeMediaCollections": {
+    "assets": "marketplaceMediaAssets_v1",
+    "associations": "marketplaceMediaAssociations_v1",
+    "reviews": "marketplaceMediaReviews_v1",
+    "publications": "marketplaceMediaPublications_v1",
+    "permissions": "marketplaceMediaPermissions_v1",
+    "generations": "marketplaceMediaGenerations_v1",
+    "receipts": "marketplaceMediaReceipts_v1",
+    "audits": "marketplaceMediaAudit_v1",
+    "quotas": "marketplaceMediaQuotas_v1",
+    "operations": "marketplaceMediaOperations_v1",
+    "journalAudits": "marketplaceMediaJournalAudit_v1",
+    "referenceReceipts": "marketplaceMediaReferenceReceipts_v1",
+    "referenceAudits": "marketplaceMediaReferenceAudit_v1"
   }
 }

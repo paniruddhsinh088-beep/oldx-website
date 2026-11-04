@@ -14,7 +14,7 @@ function projection(operation,result){
 }
 // No route or SDK initialization. createRepository receives ONLY the identity
 // derived from verified credentials; callers cannot select sender/owner/role.
-export function createPrivateConversationHttp({enabled=false,verifyFirebaseToken,consumeRateLimit,createRepository,timeoutMs=5000,now=Date.now,contract}={}){
+export function createPrivateConversationHttp({enabled=false,verifyFirebaseToken,consumeRateLimit,createRepository,timeoutMs=5000,now=Date.now,contract,emulatorTokenSyntax=false}={}){
  const keys=contract?.keys,projection=contract?.projection;
  if(!keys||typeof projection!=='function')return Object.freeze({handle:async()=>failure(503,'ENFORCEMENT_UNAVAILABLE')});
  return Object.freeze({async handle(operation,request,{signal}={}){
@@ -22,7 +22,7 @@ export function createPrivateConversationHttp({enabled=false,verifyFirebaseToken
   const r=copyRecord(request,['method','headers','body']);if(!r)return failure(400,'BAD_REQUEST');if(r.method!=='POST')return failure(405,'METHOD_NOT_ALLOWED');const h=inspectHeaders(r.headers);if(!h)return failure(400,'BAD_REQUEST');
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(h['content-type']??'')||h['content-encoding']&&h['content-encoding']!=='identity')return failure(415,'UNSUPPORTED_MEDIA_TYPE');
   const parsed=parseBoundedJson(r.body,{maxBytes:contract.maxBodyBytes??16384});if(!parsed.ok)return failure(parsed.code==='BODY_TOO_LARGE'?413:400,parsed.code);const input=copyRecord(parsed.value,keys[operation]);if(!input)return failure(400,'INVALID_REQUEST');
-  const token=/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(h.authorization??'')?.[1];if(!token)return failure(401,'AUTH_REQUIRED');if(![verifyFirebaseToken,consumeRateLimit,createRepository].every(f=>typeof f==='function'))return failure(503,'ENFORCEMENT_UNAVAILABLE');
+  const token=(emulatorTokenSyntax===true?/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*)$/:/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/).exec(h.authorization??'')?.[1];if(!token)return failure(401,'AUTH_REQUIRED');if(![verifyFirebaseToken,consumeRateLimit,createRepository].every(f=>typeof f==='function'))return failure(503,'ENFORCEMENT_UNAVAILABLE');
   const result=await runVerifiedOperation({authenticate:(credential,context)=>verifyFirebaseToken(credential,{...context,checkRevoked:true}),credential:token,signal,timeoutMs,now,run:async context=>{
    const rate=copyRecord(await consumeRateLimit({actorUid:context.actorUid,operation:contract.prefix+operation},{signal:context.signal,deadlineAt:context.deadlineAt}),['allowed']);context.checkpoint();if(!rate||typeof rate.allowed!=='boolean')return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};if(!rate.allowed)return {ok:false,code:'RATE_LIMITED'};
    const repository=createRepository({authenticate:()=>({uid:context.actorUid}),timeoutMs:Math.max(1,context.deadlineAt-now())});context.checkpoint();if(typeof repository?.[operation]!=='function')return {ok:false,code:'ENFORCEMENT_UNAVAILABLE'};

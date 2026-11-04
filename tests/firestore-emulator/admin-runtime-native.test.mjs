@@ -56,6 +56,38 @@ test('REAL client SDK remains denied by deny-all; publication and production bin
  assert.equal((await createStagingMarketplaceRuntime(options()).handle('/api/staging/marketplace/save',request(body))).status,503);
  assert.equal((await createEmulatorMarketplaceRuntime({...options(),projectId:'oldx-1c983'}).handle('/api/staging/marketplace/save',request(body))).status,503);
 });
+test('REAL native media quotas, references, independent approval and atomic public withdrawal',async()=>{
+ const {createHash}=await import('node:crypto');
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ const {createStagingMarketplaceMedia}=await import('../../scripts/staging-marketplace-media.mjs');
+ const {mediaQuotaKeys}=await import('../../scripts/firebase-media-journal.mjs');
+ const b=createEmulatorMarketplaceBinding(options()),m=b.mediaCollections,j=b.journalCollections;
+ const media=createStagingMarketplaceMedia({enabled:true,binding:b,authenticate:async()=>({uid:(await auth.verifyIdToken(ownerToken,true)).uid})});
+ const quota={known:true,bytesReserved:0,imagesReserved:0,maxBytes:3000000,maxImages:6,reservationsUsed:0,maxReservations:10};
+ for(const key of mediaQuotaKeys('owner','product',productId,null))await db.collection(j.quotas).doc(key).set(quota);
+ const reserve={requestId:'native-reserve',kind:'product',parentId:productId,service:null,expectedParentRevision:3,sourceDigest:'a'.repeat(64),reservedBytes:1024};
+ const reserved=await media.journal.reserve(reserve);assert.equal(reserved.ok,true);assert.equal((await media.journal.reserve(reserve)).imageId,reserved.imageId);
+ assert.equal((await media.journal.transition('attempt',{requestId:'native-attempt',imageId:reserved.imageId,expectedRevision:0,proof:null})).ok,true);
+ assert.equal((await media.journal.transition('confirm-upload',{requestId:'no-proof',imageId:reserved.imageId,expectedRevision:1,proof:null})).ok,false);
+ assert.equal((await db.collection(j.assets).doc(reserved.imageId).get()).data().state,'uploading');
+ const imageId='native_photo_12345678901234567890',digest='b'.repeat(64),scope=createHash('sha256').update(JSON.stringify(['product',productId,null])).digest('hex');
+ // Trusted SYNTHETIC metadata fixture, not a claim of provider upload/scanning.
+ await db.collection(m.assets).doc(imageId).set({imageId,kind:'product',parentId:productId,ownerUid:'owner',service:null,parentRevision:3,revision:0,state:'quarantined',references:[],processedDigest:digest,processed:{contentType:'image/webp',byteSize:100,width:10,height:10,metadataStripped:true,contentScanned:true}});
+ const refs=await media.references.apply({requestId:'native-reference',kind:'product',parentId:productId,expectedParentRevision:3,expectedPhotoRevision:0,imageIds:[imageId],service:null});assert.equal(refs.ok,true);
+ await db.collection(m.generations).doc('current').set({value:0});
+ await db.collection(m.permissions).doc('owner').set({uid:'owner',canModerate:false,canRelease:true,suspended:false});
+ await db.collection(m.permissions).doc('reviewer').set({uid:'reviewer',canModerate:true,canRelease:false,suspended:false});
+ const active=createEmulatorMarketplaceRuntime({...options(),publicationEnabled:true,createMediaBindings:binding=>createStagingMarketplaceMedia({enabled:true,binding})});
+ const publish={...body,id:productId,requestId:'native-photo-publish',expectedRevision:3,publication:'publish',profile:{...profile,photos:[{kind:'managed',imageId}]}};
+ assert.equal((await active.handle('/api/staging/marketplace/save',request(publish))).body.error.code,'PHOTOS_REQUIRED');
+ await db.collection(m.reviews).doc(imageId).set({imageId,ownerUid:'owner',moderatorUid:'reviewer',decision:'approved',assetRevision:1,processedDigest:digest,revision:1});
+ const accepted=await active.handle('/api/staging/marketplace/save',request(publish));assert.equal(accepted.status,200);
+ assert.equal((await db.collection(m.publications).doc(scope).get()).data().parentRevision,4);
+ assert.equal((await media.delivery.publicPhotos({kind:'product',parentId:productId,expectedParentRevision:4,expectedPhotoRevision:1})).ok,true);
+ const withdrawn=await active.handle('/api/staging/marketplace/save',request({...publish,requestId:'native-photo-withdraw',expectedRevision:4,publication:'withdraw'}));assert.equal(withdrawn.status,200);
+ assert.equal((await db.collection(c.publicViews).doc('product_'+productId).get()).exists,false);
+ assert.equal((await media.delivery.publicPhotos({kind:'product',parentId:productId,expectedParentRevision:4,expectedPhotoRevision:1})).ok,false);
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

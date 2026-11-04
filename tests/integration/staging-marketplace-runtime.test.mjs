@@ -66,3 +66,20 @@ test('only explicitly enabled Preview staging environment can produce runtime op
  assert.equal(parse().enabled,false);assert.equal(parse(env).enabled,true);assert.equal(parse(env).publicationEnabled,false);
  for(const patch of [{VERCEL_ENV:'production'},{OLDX_FIREBASE_PROJECT_ID:'oldx-1c983'},{OLDX_RATE_ACTOR_LIMIT:'1e3'},{OLDX_RATE_WINDOW_MS:'0'},{OLDX_STAGING_COMMANDS_ENABLED:'false'},{OLDX_STAGING_PUBLICATION_ENABLED:'yes'}])assert.equal(parse({...env,...patch}).enabled,false);
 });
+
+test('native namespace media policy/reference/atomic/delivery reuse the trusted pipeline',async()=>{
+ const {createStagingMarketplaceMedia}=await import('../../scripts/staging-marketplace-media.mjs');
+ const f=fixture({publicationEnabled:true,createMediaBindings:b=>createStagingMarketplaceMedia({enabled:true,binding:b})}),runtime=f.create();
+ const id=(await runtime.handle('/api/staging/marketplace/save',request(save))).body.id,b=createStagingMarketplaceBinding(f.options),m=b.mediaCollections;
+ const media=createStagingMarketplaceMedia({enabled:true,binding:b,authenticate:()=>({uid:'owner'})}),imageId='native_photo_12345678901234567890',digest='b'.repeat(64);
+ f.f.seed(m.assets,imageId,{imageId,kind:'product',parentId:id,ownerUid:'owner',service:null,parentRevision:1,revision:0,state:'quarantined',references:[],processedDigest:digest,processed:{contentType:'image/webp',byteSize:100,width:10,height:10,metadataStripped:true,contentScanned:true}});
+ assert.equal((await media.references.apply({requestId:'ref',kind:'product',parentId:id,expectedParentRevision:1,expectedPhotoRevision:0,imageIds:[imageId],service:null})).ok,true);
+ f.f.seed(m.generations,'current',{value:0});f.f.seed(m.permissions,'owner',{uid:'owner',canModerate:false,canRelease:true,suspended:false});f.f.seed(m.permissions,'reviewer',{uid:'reviewer',canModerate:true,canRelease:false,suspended:false});
+ const publish={...save,id,expectedRevision:1,requestId:'pub',publication:'publish',profile:{...profile,photos:[{kind:'managed',imageId}]}};
+ assert.equal((await runtime.handle('/api/staging/marketplace/save',request(publish))).body.error.code,'PHOTOS_REQUIRED');
+ f.f.seed(m.reviews,imageId,{imageId,ownerUid:'owner',moderatorUid:'reviewer',decision:'approved',assetRevision:1,processedDigest:digest,revision:1});
+ assert.equal((await runtime.handle('/api/staging/marketplace/save',request(publish))).status,200);
+ const photoRequest={kind:'product',parentId:id,expectedParentRevision:2,expectedPhotoRevision:1};assert.equal((await media.delivery.publicPhotos(photoRequest)).ok,true);
+ assert.equal((await runtime.handle('/api/staging/marketplace/save',request({...publish,expectedRevision:2,requestId:'withdraw-native-media',publication:'withdraw'}))).status,200);
+ assert.equal((await media.delivery.publicPhotos(photoRequest)).ok,false);
+});
