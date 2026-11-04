@@ -53,3 +53,59 @@ rows are fixture data, NOT real scanning/moderation/provider acceptance. Real Cl
 operations remain ZERO. Local related mocks/source integration 38/38 and build 3/3
 passed; actual new native suite result must come from exact-source CI because the
 local official Firestore binary download remains blocked.
+
+## Verified native checkpoint and inactive HTTP artifact
+
+- Native source: **02f4ba959c55a261dff88e7a9e146c9ae78ae716**.
+- Exact-source Review **41883099468 SUCCESS**; actual Admin/Auth/Firestore
+  Emulator **7/7 passed**, including native media transaction/withdrawal case.
+  Service Emulator **41883099552 SUCCESS**. No separate Security workflow was
+  scheduled for this source; prior dependency-source Security **41880014601** passed.
+- Actual Emulator evidence is CI, NOT local or real staging acceptance. Local
+  official JAR download is policy-blocked. Auth Emulator unsigned JWT syntax is
+  confined to explicit demo/loopback constructors; production cryptography/JWKS
+  acceptance remains a staging task.
+- Added Web-standard Vercel handler, lazy actual SDK bootstrap and pure route
+  packaging manifest. Artifacts live OUTSIDE root `api/`; no routes installed.
+  Config gates execute before SDK/credentials/body access. Original bounded JSON,
+  strict UTF-8, content type, body/startup deadlines, abort, sanitized errors,
+  no-store responses and shared authentication/rate/repository enforcement reused.
+  Publication-enabled configuration deliberately refused until provider integration.
+- `deploy/staging-marketplace/*.mjs` are locally importable inactive templates.
+  The pure `stagingMarketplaceRouteArtifacts()` manifest contains correct relative
+  imports for FUTURE root API placement. It performs no filesystem writes. Do not
+  simply relocate templates: use the manifest only after separate approval.
+- Focused handler/runtime/HTTP checks **26/26 passed**. `npm run test:build` was
+  a nonexistent script (no build performed by that command); use the actual
+  `npm run test:static-build` script. Handler cases included in existing CI suite.
+
+### Minimum operator decisions / handoff (no secrets in chat)
+
+1. Approve exact staging handler installation/flags separately, with existing
+   Node >=22 runtime (CI Node24), `oldx-staging` only, Preview only, publication
+   **false**, fixed reviewed namespaces and actor/global quotas 10/60 per minute.
+2. Confirm existing securely bound staging Admin identity/access and rollback
+   evidence. Do not provision/change IAM or credentials under this source approval.
+   Empty/missing runtime identity must fail closed; no browser Admin SDK bundle.
+3. Approve initialization manifest for synthetic actors, publication generation
+   and media quotas, backup/export and rollback. No direct-client write Rules
+   exception is required for these trusted server commands; deny-all stays intact.
+4. Supply approved server-only Cloudinary signing/inspection access via existing
+   secure configuration, never chat. Remaining actual provider multipart transport,
+   independent authenticated asset/digest verification, private-byte delivery and
+   delete/reconciliation integration are NOT validated by metadata Emulator tests.
+   Keep Free hard quotas, quarantine/unapproved visibility and no unsigned preset.
+5. Decide moderation reviewer authority, quarantine/rejection handling, retention,
+   deletion/orphan policy and user privacy copy before any real image acceptance.
+   No automated explicit-content detection is implemented or claimed.
+6. Approve isolated synthetic staging acceptance ONLY after above: owner/other/guest/
+   revoked sessions, retry after lost acknowledgement, photos and publication,
+   withdrawal/revocation, browse/edit, gu/hi/en, 320/375px and device checks.
+
+Next safest source batch: implement bounded injected provider HTTP upload/independent
+inspection/delivery ports against deterministic provider fixtures, then packaging
+acceptance for approved staging runtime. No provider call, live data, Rules/index,
+secret/IAM/billing/deployment operation happened here. HOLD/NO-GO remains.
+
+Final source validation: existing transaction integration regression **172/172** passed;
+static browser package **3/3** passed. No server modules copied to browser output.

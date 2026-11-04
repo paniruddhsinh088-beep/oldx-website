@@ -330,3 +330,12 @@ need the stated design/runtime/privacy/staging approvals. HOLD/NO-GO.
 | November 7 release | Focused local/build/browser evidence and explicit checklist | HOLD/NO-GO; production changes remain separately approved operations |
 
 Details and final tests: [session sprint checkpoint](review-progress-2026-11-04-product-session-sprint.md).
+
+4 November native SDK checkpoint: Firebase Admin **14.5.0** pinned and actual
+Auth/Firestore Emulator runtime **7/7** passed on source `02f4ba959c55a261dff88e7a9e146c9ae78ae716`
+(Review `41883099468`). Native Product/Store quota/reference/approval/atomic
+publication/withdrawal metadata bindings reuse existing contracts. Vercel Web-handler
+and lazy SDK bootstrap artifacts prepared outside root `api/`, with publication and
+all runtime gates disabled. Actual provider upload/inspection/delivery, trusted runtime
+activation, staging identity and policy acceptance remain blocked; this is not live
+Product publication. See [native SDK handoff](review-progress-2026-11-04-real-admin-sdk.md).
