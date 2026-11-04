@@ -317,3 +317,16 @@ Focused 10/10 pass; [exact-source ledger](review-progress-2026-11-04-provider-ph
 This is a synthetic-tested contract, not an implemented atomic Provider SDK reader,
 release writer, actual image URL/gateway or activated media integration. Those still
 need the stated design/runtime/privacy/staging approvals. HOLD/NO-GO.
+
+## 4 November — latest source sprint status (no completion percentages)
+
+| P0 area | Verified source progress | Remaining release gate |
+| --- | --- | --- |
+| Product create/edit | Starting-session binding, stale completion suppression, duplicate-pending guard, UTF-8 payload budget and localized feedback tested | Real trusted owner writes, photo/reference publication and full staging workflow; client guards are not authorization |
+| Mandatory photos | Existing signed multipart/quota/approval/atomic contracts remain inactive | Actual provider/inspection/delivery/delete runtime and policy acceptance; no Base64 migration or unsigned-preset activation |
+| Main redesign/mobile | Navy/orange/white foundation; keyboard-native home and wrapping 44px header; 320/375px, large text | Whole-app redesign still partial; real font/network/device/Android QA |
+| Localization | Legacy publish/busy/recovery labels use gu/hi/en, including language switch while pending; seller Unicode preserved | Remaining whole-app labels and native-speaker review |
+| Store/Provider/Chat/Admin | Existing working legacy source and disabled tested ports preserved | Real schema/runtime/identity/rate/moderation/retention integration and acceptance; not completed by Preview deployment |
+| November 7 release | Focused local/build/browser evidence and explicit checklist | HOLD/NO-GO; production changes remain separately approved operations |
+
+Details and final tests: [session sprint checkpoint](review-progress-2026-11-04-product-session-sprint.md).

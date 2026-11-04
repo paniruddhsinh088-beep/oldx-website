@@ -28,6 +28,15 @@ test('Product publication errors use real locale binding at 320/375px without le
    assert.equal(await page.locator('#customAlertDesc').textContent(),catalog['market.publishDenied']);assert.equal(await page.locator('#adTitle').inputValue(),'મૂળ Cafe\u0301 हिन्दी');assert.equal(await page.locator('#adSubmitBtn').evaluate(n=>n.disabled),false);assert.equal((await page.locator('body').textContent()).includes('private-token-DO-NOT-DISPLAY'),false);
    await page.evaluate(()=>document.body.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   }
+  await page.evaluate(()=>{
+   window.fetch=()=>new Promise(resolve=>window.finishLookup=()=>resolve({json:async()=>({ip:'sample'})}));
+   window.pendingPost=handleFinalAdSubmit({preventDefault(){}});
+  });
+  assert.equal(await page.locator('#adSubmitBtn').textContent(),(await import('../../features/i18n/catalogs/en.mjs')).default['market.legacyPublishing']);
+  await page.locator('#marketplaceLocale').selectOption('gu');await page.waitForFunction(()=>document.documentElement.lang==='gu');
+  assert.equal(await page.locator('#adSubmitBtn').textContent(),(await import('../../features/i18n/catalogs/gu.mjs')).default['market.legacyPublishing']);
+  await page.evaluate(async()=>{finishLookup();await pendingPost;});
+  assert.equal(await page.locator('#adSubmitBtn').textContent(),(await import('../../features/i18n/catalogs/gu.mjs')).default['market.legacyPublish']);
   await page.evaluate(async()=>{
    window.crossSessionWrites=0;
    window.db.collection=()=>({add:async()=>{crossSessionWrites++;}});
@@ -37,5 +46,23 @@ test('Product publication errors use real locale binding at 320/375px without le
   assert.equal(await page.evaluate(()=>crossSessionWrites),0);
   assert.equal(await page.locator('#adSubmitBtn').evaluate(n=>n.disabled),false);
   assert.deepEqual(remote,[]);
+ }finally{await context.close();}
+});
+
+test('approved navy/orange header uses native home navigation and wraps touch controls on mobile',async()=>{
+ const {context,page,remote}=await fixture();try{
+  const style=source.slice(source.indexOf('<style>')+7,source.indexOf('</style>'));
+  const start=source.indexOf('<header id="marketplaceHeader"'),header=source.slice(start,source.indexOf('</header>',start)+9);
+  assert.ok(start>0);assert.match(source,/primary: '#102a43'/);assert.match(source,/brand: '#f97316'/);
+  await page.setContent('<style>'+style+'</style>'+header+'<p id="sellerDraft">મૂળ Cafe\u0301 हिन्दी</p>');
+  for(const width of [320,375]){
+   await page.setViewportSize({width,height:900});
+   for(const font of ['100%','200%']){
+    await page.evaluate(font=>{document.documentElement.style.fontSize=font;document.getElementById('storeHeaderBtn').textContent='સ્ટોર બનાવો · स्टोर बनाएँ';document.getElementById('headerAdminBtn').style.display='inline-flex';},font);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+    for(const control of ['#oldxHomeLink','#storeHeaderBtn','#authContainer button'])assert.ok((await page.locator(control).boundingBox()).height>=44);
+   }
+  }
+  await page.locator('#oldxHomeLink').focus();assert.equal(await page.locator('#oldxHomeLink').evaluate(n=>document.activeElement===n&&n.tagName==='A'),true);await page.keyboard.press('Enter');assert.equal(await page.locator('#sellerDraft').textContent(),'મૂળ Cafe\u0301 हिन्दी');assert.deepEqual(remote,[]);
  }finally{await context.close();}
 });

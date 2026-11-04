@@ -1,5 +1,7 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.legacyPublish": "Post Now (Publish Ad)",
+  "market.legacyPublishing": "Publishing...",
   "market.publishErrorTitle": "Ad publication",
   "market.publishDenied": "Publishing is not permitted for this account or environment. Your ad was not published. Your form is unchanged.",
   "market.publishAuthRequired": "Your session could not be verified. Sign in again before publishing. Your form is unchanged.",

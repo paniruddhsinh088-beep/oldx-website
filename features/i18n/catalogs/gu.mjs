@@ -1,5 +1,7 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.legacyPublish": "હમણાં પોસ્ટ કરો (જાહેરાત પ્રકાશિત કરો)",
+  "market.legacyPublishing": "પ્રકાશિત થાય છે…",
   "market.publishErrorTitle": "જાહેરાત પ્રકાશન",
   "market.publishDenied": "આ એકાઉન્ટ અથવા પર્યાવરણમાં પ્રકાશનની મંજૂરી નથી. જાહેરાત પ્રકાશિત થઈ નથી. ફોર્મ યથાવત છે.",
   "market.publishAuthRequired": "તમારું સત્ર ચકાસી શકાયું નથી. પ્રકાશન પહેલાં ફરી લૉગિન કરો. ફોર્મ યથાવત છે.",

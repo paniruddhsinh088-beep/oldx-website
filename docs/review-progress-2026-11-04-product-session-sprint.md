@@ -36,3 +36,28 @@ credential access, media activation/quota/privacy/moderation and synthetic accep
 rollback scope. No secrets in chat. No production checklist item may be marked GO
 from mocks/Preview success. Navy/orange/white whole-app redesign and Store/Service/
 Chat/Admin/full locale/device acceptance remain unfinished; no completion percentage.
+
+## Approved UI foundation follow-up
+
+Session safety source checkpoint: `8b9bec06b8533a5b12de628a3d8bd2cadc54b421`,
+pushed/remote verified. Follow-up reuses existing homepage: navy primary #102a43,
+orange brand #f97316, white background; native keyboard home anchor, wrapping header
+controls with 44px targets and focus indicators. No new page/framework/provider.
+Publish/publishing labels now use gu/hi/en catalogs, including a locale switch while
+pending. Seller-authored Unicode is unchanged. This is a partial redesign foundation;
+remaining legacy teal/amber styles and full real-device acceptance are not complete.
+
+Final local evidence: 25 focused unit/source/integration/security cases; 11 locale
+cases; 6 actual browser cases (320/375px, 200% text, native keyboard navigation,
+private-error redaction, pending-language switch and session change); 3 build cases,
+all passed. Test source changed between focused runs; no unchanged full local sweep.
+No local actual Emulator because official binary host remains blocked; exact-source
+Review CI contains the existing 6-case actual Rules suite. CI status must be reported
+from the pushed source, not presumed from local mocks or a different SHA.
+
+Production checklist, NOT an operational authorization: named exact owner approval
+for main/release/production resources; successful synthetic staging create/photo/
+publish/browse/edit/withdraw and unauthorized/privacy/Chat/Admin tests; signed media
+quota/moderation/privacy/retention decisions; verified runtime identity/config/indexes;
+private-data projection and rollback artifacts; gu/hi/en/mobile/device acceptance;
+then separately approved monitored rollout. Without these, no production GO.

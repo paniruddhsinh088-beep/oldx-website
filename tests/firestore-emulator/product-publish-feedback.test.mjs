@@ -24,7 +24,7 @@ test('allowlisted error codes do not echo SDK messages or execute hostile getter
 for(const locale of ['gu','hi','en'])test(`denied legacy Product publish preserves photo/form and gives safe ${locale} feedback`,async()=>{
  const f=fixture({locale});await f.submit();
  assert.equal(f.writes.length,1);assert.equal(f.writes[0].name,'products');assert.equal(f.writes[0].data.title,'મૂળ Cafe\u0301 हिन्दी');assert.equal(f.writes[0].data.images.length,1);
- assert.equal(f.nodes.get('customAlertDesc').textContent,catalogs[locale]['market.publishDenied']);assert.equal(f.nodes.get('adTitle').value,'મૂળ Cafe\u0301 हिन्दी');assert.equal(f.nodes.get('adImages').files.length,1);assert.equal(f.nodes.get('adSubmitBtn').disabled,false);assert.notEqual(f.nodes.get('successAdModal').style.display,'flex');
+ assert.equal(f.nodes.get('customAlertDesc').textContent,catalogs[locale]['market.publishDenied']);assert.equal(f.nodes.get('adTitle').value,'મૂળ Cafe\u0301 हिन्दी');assert.equal(f.nodes.get('adImages').files.length,1);assert.equal(f.nodes.get('adSubmitBtn').disabled,false);assert.equal(f.nodes.get('adSubmitBtn').textContent,catalogs[locale]['market.legacyPublish']);assert.notEqual(f.nodes.get('successAdModal').style.display,'flex');
  assert.equal(JSON.stringify([f.warnings,f.alerts]).includes('private credential'),false);assert.equal(f.nodes.get('customAlertDesc').dataset.i18n,undefined);
 });
 test('photo decode failures never write; ambiguous write outcomes never automatically retry',async()=>{
