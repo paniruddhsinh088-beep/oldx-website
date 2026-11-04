@@ -240,3 +240,14 @@ current remote configuration/isolation/backup/rollback cannot be verified. No re
 staging tests or writes performed. Reconnect existing scoped access and verify
 prerequisites first; do not repeat an approval request for the already-authorized
 limited integration scope. HOLD/NO-GO remains until actual staging acceptance.
+
+## 4 November — owner-selected Cloudinary Free, inactive signing preparation
+
+Owner approves cloud `tfizvbzc` Free for photos and safe staging testing; no Blaze,
+paid resources, secrets/IAM changes, deployment or public activation. Auth/preset
+settings are owner-reported, not remotely verified. Server-only signing and verified
+HTTP preflight are now prepared default-off; no provider transport is connected.
+Raw signatures must never reach browser clients because they do not bind file bytes.
+See [Cloudinary checkpoint](review-progress-2026-11-04-cloudinary-ledger.md) for exact
+local evidence, legacy unsigned migration and required staging/security decisions.
+HOLD/NO-GO remains; mandatory photos and real acceptance are not complete.
