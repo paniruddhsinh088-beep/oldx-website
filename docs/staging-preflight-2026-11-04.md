@@ -70,3 +70,52 @@ Emulator progress remains intact, but real staging acceptance has not started.
 Keep all remaining Product/Store/Provider/photos/Chat/Admin/locale/mobile requirements.
 No reset, paid usage, live/staging writes, Storage/Rules/index/IAM/secrets/billing,
 Vercel/public deployment, migration, main update or merge. Stop operational work.
+
+## Recheck after multipart bridge — 4 November 2026
+
+New owner instruction permits read-only preflight and non-destructive staging tests
+using EXISTING authorized Firebase/Cloudinary access only. It does not authorize
+credential changes, provisioning, Rules/IAM/billing/deployment, preset changes or
+public activation. No credentials requested in chat and no interactive login started.
+
+Fresh fetch: local and remote both `9a683dc7810adb9f93ad87ab9653134f83b94b9b`,
+clean tree, authorized branch only; no concurrent changes. Reviewed AGENTS, previous
+preflight and existing admin runtime checklist. Current managed-environment observation
+is fresh (`observations_current=true`); restricted network policy enforced, zero
+outbound identity, secret or runtime-variable bindings. OIC manifest, Firebase/ADC
+credential selectors and cache files, Cloudinary credential selectors, `.firebaserc`
+and generated `firebase-env.js` absent (presence checks only; no secret file contents).
+
+Effective policy excludes `firebase.googleapis.com`, `identitytoolkit.googleapis.com`,
+`securetoken.googleapis.com`, `firebaserules.googleapis.com`, `firestore.googleapis.com`,
+`api.cloudinary.com` and `res.cloudinary.com`. These are policy observations, not HTTP
+connectivity tests. No API requests or network-policy bypass attempted. Existing repo
+contains inactive injected HTTP/signing/multipart ports, not a verified deployed staging
+server endpoint. `vercel.json` explicitly disables deployment of this review branch;
+unchanged. No staging URL/runtime binding, backup manifest or restore/rollback evidence
+was available to verify. This does not establish that none exists outside this session.
+
+Owner-reported `oldx-staging` Auth providers, deny-all Rules and Cloudinary `tfizvbzc`
+Free presets remain UNVERIFIED remotely. Production isolation, actual Auth configuration,
+current permissions and rollback readiness cannot be confirmed with present access.
+STOP: actual staging Login tests ZERO; photo uploads ZERO; remote Firebase/Cloudinary
+API calls ZERO. No account creation, reads of customer data, uploads/deletes, resource
+changes or transport activation. Staging acceptance has NOT been performed.
+
+Targeted local guard check:
+`node --test --test-isolation=none scripts/generate-firebase-env.test.js` — **6/6 pass**.
+Synthetic temporary config fixtures only; not real Login/upload/Emulator acceptance.
+Existing exact-head Review CI for `9a683dc...`: **41804544443 success**. Previous executable
+source `0b4a409...` has three successful workflows recorded in the multipart ledger.
+No executable source changed in this preflight checkpoint; its push-triggered Review
+CI status should be checked separately, not inferred from older runs.
+
+Fastest safe unblock: environment operator attaches an EXISTING staging-scoped authorized
+session through the supported secure connection mechanism (no chat credentials, no new
+IAM/secret provisioning), supplies the existing private staging runtime URL and non-secret
+isolation/backup/rollback evidence, and enables only approved required API destinations
+through the supported network-policy workflow. If that needs credentials/IAM/runtime or
+provider configuration changes, obtain separate approval first. Re-run read-only preflight
+before any login/upload attempt; do not test unsigned uploads as a fallback. Cloudinary
+Free preference is approved; actual account security, quotas and signed private delivery
+still need acceptance. HOLD/NO-GO remains; November 7 readiness is not established.
