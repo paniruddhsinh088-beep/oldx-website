@@ -28,6 +28,7 @@
     "test:chat-private-user-state:rules": "node scripts/run-emulator-tests.mjs chat-private-state",
     "test:service-providers": "node --test features/service-providers/*.test.mjs",
     "test:service-providers:rules": "node scripts/run-emulator-tests.mjs service-providers",
+    "test:product-drafts:rules": "node scripts/run-emulator-tests.mjs product-drafts",
     "test:emulator:guard": "node --test scripts/emulator-test-plan.test.mjs",
     "test:service-preview": "node --test tests/service/*.test.mjs",
     "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs tests/browser/marketplace-locale.test.mjs tests/browser/product-integration.test.mjs tests/browser/store-integration.test.mjs tests/browser/provider-private-integration.test.mjs tests/browser/provider-public-integration.test.mjs tests/browser/provider-conversation-integration.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/mandatory-photos.test.mjs",

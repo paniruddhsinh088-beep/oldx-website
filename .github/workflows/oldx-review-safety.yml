@@ -140,6 +140,8 @@ jobs:
       - name: Run Firestore Emulator authorization tests
         run: npm run test:emulator:rules
 
+      - name: Run isolated private Product draft ownership Rules tests
+        run: npm run test:product-drafts:rules
       - name: Run Firebase Storage Emulator authorization tests
         run: npm run test:storage:rules
 

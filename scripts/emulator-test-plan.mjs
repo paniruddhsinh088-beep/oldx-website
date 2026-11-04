@@ -5,6 +5,11 @@ export const EMULATOR_TEST_PLANS = Object.freeze({
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8080,
     tests: ['tests/firestore-emulator/rules-runtime.test.mjs', 'tests/firestore-emulator/admin-atomic-audit.test.mjs', 'tests/firestore-emulator/staging-readiness-runtime.test.mjs']
   }),
+  'product-drafts': Object.freeze({
+    service: 'firestore', project: 'demo-oldx-product-drafts', config: 'firebase.product-drafts-emulator.json',
+    rules: 'tests/firestore-emulator/product-owner-drafts.candidate.rules', port: 8086,
+    tests: ['tests/firestore-emulator/product-owner-drafts-runtime.test.mjs']
+  }),
   storage: Object.freeze({
     service: 'storage', project: 'demo-oldx-storage', config: 'firebase.storage-emulator.json',
     rules: 'tests/storage-emulator/candidate.rules', port: 9199,

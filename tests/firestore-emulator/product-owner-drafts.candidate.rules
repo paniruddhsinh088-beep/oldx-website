@@ -1,0 +1,47 @@
+rules_version = '2';
+// UNDEPLOYED STAGING PROPOSAL. Never grants access to legacy mixed products.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owner(data) {
+      return request.auth != null && data.sellerUid == request.auth.uid;
+    }
+    function eligible() {
+      return request.auth != null
+        && get(/databases/$(database)/documents/stagingProductActors_v1/$(request.auth.uid)).data.canWrite == true
+        && get(/databases/$(database)/documents/stagingProductActors_v1/$(request.auth.uid)).data.suspended == false;
+    }
+    function text(value, maximum) {
+      return value is string && value.size() > 0 && value.size() <= maximum;
+    }
+    function validDraft() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['sellerUid','title','description','category','subCategory',
+        'basePrice','status','revision','createdAt','updatedAt'])
+        && d.keys().hasAll(['sellerUid','title','description','category','subCategory',
+        'basePrice','status','revision','createdAt','updatedAt'])
+        && owner(d) && eligible() && text(d.title, 120) && text(d.description, 1200)
+        && text(d.category, 40) && d.category.matches('^[a-z0-9_-]+$') && text(d.subCategory, 80)
+        && d.basePrice is number && d.basePrice >= 0 && d.basePrice <= 1000000000
+        && d.status in ['draft','withdrawn']
+        && d.revision is int && d.revision >= 1
+        && d.createdAt is timestamp && d.updatedAt == request.time;
+    }
+    match /stagingProductDrafts_v1/{productId} {
+      allow get: if owner(resource.data) && eligible();
+      allow list: if owner(resource.data) && eligible() && request.query.limit != null
+        && request.query.limit > 0 && request.query.limit <= 20;
+      allow create: if validDraft() && request.resource.data.status == 'draft'
+        && request.resource.data.revision == 1
+        && request.resource.data.createdAt == request.time;
+      allow update: if owner(resource.data) && validDraft()
+        && request.resource.data.sellerUid == resource.data.sellerUid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.revision == resource.data.revision + 1;
+      // Use revisioned withdrawal. Physical deletion needs trusted media/audit cleanup.
+      allow delete: if false;
+    }
+    // Publication, approved photos, private contacts, audit, roles and all legacy
+    // collections remain server-only. No client role claim bypasses this boundary.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
