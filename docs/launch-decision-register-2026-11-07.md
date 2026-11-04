@@ -226,3 +226,17 @@ source-versus-staging evidence, exact remaining P0 blockers, approval/credential
 requirements and minimum acceptance tests. Only a small atomic-photo receipt replay
 consistency fix was implemented in this batch; no runtime migration or activation.
 Full live launch by November 7 remains conditional and cannot be promised; HOLD/NO-GO.
+
+## 4 November limited oldx-staging approval and preflight result
+
+Owner now authorizes safe integration/testing on the EXISTING oldx-staging project
+only, subject to verified isolation/access/security/backup/rollback and synthetic
+data/accounts. This is not approval for production, deployments, IAM/secrets or
+credential changes, billing/paid services, media moderation activation or main/merge.
+Rules/data changes additionally require verified backup/rollback and security review.
+[Current preflight](staging-preflight-2026-11-04.md) stopped before operational changes:
+no ready authenticated staging connection, required API egress not allowed, and
+current remote configuration/isolation/backup/rollback cannot be verified. No real
+staging tests or writes performed. Reconnect existing scoped access and verify
+prerequisites first; do not repeat an approval request for the already-authorized
+limited integration scope. HOLD/NO-GO remains until actual staging acceptance.
