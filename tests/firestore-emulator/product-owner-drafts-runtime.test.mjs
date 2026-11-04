@@ -39,7 +39,10 @@ test('owner updates and withdrawal require monotonic revision and immutable iden
 });
 test('malformed, public/privileged and Base64 payloads are rejected',async()=>{
  const db=ownerDb();let n=0;
- for(const patch of [{title:''},{title:'x'.repeat(121)},{basePrice:-1},{basePrice:NaN},{basePrice:Infinity},{description:'x'.repeat(1201)},{revision:0},{status:'published'},{isFeatured:true},{isShopVerified:true},{role:'admin'},{phone:'private'},{userIp:'sample'},{coords:{lat:0,lng:0}},{images:['data:image/jpeg;base64,'+'x'.repeat(1100000)]},{updatedAt:Timestamp.fromMillis(0)}])await assertFails(setDoc(doc(db,path,'bad-'+(++n)),{...draft(),...patch}));
+ for(const patch of [{title:''},{title:'x'.repeat(121)},{basePrice:-1},{basePrice:NaN},{basePrice:Infinity},{description:'x'.repeat(1201)},{revision:0},{status:'published'},{isFeatured:true},{isShopVerified:true},{role:'admin'},{phone:'private'},{userIp:'sample'},{coords:{lat:0,lng:0}},{images:['data:image/jpeg;base64,c2FtcGxl']},{updatedAt:Timestamp.fromMillis(0)}])await assertFails(setDoc(doc(db,path,'bad-'+(++n)),{...draft(),...patch}));
+ // Oversized values fail Firestore's size validation before Rules evaluation.
+ // Keep the small Base64 case above to independently require Rules denial.
+ await assert.rejects(setDoc(doc(db,path,'oversized'),{...draft(),images:['data:image/jpeg;base64,'+'x'.repeat(1100000)]}),{code:'invalid-argument'});
  const missing=draft();delete missing.title;await assertFails(setDoc(doc(db,path,'missing'),missing));
  const ref=doc(db,path,'no-escalation');await setDoc(ref,draft());
  for(const patch of [{status:'published'},{isFeatured:true},{isShopVerified:true},{images:['fake'] }])await assertFails(updateDoc(ref,{...patch,revision:2,updatedAt:serverTimestamp()}));
