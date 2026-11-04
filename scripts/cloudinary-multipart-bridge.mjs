@@ -39,7 +39,7 @@ export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCr
    report(0);check(context);
    let response;
    try{
-    response=await sendMultipart({url:URL,method:'POST',body,maxResponseBytes:16384},{signal:context.signal,deadlineAt:context.deadlineAt,onProgress:event=>{
+    response=await sendMultipart({url:URL,method:'POST',body,maxResponseBytes:16384},{actorUid:context.actorUid,signal:context.signal,deadlineAt:context.deadlineAt,onProgress:event=>{
      const p=copyRecord(event,['loaded','total']);
      if(p&&p.total===upload.bytes.length&&Number.isSafeInteger(p.loaded)&&p.loaded>=0&&p.loaded<=p.total)report(Math.min(99,Math.floor(p.loaded*100/p.total)));
     }});
@@ -51,7 +51,7 @@ export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCr
    const parsed=parseBoundedJson(transport.body),v=parsed.ok?copyRecord(parsed.value,['asset_id','public_id','version','signature','resource_type','type','format','bytes','width','height']):null;
    if(!v||!safeId(v.asset_id)||v.public_id!==upload.publicId||!Number.isSafeInteger(v.version)||v.version<1||v.resource_type!=='image'||v.type!=='authenticated'||v.format!=='webp'||v.bytes!==upload.bytes.length||!Number.isSafeInteger(v.width)||v.width<1||v.width>8192||!Number.isSafeInteger(v.height)||v.height<1||v.height>8192||v.width*v.height>16000000||!same(v.signature,hash('public_id='+v.public_id+'&version='+v.version+credentials.apiSecret)))unavailable();
    const digest=hash(upload.bytes);
-   const proof=copyRecord(await inspectAsset({assetId:v.asset_id,publicId:v.public_id,version:v.version},{signal:context.signal,deadlineAt:context.deadlineAt}),['assetId','publicId','version','resourceType','deliveryType','format','byteSize','width','height','digest']);
+   const proof=copyRecord(await inspectAsset({assetId:v.asset_id,publicId:v.public_id,version:v.version},{actorUid:context.actorUid,signal:context.signal,deadlineAt:context.deadlineAt}),['assetId','publicId','version','resourceType','deliveryType','format','byteSize','width','height','digest']);
    check(context);
    if(!proof||proof.assetId!==v.asset_id||proof.publicId!==v.public_id||proof.version!==v.version||proof.resourceType!=='image'||proof.deliveryType!=='authenticated'||proof.format!=='webp'||proof.byteSize!==upload.bytes.length||proof.width!==v.width||proof.height!==v.height||proof.digest!==digest||await signer.verifyForServer(signed.grant,upload,auth)!==true)unavailable();
    check(context);
