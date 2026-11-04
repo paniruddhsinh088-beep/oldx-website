@@ -14,7 +14,7 @@ const metadataKeys=uploadKeys.filter(key=>key!=='signature');
 // Server-only HTTP implementation with an injected Fetch-compatible dependency.
 // Default OFF and isolated-test ONLY: no global fetch, SDK startup or environment
 // credentials. Reuse journal leases: this module NEVER retries a mutating call.
-export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getCredentials,authorizeAsset,resolveDerivative,now=Date.now}={}){
+export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getCredentials,authorizeAsset,resolveDerivative,resolvePrivateDerivative,now=Date.now}={}){
  const active=enabled===true&&mode==='isolated-test';
  async function credentials(){
   if(!active||typeof fetchImpl!=='function'||typeof getCredentials!=='function')fail();
@@ -103,6 +103,19 @@ export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getC
    if(after.status!==404)fail();return {result:'ok'};
   },
   async inspectAsset(input,context){const {bytes,...proof}=await inspect(input,context);return proof;},
+  async readPrivateDerivative(input,context){
+   const r=copyRecord(input,['imageId','scopeId','revision','maxBytes']);
+   if(!active||!r||!safeId(r.imageId)||!safeId(r.scopeId)||!Number.isSafeInteger(r.revision)||r.revision<0||r.maxBytes!==MAX||!safeId(context?.actorUid)||typeof resolvePrivateDerivative!=='function')fail();
+   const keys=['assetId','publicId','version','digest'];
+   const target=copyRecord(await resolvePrivateDerivative({...r},context),keys);
+   if(!target||!same(target.digest,target.digest))fail();
+   const {digest,...scope}=target;await authorized('deliver-private',{...r,...scope},context);
+   const result=await inspect(scope,context);if(!same(result.digest,digest))fail();
+   await authorized('deliver-private',{...r,...scope},context);
+   const after=copyRecord(await resolvePrivateDerivative({...r},context),keys);
+   if(!after||keys.some(key=>after[key]!==target[key]))fail();
+   return {imageId:r.imageId,scopeId:r.scopeId,revision:r.revision,contentType:'image/webp',bytes:result.bytes};
+  },
   async readApprovedDerivative(input,context){
    const r=copyRecord(input,['derivativeId','version','maxBytes']);if(!active||!r||!safeId(r.derivativeId)||!positive(r.version)||r.maxBytes!==MAX||typeof resolveDerivative!=='function')fail();
    const target=copyRecord(await resolveDerivative({derivativeId:r.derivativeId,version:r.version},context),['assetId','publicId','version','digest']);

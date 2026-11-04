@@ -339,3 +339,11 @@ and lazy SDK bootstrap artifacts prepared outside root `api/`, with publication 
 all runtime gates disabled. Actual provider upload/inspection/delivery, trusted runtime
 activation, staging identity and policy acceptance remain blocked; this is not live
 Product publication. See [native SDK handoff](review-progress-2026-11-04-real-admin-sdk.md).
+
+4 November media HTTP sprint: bounded injected signed multipart transport, independent
+authenticated metadata/stored-byte inspection, approved public and participant-scoped
+private byte delivery, lease-authorized immutable-asset cleanup, and offline generated
+Vercel dependency packaging now have synthetic acceptance coverage. No provider calls,
+public routes, migration or moderation activation. Real journal/proof runtime composition,
+provider quota/policy configuration and real staging acceptance remain P0 gates.
+[Durable resume checkpoint](oldx-autonomous-resume.md) records exact source/CI and next work.

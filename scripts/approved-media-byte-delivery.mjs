@@ -42,3 +42,26 @@ export function createApprovedMediaByteDelivery({enabled=false,contract,readAppr
   return result?.ok===true?result:unavailable();
  }});
 }
+
+// Separate private port: no public-media fallback and no signed provider URLs.
+// Authentication and participant-bound redemption are independently revalidated.
+export function createPrivateMediaByteDelivery({enabled=false,authenticate,contract,readPrivateDerivative,consumeRateLimit,timeoutMs=5000}={}){
+ return Object.freeze({async read(request,{credential,signal}={}){
+  const r=copyRecord(request,['token']);
+  if(enabled!==true||typeof authenticate!=='function'||typeof contract?.authorizeRedemption!=='function'||typeof readPrivateDerivative!=='function'||typeof consumeRateLimit!=='function'||!r||typeof r.token!=='string'||!/^[A-Za-z0-9_.-]{20,2048}$/.test(r.token))return unavailable();
+  const result=await runVerifiedOperation({authenticate,credential,signal,timeoutMs,run:async context=>{
+   async function current(){
+    const scope=copyRecord(await contract.authorizeRedemption(r.token,{credential,signal:context.signal}),['ok','imageId','scopeId','revision','cacheControl']);context.checkpoint();
+    return scope?.ok===true&&safeId(scope.imageId)&&safeId(scope.scopeId)&&Number.isSafeInteger(scope.revision)&&scope.revision>=0&&scope.cacheControl==='private, no-store'?scope:null;
+   }
+   const rate=copyRecord(await consumeRateLimit({operation:'media.private.read',actorUid:context.actorUid},{signal:context.signal,deadlineAt:context.deadlineAt}),['allowed']);context.checkpoint();if(rate?.allowed!==true)return unavailable();
+   const before=await current();if(!before)return unavailable();
+   const response=copyRecord(await readPrivateDerivative({imageId:before.imageId,scopeId:before.scopeId,revision:before.revision,maxBytes:3*1024*1024},context),['imageId','scopeId','revision','contentType','bytes']);context.checkpoint();
+   if(!response||response.imageId!==before.imageId||response.scopeId!==before.scopeId||response.revision!==before.revision||!(response.bytes instanceof Uint8Array)||response.bytes.length<1||response.bytes.length>3*1024*1024||!format(response.bytes,response.contentType))return unavailable();
+   const bytes=new Uint8Array(response.bytes),after=await current();
+   if(!after||after.imageId!==before.imageId||after.scopeId!==before.scopeId||after.revision!==before.revision)return unavailable();
+   return {ok:true,bytes,headers:{'Content-Type':response.contentType,'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"}};
+  }});
+  return result?.ok===true?result:unavailable();
+ }});
+}

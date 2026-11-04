@@ -83,6 +83,6 @@ test('delete targets immutable managed asset only, requires lease authority and 
 });
 test('revoked delete lease and ambiguous delete acknowledgement never release quota or auto-retry',async()=>{
  const request={assetId:identity.assetId,publicId:identity.publicId,resourceType:'image',deliveryType:'authenticated',invalidate:true};
- for(const mode of ['revoked','unknown']){const f=fixture(),fetch=f.options.fetchImpl;let authorizations=0;f.options.authorizeAsset=async()=>mode!=='revoked'||++authorizations<2;f.options.fetchImpl=async(url,init)=>init.method==='DELETE'&&mode==='unknown'?json({deleted:{foreign:'deleted'}}):fetch(url,init);
- await assert.rejects(f.create().destroy(request,ctx()));assert.equal(f.calls.filter(c=>c.init.method==='DELETE').length,0);}
+ for(const mode of ['revoked','unknown']){const f=fixture(),fetch=f.options.fetchImpl;let authorizations=0,deleteAttempts=0;f.options.authorizeAsset=async()=>mode!=='revoked'||++authorizations<2;f.options.fetchImpl=async(url,init)=>{if(init.method==='DELETE'){deleteAttempts++;if(mode==='unknown')return json({deleted:{foreign:'deleted'}});}return fetch(url,init);};
+ await assert.rejects(f.create().destroy(request,ctx()));assert.equal(deleteAttempts,mode==='unknown'?1:0);}
 });
