@@ -218,3 +218,11 @@ Exact evidence: [atomic ledger](review-progress-2026-11-04-atomic-photos-ledger.
 Provider public-image/byte delivery, actual storage/moderation/runtime, privacy/
 retention, Auth/rates/Rules/IAM/secrets, Chat/Admin and real staging/device acceptance
 remain P0. No account action or operational approval inferred. HOLD/NO-GO.
+
+## 4 November credit-saving sprint audit
+
+See [Nov 5–7 ranked execution plan](launch-sprint-plan-2026-11-05-07.md) for current
+source-versus-staging evidence, exact remaining P0 blockers, approval/credential
+requirements and minimum acceptance tests. Only a small atomic-photo receipt replay
+consistency fix was implemented in this batch; no runtime migration or activation.
+Full live launch by November 7 remains conditional and cannot be promised; HOLD/NO-GO.
