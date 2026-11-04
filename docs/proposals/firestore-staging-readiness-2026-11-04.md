@@ -131,3 +131,21 @@ retention/deletion and Admin/media privacy/moderation policy; real staging/mobil
 acceptance. Fastest safe next step is restoring existing authorized read-only preflight
 access/evidence, then reviewing one explicit server-mediated staging slice. Do not
 relax client Rules to make the existing legacy listener work. HOLD/NO-GO remains.
+
+## Verified checkpoint
+
+Source: `7597964fa362665a6b575fe458366abfc2bb6e2c`. Remote history preserved;
+first GitHub push returned transient internal-server error, ordinary retry succeeded,
+remote SHA matched. No force push or activation.
+
+Exact-source CI: Review Safety **41810113997 success**, Branch Security
+**41810113895 success**, Service Providers Emulator **41810113893 success**.
+Review job `126506972670` logs confirm actual loopback Firestore Emulator baseline
+**13/13 pass**, including all **5/5 new staging readiness cases** (four client roles
+and trusted fixture access). This is real Emulator execution, NOT staging acceptance.
+Existing Service SDK Emulator workflow also passed unchanged ownership/publication/
+Chat/media cases; do not infer real token, deployed index or runtime readiness.
+
+Final checkpoint is this documentation-only follow-up commit; resolve with
+`git log -1 --format=%H -- docs/proposals/firestore-staging-readiness-2026-11-04.md`.
+Stop here with clean tree; no operational deployment or demo-data seeding authorized.
