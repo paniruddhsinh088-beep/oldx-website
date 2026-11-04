@@ -12,7 +12,7 @@ function fixture({locale='en',error={code:'permission-denied',message:'private c
  for(const [id,value] of Object.entries(values))nodes.set(id,{value});
  for(const id of ['adSubmitBtn','adIsFeatured','adIsShopVerified','customAlertTitle','customAlertDesc','successAdModal'])nodes.set(id,{checked:false,disabled:false,style:{},dataset:{},dispatchEvent(){this.textContent=catalogs[locale][this.dataset.i18n];}});
  nodes.set('adImages',{files:[{name:'synthetic.png'}]});
- const context=vm.createContext({Object,Event,parseFloat,Math,console:{log(){},warn:(...v)=>warnings.push(v)},window:{currentUser:{uid:'sample-owner',displayName:'Sample'}},document:{getElementById:id=>nodes.get(id)||null},selectedMainCat:{id:'mobiles'},selectedSubCat:'Mobile Phones',selectedCoords:null,firebase:{firestore:{FieldValue:{serverTimestamp:()=> 'synthetic-time'}}},fetch:async()=>({json:async()=>({ip:'synthetic-only'})}),compressImage:async()=>{if(imageError)throw Error('private photo failure');return 'data:image/jpeg;base64,c2FtcGxl';},db:{collection:name=>({add:async data=>{writes.push({name,data});if(error)throw error;}})},showCustomAlert:(...v)=>alerts.push(v),openAuthModal(){}});
+ const context=vm.createContext({Object,Event,TextEncoder,parseFloat,Math,console:{log(){},warn:(...v)=>warnings.push(v)},window:{currentUser:{uid:'sample-owner',displayName:'Sample'}},document:{getElementById:id=>nodes.get(id)||null},selectedMainCat:{id:'mobiles'},selectedSubCat:'Mobile Phones',selectedCoords:null,firebase:{firestore:{FieldValue:{serverTimestamp:()=> 'synthetic-time'}}},fetch:async()=>({json:async()=>({ip:'synthetic-only'})}),compressImage:async()=>{if(imageError)throw Error('private photo failure');return 'data:image/jpeg;base64,c2FtcGxl';},db:{collection:name=>({add:async data=>{writes.push({name,data});if(error)throw error;}})},showCustomAlert:(...v)=>alerts.push(v),openAuthModal(){}});
  vm.runInContext(code,context);
  return {context,nodes,writes,warnings,alerts,submit:()=>context.handleFinalAdSubmit({preventDefault(){}})};
 }
@@ -34,4 +34,14 @@ test('photo decode failures never write; ambiguous write outcomes never automati
 test('success still requires acknowledged Firestore write and existing login guard prevents unauthenticated submission',async()=>{
  const f=fixture({error:null});await f.submit();assert.equal(f.writes.length,1);assert.equal(f.nodes.get('successAdModal').style.display,'flex');assert.equal(f.alerts.length,0);
  const guest=fixture();guest.context.window.currentUser=null;await guest.submit();assert.equal(guest.writes.length,0);assert.equal(guest.alerts[0][0],'Login Required');
+});
+
+test('UTF-8 write budget rejects oversized photos/metadata before Firestore and preserves selection',async()=>{
+ const f=fixture({error:null});
+ f.context.compressImage=async()=> 'data:image/jpeg;base64,'+'A'.repeat(1100000);
+ await f.submit();assert.equal(f.writes.length,0);assert.equal(f.nodes.get('customAlertDesc').textContent,catalogs.en['market.publishInvalid']);assert.equal(f.nodes.get('adImages').files.length,1);assert.equal(f.nodes.get('adTitle').value,'મૂળ Cafe\u0301 हिन्दी');assert.equal(f.nodes.get('adSubmitBtn').disabled,false);
+ const fits=f.context.legacyProductFitsWriteBudget;
+ assert.equal(fits({images:['data:image/jpeg;base64,c2FtcGxl']}),true);
+ assert.equal(fits({description:'અ'.repeat(310000)}),false);
+ const cyclic={};cyclic.self=cyclic;assert.equal(fits(cyclic),false);
 });

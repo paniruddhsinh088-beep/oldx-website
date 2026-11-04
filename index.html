@@ -4967,6 +4967,14 @@
             return 'market.publishUnconfirmed';
         }
 
+        // UI-only conservative budget, not Firestore's authoritative size calculation.
+        // Keep headroom for stored field/path overhead; never log the private payload.
+        function legacyProductFitsWriteBudget(data) {
+            try {
+                return new TextEncoder().encode(JSON.stringify(data)).byteLength <= 900 * 1024;
+            } catch (_) { return false; }
+        }
+
         async function handleFinalAdSubmit(e) {
             e.preventDefault();
 
@@ -5039,6 +5047,9 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
+                if (!legacyProductFitsWriteBudget(adData)) {
+                    throw Object.assign(new Error('Product exceeds local write budget'), { code: 'invalid-argument' });
+                }
                 publishStage = 'write';
                 await db.collection('products').add(adData);
                 btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
