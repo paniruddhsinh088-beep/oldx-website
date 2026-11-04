@@ -1,5 +1,13 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.publishErrorTitle": "विज्ञापन प्रकाशन",
+  "market.publishDenied": "इस खाते या परिवेश में प्रकाशन की अनुमति नहीं है। विज्ञापन प्रकाशित नहीं हुआ। फ़ॉर्म सुरक्षित है।",
+  "market.publishAuthRequired": "आपका सत्र सत्यापित नहीं हुआ। प्रकाशन से पहले फिर लॉगिन करें। फ़ॉर्म सुरक्षित है।",
+  "market.publishImageFailed": "फ़ोटो तैयार नहीं हुआ। JPG, PNG या WebP चुनकर फिर कोशिश करें। फ़ॉर्म सुरक्षित है।",
+  "market.publishInvalid": "विज्ञापन की जानकारी स्वीकार नहीं हुई। विवरण और फ़ोटो का आकार जाँचें। फ़ॉर्म सुरक्षित है।",
+  "market.publishLimit": "प्रकाशन की सीमा पूरी हो गई है। बाद में कोशिश करें। फ़ॉर्म सुरक्षित है।",
+  "market.publishUnconfirmed": "प्रकाशन की पुष्टि नहीं हुई। फ़ॉर्म सुरक्षित है। दोहराव से बचने के लिए फिर कोशिश करने से पहले मेरे विज्ञापन जाँचें।",
+
   pageTitle: "OldX Services — UI पूर्वावलोकन (डेमो)",
   demoNotice:
     "UI PREVIEW ONLY · यह डेमो है — कोई वास्तविक प्रोफ़ाइल, फ़ोन नंबर, संदेश या डेटाबेस जुड़ा नहीं है।",

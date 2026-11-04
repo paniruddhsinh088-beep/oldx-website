@@ -1,5 +1,13 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.publishErrorTitle": "જાહેરાત પ્રકાશન",
+  "market.publishDenied": "આ એકાઉન્ટ અથવા પર્યાવરણમાં પ્રકાશનની મંજૂરી નથી. જાહેરાત પ્રકાશિત થઈ નથી. ફોર્મ યથાવત છે.",
+  "market.publishAuthRequired": "તમારું સત્ર ચકાસી શકાયું નથી. પ્રકાશન પહેલાં ફરી લૉગિન કરો. ફોર્મ યથાવત છે.",
+  "market.publishImageFailed": "ફોટો તૈયાર થઈ શક્યો નથી. JPG, PNG અથવા WebP પસંદ કરીને ફરી પ્રયાસ કરો. ફોર્મ યથાવત છે.",
+  "market.publishInvalid": "જાહેરાતની માહિતી સ્વીકારી શકાઈ નથી. વિગતો અને ફોટાનું કદ તપાસો. ફોર્મ યથાવત છે.",
+  "market.publishLimit": "પ્રકાશનની મર્યાદા પહોંચી ગઈ છે. પછી પ્રયાસ કરો. ફોર્મ યથાવત છે.",
+  "market.publishUnconfirmed": "પ્રકાશનની પુષ્ટિ થઈ નથી. ફોર્મ યથાવત છે. ડુપ્લિકેટ ટાળવા ફરી પ્રયાસ પહેલાં મારી જાહેરાતો તપાસો.",
+
   pageTitle: "OldX Services — UI પ્રિવ્યૂ (ડેમો)",
   demoNotice:
     "UI PREVIEW ONLY · આ ડેમો છે — કોઈ વાસ્તવિક પ્રોફાઇલ, ફોન નંબર, મેસેજ કે ડેટાબેઝ જોડાયેલ નથી.",

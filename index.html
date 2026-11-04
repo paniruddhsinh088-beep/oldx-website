@@ -4951,6 +4951,22 @@
             });
         }
 
+        // Allowlisted app-owned feedback only; never display SDK messages or payloads.
+        function productPublishErrorKey(error, stage) {
+            let code = '';
+            try {
+                const field = error && Object.getOwnPropertyDescriptor(error, 'code');
+                if (field && typeof field.value === 'string') code = field.value.replace(/^firestore\//, '');
+            } catch (_) {}
+            if (stage === 'image') return 'market.publishImageFailed';
+            if (code === 'permission-denied') return 'market.publishDenied';
+            if (code === 'unauthenticated') return 'market.publishAuthRequired';
+            if (code === 'invalid-argument') return 'market.publishInvalid';
+            if (code === 'resource-exhausted') return 'market.publishLimit';
+            // Network/timeouts can leave an unknown add() outcome: never auto-retry.
+            return 'market.publishUnconfirmed';
+        }
+
         async function handleFinalAdSubmit(e) {
             e.preventDefault();
 
@@ -4963,6 +4979,7 @@
             const btn = document.getElementById('adSubmitBtn');
             btn.innerText = 'Publishing...'; btn.disabled = true;
 
+            let publishStage = 'prepare';
             try {
                 let userIp = 'N/A';
                 try {
@@ -4995,6 +5012,7 @@
                 const finalPriceStr = '&#8377;' + Math.round(basePrice).toLocaleString('en-IN');
 
                 let images = [];
+                publishStage = 'image';
                 if (imgInput.files && imgInput.files.length > 0) {
                     for (let i = 0; i < imgInput.files.length; i++) {
                         const compressed = await compressImage(imgInput.files[i]);
@@ -5002,6 +5020,7 @@
                     }
                 }
 
+                publishStage = 'prepare';
                 const adData = {
                     sellerUid: window.currentUser.uid,
                     sellerName: window.currentUser.displayName || 'Seller',
@@ -5020,12 +5039,22 @@
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
 
+                publishStage = 'write';
                 await db.collection('products').add(adData);
                 btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
                 document.getElementById('successAdModal').style.display = 'flex';
             } catch (err) {
                 btn.innerText = 'Post Now (Publish Ad)'; btn.disabled = false;
-                showCustomAlert("Error", "Something went wrong. Please try again.", "error");
+                const messageKey = productPublishErrorKey(err, publishStage);
+                console.warn('[OLDX] Ad publication failed:', messageKey);
+                showCustomAlert('Ad publication', 'Could not confirm publication. Your form is unchanged. Check My Ads before retrying.', 'error');
+                for (const [id, key] of [['customAlertTitle', 'market.publishErrorTitle'], ['customAlertDesc', messageKey]]) {
+                    const node = document.getElementById(id);
+                    node.dataset.i18n = key;
+                    node.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
+                    // Avoid relabeling an unrelated alert during a later locale change.
+                    delete node.dataset.i18n;
+                }
             }
         }
 

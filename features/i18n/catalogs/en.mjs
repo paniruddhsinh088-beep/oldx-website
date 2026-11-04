@@ -1,5 +1,13 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.publishErrorTitle": "Ad publication",
+  "market.publishDenied": "Publishing is not permitted for this account or environment. Your ad was not published. Your form is unchanged.",
+  "market.publishAuthRequired": "Your session could not be verified. Sign in again before publishing. Your form is unchanged.",
+  "market.publishImageFailed": "The photo could not be prepared. Choose a JPG, PNG or WebP image and try again. Your form is unchanged.",
+  "market.publishInvalid": "The listing data could not be accepted. Check the fields and photo sizes. Your form is unchanged.",
+  "market.publishLimit": "Publishing limits were reached. Try later. Your form is unchanged.",
+  "market.publishUnconfirmed": "Could not confirm publication. Your form is unchanged. Check My Ads before retrying to avoid a duplicate.",
+
   pageTitle: "OldX Services — UI Preview (Demo)",
   demoNotice:
     "UI PREVIEW ONLY · No real profiles, phone numbers, messages or database are connected.",
