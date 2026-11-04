@@ -14,7 +14,12 @@ export function createIsolatedAtomicPhotoPublication({enabled=false,firestore,sd
  const {collections:m}=isolatedFirestoreContext({firestore,sdk,schema:marketplaceSchema,roles:['actors','privateRecords','publicViews','owners','generations','receipts','audits']});
  if(Object.values(c).some(v=>Object.values(m).includes(v)))throw new Error('Overlapping parent/media mapping');
  const policy=createIsolatedMandatoryPhotoPolicy({enabled:true,firestore,sdk,schema});
- return Object.freeze({marketplaceCollections:m,async prepare(raw,{kind,previous,next,actorUid,requestKey,fingerprint,action}={}){
+ return Object.freeze({marketplaceCollections:m,async verifyReplay(raw,{kind,parentId,actorUid,requestKey,fingerprint,parentRevision,action}){
+  const key=hash(['atomic-parent-media',actorUid,kind,parentId,requestKey]),fields=['actorUid','requestKey','fingerprint','kind','parentId','parentRevision','photoRevision','releaseRevision','generation','action'];
+  const read=async role=>{const snap=await raw.get(sdk.doc(db,c[role],key));if(!snap.exists())return null;const {committedAt,...value}=snap.data();return copyRecord(value,fields);};
+  const receipt=await read('receipts'),audit=await read('audits');
+  return !!receipt&&!!audit&&Object.entries({kind,parentId,actorUid,requestKey,fingerprint,parentRevision,action}).every(([k,v])=>receipt[k]===v)&&int(receipt.parentRevision)&&receipt.parentRevision>0&&int(receipt.photoRevision)&&int(receipt.releaseRevision)&&receipt.releaseRevision>0&&int(receipt.generation)&&receipt.generation>0&&fields.every(k=>audit[k]===receipt[k]);
+ },async prepare(raw,{kind,previous,next,actorUid,requestKey,fingerprint,action}={}){
   if(!['product','store'].includes(kind)||!['publish','withdraw','archive'].includes(action)||!safeId(actorUid)||!safeId(requestKey)||typeof fingerprint!=='string'||!/^[a-f0-9]{64}$/.test(fingerprint)||!previous||previous.id!==next?.id||previous.kind!==kind||next.kind!==kind||previous.ownerUid!==actorUid||next.ownerUid!==actorUid||!safeId(next.id)||!int(previous.revision)||next.revision!==previous.revision+1)return fail('DENIED');
   const publish=action==='publish';if(next.published!==publish||publish&&next.publicationRevision!==next.revision||!publish&&next.publicProfile!==null)return fail('CONFLICT');
   const scopeId=hash([kind,next.id,null]),referenceId='public_'+scopeId,key=hash(['atomic-parent-media',actorUid,kind,next.id,requestKey]);
