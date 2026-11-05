@@ -2,6 +2,65 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November native enquiry/contact and operational Provider host packaging
+
+Implementation **9eff838944f1e84328940dd56ba13d80774ce93d**, corrected executable
+**1a5f65f4baa3642ae420c65ed402c3c114f1cc7e** pushed to review branch only;
+remote SHA verified, preserved 1161918. No live provider/data access or activation.
+
+Reused the SAME durable enquiry/conversation transaction core in a default-disabled
+native branded repository. Fixed private namespaces, canonical Provider publication,
+active owner/participant checks, blocks, bounded SELECT id-only inbox queries, scoped
+cursors, receipts/history/audit and two-way text remain participant-only. Shared actor
+mapping projects only enquiry eligibility (never trusts caller roles). Existing native
+Provider media host now wires enquiry create/cancel/detail/inbox and conversation
+read/send behind separate enquiriesEnabled=false gate. Existing Firebase token verifier
+checks revocation; native atomic rates and repository ownership remain enforcement.
+New default-off Fetch artifacts package Provider commands and conversation handlers;
+no root api files installed. Two required private inbox indexes are proposals only.
+
+Diagnostic runtime validator never invokes credential getters or grants activation.
+Suggested free-tier staging defaults: one profile + six work images, <=2MiB/image,
+20MiB reserved/actor and 100MiB global, 20 reservation attempts/actor; rate10/actor/min,
+50 global/min; independent moderation required and automatic deletion OFF. These are
+proposed source constants, not applied quotas or approved retention policy. Trusted
+byte processing/scan, quarantine and independent reviewer gates remain mandatory.
+
+Local related integration/service/Admin/static **369/369 PASS**, safety **96/96 PASS**,
+Products/Stores/Providers/Chat mobile browser **30/30 PASS**; final native host focused
+**8/8 PASS** (overlap). Shared full HTTP host matrix is added to actual Admin/Auth/
+Firestore CI (now15): real token checks, buyer/provider inbox, private SELECT/paging,
+foreign-user denial, same-request retry, replies, stale revision, blocks/suspension,
+cancellation and withdrawal. Local SDK-double and browser fixtures are NOT acceptance.
+Initial Review **42062714643 FAILED**: actual Auth Emulator unsigned token was
+rejected by Provider command syntax before verified Auth. Fixed only explicit Emulator
+host parsing; normal/staging signed syntax and revoked-token verification stay strict.
+Focused HTTP/Auth/enforcement **21/21 PASS**, including default unsigned-token denial
+and verifier requirement in Emulator mode. Service Emulator **42062714579 SUCCESS**
+on original source. Corrected exact-source Review **42063491058 SUCCESS**, Service Emulator
+**42063491069 SUCCESS**. Actual Admin/Auth/Firestore **15/15 PASS**, including
+the full native Provider HTTP contact/inbox/two-way conversation host. Standalone
+Security workflow not triggered for this path set; Review includes safety regressions.
+
+Real Cloudinary/full staging journey NOT RUN: current enforced environment has no
+outbound identities/secrets; GOOGLE_APPLICATION_CREDENTIALS, OIC_MANIFEST_PATH,
+CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET are unset. Required Firebase/Google APIs and
+api.cloudinary.com/res.cloudinary.com are absent from effective allowlist. No credential
+discovery, provider write, proxy retroubleshooting or synthetic acceptance substitution.
+
+Exact owner/operator actions: connect EXISTING scoped oldx-staging identity and existing
+Cloudinary Free server access securely in approved runtime (never chat); allow only its
+required Google token/Firestore/Auth and Cloudinary API/delivery hosts; verify current
+project snapshot + backup/rollback; approve/initialize synthetic actors, participant
+blocks, quotas, cursor codec, Gujarat catalog and proposed indexes; choose trusted scan,
+independent moderator, quarantine/Chat retention and cleanup policy; explicitly approve
+staging routes/flags and isolated synthetic uploads/data writes. No Production, Rules,
+IAM, credential provisioning, billing or paid service change is implied.
+Next exact action: real oldx-staging + Cloudinary
+synthetic login/register/profile/work/save/review/publish/search/detail/contact/edit/
+withdraw acceptance once the listed existing access and activation approvals exist.
+Production requires that evidence plus final deployment approval. HOLD/NO-GO.
+
 ## 5 November Provider owner photo UI + production image processor packaging
 
 Owner explicitly authorized necessary repository dependency/integration changes.

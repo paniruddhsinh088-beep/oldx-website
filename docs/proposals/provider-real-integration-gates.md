@@ -59,3 +59,19 @@ Real Provider uploads/publication/search/contact are not activated. HOLD/NO-GO.
 | Privacy/moderation gate | Independent byte inspection, quarantine, moderation approval/revocation, quotas, retention/deletion and safe private/public media delivery; no automated moderation claimed |
 | Rules review gate | Proposals preserve known deny-all baseline only. Actual deployed Products/Stores/Chat permissions must be snapshotted and reconciled before any owner-approved merge; no overwrite/deployment done. |
 | Live blocker | No approved/installed runtime or real signed Provider upload path; no live data accessed. Synthetic-account staging and physical mobile acceptance have not passed. HOLD/NO-GO. |
+
+
+## Native contact/host update — 5 November
+
+Source 9eff838944f1e84328940dd56ba13d80774ce93d (Emulator token correction
+1a5f65f4baa3642ae420c65ed402c3c114f1cc7e) adds default-off native private enquiry,
+inbox/history and two-way conversation binding to the existing Provider host. Fixed
+private paths are providerEnquiries_v1, providerEnquiryReceipts_v1,
+providerEnquiryAudit_v1, providerEnquiryHistory_v1, providerParticipantBlocks_v1,
+providerConversations_v1, providerMessages_v1, providerMessageReceipts_v1 and
+providerMessageAudit_v1. Actor eligibility uses serviceProviderActors_v1, projecting
+canEnquire independently from canWrite. No browser reads to private documents.
+All paths/indexes/routes remain unactivated. Real acceptance is blocked by absent
+configured staging identity/server Cloudinary credentials and missing API allowlist
+entries in the CURRENT environment, not by a request to weaken deny-all Rules.
+See autonomous resume for exact operational handoff and test evidence.
