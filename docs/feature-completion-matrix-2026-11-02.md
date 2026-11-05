@@ -372,3 +372,15 @@ Multipart/JSON media handler artifacts remain outside root api/ and disabled. No
 real provider/staging acceptance; private draft/photo-reference and approved delivery
 binding, actual runtime/policy/access approvals and staging/device acceptance remain P0.
 [Current activation handoff and next action](oldx-autonomous-resume.md).
+
+5 November final photo-reference source `82efcf6d0697f7aaaf66f320049eab25d2c821d3`:
+private Product/Store draft references/parent/audit commit atomically, owner reference
+restore and approved public Blob views are bound, private replacement retains the
+old public release until approved replacement, and withdrawal/revocation/delete leases
+fail closed. Verified provider receipt metadata maps app release to actual provider
+version without guessing. Exact-source Review `41980270161` confirms integration
+**205/205**, actual Auth/Firestore Emulator **10/10**. Public mobile viewer **12/12**,
+existing owner/recovery/browser subset **24 pass**, static **3/3**. No real provider or
+staging acceptance; transports/routes/publication remain disabled. Stop nonessential
+synthetic additions; next gate is approved secure staging preflight/acceptance.
+[Minimum operator handoff](oldx-autonomous-resume.md).

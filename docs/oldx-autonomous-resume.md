@@ -29,7 +29,13 @@ through this resolver until independently inspected/reconciled. No legacy image 
 live document migration, automatic unpublication or account changes occurred.
 
 Baseline **f144badcfbf66b7caaf04e59f6ef5141795bf414**, Review **41976894526 SUCCESS**.
-New executable source/CI pending push. Local transaction regression **204/204 PASS**;
+Latest pushed executable source **82efcf6d0697f7aaaf66f320049eab25d2c821d3**.
+Exact-source Review **41980270161**, Security **41980270296**, Service Emulator
+**41980270155** — all SUCCESS. Vercel Preview SUCCESS. Final-source integration
+**205/205 PASS** and actual Admin/Auth/Firestore Emulator **10/10 PASS** confirmed
+in Review logs, including both Product/Store atomic lifecycle and verified owner read.
+This final ledger-only checkpoint changes no executable source; its own exact SHA
+is `git log -1 --format=%H -- docs/oldx-autonomous-resume.md`. Local transaction regression **204/204 PASS**;
 additional final owner/client + lifecycle subset **7/7 PASS**; static build **3/3 PASS**.
 Public viewer mobile **12/12 PASS** (Product/Store × gu/hi/en × 320/375px, 2x text,
 language switch, revoke-during-read, late scope result); existing owner/recovery/browser
@@ -37,12 +43,11 @@ subset **24 passed**. Initial public fixture had 12 Unicode failures due to miss
 UTF-8 response charset; corrected the fixture header and reran all 12 successfully.
 No assertion was weakened or skipped. Actual Admin/Auth/Firestore suite expanded to
 10 cases with full Product/Store upload → atomic draft reference → independent review
-fixture → publish/replace → withdraw/detach/delete lifecycle. New actual result pending
-exact-source CI. Provider/processing/review fixtures are NOT real Cloudinary, scanning
+fixture → publish/replace → withdraw/detach/delete lifecycle. Actual final-source **10/10 PASS** confirmed in exact-source CI. Provider/processing/review fixtures are NOT real Cloudinary, scanning
 or staging/moderation acceptance.
 
-Current next exact action: check final-source CI, fix verified failures, then STOP
-nonessential synthetic additions. Next meaningful execution is approved staging
+Current next exact action: STOP nonessential synthetic additions; final-source CI
+is verified. Next meaningful execution is approved staging
 readiness/preflight and real synthetic acceptance once existing secure access and
 explicit operational approvals below are available. Preserve every disabled gate.
 
