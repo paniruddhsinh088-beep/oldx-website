@@ -5,9 +5,9 @@ import {createPrivateConversationHttp} from './product-conversation-http.mjs';
 import {createStagingMediaProviderRuntime} from './staging-media-provider-runtime.mjs';
 import {copyRecord,safeId} from './isolated-firestore-context.mjs';
 const failure=(status,code)=>({status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},body:{ok:false,error:{code}}});
-function project(value){
+function project(value,operation){
  const v=copyRecord(value,['ok','imageId','state','revision','parentRevision',...(value&&Object.hasOwn(value,'replayed')?['replayed']:[])]);
- return v?.ok===true&&typeof v.imageId==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId)&&['quarantined','deleted'].includes(v.state)&&Number.isSafeInteger(v.revision)&&v.revision>=1&&Number.isSafeInteger(v.parentRevision)&&v.parentRevision>=1&&(v.replayed===undefined||v.replayed===true)?v:null;
+ return v?.ok===true&&typeof v.imageId==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId)&&(operation==='status'?['reserved','uploading','quarantined','attached','deleting','deleted','cancelled']:['quarantined','deleted']).includes(v.state)&&Number.isSafeInteger(v.revision)&&v.revision>=(operation==='status'?0:1)&&Number.isSafeInteger(v.parentRevision)&&v.parentRevision>=1&&(v.replayed===undefined||v.replayed===true)?v:null;
 }
 // No HTTP endpoint, SDK startup or provider defaults. Identity/rates MUST be the
 // existing verified enforcement ports; providerPorts are trusted SERVER bindings.
@@ -44,10 +44,24 @@ export function createStagingAuthenticatedMedia({enabled=false,binding,verifyFir
    if(response.status!==200)return response;const dto=project(outcome);return dto?{...response,body:dto}:failure(503,'UNAVAILABLE');
   },
   command(operation,request,context={}){
-   const keys={remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
-   const http=createPrivateConversationHttp({...options,contract:{prefix:'media.command.',keys,mutations:Object.keys(keys),projection:(_op,v)=>project(v)},createRepository:scope=>{
+   const keys={status:['requestId','kind','parentId'],remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
+   const http=createPrivateConversationHttp({...options,contract:{prefix:'media.command.',keys,mutations:Object.keys(keys).filter(op=>op!=='status'),projection:(op,v)=>project(v,op)},createRepository:scope=>{
     const runtime=coordinator(scope);
-    return {async remove(input,opts){const lease=await runtime.journal.transition('lease-delete',{...input,proof:null},opts);if(lease?.ok!==true)return lease;return runtime.remove({...input,expectedRevision:lease.revision},opts);},reconcileUpload:({assetId,version,...input},opts)=>runtime.reconcileUpload(input,{assetId,version},opts),reconcileDelete:(input,opts)=>runtime.reconcileDelete(input,opts)};
+    return {async status(input,{signal}={}){
+     if(!safeId(input.requestId)||!['product','store'].includes(input.kind)||!safeId(input.parentId))return {ok:false,code:'INVALID_REQUEST'};
+     const identity=await scope.authenticate(),uid=identity.uid,key=createHash('sha256').update(JSON.stringify([uid,'reserve',input.requestId])).digest('hex');
+     return b.sdk.runTransaction(b.db,async tx=>{
+      if(signal?.aborted)throw Error('Read stopped');
+      const [receipt,audit]=await Promise.all([tx.get(b.sdk.doc(b.db,b.journalCollections.operations,key)),tx.get(b.sdk.doc(b.db,b.journalCollections.audits,key))]);
+      if(!receipt.exists()||!audit.exists())return {ok:false,code:'DENIED'};const r=receipt.data(),a=audit.data();
+      if(r.actorUid!==uid||r.operation!=='reserve'||!safeId(r.imageId)||r.outcome?.imageId!==r.imageId||r.outcome?.ok!==true||a.actorUid!==uid||a.requestKey!==key||a.operation!=='reserve'||a.imageId!==r.imageId)return {ok:false,code:'DENIED'};
+      const [asset,parent,actor]=await Promise.all([tx.get(b.sdk.doc(b.db,b.journalCollections.assets,r.imageId)),tx.get(b.sdk.doc(b.db,b.collections.privateRecords,input.kind+'_'+input.parentId)),tx.get(b.sdk.doc(b.db,b.collections.actors,uid))]);
+      if(signal?.aborted)throw Error('Read stopped');if(!asset.exists()||!parent.exists()||!actor.exists())return {ok:false,code:'DENIED'};
+      const image=asset.data(),p=parent.data(),owner=actor.data();
+      if(image.imageId!==r.imageId||image.ownerUid!==uid||image.kind!==input.kind||image.parentId!==input.parentId||p.id!==input.parentId||p.kind!==input.kind||p.ownerUid!==uid||owner.uid!==uid||owner.canWrite!==true||owner.suspended!==false)return {ok:false,code:'DENIED'};
+      return {ok:true,imageId:image.imageId,state:image.state,revision:image.revision,parentRevision:image.parentRevision};
+     },{maxAttempts:3});
+    },async remove(input,opts){const lease=await runtime.journal.transition('lease-delete',{...input,proof:null},opts);if(lease?.ok!==true)return lease;return runtime.remove({...input,expectedRevision:lease.revision},opts);},reconcileUpload:({assetId,version,...input},opts)=>runtime.reconcileUpload(input,{assetId,version},opts),reconcileDelete:(input,opts)=>runtime.reconcileDelete(input,opts)};
    }});
    return http.handle(operation,request,context);
   }

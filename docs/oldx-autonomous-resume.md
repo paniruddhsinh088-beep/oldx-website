@@ -12,9 +12,13 @@ is exposed. One photo per request; existing Product/Store limits remain. Provide
 identity is deliberately excluded from this Product/Store native binding.
 
 Latest pushed baseline **ddf28e1b4ffd9d3301917e46c1acb59b451a94b6**;
-exact-source Review **41966691062 SUCCESS**. New implementation SHA/CI pending push.
+exact-source Review **41966691062 SUCCESS**. Implementation checkpoint **613c4376887f5fa4669946c8bb2b820fb5a77c96** pushed;
+its exact-source CI is being checked. Follow-up owner-only request-ID status read
+now resolves the durable allocation without exposing proof/asset/digest fields.
+Final follow-up source SHA/CI will be recorded after push.
 Local focused **10/10**, existing integration regression **194/194**, static build
-**3/3 PASS**. No failed/skipped assertions. Native Auth/Firestore suite expanded to
+**3/3 PASS**. Follow-up status flow integrated test **2/2 PASS**; broader unchanged
+suites are not rerun locally without reason; final exact-source CI covers them. No failed/skipped assertions. Native Auth/Firestore suite expanded to
 9 cases: same composition uses actual verified Auth Emulator tokens and native rate/
 quota/repository transactions with deterministic provider/processor fixtures. Actual
 new Emulator CI result pending; no live provider or staging acceptance is claimed.
@@ -25,10 +29,9 @@ upload. Durable proof persistence and resumed journal confirmation mark mutation
 attempts before awaiting native work. Quarantine never implies moderation approval;
 existing independent byte inspection and separate publication review gates remain.
 
-Next exact action: inspect the new native CI case; fix any real SDK failures before
-claiming success. Then add an authenticated receipt/status lookup by upload request
-ID and bind existing disabled photo UI recovery ports, so lost responses can discover
-an allocated image without browser access to private documents. Do not mount routes,
+Next exact action: inspect final native CI (including owner-only request-ID status);
+fix any real SDK failures before claiming success. Then bind existing disabled photo
+UI upload/status/retry ports, with same-key recovery and account-change cleanup. Do not mount routes,
 activate transport flags, or enable publication.
 
 ### Single operator handoff — blocked real staging acceptance

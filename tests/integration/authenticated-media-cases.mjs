@@ -24,6 +24,10 @@ export async function exerciseAuthenticatedMedia({binding:b,seed,read,verifyFire
  assert.equal((await make().upload(http({...intent,byteSize:bytes.length+1}),bytes)).status,400);
  assert.equal((await make().upload(http({...intent,expectedParentRevision:2}),bytes)).status,409);
  const unknown=await make().upload(http(intent),bytes);assert.equal(unknown.status,202);assert.equal(unknown.body.retrySameRequest,true);assert.equal(sends,1);
+ const statusRequest={requestId:intent.requestId,kind:'product',parentId};
+ const status=await make().command('status',http(statusRequest));assert.equal(status.status,200);assert.equal(status.body.state,'uploading');assert.ok(!JSON.stringify(status.body).includes('digest'));assert.ok(!JSON.stringify(status.body).includes('assetId'));
+ assert.equal((await make().command('status',http(statusRequest,otherToken))).status,403);
+ assert.equal((await make().command('status',http({...statusRequest,parentId:'foreign'}))).status,403);
  lost=false;const complete=await make().upload(http(intent),bytes);assert.equal(complete.status,200);assert.equal(complete.body.state,'quarantined');assert.equal(sends,1);
  assert.ok(!JSON.stringify(complete).includes('ownerUid'));assert.ok(!JSON.stringify(complete).includes('nonce'));
  assert.equal((await make().upload(http(intent),bytes)).body.replayed,true);assert.equal(sends,1);
