@@ -11,17 +11,25 @@ hashed server-side; no caller owner/role/digest, Cloudinary signature or private
 is exposed. One photo per request; existing Product/Store limits remain. Provider v1
 identity is deliberately excluded from this Product/Store native binding.
 
-Latest pushed baseline **ddf28e1b4ffd9d3301917e46c1acb59b451a94b6**;
-exact-source Review **41966691062 SUCCESS**. Implementation checkpoint **613c4376887f5fa4669946c8bb2b820fb5a77c96** pushed;
-its exact-source CI is being checked. Follow-up owner-only request-ID status read
-now resolves the durable allocation without exposing proof/asset/digest fields.
-Final follow-up source SHA/CI will be recorded after push.
+Latest pushed executable source **e648e96382dd522c92ec89bcba56e9a1a31b527f**.
+Exact-source Review **41971266001 SUCCESS**, Service Emulator **41971265956 SUCCESS**;
+Vercel Preview SUCCESS. Applicable Security **41971079366 SUCCESS** belongs to prior
+implementation checkpoint **613c4376887f5fa4669946c8bb2b820fb5a77c96** (no separate
+Security workflow was scheduled for the status-only follow-up). That earlier Review
+**41971079502 was CANCELLED** by the newer push, not passed. Latest Review validates
+all final executable source. Baseline **ddf28e1b4ffd9d3301917e46c1acb59b451a94b6** preserved.
+Owner-only request-ID status read resolves allocation without proof/asset/digest fields.
+This final ledger-only checkpoint changes no executable code; its exact commit is
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
 Local focused **10/10**, existing integration regression **194/194**, static build
 **3/3 PASS**. Follow-up status flow integrated test **2/2 PASS**; broader unchanged
 suites are not rerun locally without reason; final exact-source CI covers them. No failed/skipped assertions. Native Auth/Firestore suite expanded to
 9 cases: same composition uses actual verified Auth Emulator tokens and native rate/
 quota/repository transactions with deterministic provider/processor fixtures. Actual
-new Emulator CI result pending; no live provider or staging acceptance is claimed.
+Admin/Auth/Firestore Emulator **9/9 PASS** in latest Review CI; the integrated case
+verified native quotas, durable receipts/status, unknown outcomes and leased deletion.
+Full final-source integration **194/194 PASS** also confirmed in CI. No real
+Cloudinary or staging acceptance is claimed.
 
 Unknown outcomes retain same request keys and quota. Cancellation/deadline after a
 claimed dispatch returns 202/retrySameRequest and does not trigger a second provider
@@ -29,9 +37,10 @@ upload. Durable proof persistence and resumed journal confirmation mark mutation
 attempts before awaiting native work. Quarantine never implies moderation approval;
 existing independent byte inspection and separate publication review gates remain.
 
-Next exact action: inspect final native CI (including owner-only request-ID status);
-fix any real SDK failures before claiming success. Then bind existing disabled photo
-UI upload/status/retry ports, with same-key recovery and account-change cleanup. Do not mount routes,
+Current incomplete task / next exact action: bind existing disabled photo UI
+upload/status/retry ports to the tested composition, with same-key recovery and
+account-change cleanup. Prepare media handler artifacts outside root api/ if needed;
+keep real provider processing/inspection and moderation as explicit operational gates. Do not mount routes,
 activate transport flags, or enable publication.
 
 ### Single operator handoff — blocked real staging acceptance

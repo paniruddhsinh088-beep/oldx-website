@@ -354,3 +354,11 @@ Durable one-dispatch claims, verified proof/audit storage, restart/lost-ack reco
 owner/revision checks and lease/quota settlement reuse existing journal namespaces.
 No live provider calls or routes. Trusted preflight-to-runtime binding, real media
 processing/policy/access and staging acceptance remain P0. HOLD/NO-GO.
+
+5 November authenticated-media checkpoint `e648e96382dd522c92ec89bcba56e9a1a31b527f`:
+verified preflight → native reserve/attempt → durable upload proof/quarantine and
+owner-only status/reconciliation/lease-delete now have actual isolated Auth/Firestore
+Emulator **9/9** evidence (Review `41971266001`, integration **194/194**).
+Provider/processor fixtures remain synthetic. No endpoint or publication activation;
+photo UI transport binding, real media policy/access and staging E2E remain P0 gates.
+See [single current operator handoff](oldx-autonomous-resume.md).
