@@ -2,6 +2,45 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November bounded public Product/Store HTTP + client binding
+
+Baseline **76e238dba43693aa889ea869cdf55bb36d0d0203** matched fresh remote;
+working tree clean, no concurrent history overwritten. Executable source
+**d10cb8a4019d8edfb2678925837eec645adc9212** pushed; remote exact SHA verified.
+Added default-disabled `createMarketplacePublicHttp` and `createMarketplacePublicClient`
+for existing bounded Product/Store list/detail repositories and controller ports.
+No endpoint installation, SDK initialization, network transport, public publishing,
+operational flags or legacy page activation. Guest reads require injected trusted rate
+enforcement; absence, malformed result, denial, deadline or cancellation fails closed.
+No client-supplied owner, role, credentials or forwarding headers reach repositories.
+HTTP enforces POST/JSON, 4KiB body, exact request keys, 1..24 limit, known categories,
+Store scope and <=1024-character cursors. Strict public-field DTO validation on server
+and client rejects private/extra fields, invalid identity, ordering and scope mismatch.
+Existing repository remains responsible for current publication, generation, withdrawal,
+seller/Store ownership and cursor epoch checks. Responses no-store; no URL/media fallback.
+Existing Store projection exported for reuse rather than duplicating its field model.
+Browser/Capacitor-neutral source; authored Gujarati/Hindi/Unicode unchanged.
+
+Focused repository/HTTP/client/Product/Store/static build **19/19 PASS**. Final focused
+HTTP/command/recovery/handler/static build security regression **31/31 PASS** after
+server profile-validation tightening. Existing Product browser suite now routes actual
+Browse/detail and shared Product/Store navigation through new client + HTTP + isolated
+repository: **9/9 PASS**, including 320px/375px, language/session switching, Unicode,
+refresh, private recovery and history navigation. Fixtures use mock SDK, NOT real staging.
+Exact-source Review **42025432911 SUCCESS** and Service Emulator
+**42025432885 SUCCESS**. Review includes actual native Admin SDK Firestore/Auth
+Emulator and authorization suites; these are isolated CI results, not real staging.
+No local actual Emulator rerun: known proxy blocker is unchanged and not retroubleshot.
+Standalone Security workflow not triggered for this path set.
+
+Next source task: compose the prepared public read and authenticated command clients
+with existing photo/delivery bindings in one reviewed disabled host/runtime factory;
+reuse existing modules, do not add pages or a competing query model. Actual real staging
+remains blocked by secure oldx-staging identity/network, verified Rules snapshot/data
+inventory/rollback and separately approved provider processing/moderation/quotas/retention,
+runtime route/flag activation. No live access or settings changes; HOLD/NO-GO remains.
+Ledger-only checkpoint SHA: `git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November authenticated Product/Store command bridge
 
 Baseline **af3f3423d4a677542f6d57704783f4bf3e5e5389** and fresh remote matched;
