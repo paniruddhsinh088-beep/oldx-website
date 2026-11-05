@@ -13,7 +13,7 @@ export async function startPreviewServer(pages) {
     try {
       const body = await readFile(new URL('../..' + path, import.meta.url));
       res.setHeader('Content-Type', path.endsWith('.html') ? 'text/html; charset=utf-8'
-        : path.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8');
+        : path.endsWith('.svg') ? 'image/svg+xml' : path.endsWith('.css') ? 'text/css; charset=utf-8' : 'text/javascript; charset=utf-8');
       res.end(body);
     } catch { res.writeHead(500); res.end(); }
   });
