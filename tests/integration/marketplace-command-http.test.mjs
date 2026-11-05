@@ -60,3 +60,44 @@ test('bounded HTTP body accommodates valid Gujarati/Hindi text and six managed r
 test('real HTTP default never accepts an unsigned Emulator token',async()=>{
  const {http}=fixture();const r=request(save);r.headers.authorization='Bearer fake.test.';assert.equal((await http.handle('save',r)).status,401);
 });
+
+test('authenticated command bridge drives existing Product UI and repository; lost acknowledgement reuses request',async()=>{
+ const {createAuthenticatedMarketplaceCommands}=await import('../../features/marketplace/authenticated-command-client.mjs');
+ const {createProductIntegration}=await import('../../features/marketplace/product-integration.mjs');
+ const {http,f}=fixture();const calls=[];let lose=true;
+ const ports=createAuthenticatedMarketplaceCommands({enabled:true,getToken:scope=>({...scope,token:'fake.test.token'}),sendCommand:async(op,body,auth)=>{
+  calls.push(structuredClone(body));const response=await http.handle(op,{...request(body),headers:{...request(body).headers,authorization:'Bearer '+auth.credential}},{signal:auth.signal});
+  if(lose&&op==='save'){lose=false;throw Error('lost acknowledgement');}return response;
+ }});
+ const ui=createProductIntegration({enabled:true,ports,makeRequestId:()=> 'bridge-key'});ui.setSession({uid:'owner',sessionId:'session'});
+ await ui.save(profile);assert.equal(ui.snapshot().command.status,'unknown');assert.equal(f.commits,1);
+ await ui.retry();assert.deepEqual(calls[0],calls[1]);assert.equal(f.commits,1);assert.equal(ui.snapshot().command.status,'saved');
+ await ui.loadOwner('product-1');assert.equal(ui.snapshot().statuses.owner,'ready');
+ assert.equal(f.get(m.privateRecords,'product_product-1').profile.title,profile.title);
+ ui.setSession(null);assert.equal(ui.snapshot().owner,null);
+});
+
+test('command bridge defaults off, rejects foreign token and caller ownership without dispatch',async()=>{
+ const {createAuthenticatedMarketplaceCommands:make}=await import('../../features/marketplace/authenticated-command-client.mjs');let sent=0;
+ const context={session:{uid:'owner',sessionId:'session'}};const body={...save};delete body.kind;
+ assert.equal((await make().save(body,context)).code,'UNAVAILABLE');
+ const client=make({enabled:true,getToken:()=>({uid:'foreign',sessionId:'session',token:'fake.test.token'}),sendCommand:()=>{sent++;}});
+ assert.equal((await client.save(body,context)).code,'AUTH_REQUIRED');assert.equal((await client.save({...body,ownerUid:'forged'},context)).code,'INVALID_REQUEST');assert.equal(sent,0);
+});
+
+test('token acquisition cancellation and late session responses never populate Product state',async()=>{
+ const {createAuthenticatedMarketplaceCommands:make}=await import('../../features/marketplace/authenticated-command-client.mjs');
+ const {createProductIntegration}=await import('../../features/marketplace/product-integration.mjs');let release,sent=0;
+ const ports=make({enabled:true,getToken:s=>new Promise(r=>release=()=>r({...s,token:'fake.test.token'})),sendCommand:()=>{sent++;}});
+ const ui=createProductIntegration({enabled:true,ports,makeRequestId:()=> 'cancel-key'});ui.setSession({uid:'owner',sessionId:'one'});
+ const pending=ui.save(profile);await Promise.resolve();ui.setSession({uid:'other',sessionId:'two'});release();await pending;
+ assert.equal(sent,0);assert.equal(ui.snapshot().owner,null);
+});
+
+test('bridge maps safe errors and rejects contaminated acknowledgements without leaking details',async()=>{
+ const {createAuthenticatedMarketplaceCommands:make}=await import('../../features/marketplace/authenticated-command-client.mjs');
+ const context={session:{uid:'owner',sessionId:'session'}};const body={...save};delete body.kind;
+ for(const [response,code] of [[{status:403,body:{ok:false,error:{code:'DENIED',secret:'hidden'}}},'DENIED'],[{status:202,body:{}},'OUTCOME_UNKNOWN'],[{status:200,body:{ok:true,status:'saved',id:'p',revision:1,generation:0,secret:'hidden'}},'OUTCOME_UNKNOWN']]){
+  const client=make({enabled:true,getToken:s=>({...s,token:'fake.test.token'}),sendCommand:()=>response});assert.deepEqual(await client.save(body,context),{ok:false,code});
+ }
+});
