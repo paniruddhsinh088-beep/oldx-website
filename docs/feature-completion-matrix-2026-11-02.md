@@ -362,3 +362,13 @@ Emulator **9/9** evidence (Review `41971266001`, integration **194/194**).
 Provider/processor fixtures remain synthetic. No endpoint or publication activation;
 photo UI transport binding, real media policy/access and staging E2E remain P0 gates.
 See [single current operator handoff](oldx-autonomous-resume.md).
+
+5 November photo UI source `cd045aabdbed5c3b900128b65041b498501cc72b`:
+existing Product/Store photo mount accepts disabled authenticated upload/status/recover
+ports, same-key retries, bounded history request metadata and account/session cleanup.
+Mobile gu/hi/en 320/375px **12/12**, legacy photo browser **9/9**, integration
+**202/202**, actual Auth/Firestore Emulator **9/9** (Review `41976411576`).
+Multipart/JSON media handler artifacts remain outside root api/ and disabled. No
+real provider/staging acceptance; private draft/photo-reference and approved delivery
+binding, actual runtime/policy/access approvals and staging/device acceptance remain P0.
+[Current activation handoff and next action](oldx-autonomous-resume.md).

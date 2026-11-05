@@ -14,17 +14,26 @@ UI uses existing gu/hi/en feedback plus localized recovery status and keyboard f
 restoration. Quarantined means private upload, NOT moderation/publication approval.
 
 Baseline **fbc947b955b3471736ff5250e9e84f1ff362f6a7**, exact-source Review
-**41971739672 SUCCESS**. First UI/artifact checkpoint **e35f42d3a07c4b7f69bb240db7bfeb8bff3de31c** pushed;
-Security **41976021379** and Service Emulator **41976021442 SUCCESS**. Final follow-up
+**41971739672 SUCCESS**. Latest pushed executable source **cd045aabdbed5c3b900128b65041b498501cc72b**.
+Exact-source Review **41976411576 SUCCESS**, Service Emulator **41976411550 SUCCESS**;
+Vercel Preview SUCCESS. Applicable Security **41976021379 SUCCESS** is for initial
+UI/artifact source **e35f42d3a07c4b7f69bb240db7bfeb8bff3de31c**, whose Review
+**41976021381** and Service Emulator **41976021442** also passed. No separate
+Security workflow was scheduled for the recovery follow-up; latest Review tests all
+final executable source. This final ledger-only commit changes no executable code;
+retrieve it using `git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+Final follow-up
 adds owner-only `recover`: status `uploading` with a durable proof can now finalize
 journal confirmation without any provider dispatch or source bytes. This fixes a
 reviewed gap where status-only polling could otherwise remain stuck after lost ack.
-Final follow-up executable SHA/Review CI pending push. Local focused **16/16**,
+Final recovery regression is included in the successful final-source CI above. Local focused **16/16**,
 related integration regression **202/202**, static package **3/3 PASS**. New mobile
 browser checks **12/12 PASS** (Product/Store × gu/hi/en × 320/375px), existing photo
 browser regression **9/9 PASS**. Actual native Auth/Firestore suite remains 9 cases,
 now additionally driving this browser-neutral client through verified native ports;
-final exact-source Emulator CI result pending. No real provider/staging acceptance.
+actual Admin/Auth/Firestore Emulator **9/9 PASS** in final-source Review CI,
+including the browser-neutral client → verified native upload/status/recovery path.
+Final-source integration **202/202 PASS** also confirmed in CI. No real provider/staging acceptance.
 
 Inactive artifacts: generated `api/staging/media/{upload,status,recover,remove,reconcileUpload,
 reconcileDelete}.mjs` templates only, never installed in root api/. JSON commands reuse
@@ -33,8 +42,7 @@ exactly one file + raw intent, rejects unsafe MIME/extra fields and propagates a
 Templates remain default-disabled and require separately reviewed runtime injection.
 No secrets, SDK startup, operational env changes or endpoint activation in this batch.
 
-Next exact action: inspect final-source CI including actual native/client case and
-new browser checks and durable `recover` command; fix any verified failure. Once passed, bind private-draft photo
+Current incomplete task / next exact action: bind private-draft photo
 reference application and approved media delivery to existing owner/public views using
 the existing atomic references/publication contracts. Do not enable backend/media.
 Refresh can recover a completed upload; if no file reached the provider, users must
