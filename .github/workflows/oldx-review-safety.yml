@@ -116,6 +116,9 @@ jobs:
       - name: Validate isolated Service preview source
         run: npm run test:service-preview
 
+      - name: Validate inactive Provider command client lifecycle
+        run: node --test features/service-providers/provider-command-client.test.mjs
+
       - name: Check isolated Service preview in a local browser
         run: CHROMIUM_PATH="$(command -v google-chrome || command -v chromium)" npm run test:service-preview:browser
 
