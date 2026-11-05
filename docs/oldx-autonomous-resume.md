@@ -2,6 +2,70 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November native Provider persistence + existing Firebase Auth composition
+
+Preserved latest remote **5d178958761694d9aa01ee998a69deb397c922d2** (includes requested
+486c0979); no concurrent work overwritten. Executable source
+**94f4c2cf1b80f44e036b648572804790f234dc1d** pushed and remote SHA verified.
+Real-data SOURCE preparation, not a synthetic replacement or operational activation.
+
+Added default-off native Admin Provider repository sharing EXISTING v1 atomic draft/
+owner bootstrap/revision/receipt/audit core. Existing branded Preview/oldx-staging
+native binding now permits only fixed Provider v1 namespaces in addition to existing
+marketplace namespaces. Native publication is HARD-DENIED until atomic Provider media
+integration exists, even if a caller omits mandatoryPhotos. No SDK initialization.
+Isolated constructor still demands loopback demo context and preserves old behavior.
+
+Added existing-Firebase-Auth session/token ports + explicit website composition.
+Reuses supplied oldx-staging Auth instance; no new app/config or actual sign-in call.
+Session changes abort pending work, token refresh retains same idempotency scope,
+transient token never stored/logged. Default/Production/foreign sessions fail closed;
+lost mutation acknowledgement maps to same-key recovery. Existing owner/buyer UI is
+composed with existing command/read ports, backend remains the authorization boundary.
+Website public browser tests now exercise this composition for search/detail/enquiry/
+withdrawal, no synthetic fallback. Nothing automatically enables routes or reads.
+
+Prepared inactive merged Firestore/Storage deny-all proposals, unchanged root Firebase
+configuration. Preserve known server-mediated baseline; NOT a verified live merge.
+Firestore guest/owner/other/admin-claim Emulator suite now loads proposal and tests more
+Provider owner/identity/receipt/audit/permission paths. Storage proposal source-only.
+No broad writes, live Rules/data, IAM/secrets/billing or Cloudinary operations. Rechecked
+legacy Product Base64 and Store unsigned upload; neither reused for Provider media.
+Photos remain compressed local selections: no claimed real upload/persistence/delivery.
+See docs/proposals/provider-real-integration-gates.md for exact remaining integration.
+
+Local focused **20/20 PASS**, full related integration/service/static build **240/240
+PASS**, session edge follow-up **3/3 PASS**. Website Auth/public/photo browser **6/6 PASS**
+at 320/375 and gu/hi/en. Added actual native Admin/Auth Emulator case for Provider
+create/replay/read/edit, competing revisions, cross-owner denial, suspension, atomic
+receipt/audit and no public materialization (suite now12). Local proxy blocker unchanged;
+Initial exact-source Review **42041667507 FAILED** the new native Provider case
+with AUTH_REQUIRED: test composition omitted the required checkRevoked:true context.
+The enforcement correctly denied it. Corrected test composition and added a focused
+negative/positive revocation-flag assertion (**4/4 PASS**). Fix
+**5a690862a8c0d789e7854d3659c6a5dfa213e57a** pushed; fresh exact-source Review
+**42042267162 FAILED** because a test expected another actor bootstrap to deny;
+contract correctly returns that actor’s empty state. Strengthened assertions require
+exists=false, null providerId/draft, unknown own receipt and no owner text. Shared
+acceptance matrix now runs both locally and in actual CI: **5/5 PASS** locally.
+Verification commit **326a08911a02c03cd4648178ea73ff8eaed31ed1** pushed; final
+exact-source Review **42042948532 SUCCESS**, Service Emulator **42042948459 SUCCESS**.
+Actual native Admin/Auth/Firestore **12/12 PASS**, including new Provider matrix;
+merged Firestore proposal guest/owner/other/admin-claim denial cases passed in Review.
+Service Emulator **42042267096 SUCCESS**. No standalone
+Security workflow triggered for test-only fix; applicable result below is source94f4c2c.
+Initial Service Emulator **42041667747 SUCCESS**, Security **42041667556 SUCCESS**. First local compatibility assertion
+caught disabled method changing sync throw to rejection; restored original behavior,
+then all regressions passed. No weakened or skipped assertions.
+
+Operationally blocked: scoped staging access/network + snapshot/rollback; approved host/
+role/rate/public native-query runtime; Provider profile/work-photo reference persistence,
+trusted signed media processing/review/delivery; explicit staging activation + end-to-end
+acceptance. No safe production release; HOLD/NO-GO. Next source task: reviewed native
+Provider public-query/read binding and owner photo-reference transaction composition,
+reusing existing planners/journal; no unsigned/direct-browser shortcut. Ledger SHA:
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November existing-website Service Providers integration sprint
 
 Baseline **28f3a59b5085168772bcdc12cfc5eb72d0ed1c5b** matched fresh remote;
