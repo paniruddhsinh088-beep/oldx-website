@@ -24,7 +24,8 @@ export function buildServicePreviewLink({ pageUrl, origin, providerId } = {}) {
       return { ok: false, code: 'INVALID_PREVIEW_LINK' };
     }
     // Never forward query tokens, unrelated fragments or private draft state.
-    page.search = '';
+    const website=page.searchParams.get('mode')==='website';
+    page.search = website?'?mode=website':'';
     page.hash = 'provider/' + providerId;
     if (page.href.length > 2048) return { ok: false, code: 'INVALID_PREVIEW_LINK' };
     return { ok: true, url: page.href };

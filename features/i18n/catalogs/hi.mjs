@@ -1,5 +1,23 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "website.services": "सेवाएँ",
+  "website.title": "OLDX · सेवा प्रदाता",
+  "website.notice": "सेवा प्रदाता · वास्तविक डेटा का जुड़ाव सक्रिय नहीं है। यहाँ नमूना प्रोफाइल नहीं दिखते।",
+  "website.formNotice": "कई सेवाओं की प्रोफाइल स्थानीय रूप से तैयार करें। सुरक्षित integration की मंजूरी तक save, फोटो upload, प्रकाशन और ग्राहक संपर्क उपलब्ध नहीं हैं। फाइलें केवल इस पृष्ठ में रहती हैं।",
+  "website.footer": "OLDX सेवाएँ · वास्तविक read, write या upload सक्रिय नहीं हैं।",
+  "website.register": "सेवा पंजीकरण / संपादन",
+  "website.unavailable": "प्रदाता खोज अभी जुड़ी नहीं है। इस environment से सत्यापित सार्वजनिक प्रोफाइल उपलब्ध नहीं हैं।",
+  "website.notFound": "प्रोफाइल अनुपलब्ध",
+  "website.validate": "स्थानीय ड्राफ्ट जाँचें",
+  "website.photos": "प्रोफाइल और काम के फोटो",
+  "website.profilePhoto": "जरूरी प्रोफाइल फोटो (एक)",
+  "website.workPhoto": "काम के फोटो (छह तक)",
+  "website.photosInactive": "केवल स्थानीय compressed preview। Upload, मंजूरी या सार्वजनिक दृश्य नहीं। हर JPG, PNG या WebP 3 MiB तक चुनें।",
+  "website.photoLimit": "काम के अधिकतम छह फोटो चुनें।",
+  "website.photoProcessing": "फोटो compress हो रहे हैं…",
+  "website.photoError": "फोटो तैयार नहीं हुआ। 3 MiB तक मान्य JPG, PNG या WebP चुनें। पिछला चयन सुरक्षित है।",
+  "website.photoRequired": "स्थानीय जाँच पूरी करने से पहले प्रोफाइल फोटो चुनें। कुछ save या publish नहीं होता।",
+
   "market.legacyPublish": "अभी पोस्ट करें (विज्ञापन प्रकाशित करें)",
   "market.legacyPublishing": "प्रकाशित हो रहा है…",
   "market.publishErrorTitle": "विज्ञापन प्रकाशन",

@@ -1,3 +1,4 @@
+import {mountWebsiteProviderPhotos} from './website-photos.mjs';
 import {mountProviderUiIntegration} from './ui-integration-dom.mjs';
 import { inspectSampleEnquiry } from './preview-enquiry.mjs';
 import { demoProviders } from "./preview-fixtures.mjs";
@@ -18,7 +19,9 @@ import {
 } from "../i18n/preference.mjs";
 
 // Only explicitly projected synthetic public data reaches rendering/share state.
-let publicProfiles = demoProviders.map(provider => buildPublicProviderProfile({
+const websiteMode=new URL(location.href).searchParams.get('mode')==='website';
+let websitePhotos=null;
+let publicProfiles = (websiteMode?[]:demoProviders).map(provider => buildPublicProviderProfile({
   id: provider.id, displayName: provider.name, city: provider.city,
   serviceArea: provider.area, description: provider.about, services: provider.services,
   available: provider.available !== false, experienceYears: provider.experience
@@ -27,7 +30,8 @@ const demoIcons = new Map(demoProviders.map(provider => [provider.id, provider.i
 
 let providerIntegration=null,providerIntegrationEnabled=false,restoredProviderLanguages=[],trustedCatalog=null,trustedCursor=null,trustedPublicationEpoch=0,discoveryTimer=null,trustedOptions={};
 let translator = createTranslator("en");
-const t = (key, params) => translator.t(key, params);
+const websiteKeys={pageTitle:'website.title',demoNotice:'website.notice',formNotice:'website.formNotice',footerNotice:'website.footer',providerTab:'website.register',emptyResults:'website.unavailable',previewNotFoundHeading:'website.notFound',previewNotFoundDescription:'website.unavailable',previewNotFoundBack:'browseTab',validateButton:'website.validate'};
+const t = (key, params) => translator.t(websiteMode?(websiteKeys[key]??key):key, params);
 let currentProfile = null;
 let enquiryPreview = null, enquiryValidated = false;
 let localeRequest = 0;
@@ -256,7 +260,7 @@ function updatePreview() {
     $(id + "Error").textContent = invalid ? t("error." + field) : "";
   }
   if (validated)
-    $("validationStatus").textContent = result.ok
+    $("validationStatus").textContent = websiteMode&&result.ok&&!websitePhotos?.hasProfile()?t("website.photoRequired"):result.ok
       ? t("validationValid")
       : t("validationInvalid");
   return result;
@@ -271,7 +275,8 @@ $("providerForm").addEventListener("submit", (event) => {
   if (field) {
     const element = $(fieldIds[field]);
     (field === "services" ? element.querySelector("input") : element).focus();
-  } else $("validationStatus").focus();
+  } else if(websiteMode&&!websitePhotos?.hasProfile())document.querySelector("#websiteProviderPhotos input").focus();
+  else $("validationStatus").focus();
 });
 $("providerForm").addEventListener("input", updatePreview);
 $("availableOnly").addEventListener("change", render);
@@ -303,7 +308,8 @@ async function selectLocale(requested, persist = false) {
   // A slower earlier catalog must never replace a later language selection.
   if (request !== localeRequest) return;
   translator = next;
-  applyCatalog(document, translator);
+  applyCatalog(document, {...translator,t});
+  websitePhotos?.render();
   $("localeSelect").value = translator.locale;
   $("localeStatus").textContent = failed
     ? t("languageUnavailable")
@@ -445,12 +451,12 @@ $('trustedEnquiryLink').addEventListener('click',event=>{if(providerIntegrationE
 window.addEventListener('pagehide',()=>clearTimeout(discoveryTimer));
 // Future approved host supplies ports/session; default mounts disabled only.
 export function configureProviderIntegration(options={}){
- trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
+ trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;if(websiteMode&&!providerIntegrationEnabled){publicProfiles=[];clearProfile(true);render();}clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
  $('providerPublicStatus').hidden=$('trustedProviderPublicControls').hidden=$('trustedEnquiryStatus').hidden=$('retryTrustedEnquiry').hidden=!providerIntegrationEnabled;
  if(providerIntegrationEnabled){publicProfiles=[];clearProfile(true);$('results').replaceChildren();if(trustedCatalog?.services){$('categories').replaceChildren();for(const service of ['બધી સેવાઓ',...trustedCatalog.services]){const button=document.createElement('button');button.type='button';button.className='chip';button.dataset.cat=service;button.textContent=service==='બધી સેવાઓ'?t('serviceAll'):(options.categoryLabel?.(service,translator.locale)??service);button.setAttribute('aria-pressed',String(service===activeCategory));$('categories').append(button);}}}
  providerIntegration=mountProviderUiIntegration({...options,root:document,managedRoutes:true,translate:t,onSearchScope:queueDiscovery,buyer:{...options.buyer,onChange:state=>{if(providerIntegrationEnabled){$('trustedEnquiryStatus').textContent=t('market.provider.enquiry_'+state.status);$('retryTrustedEnquiry').disabled=!state.canRetry;$('enquiryDescription').readOnly=state.canRetry||state.status==='loading';$('sampleEnquiryForm').querySelector('button[type=submit]').disabled=state.canRetry||state.status==='loading';$('trustedEnquiryLink').hidden=state.status!=='created'||typeof options.openPrivateEnquiry!=='function';if(state.status==='created')$('trustedEnquiryLink').href='#inbox/'+currentProfile?.id+'/enquiry/'+state.enquiryId;}options.buyer?.onChange?.(state);}},
   readProfile:()=>{validated=true;const inspected=updatePreview();return inspected.ok?{...inspected.profile,languages:[...restoredProviderLanguages]}:null;},
-  clearPrivateForm:()=>{restoredProviderLanguages=[];document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());$('providerForm').reset();validated=false;updatePreview();},
+  clearPrivateForm:()=>{websitePhotos?.clear();restoredProviderLanguages=[];document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());$('providerForm').reset();validated=false;updatePreview();},
   restorePrivateForm:profile=>{
    document.querySelectorAll('[data-owner-restored]').forEach(node=>node.remove());
    for(const [key,id] of Object.entries({displayName:'providerName',city:'providerCity',serviceArea:'providerArea',description:'providerDesc'}))$(id).value=profile[key];
@@ -466,6 +472,12 @@ export function configureProviderIntegration(options={}){
    render();if(state.status!=='ready'){const message=document.createElement('p');message.setAttribute('role','status');message.textContent=t('integration.read_'+state.status);$('results').replaceChildren(message);$('profileShareStatus').textContent=message.textContent;}
   }
  });const binding=providerIntegration;return Object.freeze({...binding,setSession(value){binding.setSession(value);if(providerIntegrationEnabled)syncRoute({force:true,focus:false});},restoreRoute:()=>syncRoute({force:true}),discover:()=>navigate('#services'),detail:request=>navigate('#provider/'+request.providerId),async openEnquiry(providerId){await navigate('#provider/'+providerId);if(currentProfile?.id===providerId)$('enquiryService').focus();},changeScope:()=>binding.changeScope()});
+}
+if(websiteMode){
+ const back=document.createElement('a');back.href='./index.html';back.className='btn';back.textContent='OLDX';document.querySelector('.nav-actions').prepend(back);
+ for(const a of document.querySelectorAll('a[href*="service-inbox-preview"],a[href*="service-discovery-preview"]'))a.hidden=true;
+ $('sampleEnquiryForm').querySelector('button[type=submit]').disabled=true;
+ websitePhotos=mountWebsiteProviderPhotos({root:document,translate:t,onChange:()=>updatePreview()});
 }
 configureProviderIntegration();
 await selectLocale(readLocalePreference(preferenceStorage(), "gu"));

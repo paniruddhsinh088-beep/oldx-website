@@ -1,5 +1,23 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "website.services": "Services",
+  "website.title": "OLDX · Service Providers",
+  "website.notice": "Service Providers · Real-data integration is not active. No sample providers are shown here.",
+  "website.formNotice": "Prepare your multi-service profile locally. Saving, photo upload, publication and customer contact remain unavailable until secure integration is approved. Files stay in this page only.",
+  "website.footer": "OLDX Services · No live reads, writes or uploads are enabled.",
+  "website.register": "Register / edit services",
+  "website.unavailable": "Provider discovery is not connected yet. No verified public profiles are available from this environment.",
+  "website.notFound": "Provider unavailable",
+  "website.validate": "Check local draft",
+  "website.photos": "Profile and work photos",
+  "website.profilePhoto": "Required profile photo (one)",
+  "website.workPhoto": "Work photos (up to six)",
+  "website.photosInactive": "Local compressed previews only. No upload, approval or public visibility. Select JPG, PNG or WebP up to 3 MiB each.",
+  "website.photoLimit": "Choose at most six work photos.",
+  "website.photoProcessing": "Preparing compressed photos…",
+  "website.photoError": "Photo could not be prepared. Choose a valid JPG, PNG or WebP up to 3 MiB. Existing selections are unchanged.",
+  "website.photoRequired": "Select a profile photo before completing the local check. Nothing is saved or published.",
+
   "market.legacyPublish": "Post Now (Publish Ad)",
   "market.legacyPublishing": "Publishing...",
   "market.publishErrorTitle": "Ad publication",

@@ -33,7 +33,7 @@
     "test:product-drafts:rules": "node scripts/run-emulator-tests.mjs product-drafts",
     "test:emulator:guard": "node --test scripts/emulator-test-plan.test.mjs",
     "test:service-preview": "node --test tests/service/*.test.mjs",
-    "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs tests/browser/marketplace-locale.test.mjs tests/browser/product-integration.test.mjs tests/browser/store-integration.test.mjs tests/browser/provider-private-integration.test.mjs tests/browser/provider-public-integration.test.mjs tests/browser/provider-conversation-integration.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/mandatory-photos.test.mjs tests/browser/authenticated-photos.test.mjs tests/browser/approved-photo-view.test.mjs tests/browser/mobile-demo.test.mjs",
+    "test:service-preview:browser": "node --test tests/browser/service-preview.test.mjs tests/browser/marketplace-locale.test.mjs tests/browser/product-integration.test.mjs tests/browser/store-integration.test.mjs tests/browser/provider-private-integration.test.mjs tests/browser/provider-public-integration.test.mjs tests/browser/provider-conversation-integration.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/mandatory-photos.test.mjs tests/browser/authenticated-photos.test.mjs tests/browser/approved-photo-view.test.mjs tests/browser/mobile-demo.test.mjs tests/browser/provider-website.test.mjs",
     "test:static-build": "node --test scripts/build-static-assets.test.mjs",
     "test:i18n": "node --test features/i18n/*.test.mjs",
     "test:toolchain": "node --test scripts/toolchain-compat.test.mjs",

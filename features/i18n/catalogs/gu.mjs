@@ -1,5 +1,23 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "website.services": "સેવાઓ",
+  "website.title": "OLDX · સેવા આપનાર",
+  "website.notice": "સેવા આપનાર · વાસ્તવિક ડેટાનું જોડાણ સક્રિય નથી. અહીં નમૂનાની પ્રોફાઇલ બતાવાતી નથી.",
+  "website.formNotice": "એકથી વધુ સેવાઓની પ્રોફાઇલ સ્થાનિક રીતે તૈયાર કરો. સુરક્ષિત integration મંજૂર થાય ત્યાં સુધી save, ફોટો upload, પ્રકાશન અને ગ્રાહક સંપર્ક ઉપલબ્ધ નથી. ફાઇલો માત્ર આ પાનામાં રહે છે.",
+  "website.footer": "OLDX સેવાઓ · વાસ્તવિક read, write કે upload સક્રિય નથી.",
+  "website.register": "સેવા નોંધણી / ફેરફાર",
+  "website.unavailable": "સેવાઓની શોધ હજી જોડાયેલી નથી. આ environmentમાંથી ચકાસેલી જાહેર પ્રોફાઇલ ઉપલબ્ધ નથી.",
+  "website.notFound": "પ્રોફાઇલ ઉપલબ્ધ નથી",
+  "website.validate": "સ્થાનિક ડ્રાફ્ટ તપાસો",
+  "website.photos": "પ્રોફાઇલ અને કામના ફોટા",
+  "website.profilePhoto": "જરૂરી પ્રોફાઇલ ફોટો (એક)",
+  "website.workPhoto": "કામના ફોટા (છ સુધી)",
+  "website.photosInactive": "માત્ર સ્થાનિક compressed preview. Upload, મંજૂરી કે જાહેર દેખાવ નથી. દરેક JPG, PNG કે WebP 3 MiB સુધી પસંદ કરો.",
+  "website.photoLimit": "કામના વધુમાં વધુ છ ફોટા પસંદ કરો.",
+  "website.photoProcessing": "ફોટા compress થઈ રહ્યા છે…",
+  "website.photoError": "ફોટો તૈયાર થયો નથી. 3 MiB સુધીનો માન્ય JPG, PNG કે WebP પસંદ કરો. અગાઉની પસંદગી યથાવત છે.",
+  "website.photoRequired": "સ્થાનિક તપાસ પૂરી કરવા પ્રોફાઇલ ફોટો પસંદ કરો. કંઈ save કે publish થતું નથી.",
+
   "market.legacyPublish": "હમણાં પોસ્ટ કરો (જાહેરાત પ્રકાશિત કરો)",
   "market.legacyPublishing": "પ્રકાશિત થાય છે…",
   "market.publishErrorTitle": "જાહેરાત પ્રકાશન",

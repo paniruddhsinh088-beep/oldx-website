@@ -35,7 +35,7 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
  }
  for(const type of ['hashchange','popstate'])listen(view,type,event=>{event.stopImmediatePropagation();restoreRoute();});
  listen(root.getElementById('trustedStoreBrowse'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('stores');});
- if(providers?.navigation)listen(root.querySelector('#homeServicesPreviewSection a[href="./service-preview.html"]'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('providers');});
+ if(providers?.navigation)for(const node of root.querySelectorAll('a[href="./service-preview.html?mode=website#services"]'))listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('providers');});
  const sessions=createMarketplaceSessionIntegration({enabled,bindings:[products,stores,...(providers?.journey?[providerSessionBinding(providers.journey)]:[])]});
  return Object.freeze({product:products,store:stores,restoreRoute,async setSession(value){const result=await sessions.setSession(value);if(result&&active)await restoreRoute();return result;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();products.destroy();stores.destroy();}});
 }
