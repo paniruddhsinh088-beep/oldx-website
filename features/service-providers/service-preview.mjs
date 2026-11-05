@@ -1,3 +1,4 @@
+import {mountApprovedProviderPhotoView} from '../media/approved-photo-view.mjs';
 import {createProviderFirebaseSessionPorts} from './firebase-session-ports.mjs';
 import {mountWebsiteProviderPhotos} from './website-photos.mjs';
 import {mountProviderUiIntegration} from './ui-integration-dom.mjs';
@@ -21,7 +22,7 @@ import {
 
 // Only explicitly projected synthetic public data reaches rendering/share state.
 const websiteMode=new URL(location.href).searchParams.get('mode')==='website';
-let websitePhotos=null,websiteFirebase=null;
+let websitePhotos=null,websiteFirebase=null,providerApprovedPhotos=null;
 let publicProfiles = (websiteMode?[]:demoProviders).map(provider => buildPublicProviderProfile({
   id: provider.id, displayName: provider.name, city: provider.city,
   serviceArea: provider.area, description: provider.about, services: provider.services,
@@ -166,6 +167,7 @@ function openProfile(id, focus = true) {
   const p = publicProfiles.find((x) => x.id === id);
   if (!p) return false;
   currentProfile = p;
+  if(providerIntegrationEnabled)providerApprovedPhotos?.setScope({kind:'provider',parentId:p.id,expectedParentRevision:trustedPublicationEpoch});
   $('enquiryService').replaceChildren(...p.services.map(service=>{const option=document.createElement('option');option.value=service;option.textContent=service;return option;}));
   $("pName").textContent = p.displayName;
   $("pArea").textContent = p.serviceArea;
@@ -311,6 +313,7 @@ async function selectLocale(requested, persist = false) {
   translator = next;
   applyCatalog(document, {...translator,t});
   websitePhotos?.render();
+  if(websiteMode)document.dispatchEvent(new CustomEvent('oldx:locale-changed',{detail:{locale:translator.locale}}));
   $("localeSelect").value = translator.locale;
   $("localeStatus").textContent = failed
     ? t("languageUnavailable")
@@ -356,6 +359,7 @@ function prepareProfileLink() {
   if (!link?.ok) $("profileShareStatus").textContent = t("previewShareUnavailable");
 }
 function clearProfile(erase = false) {
+  providerApprovedPhotos?.clear();
   if(providerIntegrationEnabled){$('trustedEnquiryLink').hidden=true;$('trustedEnquiryStatus').textContent='';}
   resetSampleEnquiry(true);
   currentProfile = null; feedbackKey = null;
@@ -452,6 +456,8 @@ $('trustedEnquiryLink').addEventListener('click',event=>{if(providerIntegrationE
 window.addEventListener('pagehide',()=>clearTimeout(discoveryTimer));
 // Future approved host supplies ports/session; default mounts disabled only.
 export function configureProviderIntegration(options={}){
+ providerApprovedPhotos?.destroy();providerApprovedPhotos=null;document.getElementById('providerApprovedPhotos')?.remove();
+ if(websiteMode&&options.enabled===true&&options.publicPhotos){const box=document.createElement('div');box.id='providerApprovedPhotos';$('pArea').after(box);providerApprovedPhotos=mountApprovedProviderPhotoView({enabled:true,root:document,container:box,readManifest:options.publicPhotos.manifest,readBytes:options.publicPhotos.bytes,translate:t});}
  trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;if(websiteMode&&!providerIntegrationEnabled){publicProfiles=[];clearProfile(true);render();}clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
  $('providerPublicStatus').hidden=$('trustedProviderPublicControls').hidden=$('trustedEnquiryStatus').hidden=$('retryTrustedEnquiry').hidden=!providerIntegrationEnabled;
  if(providerIntegrationEnabled){publicProfiles=[];clearProfile(true);$('results').replaceChildren();if(trustedCatalog?.services){$('categories').replaceChildren();for(const service of ['બધી સેવાઓ',...trustedCatalog.services]){const button=document.createElement('button');button.type='button';button.className='chip';button.dataset.cat=service;button.textContent=service==='બધી સેવાઓ'?t('serviceAll'):(options.categoryLabel?.(service,translator.locale)??service);button.setAttribute('aria-pressed',String(service===activeCategory));$('categories').append(button);}}}

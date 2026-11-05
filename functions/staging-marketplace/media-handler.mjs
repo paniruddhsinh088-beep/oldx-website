@@ -1,9 +1,10 @@
-import {createMediaCommandFetchHandler} from './vercel-handler.mjs';
+import {createMediaCommandFetchHandler,createProviderMediaCommandFetchHandler} from './vercel-handler.mjs';
 const fail=(status,code)=>Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 // INACTIVE artifact only. Runtime/verified identity/processing ports must be
 // explicitly supplied by an approved server composition. No environment reads.
-export function createMediaFetchHandler({operation,options={enabled:false},loadRuntime}={}){
- if(operation!=='upload')return createMediaCommandFetchHandler({operation,options,loadRuntime:async()=>{const runtime=await loadRuntime();return {handle:(_path,request,context)=>runtime.command(operation,request,context)};}});
+export function createMediaFetchHandler({operation,options={enabled:false},loadRuntime,namespace='media'}={}){
+ if(!['media','provider-media'].includes(namespace))return Object.freeze({fetch:async()=>fail(503,'ENFORCEMENT_UNAVAILABLE')});
+ if(operation!=='upload')return (namespace==='provider-media'?createProviderMediaCommandFetchHandler:createMediaCommandFetchHandler)({operation,options,loadRuntime:async()=>{const runtime=await loadRuntime();return {handle:(_path,request,context)=>runtime.command(operation,request,context)};}});
  return Object.freeze({async fetch(request){
   if(options.enabled!==true||typeof loadRuntime!=='function')return fail(503,'ENFORCEMENT_UNAVAILABLE');
   if(!(request instanceof Request)||request.method!=='POST')return fail(405,'METHOD_NOT_ALLOWED');
@@ -29,3 +30,5 @@ export function createMediaFetchHandler({operation,options={enabled:false},loadR
   finally{clearTimeout(timer);request.signal.removeEventListener('abort',abort);if(reader)void reader.cancel().catch(()=>{});}
  }});
 }
+
+export const createProviderMediaFetchHandler=options=>createMediaFetchHandler({...options,namespace:"provider-media"});

@@ -1,5 +1,5 @@
 // Web-standard Vercel handler artifact. No root api/ entrypoints are installed.
-const routes={marketplace:new Set(['save','owner','archive']),media:new Set(['ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete'])};
+const routes={'provider-media':new Set(['moderate','references','ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete','photos','photo']),marketplace:new Set(['save','owner','archive']),media:new Set(['ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete'])};
 const response=(status,code)=>Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 function createCommandFetchHandler({namespace,operation,options={enabled:false},loadRuntime,bodyTimeoutMs=5000}={}){
  return Object.freeze({async fetch(request){
@@ -27,6 +27,7 @@ function createCommandFetchHandler({namespace,operation,options={enabled:false},
    const startupCancelled=new Promise((_,reject)=>{controller.signal.addEventListener('abort',()=>reject(Error('cancelled')),{once:true});if(controller.signal.aborted)reject(Error('cancelled'));});
    const runtime=await Promise.race([loadRuntime(),startupCancelled]);clearTimeout(timer);if(controller.signal.aborted)return response(408,'CANCELLED');
    const result=await runtime.handle(`/api/staging/${namespace}/${operation}`,{method:'POST',headers:Object.fromEntries(request.headers),body},{signal:controller.signal});
+   if(namespace==='provider-media'&&operation==='photo'&&result.status===200&&result.bytes instanceof Uint8Array&&result.bytes.length<=3*1024*1024&&['image/webp','image/jpeg','image/png'].includes(result.headers?.['Content-Type']))return new Response(result.bytes,{status:200,headers:result.headers});
    return Response.json(result.body,{status:result.status,headers:result.headers});
   }catch{return response(controller.signal.aborted?408:503,controller.signal.aborted?'CANCELLED':'ENFORCEMENT_UNAVAILABLE');}
   finally{clearTimeout(timer);request.signal.removeEventListener('abort',abort);if(reader)void reader.cancel().catch(()=>{});}
@@ -35,3 +36,5 @@ function createCommandFetchHandler({namespace,operation,options={enabled:false},
 
 export const createMarketplaceFetchHandler=options=>createCommandFetchHandler({...options,namespace:"marketplace"});
 export const createMediaCommandFetchHandler=options=>createCommandFetchHandler({...options,namespace:"media"});
+
+export const createProviderMediaCommandFetchHandler=options=>createCommandFetchHandler({...options,namespace:"provider-media"});

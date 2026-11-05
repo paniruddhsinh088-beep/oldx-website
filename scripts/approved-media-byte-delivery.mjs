@@ -14,17 +14,17 @@ function format(bytes,type){
 // derivative/version with authenticated transport and enforce maxBytes while reading.
 // Rate port must enforce global/edge quotas using server-derived scope, not client identity.
 // Magic checks are defense in depth, not a substitute for trusted decoding/review.
-export function createApprovedMediaByteDelivery({enabled=false,contract,readApprovedDerivative,consumeRateLimit,timeoutMs=5000}={}){
+function approvedMediaByteDelivery({enabled=false,contract,readApprovedDerivative,consumeRateLimit,timeoutMs=5000}={},providerScope=false){
  return Object.freeze({async read(request,{signal}={}){
   if(enabled!==true||typeof readApprovedDerivative!=='function'||typeof consumeRateLimit!=='function')return unavailable();
   const r=copyRecord(request,['kind','parentId','expectedParentRevision','expectedPhotoRevision','imageId']);
-  if(!r||!['product','store'].includes(r.kind)||!safeId(r.parentId)||!positive(r.expectedParentRevision)||!positive(r.expectedPhotoRevision)||!imageId(r.imageId))return unavailable();
+  if(!r||!(providerScope?['provider']:['product','store']).includes(r.kind)||!safeId(r.parentId)||!positive(r.expectedParentRevision)||!positive(r.expectedPhotoRevision)||!imageId(r.imageId))return unavailable();
   const {imageId:requested,...scope}=r,operation='publicPhotos';
   if(typeof contract?.[operation]!=='function')return unavailable();
   const result=await runVerifiedOperation({authenticate:()=>({uid:'public-image'}),signal,timeoutMs,run:async context=>{
    async function current(){
     const v=copyRecord(await contract[operation](scope,{signal:context.signal}),['ok','parentId','parentRevision','photoRevision','photos']);context.checkpoint();
-    if(!v||v.ok!==true||v.parentId!==r.parentId||v.parentRevision!==r.expectedParentRevision||v.photoRevision!==r.expectedPhotoRevision||!Array.isArray(v.photos)||v.photos.length<1||v.photos.length>(r.kind==='product'?6:1))return null;
+    if(!v||v.ok!==true||v.parentId!==r.parentId||v.parentRevision!==r.expectedParentRevision||v.photoRevision!==r.expectedPhotoRevision||!Array.isArray(v.photos)||v.photos.length<1||v.photos.length>(providerScope?7:r.kind==='product'?6:1))return null;
     const rows=v.photos.map(p=>copyRecord(p,['imageId','derivativeId','version']));
     if(rows.some(p=>!p||!imageId(p.imageId)||!safeId(p.derivativeId)||!positive(p.version))||new Set(rows.map(p=>p.imageId)).size!==rows.length)return null;
     return rows.find(p=>p.imageId===requested)??null;
@@ -65,3 +65,6 @@ export function createPrivateMediaByteDelivery({enabled=false,authenticate,contr
   return result?.ok===true?result:unavailable();
  }});
 }
+
+export const createApprovedMediaByteDelivery=options=>approvedMediaByteDelivery(options);
+export const createApprovedProviderMediaByteDelivery=options=>approvedMediaByteDelivery(options,true);

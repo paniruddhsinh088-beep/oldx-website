@@ -1,12 +1,14 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {getSurfacePolicy,validateProcessedImage} from './image-upload-contract-policy.mjs';
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 // Server-only isolated processor. Sharp is loaded lazily; bytes only, never URLs,
 // paths, credentials, browser/Capacitor code or an activated upload endpoint.
-export function createTrustedImageProcessor({enabled=false,mode,scan,maxInputPixels=12000000,timeoutMs=2500,maxConcurrency=2}={}){
+function trustedImageProcessor({enabled=false,mode,scan,maxInputPixels=12000000,timeoutMs=2500,maxConcurrency=2}={},stagingBinding=null){
  let running=0;
  return Object.freeze({async process(input,{surface,signal}={}){
-  if(enabled!==true||mode!=='isolated-test')return {ok:false,code:'UNAVAILABLE'};
+  stagingBinding?.check();
+  if(enabled!==true||stagingBinding===null&&mode!=='isolated-test')return {ok:false,code:'UNAVAILABLE'};
   const policy=getSurfacePolicy(surface);if(!policy||!(input instanceof Uint8Array)||input.byteLength<1||input.byteLength>3*1024*1024||!Number.isSafeInteger(maxInputPixels)||maxInputPixels<1||maxInputPixels>12000000||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>5000)return {ok:false,code:'INVALID_IMAGE'};
   if(!Number.isInteger(maxConcurrency)||maxConcurrency<1||maxConcurrency>4)return {ok:false,code:'UNAVAILABLE'};
   if(running>=maxConcurrency)return {ok:false,code:'BUSY'};
@@ -31,4 +33,10 @@ export function createTrustedImageProcessor({enabled=false,mode,scan,maxInputPix
   }catch{return {ok:false,code:signal?.aborted?'CANCELLED':controller.signal.aborted?'DEADLINE_EXCEEDED':'IMAGE_REJECTED'};}
   finally{running--;clearTimeout(timer);signal?.removeEventListener('abort',abort);pipeline?.destroy();}
  }});
+}
+
+export const createTrustedImageProcessor=options=>trustedImageProcessor(options);
+export function createStagingTrustedImageProcessor(options={}){
+ if(options.enabled!==true)return trustedImageProcessor({});
+ const binding=requireStagingMarketplaceBinding(options.binding);return trustedImageProcessor(options,binding);
 }

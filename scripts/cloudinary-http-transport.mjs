@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {copyRecord,safeId} from './isolated-firestore-context.mjs';
 import {parseBoundedJson} from './bounded-json.mjs';
@@ -14,14 +15,16 @@ const metadataKeys=uploadKeys.filter(key=>key!=='signature');
 // Server-only HTTP implementation with an injected Fetch-compatible dependency.
 // Default OFF and isolated-test ONLY: no global fetch, SDK startup or environment
 // credentials. Reuse journal leases: this module NEVER retries a mutating call.
-export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getCredentials,authorizeAsset,resolveDerivative,resolvePrivateDerivative,now=Date.now}={}){
- const active=enabled===true&&mode==='isolated-test';
+function buildCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getCredentials,authorizeAsset,resolveDerivative,resolvePrivateDerivative,now=Date.now}={},stagingBinding=null){
+ const active=enabled===true&&(stagingBinding!==null||mode==='isolated-test');
  async function credentials(){
+  stagingBinding?.check();
   if(!active||typeof fetchImpl!=='function'||typeof getCredentials!=='function')fail();
   const c=copyRecord(await getCredentials(),['cloudName','apiKey','apiSecret']);
   if(c?.cloudName!=='tfizvbzc'||typeof c.apiKey!=='string'||!/^\d{5,32}$/.test(c.apiKey)||typeof c.apiSecret!=='string'||c.apiSecret.length<16||c.apiSecret.length>256)fail();return c;
  }
  async function request(url,init,maxBytes,context={}){
+  stagingBinding?.check();
   const clock=now(),remaining=context.deadlineAt-clock;
   if(!active||typeof fetchImpl!=='function'||!Number.isSafeInteger(clock)||!Number.isSafeInteger(context.deadlineAt)||remaining<=0||remaining>30000||context.signal?.aborted)fail();
   const controller=new AbortController(),abort=()=>controller.abort();let rejectAbort;
@@ -45,7 +48,7 @@ export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getC
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(response.contentType??''))fail();const parsed=parseBoundedJson(response.bytes,{maxBytes:JSON_MAX});if(!parsed.ok)fail();return parsed.value;
  }
  const basic=c=>({'Authorization':'Basic '+Buffer.from(c.apiKey+':'+c.apiSecret).toString('base64'),'Accept':'application/json','Accept-Encoding':'identity'});
- async function authorized(action,input,context){if(!active||typeof authorizeAsset!=='function'||await authorizeAsset({action,...input},context)!==true||context?.signal?.aborted)fail();}
+ async function authorized(action,input,context){stagingBinding?.check();if(!active||typeof authorizeAsset!=='function'||await authorizeAsset({action,...input},context)!==true||context?.signal?.aborted)fail();}
  function identity(input){const r=copyRecord(input,['assetId','publicId','version']);if(!r||!safeId(r.assetId)||!publicId(r.publicId)||!positive(r.version))fail();return r;}
  function metadata(value,expected){
   const v=Object.fromEntries(metadataKeys.map(key=>[key,value[key]]));
@@ -126,4 +129,10 @@ export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getC
    return {derivativeId:r.derivativeId,version:r.version,contentType:'image/webp',bytes:result.bytes};
   }
  });
+}
+
+export const createCloudinaryHttpTransport=options=>buildCloudinaryHttpTransport(options);
+export function createStagingCloudinaryHttpTransport(options={}){
+ if(options.enabled!==true)return buildCloudinaryHttpTransport({});
+ const binding=requireStagingMarketplaceBinding(options.binding);return buildCloudinaryHttpTransport(options,binding);
 }

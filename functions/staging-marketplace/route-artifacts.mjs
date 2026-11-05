@@ -14,3 +14,11 @@ export function stagingMediaRouteArtifacts(){
   `import {createMediaFetchHandler} from '../../../functions/staging-marketplace/media-handler.mjs';\nexport default createMediaFetchHandler({operation:'${operation}'});\n`
  ])));
 }
+
+// Default-disabled Provider media artifacts only: NEVER install automatically.
+export function stagingProviderMediaRouteArtifacts(){
+ return Object.freeze(Object.fromEntries(['upload','moderate','references','ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete','photos','photo'].map(operation=>[
+  `api/staging/provider-media/${operation}.mjs`,
+  `import {createProviderMediaFetchHandler} from '../../../functions/staging-marketplace/media-handler.mjs';\nexport default createProviderMediaFetchHandler({operation:'${operation}'});\n`
+ ])));
+}

@@ -12,15 +12,15 @@ const kinds=['product','store','provider'],surface=a=>a.kind==='provider'?'profi
 const imageId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v);
 // Actual SDK durable journal only. No image provider client, bytes, signing keys,
 // decoder, network calls or production/browser mode. All effects are Emulator-only.
-function journalCore({sdk,parentCollections,actorCollections,authenticate,verifyProof,authorizeOrphan,allocateId=randomUUID,now=Date.now,timeoutMs=5000,orphanRetentionMs=86400000}={}, {db,collections:c},nativeScope=false){
- const allowedKinds=nativeScope?['product','store']:kinds;
+function journalCore({sdk,parentCollections,actorCollections,authenticate,verifyProof,authorizeOrphan,providerCollections,allocateId=randomUUID,now=Date.now,timeoutMs=5000,orphanRetentionMs=86400000}={}, {db,collections:c},nativeScope=false){
+ const allowedKinds=nativeScope==='provider'?['provider']:nativeScope?['product','store']:kinds;
  for(const mapping of [parentCollections,actorCollections])if(!copyRecord(mapping,kinds)||Object.values(mapping).some(v=>typeof v!=='string'||(!nativeScope&&!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v))))throw new Error('Unactivated media scope');
  const parents={...parentCollections},actors={...actorCollections};if(!int(orphanRetentionMs)||orphanRetentionMs<60000)throw new Error('Invalid orphan policy');
  const ref=(role,key)=>sdk.doc(db,c[role],key);
  async function read(raw,r){const snapshot=await raw.get(r);if(!snapshot.exists())return null;const {committedAt,...data}=snapshot.data();return data;}
  async function scope(raw,a,uid){
   const actor=await read(raw,sdk.doc(db,actors[a.kind],uid)),parent=await read(raw,sdk.doc(db,parents[a.kind],a.kind==='provider'?a.parentId:a.kind+'_'+a.parentId));
-  const owner=parent?.ownerUid===uid&&(a.kind==='provider'?parent.providerId===a.parentId:parent.id===a.parentId&&parent.kind===a.kind)&&int(parent.revision)&&actor?.uid===uid&&actor.canWrite===true&&actor.suspended===false&&(a.service===null||parent.profile?.services?.includes(a.service));return {actor,parent,owner:!!owner};
+  const owner=parent?.ownerUid===uid&&(a.kind==='provider'?parent.providerId===a.parentId:parent.id===a.parentId&&parent.kind===a.kind)&&int(parent.revision)&&actor?.uid===uid&&actor.canWrite===true&&actor.suspended===false&&(a.service===null||parent.profile?.services?.includes(a.service));let canonical=true;if(nativeScope==='provider'){const identity=await read(raw,sdk.doc(db,providerCollections.identities,a.parentId)),mapping=await read(raw,sdk.doc(db,providerCollections.owners,uid));canonical=identity?.providerId===a.parentId&&identity.ownerUid===uid&&mapping?.providerId===a.parentId&&mapping.ownerUid===uid&&mapping.revision===parent?.revision&&['draft','published'].includes(mapping.status);}return {actor,parent,owner:!!owner&&canonical};
  }
  async function cleanupAllowed(asset,uid,parent,context){return typeof authorizeOrphan==='function'&&int(asset.createdAtMs)&&now()-asset.createdAtMs>=orphanRetentionMs&&await authorizeOrphan({actorUid:uid,asset:structuredClone(asset),parentExists:parent!==null},context)===true;}
  async function quotas(raw,a){const rows=[];for(const key of mediaQuotaKeys(a.ownerUid,a.kind,a.parentId,a.service)){const row=await read(raw,ref('quotas',key));if(!row||!copyRecord(row,['known','bytesReserved','imagesReserved','maxBytes','maxImages','reservationsUsed','maxReservations'])||row.known!==true||!['bytesReserved','imagesReserved','maxBytes','maxImages','reservationsUsed','maxReservations'].every(k=>int(row[k]))||row.bytesReserved>row.maxBytes||row.imagesReserved>row.maxImages||row.reservationsUsed>row.maxReservations)return null;rows.push({key,row});}return rows;}
@@ -86,4 +86,9 @@ export function createIsolatedMediaJournal(options={}){
 export function createStagingMediaJournal(options={}){
  if(options.enabled!==true)return Object.freeze({reserve:async()=>fail('UNAVAILABLE'),transition:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(options.binding);
  return journalCore({...options,sdk:b.sdk,parentCollections:{product:b.collections.privateRecords,store:b.collections.privateRecords,provider:'unsupportedProvider'},actorCollections:{product:b.collections.actors,store:b.collections.actors,provider:'unsupportedProvider'}},{db:b.db,collections:b.journalCollections},true);
+}
+
+export function createStagingProviderMediaJournal(options={}){
+ if(options.enabled!==true)return Object.freeze({reserve:async()=>fail('UNAVAILABLE'),transition:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(options.binding);
+ return journalCore({...options,sdk:b.sdk,providerCollections:b.providerCollections,parentCollections:{product:'unsupportedProduct',store:'unsupportedStore',provider:b.providerCollections.drafts},actorCollections:{product:'unsupportedProduct',store:'unsupportedStore',provider:b.providerCollections.actors}},{db:b.db,collections:b.journalCollections},'provider');
 }

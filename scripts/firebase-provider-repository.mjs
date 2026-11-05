@@ -1,3 +1,4 @@
+import {requireProviderMediaRelease} from './provider-media-release.mjs';
 import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {DISCOVERY_FIELDS} from '../features/service-providers/provider-discovery.mjs';
@@ -6,7 +7,7 @@ const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(value);
 const digest=values=>createHash('sha256').update(JSON.stringify(values)).digest('hex');
 // Actual modular Firebase transaction API, injection only. No SDK initialization,
 // environment credentials, network construction or production-enable mode.
-function providerRepository({sdk,photoPolicy,publicationAllowed=true,now=Date.now}={}, {db,collections}){
+function providerRepository({sdk,photoPolicy,mediaRelease,publicationAllowed=true,now=Date.now}={}, {db,collections}){
  const unavailable=()=>{throw new Error('Provider repository unavailable');};
  const ref=(name,key)=>{if(!id(key)&&!/^[a-f0-9]{64}$/.test(key))unavailable();return sdk.doc(db,collections[name],key);};
  const receiptRef=(uid,operation,key)=>ref('receipts',digest([uid,operation,key]));
@@ -23,7 +24,7 @@ function providerRepository({sdk,photoPolicy,publicationAllowed=true,now=Date.no
     getProviderIdentity:providerId=>fields(ref('identities',providerId),['providerId','ownerUid']),
     getDraftMetadata:providerId=>fields(ref('drafts',providerId),['providerId','ownerUid','revision']),
     getDraft:providerId=>get(ref('drafts',providerId)),
-    getIdempotency:(uid,operation,key)=>get(receiptRef(uid,operation,key)),
+    getIdempotency:async(uid,operation,key)=>{const r=await get(receiptRef(uid,operation,key));if(r&&mediaRelease&&operation==='provider-publication'&&!await mediaRelease.verifyReplay(raw,r))throw Error('Provider media replay conflict');return r;},
     getAudit:key=>get(ref('audits',key)),
     getPublicationPermission:uid=>fields(ref('permissions',uid),['uid','canPublish','canWithdraw','suspended']),
     getGeneration:()=>fields(ref('generations','current'),['value']),
@@ -44,6 +45,7 @@ function providerRepository({sdk,photoPolicy,publicationAllowed=true,now=Date.no
     const generation=ref('generations','current'),existing=await get(generation);
     if(!existing||existing.value!==m.generation.value-1||!storedOwner||storedOwner.revision!==m.canonical.revision)throw new Error('Publication precondition conflict');
     if(m.publicProfile!==null&&(Reflect.ownKeys(m.publicProfile).sort().join(',')!==[...DISCOVERY_FIELDS].sort().join(',')||m.publicProfile.id!==m.publication.providerId||m.publicProfile.published!==true||m.publicProfile.publicationEpoch!==m.generation.value))throw new Error('Invalid public field projection');
+    const media=mediaRelease?await mediaRelease.prepare(raw,m):null;if(mediaRelease&&media?.ok!==true)throw Error('Provider photos unavailable');media?.commit();
     check();raw.set(generation,{...m.generation,committedAt:sdk.serverTimestamp()});raw.set(ref('publications',m.publication.providerId),{...m.publication,committedAt:sdk.serverTimestamp()});
     if(m.publicProfile===null)raw.delete(ref('publicViews',m.publication.providerId));else raw.set(ref('publicViews',m.publication.providerId),m.publicProfile);
    }
@@ -67,10 +69,12 @@ export function createIsolatedFirebaseProviderRepository(options={}){
  if(options.enabled!==true)return disabledProvider();
  return providerRepository(options,getIsolatedProviderSdkContext(options));
 }
-// Real Admin SDK facade; default-off and constrained by the existing branded
+// Real Admin SDK facade; default-off. Publication additionally requires the
+// verified, binding-scoped atomic Provider media release hook. Existing branded
 // exact-project/Preview/namespace/transport checks. Never initializes an app.
 export function createStagingFirebaseProviderRepository(options={}){
  if(options.enabled!==true)return disabledProvider();
  const binding=requireStagingMarketplaceBinding(options.binding);
- return providerRepository({...options,sdk:binding.sdk,publicationAllowed:false},{db:binding.db,collections:binding.providerCollections});
+ const mediaRelease=options.mediaRelease?requireProviderMediaRelease(options.mediaRelease,binding):null;
+ return providerRepository({...options,sdk:binding.sdk,mediaRelease,photoPolicy:mediaRelease??options.photoPolicy,publicationAllowed:!!mediaRelease},{db:binding.db,collections:binding.providerCollections});
 }

@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash,timingSafeEqual} from 'node:crypto';
 import {copyRecord,safeId} from './isolated-firestore-context.mjs';
 import {parseBoundedJson} from './bounded-json.mjs';
@@ -11,10 +12,11 @@ const unavailable=()=>{throw new Error('Upload unconfirmed');};
 // lifecycle's atomic markUploadAttempt; that journal owns retries/reconciliation.
 // inspectAsset must independently attest stored bytes (including their digest),
 // not echo upload response metadata. Provider response signatures cover only ID/version.
-export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCredentials,sendMultipart,inspectAsset,persistVerifiedUpload,onProgress,now=Date.now}={}){
- const active=enabled===true&&mode==='isolated-test';
+function buildCloudinaryMultipartBridge({enabled=false,mode,signer,getCredentials,sendMultipart,inspectAsset,persistVerifiedUpload,onProgress,now=Date.now}={},stagingBinding=null){
+ const active=enabled===true&&(stagingBinding!==null||mode==='isolated-test');
  const receipts=new WeakMap();
  const check=context=>{
+  stagingBinding?.check();
   if(!active||!safeId(context?.actorUid)||typeof context?.checkpoint!=='function'||context.signal?.aborted)unavailable();
   context.checkpoint();
  };
@@ -69,4 +71,10 @@ export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCr
    }catch{return false;}
   }
  });
+}
+
+export const createCloudinaryMultipartBridge=options=>buildCloudinaryMultipartBridge(options);
+export function createStagingCloudinaryMultipartBridge(options={}){
+ if(options.enabled!==true)return buildCloudinaryMultipartBridge({});
+ const binding=requireStagingMarketplaceBinding(options.binding);return buildCloudinaryMultipartBridge(options,binding);
 }

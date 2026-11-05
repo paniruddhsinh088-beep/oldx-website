@@ -86,3 +86,10 @@ test('cancellation during response prevents attach and ignores late progress',as
  const {lifecycle}=composition(f),request={requestId:'upload-1',surface:'product',parentId:'product-1'};
  assert.equal((await lifecycle.upload(request,bytes,{signal:controller.signal})).code,'OUTCOME_UNKNOWN');f.late();assert.ok(!f.progress.includes(100));
 });
+
+test('staging-only signed bridge reuses independent signature/byte verification, without an unsigned preset',async()=>{
+ const {createStagingCloudinaryMultipartBridge}=await import('../../scripts/cloudinary-multipart-bridge.mjs'),{createStagingMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ await assert.rejects(createStagingCloudinaryMultipartBridge().uploadProcessed(input,context()));assert.throws(()=>createStagingCloudinaryMultipartBridge({enabled:true,binding:{}}));
+ const binding=createStagingMarketplaceBinding({projectId:'oldx-staging',deploymentEnvironment:'preview',adminFirestore:{projectId:'oldx-staging',collection:()=>({doc:()=>({})}),runTransaction:()=>assert.fail('no SDK writes')},FieldValue:{serverTimestamp:()=>({})}}),f=fixture(),bridge=createStagingCloudinaryMultipartBridge({...f.options,mode:undefined,binding});
+ const result=await bridge.uploadProcessed(input,context());assert.equal(result.assetId,'asset-1');assert.equal(f.calls,1);assert.equal(await bridge.verifyUploadResult(result,{publicId:input.publicId,deliveryType:'authenticated',byteSize:bytes.length},context()),true);
+});

@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
-import {createStagingMediaJournal} from './firebase-media-journal.mjs';
+import {createStagingMediaJournal,createStagingProviderMediaJournal} from './firebase-media-journal.mjs';
 import {copyRecord,safeId} from './isolated-firestore-context.mjs';
 import {snapshotVerifiedMediaProof} from './media-proof-snapshot.mjs';
 import {validateProcessedImage} from './image-upload-contract-policy.mjs';
@@ -13,7 +13,7 @@ const fail=code=>({ok:false,code});
 // Server-only, default disabled. No provider/default transport/SDK startup.
 // Domain-separated rows reuse existing journal operations + audits; no new
 // collections, Rules or schema activation. Bytes and credentials are NEVER stored.
-export function createStagingMediaProviderRuntime({enabled=false,binding,authenticate,processor,createUploadProvider,inspectAsset,destroy,inspectDeletionSettlement,now=Date.now,timeoutMs=5000}={}){
+function mediaProviderRuntime({enabled=false,binding,authenticate,processor,createUploadProvider,inspectAsset,destroy,inspectDeletionSettlement,now=Date.now,timeoutMs=5000}={},providerScope=false){
  if(enabled!==true)return Object.freeze(Object.fromEntries(['upload','reconcileUpload','remove','reconcileDelete'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
  const b=requireStagingMarketplaceBinding(binding),{sdk,db}=b,c=b.journalCollections;
  const ref=(role,key)=>sdk.doc(db,c[role],key),read=async(tx,r)=>{const s=await tx.get(r);return s.exists()?s.data():null;};
@@ -21,9 +21,10 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
  const transaction=(context,work)=>sdk.runTransaction(db,async tx=>{context.checkpoint();const result=await work(tx);context.checkpoint();return result;},{maxAttempts:3});
  async function lease(tx,input,context,purpose){
   const asset=await read(tx,ref('assets',input.imageId));
-  if(!asset||asset.ownerUid!==context.actorUid||!['product','store'].includes(asset.kind)||asset.publicId!=='oldx/quarantine/'+input.imageId||!safeId(asset.parentId))throw Error('Denied lease');
-  const actor=await read(tx,sdk.doc(db,b.collections.actors,context.actorUid)),parent=await read(tx,sdk.doc(db,b.collections.privateRecords,asset.kind+'_'+asset.parentId));
-  if(actor?.uid!==context.actorUid||actor.canWrite!==true||actor.suspended!==false||parent?.ownerUid!==context.actorUid||parent.id!==asset.parentId||parent.kind!==asset.kind)throw Error('Denied owner');
+  if(!asset||asset.ownerUid!==context.actorUid||!(providerScope?['provider']:['product','store']).includes(asset.kind)||asset.publicId!=='oldx/quarantine/'+input.imageId||!safeId(asset.parentId))throw Error('Denied lease');
+  const c=providerScope?b.providerCollections:b.collections,actor=await read(tx,sdk.doc(db,c.actors,context.actorUid)),parent=await read(tx,sdk.doc(db,providerScope?c.drafts:c.privateRecords,providerScope?asset.parentId:asset.kind+'_'+asset.parentId));
+  if(actor?.uid!==context.actorUid||actor.canWrite!==true||actor.suspended!==false||parent?.ownerUid!==context.actorUid||(providerScope?parent.providerId!==asset.parentId:parent.id!==asset.parentId||parent.kind!==asset.kind))throw Error('Denied owner');
+  if(providerScope){const identity=await read(tx,sdk.doc(db,c.identities,asset.parentId)),owner=await read(tx,sdk.doc(db,c.owners,context.actorUid));if(identity?.providerId!==asset.parentId||identity.ownerUid!==context.actorUid||owner?.providerId!==asset.parentId||owner.ownerUid!==context.actorUid||owner.revision!==parent.revision||!['draft','published'].includes(owner.status)||asset.service!==null&&!parent.profile?.services?.includes(asset.service))throw Error('Denied Provider identity');}
   const nonce=purpose==='upload'?asset.attemptNonce:asset.deleteNonce;
   if(!imageId(nonce)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<1||asset.revision<input.expectedRevision)throw Error('Invalid lease');
   const expected={purpose,imageId:input.imageId,nonce,publicId:asset.publicId,expectedRevision:input.expectedRevision,...(purpose==='upload'?{sourceDigest:asset.sourceDigest}:{assetId:asset.assetId})};
@@ -38,7 +39,7 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   };
   return context.transaction?verify(context.transaction):transaction(context,verify);
  }
- const journal=createStagingMediaJournal({enabled:true,binding:b,authenticate,verifyProof,now,timeoutMs});
+ const journal=(providerScope?createStagingProviderMediaJournal:createStagingMediaJournal)({enabled:true,binding:b,authenticate,verifyProof,now,timeoutMs});
  async function stored(input,context,purpose){return transaction(context,async tx=>{const scope=await lease(tx,input,context,purpose),row=await read(tx,ref('operations',scope.token));return {...scope,row};});}
  async function claim(input,context,purpose,processed){
   context.markMutationAttempted();return transaction(context,async tx=>{
@@ -75,17 +76,21 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   const input=valid(request);if(!input)return Promise.resolve(fail('INVALID_REQUEST'));
   return runVerifiedOperation({authenticate,credential:options?.credential,signal:options?.signal,now,timeoutMs,run:async context=>{
    const scope=await stored(input,context,purpose);
-   if(scope.row?.phase==='complete'){context.markMutationAttempted();return journal.transition(purpose==='upload'?'confirm-upload':'confirm-delete',{...input,proof:scope.token},options);}
+   if(scope.row?.phase==='complete'){context.markMutationAttempted();const saved=await journal.transition(purpose==='upload'?'confirm-upload':'confirm-delete',{...input,proof:scope.token},options);return providerScope&&purpose==='upload'&&saved.state==='cancelled'?fail('IMAGE_REJECTED'):saved;}
    return work(input,context,scope);
   }});
  };
+ async function rejectBeforeDispatch(input,context,options){
+  context.markMutationAttempted();const token=await transaction(context,async tx=>{const scope=await lease(tx,input,context,'upload'),row=await read(tx,ref('operations',scope.token));if(row||scope.asset.state!=='uploading'||scope.asset.revision!==input.expectedRevision)return null;const proof={...scope.expected,status:'absent',definitive:true,operationSettled:true};tx.set(ref('operations',scope.token),{ownerUid:context.actorUid,phase:'complete',expected:scope.expected,processed:null,proof,provider:null});tx.set(ref('audits',scope.token),{ownerUid:context.actorUid,proofDigest:hash(proof),providerDigest:hash(null),committedAt:sdk.serverTimestamp()});return scope.token;});
+  if(!token)return unknown();const result=await journal.transition('confirm-upload',{...input,proof:token},options);return result.ok&&result.state==='cancelled'?fail('IMAGE_REJECTED'):result;
+ }
  const finish=(input,scope,options,purpose)=>journal.transition(purpose==='upload'?'confirm-upload':'confirm-delete',{...input,proof:scope.token},options);
  return Object.freeze({journal,
   upload(request,source,options={}){return run(request,options,'upload',async(input,context,scope)=>{
    if(scope.row)return unknown();if(!(source instanceof Uint8Array)||source.length<1||source.length>3*1024*1024||hash(Buffer.from(source))!==scope.asset.sourceDigest)return fail('INVALID_REQUEST');
    if(typeof processor?.decodeAndReencode!=='function'||typeof createUploadProvider!=='function')return fail('UNAVAILABLE');
-   const p=copyRecord(await processor.decodeAndReencode(new Uint8Array(source),{surface:scope.asset.kind,maxBytes:scope.asset.reservedBytes,signal:context.signal}),['bytes','contentType','width','height','metadataStripped','contentScanned']);context.checkpoint();
-   if(!p||!(p.bytes instanceof Uint8Array)||p.bytes.length>scope.asset.reservedBytes||p.contentType!=='image/webp'||p.metadataStripped!==true||p.contentScanned!==true||!validateProcessedImage({surface:scope.asset.kind,...p,byteSize:p.bytes.length}).ok)return fail('IMAGE_REJECTED');
+   let p;try{p=copyRecord(await processor.decodeAndReencode(new Uint8Array(source),{surface:providerScope?'profile':scope.asset.kind,maxBytes:scope.asset.reservedBytes,signal:context.signal}),['bytes','contentType','width','height','metadataStripped','contentScanned']);}catch{if(providerScope&&!context.signal.aborted)return rejectBeforeDispatch(input,context,options);throw Error('Image processing unavailable');}context.checkpoint();
+   if(!p||!(p.bytes instanceof Uint8Array)||p.bytes.length>scope.asset.reservedBytes||p.contentType!=='image/webp'||p.metadataStripped!==true||p.contentScanned!==true||!validateProcessedImage({surface:providerScope?'profile':scope.asset.kind,...p,byteSize:p.bytes.length}).ok)return providerScope?rejectBeforeDispatch(input,context,options):fail('IMAGE_REJECTED');
    const bytes=new Uint8Array(p.bytes),processed={digest:hash(Buffer.from(bytes)),contentType:p.contentType,byteSize:bytes.length,width:p.width,height:p.height};
    const claimed=await claim(input,context,'upload',processed);if(!claimed.claimed)return unknown();context.checkpoint();
    const provider=createUploadProvider({persistVerifiedUpload:proof=>acceptUpload(input,context,proof)});
@@ -110,3 +115,6 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   });}
  });
 }
+
+export const createStagingMediaProviderRuntime=options=>mediaProviderRuntime(options);
+export const createStagingProviderMediaRuntime=options=>mediaProviderRuntime(options,true);

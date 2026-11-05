@@ -122,6 +122,9 @@ test('REAL native Provider public discovery/detail validates projection, paginat
  const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs'),{exerciseNativeProviderReads}=await import('../integration/provider-native-read-cases.mjs');
  await exerciseNativeProviderReads({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value)});
 });
+test('REAL native Provider media journal, references, album quotas and safe deletion',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs'),{exerciseProviderMedia}=await import('../integration/provider-media-cases.mjs');await exerciseProviderMedia({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value),read:async(c,id)=>(await db.collection(c).doc(id).get()).data()});
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);
