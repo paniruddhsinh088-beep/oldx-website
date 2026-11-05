@@ -394,3 +394,14 @@ renders approved binary delivery with revocation clearing. Local related regress
 production sharp packaging, actual signed provider acceptance, policies/configuration
 and separately approved staging activation remain unfinished. See autonomous resume
 for exact-source CI status; source readiness does not change HOLD/NO-GO.
+
+5 November Provider owner-media source `2c97f5360f67d91f963cc3bb5218ac49c960b6b3`:
+Existing website now composes authenticated photo upload/recovery/reference ports with
+private canonical draft scope and Firebase session isolation. Default-off same-origin
+multipart binding prepared; no browser signing secrets/unsigned preset. Profile/work
+compression, quarantine status, identical-reference retry and known-reference detach
+are source-tested. Pinned sharp0.35.5 is now a production dependency under explicit
+owner authorization. Local related checks270/270, final Auth6/6, Provider browser15/15
+and packaging/processor5/5 pass (overlapping counts). Runtime routes remain uninstalled,
+flags off. Actual signed provider acceptance, scan/moderation/retention/quota/rollback
+configuration and real staging/device workflow remain gates; no live functionality claim.

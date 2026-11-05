@@ -2,6 +2,62 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November Provider owner photo UI + production image processor packaging
+
+Owner explicitly authorized necessary repository dependency/integration changes.
+Executable source **2c97f5360f67d91f963cc3bb5218ac49c960b6b3** pushed only to
+security-hardening-review; exact remote SHA verified. Preserved 002d335. All operational
+gates remain off. No endpoints installed or live provider/Firebase calls performed.
+
+Existing pinned sharp **0.35.5** moved from development to production dependencies
+with npm-generated lock metadata; no version change or paid dependency. npm ls
+--omit=dev confirms it is in the production tree. Previous approval rejection is
+resolved by the owner's new explicit dependency authorization.
+
+Existing Provider website photo UI now accepts authenticated media ports after
+verified private draft save/bootstrap supplies canonical parent/revision/services.
+Profile and multi-service work photos compress locally, upload to quarantine and
+persist atomic private references; failure preserves the text draft and selections.
+Unknown reference outcomes keep the same request for retry, with editing locked;
+upload recovery uses status/recover rather than resending blindly. Known attached
+photo removal detaches through revision-bound references; remote provider deletion
+remains the server journal's separate authorized lease/cleanup operation.
+Firebase Auth media token bridge checks current account/session before and after
+acquisition, clears on logout/account switch. Existing public approved gallery and
+private draft/public publication distinction retained. No client approval or synthetic
+providers substituted. App-owned copy localized gu/hi/en; authored service text kept.
+
+Added default-off same-origin staging multipart/JSON client with injected fetch,
+Bearer auth, no redirects/ambient cookies, bounded response/file size and deadline.
+No browser Cloudinary secrets/signatures or unsigned presets. Existing host must
+explicitly supply options.media ports OR {enabled:true,fetch,origin} after approval.
+Production handler artifacts (including Provider media) import disabled without SDK
+initialization; no routes automatically copied. Native processing package tested.
+
+Local related source/integration/service/locale/static **270/270 PASS**; latest Auth
+bridge **6/6 PASS**; Provider website/private/public/media browser **15/15 PASS**,
+including 320gu/375hi/375en, unknown reference retry, no duplicate upload, enlarged
+text and session clearing. Packaging/actual sharp **5/5 PASS** (overlapping tests).
+Initial enlarged-text select overflow was fixed; final browser suite has no failures.
+Exact-source Security **42060652237 SUCCESS**, Service Emulator **42060652233 SUCCESS**,
+Review **42060652298 SUCCESS**. Review again runs actual Admin/Auth/Firestore Emulator
+**14/14 PASS**, including Provider media. Do not confuse fixture browser tests or
+isolated Emulator results with actual Cloudinary/staging acceptance.
+
+Concrete remaining operations: verified existing staging identity/network and backup/
+rollback; server-only Cloudinary credentials/access (never in chat), actual signature/
+inspection/delivery acceptance; trusted scan/quarantine + independent moderation,
+quota initialization, retention/cleanup and ambiguous-delete policy; separate runtime/
+route/flag activation approval. Refresh restores private parent/reference metadata via
+owner bootstrap; unfinished local file selections/request keys are not persisted across
+browser reload. No real staging uploads or safe production release claimed. HOLD/NO-GO.
+Next exact source task: connect the existing isolated durable enquiry/conversation
+repository core to reviewed native namespaces and the Provider HTTP host: media host
+currently supplies draft/publication, not enquiry repository ports. Do not claim contact
+works through that native host yet. Then approved synthetic staging acceptance
+(Login -> draft -> photos -> independent review -> publish -> search/detail -> enquiry
+-> withdraw) once operational prerequisites and final activation approval exist.
+
 ## 5 November native Provider media journal, release and disabled HTTP host
 
 Executable source **c80ae027f335babae3cba06ef6fbf76ad26a45cb**, pushed only to
