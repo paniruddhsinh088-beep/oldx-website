@@ -122,7 +122,7 @@ test('REAL native Provider private create/edit/ownership/replay/revision persist
  for(const uid of ['owner','other'])await db.collection(schema.actors).doc(uid).set({uid,canWrite:true,suspended:false});
  await db.collection(schema.permissions).doc('owner').set({uid:'owner',canPublish:true,canWithdraw:true,suspended:false});await db.collection(schema.generations).doc('current').set({value:0});
  const repository=createStagingFirebaseProviderRepository({enabled:true,binding}),catalog={version:1,stateCode:'GJ',services:['Repair','Plumber'],localities:[{city:'Ahmedabad',serviceArea:'Sample area'}]};
- const owner=createProviderV1Integration({enabled:true,repository,catalog,authenticate:enforcement.verifyFirebaseToken,randomId:()=> 'opaque-native-profile'});
+ const owner=createProviderV1Integration({enabled:true,repository,catalog,authenticate:(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true}),randomId:()=> 'opaque-native-profile'});
  const profile={displayName:'મૂળ हिन्दी Native',city:'Ahmedabad',serviceArea:'Sample area',services:['Repair','Plumber'],description:'Synthetic original',available:true,experienceYears:null,languages:['gu','hi','en']};
  const input={requestId:'native-provider-create',expectedRevision:0,profile};
  const created=await owner.saveDraft(input,{credential:ownerToken});assert.equal(created.ok,true,JSON.stringify(created));

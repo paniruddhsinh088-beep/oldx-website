@@ -36,3 +36,10 @@ test('Auth bridge rejects production/defaults, foreign scopes and stale token ac
  assert.equal((await bridge.commands.execute('draft.save',{}, {session:{uid:'other',sessionId:'safe-session'}})).status,401);
  const pending=bridge.commands.execute('draft.save',{}, {session});await Promise.resolve();auth.currentUser=null;listener(null);resolve('fake.test.token');assert.equal((await pending).status,401);assert.equal(sends,0);bridge.destroy();
 });
+
+test('native Provider authentication composition explicitly requires revoked-token verification',async()=>{
+ const {createIsolatedProviderEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');const projectId='demo-oldx-provider',seconds=Math.floor(Date.now()/1000);let checked=false;
+ const enforcement=createIsolatedProviderEnforcement({enabled:true,projectId,adminAuth:{app:{options:{projectId}},verifyIdToken:async(_token,checkRevoked)=>{checked=checkRevoked;return {uid:'owner',sub:'owner',aud:projectId,iss:'https://securetoken.google.com/'+projectId,iat:seconds,exp:seconds+3600};}}});
+ await assert.rejects(enforcement.verifyFirebaseToken('fake.test.token',{}));assert.equal(checked,false);
+ const authenticate=(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true});assert.deepEqual(await authenticate('fake.test.token',{}),{uid:'owner'});assert.equal(checked,true);
+});
