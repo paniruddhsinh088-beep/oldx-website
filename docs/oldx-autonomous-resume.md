@@ -2,6 +2,54 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November native Provider public search/detail + media compatibility
+
+Fresh remote **bdac5738e7f8ff61458b5a94746cc9c91e30407d** matched; no concurrent
+work overwritten. Source **0d6e1d202269e280186127a6ecd357d02146f67c** pushed and
+remote SHA verified. No new demos or live access. Existing Services UI/design retained.
+
+Completed default-off native Admin public Provider repository using the SAME existing
+query planner, public DTOs, catalog and scoped cursor model. Fixed public SELECT only;
+private/unbounded/foreign queries rejected. Native snapshots normalize actual SDK
+metadata; independent canonical publication/identity/owner and now ACTIVE ACTOR checks
+inside transaction. Verified privacy gap fixed: suspension without generation change
+now denies directory/detail. Complete public row re-read after query rejects changed
+content before responding, using deterministic field-key order (no map-order issue).
+Existing browser Auth/UI ports accept this repository's discover/detail interface;
+actual HTTP host/transport remains uninstalled/inactive. No browser private filtering.
+
+Photo compatibility issue fixed: old client 1600px output exceeded trusted profile
+1024px policy. Preparation now <=1024px/2MiB JPEG and regression asserts policy parity;
+profile/work-photo local selections remain private and are NOT presented as uploads.
+Exact infrastructure blockers verified in source: Cloudinary transport requires
+isolated-test mode, native journal/reference/media composition supports Product/Store
+only, Provider work-photo role/service/parent/reference/release bindings absent.
+No fake provider proof, unchecked upload, unsigned preset reuse or publication bypass.
+Existing independent inspection/moderation gates and native publication hard-denial stay.
+
+Local focused reads/native session **11/11 PASS**, full related source integration/
+service/static regression **244/244 PASS**, existing Services Auth/public/photo browser
+**6/6 PASS** including 320/375 gu/hi/en and suspension clearing; focused policy/compression/
+build/browser **12/12 PASS** after dimension fix. Counts overlap. Same native read
+acceptance matrix passed against Admin-shaped doubles and is added to actual Admin/
+Auth/Firestore suite (now13); no local Emulator/proxy retroubleshooting. Exact-source
+Review **42048717778 SUCCESS**, Service Emulator **42048717745 SUCCESS**.
+Actual native Admin/Auth/Firestore **13/13 PASS**, including Provider public reads;
+these are isolated Emulator results, not real staging or provider-upload acceptance. Standalone Security
+workflow not triggered by this path set; security regressions are included in Review.
+
+Rules proposals untouched/unactivated; live Products/Stores/Chat permissions unknown,
+so no verified-live merge claim. Existing four Provider public index proposals reused,
+not deployed. Concise completed/configuration/live-blocker checklist updated in
+`docs/proposals/provider-real-integration-gates.md`. Existing source auth/private draft
+work preserved. Required next code: native Provider photo journal/reference/atomic release
+and real provider transport plus reviewed HTTP composition. Required operations: existing
+scoped staging identity/network, snapshot/rollback, catalog/roles/rates/cursors/index
+acceptance, media privacy/moderation/retention decisions and separate activation approval.
+No real uploads, public publishing, deployment, Rules/IAM/secrets/billing/live data change.
+Real staging and safe production release remain HOLD/NO-GO. Ledger SHA:
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November native Provider persistence + existing Firebase Auth composition
 
 Preserved latest remote **5d178958761694d9aa01ee998a69deb397c922d2** (includes requested
