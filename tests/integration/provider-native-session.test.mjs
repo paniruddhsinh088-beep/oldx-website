@@ -63,3 +63,10 @@ test('native contact host shares durable enquiry and two-way Chat core (SDK doub
 test('Provider runtime preflight is diagnostic-only, fail-closed and never reads credentials',async()=>{
  const {inspectStagingProviderConfiguration,PROVIDER_STAGING_SAFE_DEFAULTS}=await import('../../functions/staging-marketplace/provider-media-host.mjs');const result=inspectStagingProviderConfiguration({getCredentials:()=>assert.fail('must not read credentials')});assert.equal(result.ok,false);assert.equal(result.operationallyApproved,false);assert.ok(result.missing.includes('STAGING_BINDING'));assert.equal(result.missing.includes('CLOUDINARY_SERVER_ACCESS'),false);assert.equal(JSON.stringify(result).includes('secret'),false);assert.equal(PROVIDER_STAGING_SAFE_DEFAULTS.automaticDeletion,false);assert.equal(PROVIDER_STAGING_SAFE_DEFAULTS.workImages,6);
 });
+
+test('unsigned Auth Emulator token syntax never reaches verifier by default',async()=>{
+ const {createProviderHttpComposition}=await import('../../scripts/provider-http-composition.mjs');let calls=0;const request={method:'POST',headers:{'content-type':'application/json',authorization:'Bearer header.payload.'},body:JSON.stringify({operation:null,requestId:null})};
+ const verifyFirebaseToken=()=>{calls++;throw Error('still require verified identity');};
+ assert.equal((await createProviderHttpComposition({enabled:true,verifyFirebaseToken}).handle('owner.bootstrap',request)).status,401);assert.equal(calls,0);
+ assert.equal((await createProviderHttpComposition({enabled:true,emulatorTokenSyntax:true,verifyFirebaseToken,resolveProviderRole:()=>{},consumeRateLimit:()=>{}}).handle('owner.bootstrap',request)).status,401);assert.equal(calls,1);
+});

@@ -17,7 +17,7 @@ function copy(input,keys){try{if(!input||Object.getPrototypeOf(input)!==Object.p
 function requestHeaders(input){try{if(!input||Object.getPrototypeOf(input)!==Object.prototype||Reflect.ownKeys(input).length>32)return null;const out=Object.create(null);for(const key of Reflect.ownKeys(input)){const d=Object.getOwnPropertyDescriptor(input,key),lower=key.toLowerCase();if(!d||!Object.hasOwn(d,'value')||typeof d.value!=='string'||d.value.length>8192||Object.hasOwn(out,lower)||/[\r\n]/.test(d.value))return null;out[lower]=d.value;}return out;}catch{return null;}}
 // Default-disabled, framework-neutral function only. No route/listener/SDK/auth
 // provider is initialized. All roles, rates and identities are trusted injections.
-export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},bootstrap={},enquiry={},timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
+export function createProviderHttpComposition({enabled=false,verifyFirebaseToken,resolveProviderRole,consumeRateLimit,draft={},publication={},bootstrap={},enquiry={},emulatorTokenSyntax=false,timeoutMs=5000,now=Date.now,schedule=setTimeout,cancel=clearTimeout}={}){
  return Object.freeze({async handle(operation,request,{signal}={}){
   if(enabled!==true)return error(503,'UNAVAILABLE');
   if(!['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel','enquiry.change','enquiry.detail','enquiry.inbox'].includes(operation))return error(404,'NOT_FOUND');
@@ -37,7 +37,7 @@ export function createProviderHttpComposition({enabled=false,verifyFirebaseToken
   else if(operation==='owner.bootstrap'){input=copy(parsed.value,['operation','requestId']);if(input&&!(input.operation===null&&input.requestId===null||['draft.save','publication.manage'].includes(input.operation)&&id(input.requestId)))input=null;}
   else{input=copy(parsed.value,['requestId','expectedRevision','expectedGeneration','action']);if(input&&(!id(input.requestId)||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!Number.isSafeInteger(input.expectedGeneration)||input.expectedGeneration<0||!['publish','withdraw'].includes(input.action)))input=null;}
   if(!input)return error(400,'INVALID_REQUEST');
-  const token=/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.exec(h.authorization??'')?.[1];
+  const token=(emulatorTokenSyntax===true?/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*)$/:/^Bearer ([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/).exec(h.authorization??'')?.[1];
   if(!token)return error(401,'AUTH_REQUIRED');
   if(![verifyFirebaseToken,resolveProviderRole,consumeRateLimit].every(fn=>typeof fn==='function'))return error(503,'ENFORCEMENT_UNAVAILABLE');
   const result=await runVerifiedOperation({credential:token,authenticate:(credential,context)=>verifyFirebaseToken(credential,{...context,checkRevoked:true}),signal,timeoutMs,now,schedule,cancel,run:async context=>{

@@ -28,7 +28,7 @@ function host({enabled=false,binding,adminAuth,ratePolicy,getCredentials,fetchIm
   // Existing HTTP composition derives canonical owner IDs during its atomic draft
   // transaction. Opaque ID candidates never encode an Auth UID.
   const contact=createStagingProviderContactPorts({enabled:enquiriesEnabled===true,binding:b,catalog,verifyFirebaseToken:verify,consumeRateLimit:rate,readCursor,issueCursor,now,emulatorTokenSyntax:emulator});
-  const commands=createProviderHttpComposition({enabled:true,verifyFirebaseToken:verify,resolveProviderRole:role,consumeRateLimit:async(key,context)=>{const r=await rate(key,context);return {allowed:r.allowed,retryAfterSeconds:r.allowed?0:Math.max(1,Math.min(3600,Math.ceil(ratePolicy.windowMs/1000)))};},draft:{repository,providerIdForActor:()=> 'sp_'+globalThis.crypto.randomUUID()},bootstrap:{repository},enquiry:contact.enquiry,publication:{repository,catalog,mandatoryPhotos:true},now});
+  const commands=createProviderHttpComposition({enabled:true,emulatorTokenSyntax:emulator,verifyFirebaseToken:verify,resolveProviderRole:role,consumeRateLimit:async(key,context)=>{const r=await rate(key,context);return {allowed:r.allowed,retryAfterSeconds:r.allowed?0:Math.max(1,Math.min(3600,Math.ceil(ratePolicy.windowMs/1000)))};},draft:{repository,providerIdForActor:()=> 'sp_'+globalThis.crypto.randomUUID()},bootstrap:{repository},enquiry:contact.enquiry,publication:{repository,catalog,mandatoryPhotos:true},now});
   return Object.freeze({...media,release,providerCommands:commands,conversation:contact.conversation,publicReads:createStagingPublicProviderRepository({enabled:publicReadsEnabled===true,binding:b,catalog,readCursor,issueCursor})});
  }catch{return disabled();}
 }
