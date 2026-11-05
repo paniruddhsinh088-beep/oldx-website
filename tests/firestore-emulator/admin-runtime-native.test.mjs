@@ -88,6 +88,14 @@ test('REAL native media quotas, references, independent approval and atomic publ
  assert.equal((await db.collection(c.publicViews).doc('product_'+productId).get()).exists,false);
  assert.equal((await media.delivery.publicPhotos({kind:'product',parentId:productId,expectedParentRevision:4,expectedPhotoRevision:1})).ok,false);
 });
+test('REAL native durable provider receipts reconcile lost acknowledgements, lease deletion and quotas',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ const {exerciseNativeMediaProofs}=await import('../integration/media-provider-runtime-cases.mjs');
+ let loseAck=false;
+ const wrapped={projectId:db.projectId,_settings:db._settings,collection:name=>db.collection(name),runTransaction:async(work,opts)=>{let accepted=false;const result=await db.runTransaction(tx=>work({get:ref=>tx.get(ref),set:(ref,value)=>{if(value.state==='quarantined')accepted=true;tx.set(ref,value);},delete:ref=>tx.delete(ref)}),opts);if(accepted&&loseAck){loseAck=false;throw Error('Synthetic lost acknowledgement AFTER native commit');}return result;}};
+ const binding=createEmulatorMarketplaceBinding({...options(),adminFirestore:wrapped});
+ await exerciseNativeMediaProofs({binding,loseJournalAck:()=>loseAck=true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

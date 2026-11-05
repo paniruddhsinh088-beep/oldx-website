@@ -11,7 +11,7 @@ const unavailable=()=>{throw new Error('Upload unconfirmed');};
 // lifecycle's atomic markUploadAttempt; that journal owns retries/reconciliation.
 // inspectAsset must independently attest stored bytes (including their digest),
 // not echo upload response metadata. Provider response signatures cover only ID/version.
-export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCredentials,sendMultipart,inspectAsset,onProgress,now=Date.now}={}){
+export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCredentials,sendMultipart,inspectAsset,persistVerifiedUpload,onProgress,now=Date.now}={}){
  const active=enabled===true&&mode==='isolated-test';
  const receipts=new WeakMap();
  const check=context=>{
@@ -55,6 +55,7 @@ export function createCloudinaryMultipartBridge({enabled=false,mode,signer,getCr
    check(context);
    if(!proof||proof.assetId!==v.asset_id||proof.publicId!==v.public_id||proof.version!==v.version||proof.resourceType!=='image'||proof.deliveryType!=='authenticated'||proof.format!=='webp'||proof.byteSize!==upload.bytes.length||proof.width!==v.width||proof.height!==v.height||proof.digest!==digest||await signer.verifyForServer(signed.grant,upload,auth)!==true)unavailable();
    check(context);
+   if(persistVerifiedUpload!==undefined&&(typeof persistVerifiedUpload!=='function'||await persistVerifiedUpload(proof,context)!==true))unavailable();check(context);
    const result=Object.freeze({assetId:v.asset_id});
    receipts.set(result,{actorUid:context.actorUid,publicId:upload.publicId,byteSize:upload.bytes.length,expiresAt:signed.grant.expiresAt,upload,grant:signed.grant});
    try{onProgress?.(100);}catch{/* No private metadata in progress. */}

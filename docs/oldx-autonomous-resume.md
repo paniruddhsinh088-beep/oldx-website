@@ -1,6 +1,46 @@
-# OLDX autonomous resume — 4 November 2026
+# OLDX autonomous resume — 5 November 2026
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
+
+## 5 November native provider-proof milestone
+
+Completed source: default-disabled native provider-proof runtime, durable one-dispatch
+claims, independently verified upload proof persistence, restart/retry confirmation,
+present-upload reconciliation, delete leases/settlement receipts and atomic quota
+refund through existing journal. Reuses operations/audits with domain-separated
+`providerproof_` / `attempt_providerproof_` keys; no new collection or live schema.
+Existing signed multipart bridge has an optional server-only durable proof callback.
+Journal verification reads proof/audit in the SAME transaction (no nested transaction
+or provider side effects). Canonical proof hashing handles Firestore map ordering.
+
+Latest pushed baseline: **aa9cb82ca68bb8375ba54820a88282dd83ebb881**;
+its Review **41889978710 SUCCESS**. New source SHA/CI to be recorded after push.
+Local focused **24/24 PASS**, relevant transaction regression **192/192 PASS**,
+static browser package **3/3 PASS**. Native Emulator suite expanded from 7 to 8
+cases; new actual-repository case includes lost provider acknowledgement, restart,
+AFTER-native-commit lost journal acknowledgement, ownership/revision and quota checks.
+Actual new Emulator result is pending exact-source CI; no local JAR re-download
+attempt (same known network blocker). All provider/processor results are deterministic
+fixtures; this is NOT Cloudinary, real scanning or staging acceptance.
+
+Next exact action: inspect exact-source Review CI's new native case, fix any actual
+SDK failure before proceeding, then record source/CI and reconcile remote. If passed,
+prepare the narrow trusted runtime binding from authenticated media preflight to this
+coordinator with native journal reserve/attempt and mandatory rate/quotas. Do NOT
+mount routes or enable publication. Provider canonical v1 sidecar remains separate.
+
+Operational blockers: existing securely bound staging identity/media access and
+network authorization; explicit runtime/route/flag approval; initialized synthetic
+actor/generation/quota manifest with backup and rollback; independent processor and
+moderation policy; Cloudinary Free quota, inspection, retention/deletion settlement
+and actual synthetic staging workflow acceptance. No secrets in chat. Public image
+publication and all new transports remain disabled. Unknown upload/delete outcomes
+retain quota; a 404 alone NEVER proves a late operation has settled.
+
+No automated scheduler was created; next authorized scheduled/manual execution must
+read this checkpoint and latest remote/CI. No promise of restart after credit reset.
+
+## Preserved prior checkpoint detail
 
 Last completed task: default-disabled, injected Fetch-compatible Cloudinary signed
 multipart HTTP, independent authenticated metadata/bytes inspection, public-approved
