@@ -2,6 +2,51 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November authenticated Product/Store command bridge
+
+Baseline **af3f3423d4a677542f6d57704783f4bf3e5e5389** and fresh remote matched;
+no concurrent work overwritten. Source **d16f9fb4b9d77302775757400fc01a0f9f429fcf**
+pushed and exact remote SHA verified. Added default-disabled browser/Capacitor-neutral
+`createAuthenticatedMarketplaceCommands` for existing Product/Store save/owner/archive
+ports. Injected token acquisition requires matching uid + sessionId; no caller owner/
+role accepted, no automatic fetch, SDK, credentials or endpoint. Existing controller
+continues to own deadlines, cancellation, late-response rejection and same-key retry.
+Lost acknowledgements map to OUTCOME_UNKNOWN; mutations are not automatically retried.
+Strict top-level acknowledgement allowlist and safe error-code mapping; original Unicode
+preserved. Static asset packaging includes this client, no runtime installation.
+
+Audit: legacy index.html still directly accesses products; this bridge is not activated
+there. Public bounded repository exists but guest HTTP/client binding remains missing.
+Photo approval/atomic references are prepared; real processing/provider/moderation and
+staging credentials/rollback/runtime/flag approvals still block end-to-end publication.
+No legacy rewrite, public publishing, Cloudinary or live Firebase activity performed.
+Proxy blocker is acknowledged; no repeated troubleshooting or environment recreation.
+
+Focused integration/recovery/session plus static build **27/27 PASS** using
+`node --test --test-isolation=none` on marketplace-command-http, product-ui,
+product-recovery, marketplace-session and build-static-assets tests. Related
+photo/atomic-publication/runtime/public-query/handler security **29/29 PASS**.
+New four bridge cases cover real policy repository through mocked SDK + HTTP, durable
+same-key replay after lost acknowledgement, foreign token/ownership denial, cancellation
+on account switch, safe errors and contaminated acknowledgements. These are isolated
+mock integration results, NOT actual staging or real Firebase Emulator acceptance.
+Local actual Emulator remains blocked by known proxy; rely on exact-source CI below.
+Existing Product browser regression **9/9 PASS**, including shared host navigation at
+320px/375px, locale/session isolation, owner Unicode/refresh recovery and unknown-key
+retry. Browser fixtures are synthetic; no live backend/provider acceptance.
+Exact-source Review **42020061372 SUCCESS** (including actual native Admin SDK
+Firestore/Auth Emulator step) and Service Emulator **42020061377 SUCCESS**.
+These CI Emulator results do not establish real staging acceptance.
+Standalone Security workflow not triggered for this source path set.
+
+Next exact source task: add default-disabled rate-enforced public HTTP/client binding
+for existing bounded public Browse/detail repository, then compose with Product UI ports;
+do not create a second query model or new page. Operational critical blocker remains
+existing secure staging identity + restored official API connectivity, verified Rules
+snapshot/inventory/rollback, then separately approved media/runtime acceptance.
+HOLD/NO-GO; no automatic scheduler installed. Latest ledger-only SHA is available via
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November conditional staging Firestore repair
 
 Owner NOW approves `oldx-staging` Rules/collection changes conditionally, ONLY after
