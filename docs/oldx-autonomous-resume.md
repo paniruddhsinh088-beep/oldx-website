@@ -2,6 +2,50 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November visible Android-sized mobile demonstration (owner priority)
+
+Remote baseline **a103ba81f92e5b4b63f134c4e5473f1588c79317** matched; no concurrent
+work overwritten. Source **392f3c93f05a2e18df62051e11332a7ff3831da3** pushed and
+remote exact SHA verified. Dedicated entry **/mobile-demo.html**; approved navy/orange/
+white responsive shell, persistent five-screen navigation and Product detail/Provider
+profile/deep links. Reuses existing Product controller/public DTO client, Store/Provider
+synthetic fixtures, public Provider projector, i18n translator, message validation and
+mandatory-photo validator. No new backend module, dependency, Auth or runtime activation.
+
+Visible interactions: Product search/availability/saved filters, details/favorite,
+Seller Store catalogue, multi-service Provider profile and local enquiry handoff,
+buyer/provider in-memory text rehearsal with block/unblock/clear, sample Admin
+hide/restore/reset and local draft/photo select/remove. All data/illustrations clearly
+synthetic. No real permissions, moderation, sends, uploads or publication implied.
+Original fixture Unicode unchanged; all demo-owned UI gu/hi/en. No local/session storage.
+CSP connect-src none/form-action none, no remote fonts/images/scripts; only textContent
+rendering. Photo Blob previews revoked on removal/exit. All real integrations stay off.
+
+Validation: demo mobile browser **6/6 PASS** (320/375 x gu/hi/en; navigation/history,
+chat/block, Admin hide, photo/remove, draft/reload, 200% text, keyboard, invalid deep link,
+no external requests/storage/page errors). Initial tests failed from a mismatched URL
+pattern and a source check matching a safety comment; corrected harness to assert exact
+hash and prohibited imports/calls. No feature/security assertion weakened. Static build
+**3/3 PASS**. Related final source/security/build regression **21/21 PASS** includes
+local server deny-private-files tests. Existing Product/Store browser **12/12 PASS**.
+Exact-source Review **42027599404 SUCCESS**, Service Emulator **42027599351 SUCCESS**,
+Branch Security **42027599249 SUCCESS**. These include isolated actual Emulator
+checks; no live staging acceptance is implied. No repeated local Emulator/proxy investigation.
+
+Owner opening instructions: docs/mobile-demo-guide.md. On the owner's computer run
+`npm run preview:mobile -- --lan`; phone on same trusted Wi-Fi opens
+`http://<computer-private-LAN-IP>:8080/mobile-demo.html`. Without --lan loopback only.
+Server serves reviewed browser assets ONLY; rejects index/admin legacy, Firebase config,
+.git/server/API paths. No public port forwarding. Cloud session localhost is not a phone
+URL. No manual Vercel/Firebase deployment or activation performed; existing approved
+Git-triggered Preview automation is separate. No hosted Preview URL claimed here.
+
+Next: owner views this demo on physical Android and reviews usability/design. Address
+verified UI feedback before more nonessential backend modules. Real staging remains
+blocked by scoped identity/connectivity, backup/rollback and explicit media/runtime/
+processing/moderation/retention activation acceptance. HOLD/NO-GO remains. Ledger SHA:
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November bounded public Product/Store HTTP + client binding
 
 Baseline **76e238dba43693aa889ea869cdf55bb36d0d0203** matched fresh remote;
