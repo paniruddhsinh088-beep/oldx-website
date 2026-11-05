@@ -118,6 +118,10 @@ test('REAL native Provider private create/edit/ownership/replay/revision persist
  const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
  await exerciseNativeProvider({binding:createEmulatorMarketplaceBinding(options()),authenticate:(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true}),ownerToken,otherToken,seed:(c,id,value)=>db.collection(c).doc(id).set(value),rows:async c=>(await db.collection(c).get()).docs.map(d=>d.data())});
 });
+test('REAL native Provider public discovery/detail validates projection, pagination and suspension',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs'),{exerciseNativeProviderReads}=await import('../integration/provider-native-read-cases.mjs');
+ await exerciseNativeProviderReads({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value)});
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

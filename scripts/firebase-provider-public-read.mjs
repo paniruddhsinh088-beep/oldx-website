@@ -1,15 +1,14 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
+import {createStagingProviderQuerySdk} from './staging-provider-query-sdk.mjs';
 import {createBoundedRead} from '../features/shared/bounded-read.mjs';
 import {getIsolatedProviderSdkContext} from './firebase-provider-repository.mjs';
-import {planPublicProviderQuery,DISCOVERY_FIELDS,projectPublicRow} from '../features/service-providers/provider-discovery.mjs';
+import {createPublicProviderRepository,planPublicProviderQuery,DISCOVERY_FIELDS,projectPublicRow} from '../features/service-providers/provider-discovery.mjs';
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v),integer=v=>Number.isSafeInteger(v)&&v>=0;
 function exact(value,keys){if(!value||Object.getPrototypeOf(value)!==Object.prototype||Reflect.ownKeys(value).sort().join(',')!==[...keys].sort().join(','))throw new Error('Invalid public snapshot');return value;}
 function data(snapshot){if(!snapshot.exists())return null;const {committedAt,...facts}=snapshot.data();return facts;}
 // Emulator-only bridge: fresh SDK server query + transactional generation,
 // ownership and canonical publication barrier. No cache, app or credentials.
-export function createIsolatedProviderPublicRead({enabled=false,firestore,sdk,schema,catalog,now=Date.now,timeoutMs=5000}={}){
- const unavailable=async()=>{throw new Error('Public read unavailable');};
- if(enabled!==true)return Object.freeze({getPublicationEpoch:unavailable,query:unavailable,readCanonical:unavailable});
- const {db,collections}=getIsolatedProviderSdkContext({firestore,sdk,schema});
+function providerPublicRead({sdk,catalog,now=Date.now,timeoutMs=5000}={}, {db,collections}){
  if(!['collection','query','where','orderBy','limit','startAfter','getDocsFromServer','getDocFromServer'].every(k=>typeof sdk[k]==='function')||!planPublicProviderQuery({category:'',locality:'',limit:1,cursor:null},catalog,{publicationEpoch:0})||!Number.isInteger(timeoutMs)||timeoutMs<1||timeoutMs>30000)throw new Error('Public read configuration unavailable');
  const trusted={services:[...catalog.services],localities:catalog.localities.map(l=>({...l}))};
  const ref=(name,key)=>{if(!id(key))throw new Error('Invalid identifier');return sdk.doc(db,collections[name],key);};
@@ -19,7 +18,8 @@ export function createIsolatedProviderPublicRead({enabled=false,firestore,sdk,sc
   check(signal,deadline);const publication=data(await raw.get(ref('publications',providerId)));check(signal,deadline);
   if(!publication)return null;exact(publication,['providerId','ownerUid','published','services','publicationEpoch']);
   if(publication.providerId!==providerId||!id(publication.ownerUid)||publication.published!==true||!integer(publication.publicationEpoch)||publication.publicationEpoch>global||!Array.isArray(publication.services)||publication.services.length<1||publication.services.length>12||publication.services.some(category=>!trusted.services.includes(category))||new Set(publication.services).size!==publication.services.length)throw new Error('Invalid canonical publication');
-  const identity=data(await raw.get(ref('identities',providerId))),owner=data(await raw.get(ref('owners',publication.ownerUid)));check(signal,deadline);
+  const identity=data(await raw.get(ref('identities',providerId))),owner=data(await raw.get(ref('owners',publication.ownerUid))),actor=data(await raw.get(ref('actors',publication.ownerUid)));check(signal,deadline);
+  if(actor?.uid!==publication.ownerUid||actor.canWrite!==true||actor.suspended!==false)throw new Error('Inactive Provider owner');
   if(identity?.providerId!==providerId||identity.ownerUid!==publication.ownerUid||owner?.providerId!==providerId||owner.ownerUid!==publication.ownerUid||owner.status!=='published')throw new Error('Invalid canonical identity');
   return publication;
  }
@@ -55,7 +55,7 @@ export function createIsolatedProviderPublicRead({enabled=false,firestore,sdk,sc
    const rows=snapshot.docs.map(doc=>{const row=exact(doc.data(),DISCOVERY_FIELDS);if(doc.metadata?.fromCache!==false||doc.metadata?.hasPendingWrites!==false||row.id!==doc.id||row.published!==true||!integer(row.publicationEpoch)||row.publicationEpoch>plan.publicationEpoch||!projectPublicRow(row,trusted,row.publicationEpoch))throw new Error('Invalid public row');return structuredClone(row);});
    const result=await sdk.runTransaction(db,async raw=>{
     const g=exact(data(await raw.get(ref('generations','current'))),['value']).value;check(signal,deadline);if(g!==plan.publicationEpoch)throw new Error('Publication changed during query');
-    for(const row of rows){const current=await canonical(raw,row.id,g,signal,deadline);if(!current||current.publicationEpoch!==row.publicationEpoch||JSON.stringify(current.services)!==JSON.stringify(row.services))throw new Error('Stale public row');}
+    for(const row of rows){const currentRow=data(await raw.get(ref('publicViews',row.id)));if(!currentRow||!exact(currentRow,DISCOVERY_FIELDS)||JSON.stringify(DISCOVERY_FIELDS.map(k=>[k,currentRow[k]]))!==JSON.stringify(DISCOVERY_FIELDS.map(k=>[k,row[k]])))throw new Error('Public Provider changed during query');const current=await canonical(raw,row.id,g,signal,deadline);if(!current||current.publicationEpoch!==row.publicationEpoch||JSON.stringify(current.services)!==JSON.stringify(row.services))throw new Error('Stale public row');}
     // Only after the barrier may a stored per-row version be represented as the
     // existing port's current dataset snapshot epoch. It is never a cache stamp.
     return {publicationEpoch:g,rows:rows.map(row=>({...row,publicationEpoch:g}))};
@@ -63,4 +63,19 @@ export function createIsolatedProviderPublicRead({enabled=false,firestore,sdk,sc
    if(await generation(signal,deadline)!==plan.publicationEpoch)throw new Error('Publication changed after query');return result;},signal);
   }
  });
+}
+
+const disabledRead=()=>{const unavailable=async()=>{throw Error('Public read unavailable');};return Object.freeze({getPublicationEpoch:unavailable,query:unavailable,readCanonical:unavailable});};
+export function createIsolatedProviderPublicRead(options={}){
+ if(options.enabled!==true)return disabledRead();
+ return providerPublicRead(options,getIsolatedProviderSdkContext(options));
+}
+// Real Admin SDK path, default-off and bound to existing exact-project gates.
+export function createStagingProviderPublicRead(options={}){
+ if(options.enabled!==true)return disabledRead();
+ const b=requireStagingMarketplaceBinding(options.binding),sdk=createStagingProviderQuerySdk({binding:b});
+ return providerPublicRead({...options,sdk},{db:b.db,collections:b.providerCollections});
+}
+export function createStagingPublicProviderRepository(options={}){
+ return createPublicProviderRepository({...options,...createStagingProviderPublicRead(options)});
 }

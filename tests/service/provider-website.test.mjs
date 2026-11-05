@@ -13,3 +13,7 @@ test('merged staging Rules proposal preserves deny-all and is never selected for
  const config=JSON.parse(await readFile(new URL('../../firebase.json',import.meta.url),'utf8'));assert.equal(config.firestore,undefined);assert.equal(config.storage,undefined);
  for(const name of ['provider-merged-firestore.rules','provider-merged-storage.rules']){const rules=await readFile(new URL('../../docs/proposals/'+name,import.meta.url),'utf8');assert.match(rules,/allow read, write: if false;/);assert.doesNotMatch(rules,/allow[^;]+if true/);}
 });
+
+test('Provider client JPEG preparation is compatible with trusted profile size/dimension policy',async()=>{
+ const {PROVIDER_PHOTO_PREPARATION}=await import('../../features/media/compress-provider-photo.mjs'),{getSurfacePolicy}=await import('../../scripts/image-upload-contract-policy.mjs');const policy=getSurfacePolicy('profile');assert.equal(PROVIDER_PHOTO_PREPARATION.maxDimension,policy.maxDimension);assert.equal(PROVIDER_PHOTO_PREPARATION.maxBytes,policy.maxBytes);
+});
