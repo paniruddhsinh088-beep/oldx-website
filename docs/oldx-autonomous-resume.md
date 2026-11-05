@@ -51,10 +51,21 @@ FAILED** the new actual Browse case (UNAVAILABLE). A focused reproduction confir
 public SELECT field ordering differs from document map ordering. Corrected identity
 comparison to compare ALL public keys/values in deterministic key order (arrays retain
 order); changed published content still denies. No Rules or negative test weakened.
-Fix focused **15/15 PASS**, integration **207/207 PASS**; final exact-source CI pending.
+Fix focused **15/15 PASS**, integration **207/207 PASS**; Latest pushed executable fix **dd41d8f093ffc8f4ce453abdf4dfbc2f9130b66a**:
+exact-source Review **41990159155 SUCCESS**, Service Emulator **41990159027 SUCCESS**.
+Applicable Security **41989298814 SUCCESS** is from initial native Browse source
+`9f5e54c8e20c3f1c87430c7593901d78c4f946f6`; no separate Security run triggered for
+field-order fix. Final Review confirms integration **207/207**, actual native SDK
+**11/11**, private Product draft Rules Emulator **6/6** (guest/owner/other/admin-like
+allow/deny/malformed cases). Existing deny-all/authorization suites passed in the
+same Review. Isolated fixtures are not live staging evidence. No failing test hidden.
+This final ledger-only commit changes no executable code; its exact SHA is
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+Selected deny-all SOURCE fixture SHA256 is
+`655eff11d37f6c703de471b2917b02234d5e9fa425879a3c66d9932f080eab83`;
+this is NOT a deployed Rules snapshot or rollback proof.
 
-Next exact action: verify new exact-source Emulator result, fix real SDK failures,
-checkpoint; operationally STOP until existing scoped access/network and actual backup/
+Next exact action: exact-source Emulator verification is complete; operationally STOP until existing scoped access/network and actual backup/
 rollback proof are available. No more Rules approval is needed for the already granted
 conditional scope, but do not assume endpoint/publication/media/index activation approval.
 HOLD/NO-GO remains. No automatic scheduler/restart installed.

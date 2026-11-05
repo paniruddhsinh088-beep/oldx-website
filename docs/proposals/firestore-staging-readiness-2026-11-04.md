@@ -159,3 +159,11 @@ or live observation occurred. The least-privilege server-mediated selection rema
 deny-all; do not use the unrelated owner-drafts proposal to open legacy products.
 New default-disabled native public Browse preparation reuses the existing public
 query/publication contracts. See [current checkpoint](../oldx-autonomous-resume.md).
+
+Native Browse fix `dd41d8f093ffc8f4ce453abdf4dfbc2f9130b66a` passed Review
+`41990159155`: actual native SDK **11/11**, private Product-draft Rules **6/6**,
+integration **207/207**. SELECT/doc public field order is normalized without dropping
+any field/value comparison. New ports remain disabled/uninstalled. No deployed Rules
+snapshot, live empty-state inventory or rollback verification exists in this environment;
+existing scoped Firebase access/network is the exact deployment blocker. Conditional
+staging Rules approval is recorded; broad legacy read/write allowances are not a fix.
