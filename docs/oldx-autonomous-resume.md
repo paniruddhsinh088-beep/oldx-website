@@ -14,14 +14,19 @@ UI uses existing gu/hi/en feedback plus localized recovery status and keyboard f
 restoration. Quarantined means private upload, NOT moderation/publication approval.
 
 Baseline **fbc947b955b3471736ff5250e9e84f1ff362f6a7**, exact-source Review
-**41971739672 SUCCESS**. New executable SHA/CI pending push. Local focused **16/16**,
-related integration regression **201/201**, static package **3/3 PASS**. New mobile
+**41971739672 SUCCESS**. First UI/artifact checkpoint **e35f42d3a07c4b7f69bb240db7bfeb8bff3de31c** pushed;
+Security **41976021379** and Service Emulator **41976021442 SUCCESS**. Final follow-up
+adds owner-only `recover`: status `uploading` with a durable proof can now finalize
+journal confirmation without any provider dispatch or source bytes. This fixes a
+reviewed gap where status-only polling could otherwise remain stuck after lost ack.
+Final follow-up executable SHA/Review CI pending push. Local focused **16/16**,
+related integration regression **202/202**, static package **3/3 PASS**. New mobile
 browser checks **12/12 PASS** (Product/Store × gu/hi/en × 320/375px), existing photo
 browser regression **9/9 PASS**. Actual native Auth/Firestore suite remains 9 cases,
 now additionally driving this browser-neutral client through verified native ports;
 final exact-source Emulator CI result pending. No real provider/staging acceptance.
 
-Inactive artifacts: generated `api/staging/media/{upload,status,remove,reconcileUpload,
+Inactive artifacts: generated `api/staging/media/{upload,status,recover,remove,reconcileUpload,
 reconcileDelete}.mjs` templates only, never installed in root api/. JSON commands reuse
 existing bounded server handler; multipart upload buffers at most 3MiB+32KiB, requires
 exactly one file + raw intent, rejects unsafe MIME/extra fields and propagates abort.
@@ -29,7 +34,7 @@ Templates remain default-disabled and require separately reviewed runtime inject
 No secrets, SDK startup, operational env changes or endpoint activation in this batch.
 
 Next exact action: inspect final-source CI including actual native/client case and
-new browser checks; fix any verified failure. Once passed, bind private-draft photo
+new browser checks and durable `recover` command; fix any verified failure. Once passed, bind private-draft photo
 reference application and approved media delivery to existing owner/public views using
 the existing atomic references/publication contracts. Do not enable backend/media.
 Refresh can recover a completed upload; if no file reached the provider, users must

@@ -24,13 +24,15 @@ export async function exerciseAuthenticatedMedia({binding:b,seed,read,verifyFire
  assert.equal((await make({consumeRateLimit:async()=>({allowed:false})}).upload(http(intent),bytes)).status,429);
  assert.equal((await make().upload(http({...intent,byteSize:bytes.length+1}),bytes)).status,400);
  assert.equal((await make().upload(http({...intent,expectedParentRevision:2}),bytes)).status,409);
- const unknown=await make().upload(http(intent),bytes);assert.equal(unknown.status,202);assert.equal(unknown.body.retrySameRequest,true);assert.equal(sends,1);
+ let lastResponse;const photoClient=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>({uid:s.uid,sessionId:s.sessionId,token:ownerToken}),sendUpload:async(body,file,auth)=>{lastResponse=await make().upload(http(body,auth.credential),file,{signal:auth.signal});return lastResponse;},sendCommand:(op,body,auth)=>make().command(op,http(body,auth.credential),{signal:auth.signal})});
+ photoClient.setScope({uid:'owner',sessionId:'native-session',parentId,revision:1});
+ await photoClient.upload({requestId:intent.requestId,kind:'product',parentId,expectedParentRevision:1,contentType:'image/webp',bytes});
+ const unknown=lastResponse;assert.equal(unknown.status,202);assert.equal(unknown.body.retrySameRequest,true);assert.equal(sends,1);
  const statusRequest={requestId:intent.requestId,kind:'product',parentId};
  const status=await make().command('status',http(statusRequest));assert.equal(status.status,200);assert.equal(status.body.state,'uploading');assert.ok(!JSON.stringify(status.body).includes('digest'));assert.ok(!JSON.stringify(status.body).includes('assetId'));
- assert.equal((await make().command('status',http(statusRequest,otherToken))).status,403);
+ assert.equal((await make().command('status',http(statusRequest,otherToken))).status,403);assert.equal((await make().command('recover',http(statusRequest,otherToken))).status,403);
  assert.equal((await make().command('status',http({...statusRequest,parentId:'foreign'}))).status,403);
  lost=false;
- const photoClient=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>({uid:s.uid,sessionId:s.sessionId,token:ownerToken}),sendUpload:(body,file,auth)=>make().upload(http(body,auth.credential),file,{signal:auth.signal}),sendCommand:(op,body,auth)=>make().command(op,http(body,auth.credential),{signal:auth.signal})});
  photoClient.setScope({uid:'owner',sessionId:'native-session',parentId,revision:1});
  const recoveredClient=await photoClient.upload({requestId:intent.requestId,kind:'product',parentId,expectedParentRevision:1,contentType:'image/webp',bytes});assert.equal(recoveredClient.ok,true);assert.equal(sends,1);
  assert.equal((await photoClient.recover({requestId:intent.requestId,kind:'product',parentId,expectedParentRevision:1})).ok,true);

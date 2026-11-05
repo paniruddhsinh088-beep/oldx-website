@@ -21,14 +21,20 @@ export function createAuthenticatedPhotoClient({enabled=false,getToken,sendUploa
   const v=result?.body;
   if(result?.status===200&&v?.ok===true&&v.parentRevision===r.expectedParentRevision&&v.state==='quarantined'&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId))return {ok:true,state:'quarantined',imageId:v.imageId};
   if(result?.status===200&&v?.ok===true&&v.state==='reserved'&&v.parentRevision===r.expectedParentRevision)return failed('RESERVED');
+  if(result?.status===200&&v?.ok===true&&v.state==='uploading'&&v.parentRevision===r.expectedParentRevision)return failed('PENDING');
   return failed(result?.status===401||result?.status===403?'DENIED':'OUTCOME_UNKNOWN');
+ }
+ async function recoverStatus(r,auth,current){
+  const value=await status(r,auth,current);if(value.code!=='PENDING')return value;
+  const result=await sendCommand('recover',{requestId:r.requestId,kind:r.kind,parentId:r.parentId},auth);if(!current())return failed('CANCELLED');
+  const v=result?.body;return result?.status===200&&v?.ok===true&&v.state==='quarantined'&&v.parentRevision===r.expectedParentRevision&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId)?{ok:true,state:'quarantined',imageId:v.imageId}:failed('OUTCOME_UNKNOWN');
  }
  return Object.freeze({
   setScope(value){const next=scopeOf(value);if(JSON.stringify(next)!==JSON.stringify(scope)){epoch++;for(const controller of requests)controller.abort();requests.clear();pending.clear();scope=next;}},
-  recover:(r,context={})=>run(r,context,(auth,current)=>status(r,auth,current)),
+  recover:(r,context={})=>run(r,context,(auth,current)=>recoverStatus(r,auth,current)),
   upload(r,context={}){return run(r,context,async(auth,current)=>{
    if(typeof sendUpload!=='function'||!(r.bytes instanceof Uint8Array)||r.bytes.length<1||r.bytes.length>3*1024*1024)return failed('INVALID_IMAGE');
-   if(pending.has(r.requestId)){const restored=await status(r,auth,current);if(restored.ok||restored.code!=='RESERVED'){if(restored.ok)pending.delete(r.requestId);return restored;}}
+   if(pending.has(r.requestId)){const restored=await recoverStatus(r,auth,current);if(restored.ok||restored.code!=='RESERVED'){if(restored.ok)pending.delete(r.requestId);return restored;}}
    if(!current()||pending.size>=6&&!pending.has(r.requestId))return failed('UNAVAILABLE');pending.add(r.requestId);
    context.onProgress?.(0);
    const intent={requestId:r.requestId,kind:r.kind,parentId:r.parentId,expectedParentRevision:r.expectedParentRevision,contentType:r.contentType,byteSize:r.bytes.length,count:1};

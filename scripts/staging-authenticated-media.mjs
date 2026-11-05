@@ -44,10 +44,10 @@ export function createStagingAuthenticatedMedia({enabled=false,binding,verifyFir
    if(response.status!==200)return response;const dto=project(outcome);return dto?{...response,body:dto}:failure(503,'UNAVAILABLE');
   },
   command(operation,request,context={}){
-   const keys={status:['requestId','kind','parentId'],remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
+   const keys={status:['requestId','kind','parentId'],recover:['requestId','kind','parentId'],remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
    const http=createPrivateConversationHttp({...options,contract:{prefix:'media.command.',keys,mutations:Object.keys(keys).filter(op=>op!=='status'),projection:(op,v)=>project(v,op)},createRepository:scope=>{
     const runtime=coordinator(scope);
-    return {async status(input,{signal}={}){
+    const status=async(input,{signal}={})=>{
      if(!safeId(input.requestId)||!['product','store'].includes(input.kind)||!safeId(input.parentId))return {ok:false,code:'INVALID_REQUEST'};
      const identity=await scope.authenticate(),uid=identity.uid,key=createHash('sha256').update(JSON.stringify([uid,'reserve',input.requestId])).digest('hex');
      return b.sdk.runTransaction(b.db,async tx=>{
@@ -61,6 +61,14 @@ export function createStagingAuthenticatedMedia({enabled=false,binding,verifyFir
       if(image.imageId!==r.imageId||image.ownerUid!==uid||image.kind!==input.kind||image.parentId!==input.parentId||p.id!==input.parentId||p.kind!==input.kind||p.ownerUid!==uid||owner.uid!==uid||owner.canWrite!==true||owner.suspended!==false)return {ok:false,code:'DENIED'};
       return {ok:true,imageId:image.imageId,state:image.state,revision:image.revision,parentRevision:image.parentRevision};
      },{maxAttempts:3});
+    };
+    return {status,async recover(input,opts){
+     const current=await status(input,opts);if(current?.ok!==true)return current;
+     if(current.state==='quarantined')return current;
+     if(current.state!=='uploading')return {ok:false,code:'OUTCOME_UNKNOWN'};
+     // Null identity cannot trigger provider inspection/dispatch. The coordinator
+     // may ONLY finalize an existing durable proof for this owned request.
+     return runtime.reconcileUpload({requestId:input.requestId,imageId:current.imageId,expectedRevision:current.revision},null,opts);
     },async remove(input,opts){const lease=await runtime.journal.transition('lease-delete',{...input,proof:null},opts);if(lease?.ok!==true)return lease;return runtime.remove({...input,expectedRevision:lease.revision},opts);},reconcileUpload:({assetId,version,...input},opts)=>runtime.reconcileUpload(input,{assetId,version},opts),reconcileDelete:(input,opts)=>runtime.reconcileDelete(input,opts)};
    }});
    return http.handle(operation,request,context);

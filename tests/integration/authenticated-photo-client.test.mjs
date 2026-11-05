@@ -22,3 +22,8 @@ test('unsettled, revoked or unavailable status never resends; cancelled recovery
   let sends=0;const p=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>identity(s),sendUpload:async()=>{sends++;return {status:202};},sendCommand:async()=>result});p.setScope(scope);await p.upload(request);assert.equal((await p.upload(request)).ok,false);assert.equal(sends,1);
  }
 });
+test('uploading status with an existing durable proof finalizes through recover, never sends bytes twice',async()=>{
+ let sends=0;const commands=[];const p=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>identity(s),sendUpload:async()=>{sends++;return {status:202};},sendCommand:async op=>{commands.push(op);return op==='status'?{status:200,body:{ok:true,state:'uploading',parentRevision:1}}:ok;}});p.setScope(scope);
+ assert.equal((await p.upload(request)).ok,false);assert.equal((await p.upload(request)).ok,true);assert.equal(sends,1);assert.deepEqual(commands,['status','recover']);
+ const restored=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>identity(s),sendUpload:()=>assert.fail('no file upload on refresh'),sendCommand:async op=>op==='status'?{status:200,body:{ok:true,state:'uploading',parentRevision:1}}:ok});restored.setScope(scope);assert.equal((await restored.recover(request)).ok,true);
+});
