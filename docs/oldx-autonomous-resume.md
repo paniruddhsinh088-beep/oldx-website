@@ -2,7 +2,60 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
-## 5 November native provider-proof milestone
+## 5 November authenticated media preflight milestone
+
+Completed source: existing verified HTTP preflight now composes native parent/actor
+checks, atomic rate enforcement, journal reserve/attempt, durable provider proof upload
+and owner-only lease-delete/reconciliation commands. Source bytes are snapshotted and
+hashed server-side; no caller owner/role/digest, Cloudinary signature or private record
+is exposed. One photo per request; existing Product/Store limits remain. Provider v1
+identity is deliberately excluded from this Product/Store native binding.
+
+Latest pushed baseline **ddf28e1b4ffd9d3301917e46c1acb59b451a94b6**;
+exact-source Review **41966691062 SUCCESS**. New implementation SHA/CI pending push.
+Local focused **10/10**, existing integration regression **194/194**, static build
+**3/3 PASS**. No failed/skipped assertions. Native Auth/Firestore suite expanded to
+9 cases: same composition uses actual verified Auth Emulator tokens and native rate/
+quota/repository transactions with deterministic provider/processor fixtures. Actual
+new Emulator CI result pending; no live provider or staging acceptance is claimed.
+
+Unknown outcomes retain same request keys and quota. Cancellation/deadline after a
+claimed dispatch returns 202/retrySameRequest and does not trigger a second provider
+upload. Durable proof persistence and resumed journal confirmation mark mutation
+attempts before awaiting native work. Quarantine never implies moderation approval;
+existing independent byte inspection and separate publication review gates remain.
+
+Next exact action: inspect the new native CI case; fix any real SDK failures before
+claiming success. Then add an authenticated receipt/status lookup by upload request
+ID and bind existing disabled photo UI recovery ports, so lost responses can discover
+an allocated image without browser access to private documents. Do not mount routes,
+activate transport flags, or enable publication.
+
+### Single operator handoff — blocked real staging acceptance
+
+1. Confirm existing securely bound `oldx-staging` Admin identity/isolation and
+   secure server-only Cloudinary Free access; permit approved provider API/CDN egress
+   (`api.cloudinary.com`, `res.cloudinary.com`) through normal policy. No secrets in
+   chat, credential/IAM provisioning or network bypass under this development scope.
+2. Approve exact synthetic actor/quota/generation initialization manifest, backup
+   and rollback evidence. Keep direct-client deny-all Rules. Recommended rate ceiling
+   remains 10 actor / 60 global requests per 60 seconds; confirm provider Free capacity
+   and hard storage/inspection budgets before use. Never auto-enable billing.
+3. Approve trusted decode/reencode/metadata-removal, quarantine, independent manual
+   reviewer/moderation policy, retention, deletion/orphan grace and authoritative
+   operation-settlement evidence. No automated explicit-content detection is claimed.
+   A provider 404 alone cannot refund an uncertain in-flight operation.
+4. Separately authorize exact staging route installation/flags after prerequisites;
+   keep `OLDX_STAGING_PUBLICATION_ENABLED=false` until photo/provider acceptance and
+   authorized review/publication prerequisites are proven. Validate the synthetic
+   Login/create/upload/review/publish/browse/edit/withdraw path, owner/other/guest/
+   revoked accounts, retry/account switching/logout and 320/375px gu/hi/en. All current
+   transports/endpoints remain uninstalled/default-disabled; HOLD/NO-GO.
+
+No scheduler was installed; next authorized scheduled/manual execution must read
+this ledger and fresh remote/CI. No promise of restart after credit reset.
+
+## Preserved earlier native provider-proof milestone
 
 Completed source: default-disabled native provider-proof runtime, durable one-dispatch
 claims, independently verified upload proof persistence, restart/retry confirmation,

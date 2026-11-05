@@ -96,6 +96,13 @@ test('REAL native durable provider receipts reconcile lost acknowledgements, lea
  const binding=createEmulatorMarketplaceBinding({...options(),adminFirestore:wrapped});
  await exerciseNativeMediaProofs({binding,loseJournalAck:()=>loseAck=true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
 });
+test('REAL verified Auth preflight drives native media quotas, attempt receipts and private recovery',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ const {createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');
+ const {exerciseAuthenticatedMedia}=await import('../integration/authenticated-media-cases.mjs');
+ const binding=createEmulatorMarketplaceBinding(options()),enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
+ await exerciseAuthenticatedMedia({binding,verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,otherToken,emulatorTokenSyntax:true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

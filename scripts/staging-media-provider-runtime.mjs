@@ -50,6 +50,7 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   });
  }
  async function persist(input,context,purpose,proof){
+  context.markMutationAttempted();
   return transaction(context,async tx=>{
    const scope=await lease(tx,input,context,purpose),row=await read(tx,ref('operations',scope.token));
    const validated=snapshotVerifiedMediaProof(proof,scope.expected);
@@ -73,7 +74,7 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   const input=valid(request);if(!input)return Promise.resolve(fail('INVALID_REQUEST'));
   return runVerifiedOperation({authenticate,credential:options?.credential,signal:options?.signal,now,timeoutMs,run:async context=>{
    const scope=await stored(input,context,purpose);
-   if(scope.row?.phase==='complete')return journal.transition(purpose==='upload'?'confirm-upload':'confirm-delete',{...input,proof:scope.token},options);
+   if(scope.row?.phase==='complete'){context.markMutationAttempted();return journal.transition(purpose==='upload'?'confirm-upload':'confirm-delete',{...input,proof:scope.token},options);}
    return work(input,context,scope);
   }});
  };
