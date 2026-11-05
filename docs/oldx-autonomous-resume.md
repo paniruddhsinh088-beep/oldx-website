@@ -2,6 +2,65 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November existing-website Service Providers integration sprint
+
+Baseline **28f3a59b5085168772bcdc12cfc5eb72d0ed1c5b** matched fresh remote;
+source **486c0979b533c31e074e6cefd517ce5c9df85ea7** pushed and remote verified.
+Owner priority is current website integration, NOT replacement with mobile demo.
+Read current index/admin, Provider UI/journey/public/owner/sharing/photo contracts and
+approved design. Existing Products/Stores/Login/Chat/Admin initialization untouched.
+
+Implemented current header + Home Services link to existing Service page
+`/service-preview.html?mode=website#services`, same-tab navigation and OLDX return link.
+Shared host intercepts website links when explicitly mounted; legacy labelled synthetic
+preview stays separate. Reuses existing multi-service registration/edit form, search,
+public detail, sharing and trusted enquiry/owner ports. Website mode starts EMPTY,
+never displays synthetic providers (even direct p1 link), and clearly explains inactive
+real runtime. Save/publication/contact remain disabled absent injected approved ports.
+Sharing retains only mode=website and public provider ID, strips other query values,
+so a future website link cannot fall back to synthetic profiles on arrival. Disabling
+website integration clears public profile/detail state. No native route/SDK activation.
+
+Added local required profile photo + up to six separate work photos, remove/replacement,
+localized processing/error feedback and existing-draft preservation. Signature/MIME/3MiB
+input checks before bitmap decode, <=24M decoded pixels/8192px bound; JPEG canvas
+re-encode <=1600px/.82 quality/<=2MiB, private metadata discarded by re-encoding.
+Files/Blob previews stay in memory, never enter Provider v1 text schema or public DTO;
+rejected replacement preserves original; no automatic work-to-profile promotion.
+Bitmaps/Blob URLs cleaned on removal/exit/session clear through existing owner binding.
+Client processing is NOT trusted byte inspection, moderation or upload authorization.
+Real Provider photo/portfolio reference transactions + delivery still require reviewed
+runtime/schema/media policy binding; no fake receipts or public URLs generated.
+
+Storage audit rechecked: legacy Product JPEG/Base64 and Store unsigned Oldxbazar upload
+still exist; new Provider code uses NEITHER and changes no existing images/settings.
+No paid SDK/service, Firebase/Cloudinary request, Rules/index/IAM/secret/billing operation,
+manual deployment or live data change. Existing auth/role guards in admin untouched.
+
+Local evidence: focused i18n/route/compression/security/static-build **18/18 PASS**;
+new existing-website browser **3/3 PASS** (320gu/375hi/375en, original Unicode,
+multiple services, required profile vs work photos, real canvas downscale, invalid
+replacement rollback, remove, locale/200% text, reload clearing, no external traffic).
+Related source/journey/bootstrap/photo contracts **29/29 PASS**. Initial broader browser
+**41/43 PASS**, two shared-host cases failed because new separate website/preview links
+made an old generic selector ambiguous. Updated host website-link interception and
+specific test selector (same assertions); rerun Product + trusted Provider website
+browser **12/12 PASS**, including discovery/detail/enquiry/withdrawal and 320/375 back/
+refresh/logout. Other initial legacy Service/Store/private-inbox browser cases passed.
+Exact-source Review **42038748557 SUCCESS**, Service Emulator **42038748754 SUCCESS**,
+Branch Security **42038748492 SUCCESS**. Actual SDK/Auth/Firestore Emulator checks
+passed in CI; these are not live staging or real media-provider tests. Local Emulator/proxy not retroubleshot.
+
+Still NOT live: real registration/save/upload/publication/public discovery/contact.
+No real Firebase runtime connection, no approved Provider work-photo persistence schema,
+no active media upload/independent inspection/moderation or verified physical-device/
+staging end-to-end acceptance. Website mode intentionally unavailable instead of showing
+synthetic records as real. Safe production release: NO; HOLD/NO-GO. Next exact task:
+owner reviews this website entry, then attach verified staging identity/connectivity and
+review auth/session + existing command/read/enquiry bindings and Provider media reference
+policy before any separately approved operational staging activation. Ledger SHA:
+`git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
+
 ## 5 November visible Android-sized mobile demonstration (owner priority)
 
 Remote baseline **a103ba81f92e5b4b63f134c4e5473f1588c79317** matched; no concurrent
