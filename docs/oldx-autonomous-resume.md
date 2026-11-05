@@ -2,6 +2,46 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November native Provider media journal, release and disabled HTTP host
+
+Executable source **c80ae027f335babae3cba06ef6fbf76ad26a45cb**, pushed only to
+security-hardening-review; remote SHA verified. Preserved remote 5264e9b. All new
+transports, publication, public delivery and runtime flags remain default-disabled.
+No live Firebase/Cloudinary, installed routes, Rules, IAM, secrets or billing changes.
+
+Implemented native Provider-only journal with quotas, durable receipts, lost-ack recovery,
+pre-dispatch rejected-image refund and safe delete leases; atomic private photo references
+bind canonical ownership/service/parent revisions. One profile + six total work images;
+text edits require rebind and fresh independent review. Independent moderator cannot
+approve own images. Publication atomically commits approved media release, public view,
+generation, receipt and audit; withdrawal/revocation denies delivery and replay cannot
+resurrect it. Public v1 text DTO remains separate from private image sidecars.
+
+Prepared signed staging Cloudinary transport/independent asset inspection, native asset
+authorization and default-off Provider HTTP host/Fetch route artifacts. No unsigned preset.
+Existing Provider detail UI optionally composes approved Blob delivery with revocation
+checks; no new demo. Existing owner selection/compression UI still needs authenticated
+upload/reference client wiring; do not claim owner uploads work in the live website.
+
+Local source integration/service/static suite **249/249 PASS**; related browser suite
+**30/30 PASS** (320/375, gu/hi/en, enlarged text, public album revoke/recovery); independent
+sharp/Cloudinary tests **23/23 PASS**, handlers/packaging **32/32 PASS** (overlapping counts).
+Exact-source Security **42057777695 SUCCESS**, Service Emulator **42057777867 SUCCESS**,
+Review **42057777879 SUCCESS**. Review logs confirm actual Admin/Auth/Firestore
+**14/14 PASS**, including native Provider media journal/reference/album/delete matrix.
+This is isolated Emulator evidence, not real Cloudinary or staging acceptance.
+
+Remaining: owner upload-client binding; production image-processor
+packaging; verified existing staging identity/network + backup/rollback; server-only
+Cloudinary access and actual signed/independent delivery verification; approved scanner/
+human moderation, quotas, retention and ambiguous-delete settlement; separately approved
+route/flag activation and real synthetic/device acceptance. No automated detector claimed.
+Automatic approval review rejected promoting existing pinned sharp from dev to production
+dependency without explicit approval. Dependency metadata unchanged; do not bypass rejection.
+Next exact action: finish existing owner UI upload/reference client using these ports,
+then approved packaging/provider acceptance. HOLD/NO-GO until real acceptance.
+Latest pushed executable SHA above; ledger SHA: git log -1 --format=%H -- docs/oldx-autonomous-resume.md.
+
 ## 5 November native Provider public search/detail + media compatibility
 
 Fresh remote **bdac5738e7f8ff61458b5a94746cc9c91e30407d** matched; no concurrent

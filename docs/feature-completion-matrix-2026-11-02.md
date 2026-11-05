@@ -384,3 +384,13 @@ existing owner/recovery/browser subset **24 pass**, static **3/3**. No real prov
 staging acceptance; transports/routes/publication remain disabled. Stop nonessential
 synthetic additions; next gate is approved secure staging preflight/acceptance.
 [Minimum operator handoff](oldx-autonomous-resume.md).
+
+5 November Provider native media source `c80ae027f335babae3cba06ef6fbf76ad26a45cb`:
+Provider journal/quota receipts, one-profile/six-work reference transactions,
+independent moderation and atomic publication/withdrawal now have default-disabled
+native repository/HTTP host implementations. Existing public detail UI optionally
+renders approved binary delivery with revocation clearing. Local related regression
+249/249 and browser 30/30 pass. No live provider activity. Owner upload-client wiring,
+production sharp packaging, actual signed provider acceptance, policies/configuration
+and separately approved staging activation remain unfinished. See autonomous resume
+for exact-source CI status; source readiness does not change HOLD/NO-GO.
