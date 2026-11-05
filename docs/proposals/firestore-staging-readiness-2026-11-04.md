@@ -149,3 +149,13 @@ Chat/media cases; do not infer real token, deployed index or runtime readiness.
 Final checkpoint is this documentation-only follow-up commit; resolve with
 `git log -1 --format=%H -- docs/proposals/firestore-staging-readiness-2026-11-04.md`.
 Stop here with clean tree; no operational deployment or demo-data seeding authorized.
+
+## 5 November owner approval / current preflight
+
+Owner conditionally approves oldx-staging Rules/collections ONLY after identity,
+live Rules snapshot, empty-state/backup, rollback and checks are verified. These
+prerequisites are currently unavailable in the execution environment. No deployment
+or live observation occurred. The least-privilege server-mediated selection remains
+deny-all; do not use the unrelated owner-drafts proposal to open legacy products.
+New default-disabled native public Browse preparation reuses the existing public
+query/publication contracts. See [current checkpoint](../oldx-autonomous-resume.md).

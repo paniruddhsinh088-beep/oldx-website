@@ -1,3 +1,4 @@
+import {createStagingPublicQuerySdk} from './staging-public-query-sdk.mjs';
 import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash,randomUUID} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
@@ -113,4 +114,12 @@ export function createStagingMarketplaceRepository(options={}){
   if(request?.publication==='publish'&&(options.publicationEnabled!==true||!atomicReady)||request?.publication==='withdraw'&&!atomicReady)return Promise.resolve(fail('ENFORCEMENT_UNAVAILABLE'));
   return core.save(kind,request,context);
  },archive:(...args)=>atomicReady?core.archive(...args):Promise.resolve(fail('ENFORCEMENT_UNAVAILABLE'))});
+}
+
+// Separate default-disabled guest read port. Server validates publication/actor/
+// Store ownership after bounded native SELECT; clients still have deny-all Rules.
+export function createStagingMarketplacePublicRepository(options={}){
+ if(options.enabled!==true)return Object.freeze({list:async()=>fail('UNAVAILABLE'),detail:async()=>fail('UNAVAILABLE')});
+ const b=requireStagingMarketplaceBinding(options.binding),sdk=createStagingPublicQuerySdk({binding:b,Filter:options.Filter}),core=marketplaceCore({...options,sdk},b);
+ return Object.freeze({list:core.list,detail:core.detail});
 }

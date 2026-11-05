@@ -1,6 +1,6 @@
 import test,{before,after} from 'node:test';import assert from 'node:assert/strict';
 import {initializeApp,deleteApp} from 'firebase-admin/app';
-import {getFirestore,FieldValue} from 'firebase-admin/firestore';import {getAuth} from 'firebase-admin/auth';
+import {getFirestore,FieldValue,Filter} from 'firebase-admin/firestore';import {getAuth} from 'firebase-admin/auth';
 import {initializeApp as webApp,deleteApp as deleteWebApp} from 'firebase/app';
 import {getAuth as webAuth,connectAuthEmulator,signInWithEmailAndPassword,signOut} from 'firebase/auth';
 import {getFirestore as webFirestore,connectFirestoreEmulator,doc,getDoc} from 'firebase/firestore';
@@ -108,6 +108,10 @@ test('REAL Product/Store private references and approved public bytes share atom
  const {exercisePhotoLifecycle}=await import('../integration/photo-lifecycle-cases.mjs');const binding=createEmulatorMarketplaceBinding(options());
  const {createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
  await exercisePhotoLifecycle({binding,verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,otherToken,emulatorTokenSyntax:true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
+});
+test('REAL native public Browse uses bounded projection/cursors and rejects withdrawn/suspended records',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');const {exerciseNativePublicReads}=await import('../integration/staging-public-query-cases.mjs');
+ await exerciseNativePublicReads({binding:createEmulatorMarketplaceBinding(options()),Filter,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
 });
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');

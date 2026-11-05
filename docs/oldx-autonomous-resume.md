@@ -2,7 +2,58 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
-## 5 November read-only staging readiness preparation
+## 5 November conditional staging Firestore repair
+
+Owner NOW approves `oldx-staging` Rules/collection changes conditionally, ONLY after
+verified authorized access, live project identity, Rules backup/empty-state inventory,
+rollback and applicable security checks. This supersedes the older preparation-only
+approval below; it does NOT authorize Production/main, IAM/credentials/billing,
+Cloudinary activation or unrelated endpoint/flag changes.
+
+Preflight result: current environment observations are fresh/enforced; no configured
+secret/outbound identity and no Firebase Rules/Firestore/project API egress. No Firebase
+connector is available. Therefore live project/Rules/empty database and rollback access
+could NOT be verified. NO deployed Rules snapshot exists here, NO emptiness claim,
+NO live reads/writes/deployment or collection creation. Block before deployment.
+Owner must attach an EXISTING authorized `oldx-staging` Firebase/GCP connection through
+secure tooling and approve required official API/authentication network access; do
+not send secrets or create/change IAM/credentials. Then capture actual release/source
+hash, database inventory and rollback evidence before considering any staging action.
+
+Legacy `index.html` still reads `products` ordered by createdAt and performs direct
+add/update/delete. Create stores phone, userIp, coords and Base64 images alongside
+listing data. Public/global authenticated access would expose mixed private data.
+Do not open legacy Products/Stores or seed placeholders to hide permission errors.
+Selected least-privilege policy remains existing `tests/firestore-emulator/deny-all.rules`
+for trusted server-mediated architecture. The separate owner-drafts candidate is NOT
+this trusted marketplace schema and cannot fix legacy publication. Existing private/
+public/actor/owner/receipt/audit/generation namespaces remain `marketplace*_v1`.
+Firestore collections are created by approved real transactions, not schema deployment;
+no placeholder documents or migration performed. New indexes are NOT implicitly approved.
+
+Completed safe source preparation: separate DEFAULT-DISABLED staging public repository
+reuses existing publication/generation/actor/Store checks and cursor contracts. Native
+Admin SELECT reads only fixed public fields from marketplacePublic_v1; branded bounded
+queries require kind, id ASC, limit+1 <=25, allowed filters and safe cursors. Private
+collections/fields/unbounded queries are rejected. No HTTP routes/operational flags
+installed/enabled. Public Browse still needs reviewed runtime/client binding before live
+use; Rules alone cannot switch legacy UI to the trusted backend. Cloudinary remains off.
+
+Local Rules/config/query boundaries **12/12 PASS**, integration regression **206/206
+PASS**, static build **3/3 PASS**. Added actual native Emulator Browse/pagination/
+withdrawal/suspension test (suite now11); fresh exact-source CI pending push. Existing
+six owner-drafts Emulator cases and deny-all authorization suites run in Review CI;
+no weakened tests or broader direct-client Rules introduced. Source Rules are not a
+verified snapshot of live staging. Baseline **3e682c134b008c7b759f3d6dd5038188051e31f1**,
+Review **41983088686 SUCCESS**, preserved. New source SHA/CI to record after push.
+
+Next exact action: verify new exact-source Emulator result, fix real SDK failures,
+checkpoint; operationally STOP until existing scoped access/network and actual backup/
+rollback proof are available. No more Rules approval is needed for the already granted
+conditional scope, but do not assume endpoint/publication/media/index activation approval.
+HOLD/NO-GO remains. No automatic scheduler/restart installed.
+
+## Preserved earlier read-only staging readiness preparation
 
 Owner approval: preparation/read-only audit ONLY. No real uploads, staging writes,
 route installation, flags, Rules/IAM/credentials/billing or Production changes.
