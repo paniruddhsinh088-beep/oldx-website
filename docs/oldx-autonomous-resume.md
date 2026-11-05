@@ -13,20 +13,24 @@ Existing signed multipart bridge has an optional server-only durable proof callb
 Journal verification reads proof/audit in the SAME transaction (no nested transaction
 or provider side effects). Canonical proof hashing handles Firestore map ordering.
 
-Latest pushed baseline: **aa9cb82ca68bb8375ba54820a88282dd83ebb881**;
-its Review **41889978710 SUCCESS**. New source SHA/CI to be recorded after push.
+Latest pushed executable source: **d9a92f1fac9046ae9132bbea77e1f636d6ca74b0**.
+Exact-source CI: Review **41966283058**, Security **41966283019**, Service
+Emulator **41966283073** — all SUCCESS. Vercel Preview status SUCCESS.
+Prior baseline **aa9cb82ca68bb8375ba54820a88282dd83ebb881** preserved.
+The final ledger commit does not change executable source; retrieve its exact SHA
+with `git log -1 --format=%H -- docs/oldx-autonomous-resume.md`.
 Local focused **24/24 PASS**, relevant transaction regression **192/192 PASS**,
 static browser package **3/3 PASS**. Native Emulator suite expanded from 7 to 8
 cases; new actual-repository case includes lost provider acknowledgement, restart,
 AFTER-native-commit lost journal acknowledgement, ownership/revision and quota checks.
-Actual new Emulator result is pending exact-source CI; no local JAR re-download
+Actual Admin/Auth/Firestore Emulator **8/8 PASS** in Review CI, including the new
+durable receipt/AFTER-commit lost acknowledgement case. No local JAR re-download
 attempt (same known network blocker). All provider/processor results are deterministic
 fixtures; this is NOT Cloudinary, real scanning or staging acceptance.
 
-Next exact action: inspect exact-source Review CI's new native case, fix any actual
-SDK failure before proceeding, then record source/CI and reconcile remote. If passed,
-prepare the narrow trusted runtime binding from authenticated media preflight to this
-coordinator with native journal reserve/attempt and mandatory rate/quotas. Do NOT
+Current incomplete task / next exact action: prepare the narrow trusted runtime
+binding from authenticated media preflight to this coordinator with native journal
+reserve/attempt, mandatory rate/quotas and unknown-outcome deadline handling. Do NOT
 mount routes or enable publication. Provider canonical v1 sidecar remains separate.
 
 Operational blockers: existing securely bound staging identity/media access and
@@ -36,6 +40,21 @@ moderation policy; Cloudinary Free quota, inspection, retention/deletion settlem
 and actual synthetic staging workflow acceptance. No secrets in chat. Public image
 publication and all new transports remain disabled. Unknown upload/delete outcomes
 retain quota; a 404 alone NEVER proves a late operation has settled.
+
+Minimum operator actions before real acceptance:
+1. Confirm existing securely bound `oldx-staging` Admin identity/project isolation,
+   approved server-only Cloudinary Free credentials/inspection permissions and
+   provider-host egress. No secrets in chat or new IAM/secrets provisioning here.
+2. Approve reviewed synthetic actor/quota/generation initialization manifest,
+   backup and rollback evidence. Keep direct-client deny-all Rules unchanged.
+3. Select/approve trusted reencoding, metadata removal, quarantine/manual reviewer
+   policy, provider quotas, retention and authoritative delete-settlement evidence.
+   No automated explicit-content moderation is claimed. Mere absence is insufficient
+   to refund an in-flight upload/delete reservation.
+4. Separately approve narrow staging route installation and operational flags only
+   after these prerequisites. Run owner/other/guest/revoked-session synthetic
+   Login/create/upload/review/publish/browse/edit/withdraw and 320/375px gu/hi/en
+   staging acceptance. Until then source/Emulator evidence is NOT staging GO.
 
 No automated scheduler was created; next authorized scheduled/manual execution must
 read this checkpoint and latest remote/CI. No promise of restart after credit reset.

@@ -347,3 +347,10 @@ Vercel dependency packaging now have synthetic acceptance coverage. No provider 
 public routes, migration or moderation activation. Real journal/proof runtime composition,
 provider quota/policy configuration and real staging acceptance remain P0 gates.
 [Durable resume checkpoint](oldx-autonomous-resume.md) records exact source/CI and next work.
+
+5 November: native provider-proof composition on `d9a92f1fac9046ae9132bbea77e1f636d6ca74b0`
+passed actual isolated Admin/Auth/Firestore Emulator **8/8** (Review `41966283058`).
+Durable one-dispatch claims, verified proof/audit storage, restart/lost-ack recovery,
+owner/revision checks and lease/quota settlement reuse existing journal namespaces.
+No live provider calls or routes. Trusted preflight-to-runtime binding, real media
+processing/policy/access and staging acceptance remain P0. HOLD/NO-GO.
