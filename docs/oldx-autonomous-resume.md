@@ -45,7 +45,13 @@ withdrawal/suspension test (suite now11); fresh exact-source CI pending push. Ex
 six owner-drafts Emulator cases and deny-all authorization suites run in Review CI;
 no weakened tests or broader direct-client Rules introduced. Source Rules are not a
 verified snapshot of live staging. Baseline **3e682c134b008c7b759f3d6dd5038188051e31f1**,
-Review **41983088686 SUCCESS**, preserved. New source SHA/CI to record after push.
+Review **41983088686 SUCCESS**, preserved. Implementation **9f5e54c8e20c3f1c87430c7593901d78c4f946f6** pushed; Security
+**41989298814** / Service Emulator **41989298815 SUCCESS**, Review **41989298809
+FAILED** the new actual Browse case (UNAVAILABLE). A focused reproduction confirmed
+public SELECT field ordering differs from document map ordering. Corrected identity
+comparison to compare ALL public keys/values in deterministic key order (arrays retain
+order); changed published content still denies. No Rules or negative test weakened.
+Fix focused **15/15 PASS**, integration **207/207 PASS**; final exact-source CI pending.
 
 Next exact action: verify new exact-source Emulator result, fix real SDK failures,
 checkpoint; operationally STOP until existing scoped access/network and actual backup/

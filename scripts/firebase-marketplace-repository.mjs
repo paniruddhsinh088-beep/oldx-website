@@ -15,6 +15,9 @@ function inspectProfile(kind,input){
  if(!p||!text(p[kind==='product'?'title':'name'],120)||!text(p.description,5000,true)||!text(p.locationLabel,160)||!STORE_CATEGORY_IDS.includes(p.category)||!preparePhotoReferences(kind,p.photos).ok||kind==='product'&&(!Number.isFinite(p.basePrice)||p.basePrice<0||p.basePrice>1e9||typeof p.isSold!=='boolean'||p.storeId!==null&&!safeId(p.storeId))||Buffer.byteLength(JSON.stringify(p))>700000)return null;
  return structuredClone(p);
 }
+// Admin SELECT and document reads may order map fields differently. Compare
+// the complete validated public field/value set, preserving array ordering.
+const publicIdentity=p=>JSON.stringify(Object.keys(p??{}).sort().map(key=>[key,p[key]]));
 function publicProfile(kind,id,profile,revision){const {photos,...fields}=profile;return {id,kind,revision,...fields};}
 // Shared transaction/query core; separate constructors enforce demo or staging scope.
 // No legacy collection access, browser import, app initialization or Production mode.
@@ -26,7 +29,7 @@ function marketplaceCore({sdk,authenticate,mandatoryPhotos=false,photoPolicy,ato
  async function read(raw,reference){const snap=await raw.get(reference);if(!snap.exists())return null;const {committedAt,...data}=snap.data();return data;}
  async function currentPublic(raw,row){
   if(!row||!['product','store'].includes(row.kind)||!safeId(row.id)||!integer(row.revision)||!inspectProfile(row.kind,{...Object.fromEntries(Object.entries(row).filter(([k])=>!['id','kind','revision'].includes(k))),photos:[]}))throw new Error('Invalid public projection');
-  const stored=await read(raw,ref('privateRecords',recordKey(row.kind,row.id)));if(!stored||stored.id!==row.id||stored.kind!==row.kind||stored.published!==true||stored.publicationRevision!==row.revision||JSON.stringify(stored.publicProfile)!==JSON.stringify(row)||!safeId(stored.ownerUid))throw new Error('Withdrawn public record');
+  const stored=await read(raw,ref('privateRecords',recordKey(row.kind,row.id)));if(!stored||stored.id!==row.id||stored.kind!==row.kind||stored.published!==true||stored.publicationRevision!==row.revision||publicIdentity(stored.publicProfile)!==publicIdentity(row)||!safeId(stored.ownerUid))throw new Error('Withdrawn public record');
   const actor=await read(raw,ref('actors',stored.ownerUid));if(actor?.uid!==stored.ownerUid||actor.suspended!==false||actor.canWrite!==true)throw new Error('Inactive seller');
   if(row.kind==='product'&&row.storeId!==null){const shop=await read(raw,ref('privateRecords',recordKey('store',row.storeId)));if(!shop||shop.ownerUid!==stored.ownerUid||shop.published!==true)throw new Error('Withdrawn or foreign Store');}
   return stored;
