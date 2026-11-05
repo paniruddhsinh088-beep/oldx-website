@@ -460,6 +460,7 @@ export default Object.freeze({
   "media.remove": "Remove selection",
   "media.empty": "No photos selected. Save a private draft first.",
   "media.selected": "Selected photos remain private.",
+  "media.recovering": "Checking upload status…",
   "media.uploading": "Uploading to quarantine…",
   "media.limit": "Photo count limit reached.",
   "media.invalid": "Unsupported, invalid or oversized photo.",

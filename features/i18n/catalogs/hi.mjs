@@ -462,6 +462,7 @@ export default Object.freeze({
   "media.remove": "चयन हटाएँ",
   "media.empty": "फ़ोटो नहीं चुना। पहले निजी ड्राफ़्ट सहेजें।",
   "media.selected": "चुने गए फ़ोटो निजी रहते हैं।",
+  "media.recovering": "अपलोड की स्थिति जाँची जा रही है…",
   "media.uploading": "क्वारंटीन में अपलोड हो रहा है…",
   "media.limit": "फ़ोटो की संख्या सीमा पूरी हुई।",
   "media.invalid": "फ़ोटो अमान्य, असमर्थित या बहुत बड़ा है।",

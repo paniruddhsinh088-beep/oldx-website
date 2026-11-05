@@ -1,10 +1,10 @@
 // Web-standard Vercel handler artifact. No root api/ entrypoints are installed.
-const routes=new Set(['save','owner','archive']);
+const routes={marketplace:new Set(['save','owner','archive']),media:new Set(['status','remove','reconcileUpload','reconcileDelete'])};
 const response=(status,code)=>Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
-export function createMarketplaceFetchHandler({operation,options={enabled:false},loadRuntime,bodyTimeoutMs=5000}={}){
+function createCommandFetchHandler({namespace,operation,options={enabled:false},loadRuntime,bodyTimeoutMs=5000}={}){
  return Object.freeze({async fetch(request){
   // Check configuration BEFORE reading input, loading SDKs or acquiring credentials.
-  if(options.enabled!==true||!routes.has(operation)||typeof loadRuntime!=='function')return response(503,'ENFORCEMENT_UNAVAILABLE');
+  if(options.enabled!==true||!routes[namespace]?.has(operation)||typeof loadRuntime!=='function')return response(503,'ENFORCEMENT_UNAVAILABLE');
   if(!(request instanceof Request))return response(400,'BAD_REQUEST');
   if(request.method!=='POST')return response(405,'METHOD_NOT_ALLOWED');
   if(!/^application\/json(?:;\s*charset=utf-8)?$/i.test(request.headers.get('content-type')??'')||!['identity',null].includes(request.headers.get('content-encoding')))return response(415,'UNSUPPORTED_MEDIA_TYPE');
@@ -26,9 +26,12 @@ export function createMarketplaceFetchHandler({operation,options={enabled:false}
    // Keep original JSON bytes: shared bounded parser rejects duplicate keys.
    const startupCancelled=new Promise((_,reject)=>{controller.signal.addEventListener('abort',()=>reject(Error('cancelled')),{once:true});if(controller.signal.aborted)reject(Error('cancelled'));});
    const runtime=await Promise.race([loadRuntime(),startupCancelled]);clearTimeout(timer);if(controller.signal.aborted)return response(408,'CANCELLED');
-   const result=await runtime.handle(`/api/staging/marketplace/${operation}`,{method:'POST',headers:Object.fromEntries(request.headers),body},{signal:controller.signal});
+   const result=await runtime.handle(`/api/staging/${namespace}/${operation}`,{method:'POST',headers:Object.fromEntries(request.headers),body},{signal:controller.signal});
    return Response.json(result.body,{status:result.status,headers:result.headers});
   }catch{return response(controller.signal.aborted?408:503,controller.signal.aborted?'CANCELLED':'ENFORCEMENT_UNAVAILABLE');}
   finally{clearTimeout(timer);request.signal.removeEventListener('abort',abort);if(reader)void reader.cancel().catch(()=>{});}
  }});
 }
+
+export const createMarketplaceFetchHandler=options=>createCommandFetchHandler({...options,namespace:"marketplace"});
+export const createMediaCommandFetchHandler=options=>createCommandFetchHandler({...options,namespace:"media"});

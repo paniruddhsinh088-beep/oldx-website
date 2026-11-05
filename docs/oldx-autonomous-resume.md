@@ -2,7 +2,64 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
-## 5 November authenticated media preflight milestone
+## 5 November photo UI and inactive media-handler milestone
+
+Completed: existing Product/Store photo component now accepts the injected authenticated
+photo client. Same-key retry checks durable status before any resend; restored entries
+recover status without original file bytes. Scope/logout cancels requests and rejects
+late results. Browser history stores only bounded request IDs plus owner/session/parent
+scope, never files, previews or tokens. Explicit logout/destroy clears recovery metadata;
+pagehide retains it for same-session refresh. Original authored form text is untouched.
+UI uses existing gu/hi/en feedback plus localized recovery status and keyboard focus
+restoration. Quarantined means private upload, NOT moderation/publication approval.
+
+Baseline **fbc947b955b3471736ff5250e9e84f1ff362f6a7**, exact-source Review
+**41971739672 SUCCESS**. New executable SHA/CI pending push. Local focused **16/16**,
+related integration regression **201/201**, static package **3/3 PASS**. New mobile
+browser checks **12/12 PASS** (Product/Store × gu/hi/en × 320/375px), existing photo
+browser regression **9/9 PASS**. Actual native Auth/Firestore suite remains 9 cases,
+now additionally driving this browser-neutral client through verified native ports;
+final exact-source Emulator CI result pending. No real provider/staging acceptance.
+
+Inactive artifacts: generated `api/staging/media/{upload,status,remove,reconcileUpload,
+reconcileDelete}.mjs` templates only, never installed in root api/. JSON commands reuse
+existing bounded server handler; multipart upload buffers at most 3MiB+32KiB, requires
+exactly one file + raw intent, rejects unsafe MIME/extra fields and propagates abort.
+Templates remain default-disabled and require separately reviewed runtime injection.
+No secrets, SDK startup, operational env changes or endpoint activation in this batch.
+
+Next exact action: inspect final-source CI including actual native/client case and
+new browser checks; fix any verified failure. Once passed, bind private-draft photo
+reference application and approved media delivery to existing owner/public views using
+the existing atomic references/publication contracts. Do not enable backend/media.
+Refresh can recover a completed upload; if no file reached the provider, users must
+reselect the original file rather than persisting private bytes in browser storage.
+Removal here changes local selection only; managed provider deletion still requires
+trusted unreferenced delete leases and reference transactions (no unsafe auto-delete).
+
+### Current single staging activation handoff
+
+1. Confirm secure existing `oldx-staging` Admin identity/project isolation and
+   Cloudinary Free server-only signing/inspection access; approve provider API/CDN
+   egress through normal policy. Never place secrets in chat/browser/history/Git.
+2. Review synthetic actor, generation and hard quota initialization; prove backup
+   and rollback. Keep client deny-all Rules and default-disabled runtime/publication.
+   Existing recommended rates remain 10 actor / 60 global requests per minute.
+3. Approve real decode/reencode/metadata stripping, independent byte inspection,
+   quarantine/manual moderation authority, Free budgets, retention/orphan cleanup
+   and definitive delete settlement. No automated explicit-content detection exists.
+4. Separately approve exact media/command route installation and explicit trusted
+   runtime/credential/transport bindings. Multipart uses `intent` (JSON) + `file`;
+   command reads use bounded JSON. Templates alone cannot activate a real backend.
+5. Only then run isolated synthetic real Login/create/upload/review/publish/browse/
+   edit/withdraw acceptance, cross-account/revoked/logout/retry cases, gu/hi/en and
+   320/375px/device checks. No production, Rules/index, IAM, secrets or billing action
+   is included here. HOLD/NO-GO until required staging acceptance passes.
+
+No scheduler created; next authorized execution reads latest remote/CI and this
+checkpoint. No promise of automatic restart after credit reset.
+
+## Preserved earlier authenticated media preflight milestone
 
 Completed source: existing verified HTTP preflight now composes native parent/actor
 checks, atomic rate enforcement, journal reserve/attempt, durable provider proof upload

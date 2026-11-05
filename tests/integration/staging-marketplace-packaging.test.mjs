@@ -5,7 +5,7 @@ import {tmpdir} from 'node:os';
 import {resolve,dirname,relative} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
-import {stagingMarketplaceRouteArtifacts} from '../../functions/staging-marketplace/route-artifacts.mjs';
+import {stagingMarketplaceRouteArtifacts,stagingMediaRouteArtifacts} from '../../functions/staging-marketplace/route-artifacts.mjs';
 const root=resolve(import.meta.dirname,'../..');
 test('generated staging routes package complete server import closure and remain disabled',async()=>{
  const output=await mkdtemp(resolve(tmpdir(),'oldx-staging-package-')),seen=new Set();
@@ -15,7 +15,7 @@ test('generated staging routes package complete server import closure and remain
   for(const match of source.matchAll(/(?:from\s*|import\s*\()(['"])(\.[^'"]+)\1/g))await copy(resolve(dirname(file),match[2]));
  }
  try{
-  for(const [route,source] of Object.entries(stagingMarketplaceRouteArtifacts())){
+  for(const [route,source] of Object.entries({...stagingMarketplaceRouteArtifacts(),...stagingMediaRouteArtifacts()})){
    await assert.rejects(access(resolve(root,route)));const target=resolve(output,route);await mkdir(dirname(target),{recursive:true});await writeFile(target,source);
    const dependency=/from '([^']+)'/.exec(source)[1];await copy(resolve(root,dirname(route),dependency));
    // No SDK package/credentials exist in this isolated output. Default handler
