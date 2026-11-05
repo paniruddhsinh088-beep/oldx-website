@@ -43,3 +43,10 @@ test('native Provider authentication composition explicitly requires revoked-tok
  await assert.rejects(enforcement.verifyFirebaseToken('fake.test.token',{}));assert.equal(checked,false);
  const authenticate=(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true});assert.deepEqual(await authenticate('fake.test.token',{}),{uid:'owner'});assert.equal(checked,true);
 });
+
+test('same native Provider acceptance matrix runs locally before real Emulator CI',async()=>{
+ const {exerciseNativeProvider}=await import('./provider-native-cases.mjs');const f=fakeFirestoreSdk();
+ const adminFirestore={projectId:'oldx-staging',collection:name=>({doc:id=>f.sdk.doc(f.db,name,id)}),runTransaction:(work,opts)=>f.sdk.runTransaction(f.db,tx=>work({get:async ref=>{const snap=await tx.get(ref);return {exists:snap.exists(),data:snap.data};},set:(...a)=>tx.set(...a),delete:(...a)=>tx.delete(...a)}),opts)};
+ const binding=createStagingMarketplaceBinding({projectId:'oldx-staging',deploymentEnvironment:'preview',adminFirestore,FieldValue:{serverTimestamp:f.sdk.serverTimestamp}});
+ await exerciseNativeProvider({binding,authenticate:token=>({uid:token}),ownerToken:'owner',otherToken:'other',seed:(...a)=>f.seed(...a),rows:async collection=>[...f.snapshot()].filter(([path])=>path.startsWith(collection+'/')).map(([,value])=>value)});
+});

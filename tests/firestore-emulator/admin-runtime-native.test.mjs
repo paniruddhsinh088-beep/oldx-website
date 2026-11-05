@@ -114,28 +114,9 @@ test('REAL native public Browse uses bounded projection/cursors and rejects with
  await exerciseNativePublicReads({binding:createEmulatorMarketplaceBinding(options()),Filter,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
 });
 test('REAL native Provider private create/edit/ownership/replay/revision persistence',async()=>{
- const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
- const {createStagingFirebaseProviderRepository}=await import('../../scripts/firebase-provider-repository.mjs');
- const {createProviderV1Integration}=await import('../../scripts/provider-schema-v1.mjs');
- const {createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');
- const binding=createEmulatorMarketplaceBinding(options()),schema=binding.providerCollections,enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
- for(const uid of ['owner','other'])await db.collection(schema.actors).doc(uid).set({uid,canWrite:true,suspended:false});
- await db.collection(schema.permissions).doc('owner').set({uid:'owner',canPublish:true,canWithdraw:true,suspended:false});await db.collection(schema.generations).doc('current').set({value:0});
- const repository=createStagingFirebaseProviderRepository({enabled:true,binding}),catalog={version:1,stateCode:'GJ',services:['Repair','Plumber'],localities:[{city:'Ahmedabad',serviceArea:'Sample area'}]};
- const owner=createProviderV1Integration({enabled:true,repository,catalog,authenticate:(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true}),randomId:()=> 'opaque-native-profile'});
- const profile={displayName:'મૂળ हिन्दी Native',city:'Ahmedabad',serviceArea:'Sample area',services:['Repair','Plumber'],description:'Synthetic original',available:true,experienceYears:null,languages:['gu','hi','en']};
- const input={requestId:'native-provider-create',expectedRevision:0,profile};
- const created=await owner.saveDraft(input,{credential:ownerToken});assert.equal(created.ok,true,JSON.stringify(created));
- assert.equal((await owner.saveDraft(input,{credential:ownerToken})).status,'replayed');
- const recovered=await owner.bootstrap({operation:'draft.save',requestId:input.requestId},{credential:ownerToken});assert.equal(recovered.draft.displayName,profile.displayName);assert.deepEqual(recovered.draft.services,profile.services);
- assert.equal((await owner.bootstrap({operation:'draft.save',requestId:input.requestId},{credential:otherToken})).ok,false);
- assert.equal((await owner.saveDraft({...input,requestId:'foreign',expectedRevision:1},{credential:otherToken})).ok,false);
- const outcomes=await Promise.all(['one','two'].map(key=>owner.saveDraft({...input,requestId:'native-race-'+key,expectedRevision:1,profile:{...profile,description:key}},{credential:ownerToken})));assert.equal(outcomes.filter(r=>r.ok).length,1);assert.equal(outcomes.filter(r=>r.code==='REVISION_CONFLICT').length,1);
- const saved=await owner.bootstrap({operation:null,requestId:null},{credential:ownerToken});assert.equal(saved.revision,2);
- assert.equal((await owner.saveDraft({...input,requestId:'stale',expectedRevision:1},{credential:ownerToken})).code,'REVISION_CONFLICT');
- assert.equal((await owner.managePublication({requestId:'no-media-publish',expectedRevision:2,expectedGeneration:0,action:'publish'},{credential:ownerToken})).ok,false);assert.equal((await db.collection(schema.publicViews).get()).size,0);
- await db.collection(schema.actors).doc('owner').update({suspended:true});assert.equal((await owner.saveDraft({...input,requestId:'suspended',expectedRevision:2},{credential:ownerToken})).code,'DENIED');await db.collection(schema.actors).doc('owner').update({suspended:false});
- assert.equal((await db.collection(schema.audits).get()).size,2);assert.equal((await db.collection(schema.receipts).get()).size,2);
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');const {createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');const {exerciseNativeProvider}=await import('../integration/provider-native-cases.mjs');
+ const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
+ await exerciseNativeProvider({binding:createEmulatorMarketplaceBinding(options()),authenticate:(token,context)=>enforcement.verifyFirebaseToken(token,{...context,checkRevoked:true}),ownerToken,otherToken,seed:(c,id,value)=>db.collection(c).doc(id).set(value),rows:async c=>(await db.collection(c).get()).docs.map(d=>d.data())});
 });
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
