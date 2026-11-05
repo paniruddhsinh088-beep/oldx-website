@@ -2,6 +2,38 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
+## 5 November read-only staging readiness preparation
+
+Owner approval: preparation/read-only audit ONLY. No real uploads, staging writes,
+route installation, flags, Rules/IAM/credentials/billing or Production changes.
+Reviewed remote baseline **1134f9811407a2795c5676e0a3aaacab7c318cec**;
+its exact-source Review **41980833258 SUCCESS**. Working tree was clean.
+Existing executable source remains **82efcf6d0697f7aaaf66f320049eab25d2c821d3**.
+No code correction or repeated tests required for this read-only audit.
+
+Observed access: current environment reports enforced network, ZERO configured
+secret/outbound identity bindings, and neither Cloudinary API nor CDN host allowed.
+Vercel connector lookup for `oldx-website` under known team `old-x-store` returned
+404; this does NOT prove the project is absent, only that this lookup cannot confirm
+access. No secret values retrieved. Live Firebase project isolation/Auth/Rules/data,
+Cloudinary configuration/usage and backup/rollback availability could NOT be verified.
+Repository deny-all baseline is documented, not a fresh live Rules observation.
+
+Verified source gates: root api/ absent; Vercel builds allowlisted static output.
+Cloudinary transport still requires isolated-test mode. Staging bootstrap rejects
+publication-enabled configuration. Staging repository exposes owner/save/archive,
+not native public browse/query routes. Processing/provider/public-read bindings and
+activation review are still needed: credentials plus flag flips alone are NOT enough.
+Do not relabel real provider activity as an isolated test or bypass these gates.
+
+Next exact action: owner confirms the correct connected Vercel team/project and
+availability of existing secure staging Admin/Cloudinary access (NO values in chat).
+Then prepare/review staging-only real transport, processing and public-read bindings
+with all gates OFF. Real synthetic writes/uploads/route/flag configuration need a
+separate exact operational approval, verified backup or empty-state evidence and
+rollback. Use the single detailed operator handoff below; HOLD/NO-GO remains.
+This audit-only checkpoint changes no executable code and proves no staging acceptance.
+
 ## 5 November final photo reference / delivery integration
 
 Completed source: Product/Store draft saves stage the EXISTING reference transaction
