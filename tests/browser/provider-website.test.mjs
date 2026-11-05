@@ -17,3 +17,20 @@ for(const [width,locale]of [[320,'gu'],[375,'hi'],[375,'en']])test(`existing web
  await page.reload();await page.waitForSelector('#websiteProviderPhotos',{state:'attached'});assert.equal(await page.locator('#websiteProviderPhotos img').count(),0);await page.goto(origin+'/service-preview.html?mode=website#provider/p1');await page.waitForSelector('#notFoundView',{state:'visible'});assert.equal(await page.locator('#results article').count(),0);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
  }finally{await context.close();}
 });
+for(const [width,locale]of [[320,'gu'],[375,'hi'],[375,'en']])test(`Provider private photo upload UI retries references and clears session ${width} ${locale}`,async()=>{
+ const context=await browser.newContext({viewport:{width,height:850}}),page=await context.newPage();try{
+ await page.goto(origin+'/service-preview.html?mode=website#register');await page.waitForSelector('#websiteProviderPhotos',{state:'attached'});await page.locator('#providerTab').click();
+ await page.evaluate(async locale=>{
+  document.getElementById('websiteProviderPhotos').remove();const {mountWebsiteProviderPhotos}=await import('/features/service-providers/website-photos.mjs'),{createAuthenticatedProviderPhotoClient}=await import('/features/media/authenticated-photo-client.mjs'),translator=await(await import('/features/i18n/i18n.mjs')).loadTranslator(locale);
+  const log=window.photoCalls=[];let refs=0;const client=createAuthenticatedProviderPhotoClient({enabled:true,getToken:async s=>({...s,token:'fixture.token.only'}),sendUpload:async r=>{log.push({op:'upload',...r});return {status:200,body:{ok:true,state:'quarantined',imageId:'image_12345678901234567890',parentRevision:1}};},sendCommand:async(op,r)=>{log.push({op,...r});if(op==='ownerPhotos')return {status:200,body:{ok:true,parentId:'provider',parentRevision:1,photoRevision:refs?1:0,photos:[]}};refs++;return refs===1?{status:202}:{status:200,body:{ok:true,status:'saved',photoRevision:1}};}});
+  const view=window.photoView=mountWebsiteProviderPhotos({translate:translator.t});view.configure(client);view.setScope({uid:'owner',sessionId:'session',parentId:'provider',revision:1,services:['મૂળ Cafe\u0301 हिन्दी']});
+ },locale);
+ const png=await page.evaluate(()=>{const canvas=document.createElement('canvas');canvas.width=30;canvas.height=30;return canvas.toDataURL('image/png').split(',')[1];});
+ await page.locator('input[data-photo-role=profile]').setInputFiles({name:'fixture.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});await page.waitForFunction(()=>document.querySelectorAll('#websiteProviderPhotos img').length===1);
+ await page.locator('[data-provider-photo-upload]').click();await page.waitForFunction(()=>window.photoCalls.filter(v=>v.op==='references').length===1);await page.waitForFunction(()=>!document.querySelector('[data-provider-photo-upload]').disabled);
+ assert.equal(await page.locator('input[data-photo-role=profile]').isDisabled(),true);await page.locator('[data-provider-photo-upload]').click();await page.waitForFunction(()=>window.photoCalls.filter(v=>v.op==='references').length===2);
+ const calls=await page.evaluate(()=>window.photoCalls);assert.equal(calls.filter(v=>v.op==='upload').length,1);assert.deepEqual(calls.filter(v=>v.op==='references')[0],calls.filter(v=>v.op==='references')[1]);
+ await page.evaluate(()=>document.documentElement.style.fontSize='32px');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+ await page.evaluate(()=>window.photoView.clear());assert.equal(await page.locator('#websiteProviderPhotos img').count(),0);assert.equal(await page.locator('[data-provider-photo-upload]').isDisabled(),true);
+ }finally{await context.close();}
+});

@@ -8,7 +8,7 @@ const exact=(v,keys)=>v&&Object.getPrototypeOf(v)===Object.prototype&&Reflect.ow
 function publicProfile(value){if(!exact(value,profileKeys))return null;const checked=buildPublicProviderProfile(value);return checked.ok?Object.freeze({...checked.profile,services:Object.freeze(checked.profile.services),languages:Object.freeze(checked.profile.languages)}):null;}
 // Default-disabled UI port. No token, endpoint, SDK, browser storage or identity
 // authority. Session values are cancellation scopes, never server authorization.
-export function createProviderUiIntegration({enabled=false,commands,reads,owner,onOwnerDraft=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),onChange=()=>{},timeoutMs=5000}={}){
+export function createProviderUiIntegration({enabled=false,commands,reads,owner,onOwnerDraft=()=>{},onOwnerScope=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),onChange=()=>{},timeoutMs=5000}={}){
  let session=null,revision=0,generation=0,scopeRevision=0,commandRevision=0,pending=null,commandRead=null,publicRead=null,online=true,ownerRead=null,ownerRevision=0,ownerState=Object.freeze({status:'idle'});
  let command=Object.freeze({status:enabled?'idle':'disabled',operation:null,canRetry:false}),publicState=Object.freeze({status:'idle'});
  const snapshot=()=>Object.freeze({command,public:publicState,owner:ownerState});const emit=()=>onChange(snapshot());
@@ -29,7 +29,7 @@ export function createProviderUiIntegration({enabled=false,commands,reads,owner,
    if(response.status===200){
     const draft=envelope.operation==='draft.save',keys=draft?['ok','status','providerId','revision']:['ok','status','providerId','action','generation'];
     if(!exact(body,keys)||body.ok!==true||!id(body.providerId)||!(draft?['saved','replayed']:['applied','replayed']).includes(body.status)||!number(draft?body.revision:body.generation)||!draft&&body.action!==envelope.body.action){setCommand('unknown');return;}
-    if(draft)revision=Math.max(revision,body.revision);else generation=Math.max(generation,body.generation);
+    if(draft){revision=Math.max(revision,body.revision);onOwnerScope({providerId:body.providerId,revision,services:[...envelope.body.profile.services]});}else generation=Math.max(generation,body.generation);
     pending=null;setCommand(draft?'saved':envelope.body.action==='publish'?'published':'withdrawn',envelope.operation,false);return;
    }
    if(response.status===202){setCommand('unknown');return;}
@@ -83,6 +83,7 @@ export function createProviderUiIntegration({enabled=false,commands,reads,owner,
    const unresolved=body.receipt?.status==='unknown';
    if(pending&&body.receipt?.status==='committed'){pending=null;setCommand('reconciled',request.operation,false);}
    ownerState=Object.freeze({status:unresolved?'unresolved':'ready',...body.capabilities});
+   onOwnerScope(body.exists&&!unresolved?{providerId:body.providerId,revision,services:[...body.draft.services]}:null);
    if(restoreDraft&&!unresolved&&body.draft)onOwnerDraft(structuredClone(body.draft));emit();
   }});await ownerRead.load({});return snapshot();
  }

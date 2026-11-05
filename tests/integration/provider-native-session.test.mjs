@@ -50,3 +50,8 @@ test('same native Provider acceptance matrix runs locally before real Emulator C
  const binding=createStagingMarketplaceBinding({projectId:'oldx-staging',deploymentEnvironment:'preview',adminFirestore,FieldValue:{serverTimestamp:f.sdk.serverTimestamp}});
  await exerciseNativeProvider({binding,authenticate:token=>({uid:token}),ownerToken:'owner',otherToken:'other',seed:(...a)=>f.seed(...a),rows:async collection=>[...f.snapshot()].filter(([path])=>path.startsWith(collection+'/')).map(([,value])=>value)});
 });
+test('media token bridge rejects foreign scopes and logout while token acquisition is pending',async()=>{
+ let listener,release,session;const user={uid:'owner',getIdToken:()=>new Promise(r=>release=r)},auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged:fn=>{listener=fn;return ()=>{};}};
+ const bridge=createProviderFirebaseSessionPorts({enabled:true,auth,sendCommand:()=>{},makeSessionId:()=> 'session',onSession:s=>session=s});listener(user);
+ await assert.rejects(bridge.getMediaToken({...session,uid:'foreign'}));const task=bridge.getMediaToken(session);auth.currentUser=null;listener(null);release('fixture.token.only');await assert.rejects(task);bridge.destroy();
+});

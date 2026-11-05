@@ -24,5 +24,12 @@ export function createProviderFirebaseSessionPorts({enabled=false,auth,sendComma
   }catch{return sent&&mutation?{status:202,body:{ok:false,error:{code:'OUTCOME_UNKNOWN'},retrySameRequest:true}}:unavailable();}
   finally{pending.delete(controller);context.signal?.removeEventListener('abort',abort);}
  }
- return Object.freeze({commands:Object.freeze({execute}),owner:Object.freeze({load:(body,context)=>execute('owner.bootstrap',body,context)}),destroy(){active=false;unsubscribe?.();clear();}});
+ async function getMediaToken(scope,{signal}={}){
+  const version=epoch,user=auth?.currentUser;
+  if(!active||!uid||user?.uid!==uid||scope?.uid!==uid||scope?.sessionId!==sessionId||signal?.aborted)throw Error('AUTH_REQUIRED');
+  const token=await user.getIdToken();
+  if(version!==epoch||signal?.aborted||auth.currentUser?.uid!==uid||typeof token!=='string'||token.length>8192||!/^[-\w]+\.[-\w]+\.[-\w]+$/.test(token))throw Error('AUTH_REQUIRED');
+  return {token,uid,sessionId};
+ }
+ return Object.freeze({getMediaToken,commands:Object.freeze({execute}),owner:Object.freeze({load:(body,context)=>execute('owner.bootstrap',body,context)}),destroy(){active=false;unsubscribe?.();clear();}});
 }

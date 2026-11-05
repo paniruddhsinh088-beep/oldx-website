@@ -1,3 +1,5 @@
+import {createProviderMediaHttpTransport} from '../media/provider-media-http-client.mjs';
+import {createAuthenticatedProviderPhotoClient} from '../media/authenticated-photo-client.mjs';
 import {mountApprovedProviderPhotoView} from '../media/approved-photo-view.mjs';
 import {createProviderFirebaseSessionPorts} from './firebase-session-ports.mjs';
 import {mountWebsiteProviderPhotos} from './website-photos.mjs';
@@ -485,9 +487,11 @@ export function configureProviderIntegration(options={}){
 export function configureWebsiteProviderFirebase({enabled=false,auth,sendCommand,reads,catalog,...options}={}){
  websiteFirebase?.destroy();websiteFirebase=null;
  const ready=websiteMode&&enabled===true&&auth?.app?.options?.projectId==='oldx-staging'&&typeof sendCommand==='function'&&typeof reads?.discover==='function'&&typeof reads?.detail==='function';
- let binding=null,session=null;
- const ports=createProviderFirebaseSessionPorts({enabled:ready,auth,sendCommand,onSession:value=>{session=value;binding?.setSession(value);}});
- binding=configureProviderIntegration({...options,enabled:ready,catalog,reads:ready?reads:undefined,commands:ports.commands,owner:ports.owner,buyer:{...options.buyer,commands:ports.commands}});
+ let binding=null,session=null,ownerScope=null;
+ const syncPhotos=()=>websitePhotos?.setScope(session&&ownerScope?{...session,parentId:ownerScope.providerId,revision:ownerScope.revision,services:ownerScope.services}:null);
+ const ports=createProviderFirebaseSessionPorts({enabled:ready,auth,sendCommand,onSession:value=>{session=value;binding?.setSession(value);syncPhotos();}});
+ const media=options.media?.fetch?createProviderMediaHttpTransport(options.media):options.media;websitePhotos?.configure(ready&&typeof media?.sendUpload==='function'&&typeof media?.sendCommand==='function'?createAuthenticatedProviderPhotoClient({enabled:true,getToken:ports.getMediaToken,sendUpload:media.sendUpload,sendCommand:media.sendCommand}):null);
+ binding=configureProviderIntegration({...options,onOwnerScope:value=>{ownerScope=value;syncPhotos();options.onOwnerScope?.(value);},enabled:ready,catalog,reads:ready?reads:undefined,commands:ports.commands,owner:ports.owner,buyer:{...options.buyer,commands:ports.commands}});
  binding.setSession(session);
  websiteFirebase=Object.freeze({...binding,destroy(){ports.destroy();binding.destroy();}});
  return websiteFirebase;

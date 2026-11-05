@@ -33,3 +33,22 @@ test('owner references restore saved managed IDs without making the draft dirty;
  const model=createMandatoryPhotos({enabled:true,kind:'product'});model.setScope(scope);assert.equal(model.restoreReferences(result.photos),true);assert.equal(model.snapshot().changed,false);assert.equal(model.references()[0].imageId,imageId);
  const stale=p.ownerReferences({kind:'product',parentId:'parent',expectedParentRevision:1});await new Promise(r=>setTimeout(r,0));p.setScope({...scope,uid:'other'});release({status:200,body:{ok:true,parentId:'parent',parentRevision:1,photoRevision:1,photos:[{kind:'managed',imageId}]}});assert.equal((await stale).ok,false);
 });
+
+test('Provider media ports bind service, revisions and same-key recovery without public fields',async()=>{
+ const {createAuthenticatedProviderPhotoClient}=await import('../../features/media/authenticated-photo-client.mjs');const calls=[];let uploaded=0;
+ const client=createAuthenticatedProviderPhotoClient({enabled:true,getToken:async s=>identity(s),sendUpload:async r=>{calls.push(r);uploaded++;return {status:202};},sendCommand:async(op,r)=>{calls.push({op,...r});if(op==='status')return ok;if(op==='references')return {status:200,body:{ok:true,status:'saved',photoRevision:2}};return {status:200,body:{ok:true,parentId:'parent',parentRevision:1,photoRevision:1,photos:[]}};}});client.setScope(scope);
+ const r={...request,kind:'provider',service:'મૂળ Cafe\u0301 हिन्दी'};assert.equal((await client.upload(r)).ok,false);assert.equal((await client.upload(r)).ok,true);assert.equal(uploaded,1);assert.equal(calls[0].service,r.service);assert.equal(calls[1].service,r.service);
+ assert.equal((await client.ownerReferences(r)).photoRevision,1);assert.equal((await client.references({...r,expectedPhotoRevision:1,imageIds:[imageId]})).photoRevision,2);
+ assert.equal((await client.references({...r,expectedPhotoRevision:1,imageIds:[imageId,imageId]})).code,'INVALID_REQUEST');assert.equal((await client.upload({...r,kind:'product'})).ok,false);assert.equal((await client.upload({...r,bytes:new Uint8Array(2*1024*1024+1)})).code,'INVALID_IMAGE');
+ assert.equal((await client.references({...r,service:null,expectedPhotoRevision:1,imageIds:[imageId,'image_22345678901234567890']})).ok,false);
+ client.setScope(null);assert.equal((await client.ownerReferences(r)).ok,false);
+});
+test('Provider HTTP transport is same-origin, bounded, authenticated and no redirect/unsigned path',async()=>{
+ const {createProviderMediaHttpTransport}=await import('../../features/media/provider-media-http-client.mjs');let calls=0;
+ const transport=createProviderMediaHttpTransport({enabled:true,origin:'https://preview.invalid',fetch:async(url,options)=>{calls++;assert.equal(url,'https://preview.invalid/api/staging/provider-media/upload');assert.equal(options.redirect,'error');assert.equal(options.credentials,'omit');assert.equal(options.headers.Authorization,'Bearer fixture.token.only');assert.equal(options.body.get('intent').includes('provider'),true);assert.equal(options.body.has('upload_preset'),false);assert.equal(options.body.get('file').size,bytes.length);return Response.json({ok:true});}});
+ assert.equal((await transport.sendUpload({...request,kind:'provider'},bytes,{credential:'fixture.token.only'})).status,200);assert.equal(calls,1);
+ assert.equal((await transport.sendCommand('moderate',{}, {credential:'fixture.token.only'})).status,503);assert.equal(calls,1);
+ assert.equal((await createProviderMediaHttpTransport().sendUpload(request,bytes,{})).status,503);
+ const large=createProviderMediaHttpTransport({enabled:true,origin:'https://preview.invalid',fetch:async()=>new Response('x'.repeat(17000),{headers:{'content-type':'application/json'}})});assert.equal((await large.sendCommand('status',{}, {credential:'fixture.token.only'})).status,202);
+ const timeout=createProviderMediaHttpTransport({enabled:true,timeoutMs:1,origin:'https://preview.invalid',fetch:()=>new Promise(()=>{})});assert.equal((await timeout.sendCommand('status',{}, {credential:'fixture.token.only'})).status,202);
+});
