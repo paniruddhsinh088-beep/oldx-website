@@ -39,3 +39,54 @@ export function createStagingPhotoReferenceRepository(options={}){
  if(options.enabled!==true)return Object.freeze({apply:async()=>fail('UNAVAILABLE')});const b=requireStagingMarketplaceBinding(options.binding);
  return referenceCore({...options,sdk:b.sdk,parentCollections:{product:b.collections.privateRecords,store:b.collections.privateRecords,provider:'unsupportedProvider'},actorCollections:{product:b.collections.actors,store:b.collections.actors,provider:'unsupportedProvider'}},{db:b.db,collections:b.referenceCollections},true);
 }
+
+// Reuse the reference transaction implementation inside the parent transaction.
+// All reads finish before commit(); no nested SDK transaction/provider work.
+export function createStagingDraftPhotoReferences({enabled=false,binding,now=Date.now}={}){
+ if(enabled!==true)return null;const b=requireStagingMarketplaceBinding(binding),{sdk,db}=b,c=b.referenceCollections;
+ const marker=key=>'draft_parent_'+key,read=async(raw,role,key)=>{const s=await raw.get(sdk.doc(db,c[role],key));return s.exists()?s.data():null;};
+ return Object.freeze({marketplaceCollections:b.collections,
+  async verifyReplay(raw,claims){
+   const key=marker(claims.requestKey),r=await read(raw,'receipts',key),a=await read(raw,'audits',key);
+   return !!r&&!!a&&['actorUid','requestKey','fingerprint','kind','parentId','parentRevision'].every(k=>r[k]===claims[k]&&a[k]===claims[k]);
+  },
+  async prepare(raw,{kind,previous,next,actorUid,requestKey,fingerprint,signal}){
+   const photos=next.profile?.photos;
+   if(!['product','store'].includes(kind)||next.ownerUid!==actorUid||!Array.isArray(photos)||photos.some(p=>typeof p!=='string'&&(!p||p.kind!=='managed')))return fail('DENIED');
+   const key=marker(requestKey),existing=await read(raw,'receipts',key),audit=await read(raw,'audits',key);if(existing||audit)return fail('CONFLICT');
+   const associationId=hash([kind,next.id,null]),association=await read(raw,'associations',associationId),writes=[];
+   // Preserve legacy strings; never migrate or publicly release them here.
+   if(photos.some(p=>typeof p==='string')){if(association)return fail('CONFLICT');}
+   else if(previous&&(association||photos.length)){
+    const staged={get:r=>raw.get(r),set(r,value){
+     let row=value;
+     if(r.path.startsWith(c.assets+'/')||r.path.startsWith(c.associations+'/')||r.path.startsWith(c.audits+'/'))row={...value,parentRevision:next.revision};
+     writes.push(()=>raw.set(r,row));
+    }};
+    const shim={...sdk,runTransaction:async(_db,work)=>work(staged)};
+    const references=referenceCore({sdk:shim,authenticate:async()=>({uid:actorUid}),now,parentCollections:{product:b.collections.privateRecords,store:b.collections.privateRecords,provider:'unsupportedProvider'},actorCollections:{product:b.collections.actors,store:b.collections.actors,provider:'unsupportedProvider'}},{db,collections:c},true);
+    const result=await references.apply({requestId:'draft_'+requestKey,kind,parentId:next.id,service:null,expectedParentRevision:previous.revision,expectedPhotoRevision:association?.photoRevision??0,imageIds:photos.map(p=>p.imageId)},{signal});
+    if(result?.ok!==true)return result;
+   }else if(photos.length)return fail('DENIED');
+   const receipt={kind,parentId:next.id,actorUid,requestKey,fingerprint,parentRevision:next.revision};
+   return {ok:true,commit(){for(const write of writes)write();raw.set(sdk.doc(db,c.receipts,key),receipt);raw.set(sdk.doc(db,c.audits,key),receipt);}};
+  }
+ });
+}
+
+export function createStagingOwnerPhotoRead({enabled=false,binding,authenticate,now=Date.now}={}){
+ if(enabled!==true)return async()=>fail('UNAVAILABLE');const b=requireStagingMarketplaceBinding(binding),{sdk,db}=b,c=b.referenceCollections;
+ return async(input,{credential,signal}={})=>{
+  const r=copyRecord(input,['kind','parentId','expectedParentRevision']);if(!r||!['product','store'].includes(r.kind)||!safeId(r.parentId)||!int(r.expectedParentRevision)||r.expectedParentRevision<1)return fail('INVALID_REQUEST');
+  return runVerifiedOperation({authenticate,credential,signal,now,run:context=>sdk.runTransaction(db,async tx=>{
+   const get=async(collection,id)=>{context.checkpoint();const s=await tx.get(sdk.doc(db,collection,id));return s.exists()?s.data():null;};
+   const parent=await get(b.collections.privateRecords,r.kind+'_'+r.parentId),actor=await get(b.collections.actors,context.actorUid),associationId=hash([r.kind,r.parentId,null]),a=await get(c.associations,associationId);
+   if(parent?.id!==r.parentId||parent.kind!==r.kind||parent.ownerUid!==context.actorUid||parent.archived===true||actor?.uid!==context.actorUid||actor.canWrite!==true||actor.suspended!==false)return fail('DENIED');
+   if(parent.revision!==r.expectedParentRevision)return fail('REVISION_CONFLICT');
+   if(!a)return {ok:true,parentId:r.parentId,parentRevision:parent.revision,photoRevision:0,photos:[]};
+   if(a.ownerUid!==context.actorUid||a.kind!==r.kind||a.parentId!==r.parentId||a.parentRevision!==parent.revision||a.service!==null||a.visibility!=='private'||!int(a.photoRevision)||!Array.isArray(a.imageIds)||a.imageIds.length>(r.kind==='store'?1:6)||new Set(a.imageIds).size!==a.imageIds.length)return fail('CONFLICT');
+   for(const imageId of a.imageIds){if(typeof imageId!=='string'||!/^[A-Za-z0-9_-]{20,80}$/.test(imageId))return fail('CONFLICT');const asset=await get(c.assets,imageId);if(asset?.imageId!==imageId||asset.ownerUid!==context.actorUid||asset.parentId!==r.parentId||asset.kind!==r.kind||asset.parentRevision!==parent.revision||asset.state!=='attached'||!asset.references?.includes(associationId))return fail('DENIED');}
+   context.checkpoint();return {ok:true,parentId:r.parentId,parentRevision:parent.revision,photoRevision:a.photoRevision,photos:a.imageIds.map(imageId=>({kind:'managed',imageId}))};
+  },{maxAttempts:3})});
+ };
+}

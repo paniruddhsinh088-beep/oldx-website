@@ -2,7 +2,78 @@
 
 Branch: `security-hardening-review` ONLY. HOLD/NO-GO.
 
-## 5 November photo UI and inactive media-handler milestone
+## 5 November final photo reference / delivery integration
+
+Completed source: Product/Store draft saves stage the EXISTING reference transaction
+inside the parent transaction: owner/parent/asset checks, photo association, asset
+revision binding, receipts/audits and parent commit together. Replay verifies a separate
+domain-bound draft marker. No nested SDK transaction or provider call occurs inside
+this hook. New parent draft revisions invalidate stale approval, never manufacture it.
+Private replacement preserves the previous approved public release until explicit
+approved publication. Withdrawal now rebinds retained private references to its new
+parent revision; referenced deletion still denies until atomic detach.
+
+Owner UI can restore allowlisted managed references through verified `ownerPhotos`;
+account/session/logout cleanup remains. Existing Product/Store public views accept a
+default-disabled Blob-based approved viewer: no provider URL fallback, all photos
+validate before paint, post-byte manifest freshness, cancellation and URL revocation,
+localized labels/live language switching, gu/hi/en mobile layouts. Original seller
+Unicode remains unchanged. Missing/unapproved/revoked/foreign data fails closed.
+
+Provider mapping: durable verified upload receipts now retain private provider identity,
+actual version/digest and audit binding; journal stores a private `providerProof` pointer.
+The native resolver validates the approved public snapshot before returning server-only
+identity. App release version and Cloudinary version are distinct; no guessed-version
+fallback. Older synthetic/pre-upgrade rows lacking this evidence remain undeliverable
+through this resolver until independently inspected/reconciled. No legacy image or
+live document migration, automatic unpublication or account changes occurred.
+
+Baseline **f144badcfbf66b7caaf04e59f6ef5141795bf414**, Review **41976894526 SUCCESS**.
+New executable source/CI pending push. Local transaction regression **204/204 PASS**;
+additional final owner/client + lifecycle subset **7/7 PASS**; static build **3/3 PASS**.
+Public viewer mobile **12/12 PASS** (Product/Store × gu/hi/en × 320/375px, 2x text,
+language switch, revoke-during-read, late scope result); existing owner/recovery/browser
+subset **24 passed**. Initial public fixture had 12 Unicode failures due to missing
+UTF-8 response charset; corrected the fixture header and reran all 12 successfully.
+No assertion was weakened or skipped. Actual Admin/Auth/Firestore suite expanded to
+10 cases with full Product/Store upload → atomic draft reference → independent review
+fixture → publish/replace → withdraw/detach/delete lifecycle. New actual result pending
+exact-source CI. Provider/processing/review fixtures are NOT real Cloudinary, scanning
+or staging/moderation acceptance.
+
+Current next exact action: check final-source CI, fix verified failures, then STOP
+nonessential synthetic additions. Next meaningful execution is approved staging
+readiness/preflight and real synthetic acceptance once existing secure access and
+explicit operational approvals below are available. Preserve every disabled gate.
+
+### Minimum exact operator handoff — no operational authorization implied
+
+1. Confirm isolated `oldx-staging`, existing secure Admin runtime identity/project,
+   Auth providers/test accounts and approved Preview environment. No credentials in
+   chat/browser/Git. No IAM/secrets provisioning or Production access in this scope.
+2. Bind existing Cloudinary Free signing/inspection credentials server-side and
+   approve normal egress for `api.cloudinary.com` / `res.cloudinary.com`. Inject the
+   tested HTTP transport + native approved resolver; never use unsigned presets,
+   provider URLs in public DTOs, guessed versions or billing upgrades.
+3. Review exact synthetic actor/generation/quota and independent moderator manifest,
+   proposed private proof/version fields, hard byte/image/request/provider budgets,
+   trusted reencode/metadata stripping/inspection, quarantine and manual moderation.
+   Owner cannot self-approve. Decide retention/orphan grace/delete settlement. No
+   automated explicit-content detection is implemented. Legacy images remain intact.
+4. Verify backup/export plus rollback evidence BEFORE any staging writes. Approve
+   exact route installation and explicit runtime bindings/flags separately. Current
+   artifacts remain OUTSIDE root api/; no flags enabled. Keep client Rules deny-all
+   and publication false until processing, moderation and delivery acceptance pass.
+   Rollback: disable operational flags/remove approved test routes; retain/quarantine
+   uncertain assets and audit/receipts, do not blindly delete or refund late outcomes.
+5. Only then authorize real synthetic Login/create/upload/draft/review/publish/browse/
+   edit/replace/withdraw acceptance, other/guest/revoked/account-switch/logout/retry,
+   320/375px gu/hi/en and device checks. No main/merge, production, Rules/index,
+   IAM/secrets/billing or Cloudinary activation done here. HOLD/NO-GO.
+
+No scheduler created; next authorized execution must fetch remote and read this ledger.
+
+## Preserved earlier photo UI and inactive media-handler milestone
 
 Completed: existing Product/Store photo component now accepts the injected authenticated
 photo client. Same-key retry checks durable status before any resend; restored entries

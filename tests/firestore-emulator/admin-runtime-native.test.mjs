@@ -103,6 +103,12 @@ test('REAL verified Auth preflight drives native media quotas, attempt receipts 
  const binding=createEmulatorMarketplaceBinding(options()),enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
  await exerciseAuthenticatedMedia({binding,verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,otherToken,emulatorTokenSyntax:true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
 });
+test('REAL Product/Store private references and approved public bytes share atomic lifecycle',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ const {exercisePhotoLifecycle}=await import('../integration/photo-lifecycle-cases.mjs');const binding=createEmulatorMarketplaceBinding(options());
+ const {createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs');const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
+ await exercisePhotoLifecycle({binding,verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,otherToken,emulatorTokenSyntax:true,seed:(collection,id,value)=>db.collection(collection).doc(id).set(value),read:async(collection,id)=>(await db.collection(collection).doc(id).get()).data()});
+});
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

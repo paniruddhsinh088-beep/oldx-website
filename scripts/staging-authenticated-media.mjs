@@ -1,3 +1,4 @@
+import {createStagingMarketplaceMedia} from './staging-marketplace-media.mjs';
 import {createHash} from 'node:crypto';
 import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createCloudinaryUploadHttp} from './cloudinary-upload-http.mjs';
@@ -6,6 +7,11 @@ import {createStagingMediaProviderRuntime} from './staging-media-provider-runtim
 import {copyRecord,safeId} from './isolated-firestore-context.mjs';
 const failure=(status,code)=>({status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'},body:{ok:false,error:{code}}});
 function project(value,operation){
+ if(operation==='ownerPhotos'){
+  const v=copyRecord(value,['ok','parentId','parentRevision','photoRevision','photos']);
+  return v?.ok===true&&safeId(v.parentId)&&Number.isSafeInteger(v.parentRevision)&&v.parentRevision>0&&Number.isSafeInteger(v.photoRevision)&&v.photoRevision>=0&&Array.isArray(v.photos)&&v.photos.length<=6&&v.photos.every(p=>p?.kind==='managed'&&/^[A-Za-z0-9_-]{20,80}$/.test(p.imageId)&&Object.keys(p).sort().join(',')==='imageId,kind')?v:null;
+ }
+
  const v=copyRecord(value,['ok','imageId','state','revision','parentRevision',...(value&&Object.hasOwn(value,'replayed')?['replayed']:[])]);
  return v?.ok===true&&typeof v.imageId==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId)&&(operation==='status'?['reserved','uploading','quarantined','attached','deleting','deleted','cancelled']:['quarantined','deleted']).includes(v.state)&&Number.isSafeInteger(v.revision)&&v.revision>=(operation==='status'?0:1)&&Number.isSafeInteger(v.parentRevision)&&v.parentRevision>=1&&(v.replayed===undefined||v.replayed===true)?v:null;
 }
@@ -44,8 +50,8 @@ export function createStagingAuthenticatedMedia({enabled=false,binding,verifyFir
    if(response.status!==200)return response;const dto=project(outcome);return dto?{...response,body:dto}:failure(503,'UNAVAILABLE');
   },
   command(operation,request,context={}){
-   const keys={status:['requestId','kind','parentId'],recover:['requestId','kind','parentId'],remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
-   const http=createPrivateConversationHttp({...options,contract:{prefix:'media.command.',keys,mutations:Object.keys(keys).filter(op=>op!=='status'),projection:(op,v)=>project(v,op)},createRepository:scope=>{
+   const keys={ownerPhotos:['kind','parentId','expectedParentRevision'],status:['requestId','kind','parentId'],recover:['requestId','kind','parentId'],remove:['requestId','imageId','expectedRevision'],reconcileUpload:['requestId','imageId','expectedRevision','assetId','version'],reconcileDelete:['requestId','imageId','expectedRevision']};
+   const http=createPrivateConversationHttp({...options,contract:{prefix:'media.command.',keys,mutations:Object.keys(keys).filter(op=>!['status','ownerPhotos'].includes(op)),projection:(op,v)=>project(v,op)},createRepository:scope=>{
     const runtime=coordinator(scope);
     const status=async(input,{signal}={})=>{
      if(!safeId(input.requestId)||!['product','store'].includes(input.kind)||!safeId(input.parentId))return {ok:false,code:'INVALID_REQUEST'};
@@ -62,7 +68,7 @@ export function createStagingAuthenticatedMedia({enabled=false,binding,verifyFir
       return {ok:true,imageId:image.imageId,state:image.state,revision:image.revision,parentRevision:image.parentRevision};
      },{maxAttempts:3});
     };
-    return {status,async recover(input,opts){
+    return {status,ownerPhotos:(input,opts)=>createStagingMarketplaceMedia({enabled:true,binding:b,authenticate:scope.authenticate}).ownerPhotos(input,opts),async recover(input,opts){
      const current=await status(input,opts);if(current?.ok!==true)return current;
      if(current.state==='quarantined')return current;
      if(current.state!=='uploading')return {ok:false,code:'OUTCOME_UNKNOWN'};

@@ -6,6 +6,7 @@ import {snapshotVerifiedMediaProof} from './media-proof-snapshot.mjs';
 import {validateProcessedImage} from './image-upload-contract-policy.mjs';
 import {runVerifiedOperation} from './verified-operation.mjs';
 const hash=v=>createHash('sha256').update(typeof v==='string'||ArrayBuffer.isView(v)?v:JSON.stringify(v,(_k,value)=>value&&[Object.prototype,null].includes(Object.getPrototypeOf(value))?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b))):value)).digest('hex');
+export const mediaProviderRecordDigest=hash;
 const imageId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v);
 const unknown=()=>({ok:false,code:'OUTCOME_UNKNOWN',retrySameRequest:true});
 const fail=code=>({ok:false,code});
@@ -32,7 +33,7 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
   if(token!==key(context.actorUid,expected))return null;
   const verify=async tx=>{
    const row=await read(tx,ref('operations',token)),audit=await read(tx,ref('audits',token));
-   if(row?.ownerUid!==context.actorUid||row.phase!=='complete'||audit?.ownerUid!==context.actorUid||audit.proofDigest!==hash(row.proof))return null;
+   if(row?.ownerUid!==context.actorUid||row.phase!=='complete'||audit?.ownerUid!==context.actorUid||audit.proofDigest!==hash(row.proof)||audit.providerDigest!==hash(row.provider??null))return null;
    return snapshotVerifiedMediaProof(row.proof,expected);
   };
   return context.transaction?verify(context.transaction):transaction(context,verify);
@@ -49,25 +50,25 @@ export function createStagingMediaProviderRuntime({enabled=false,binding,authent
    tx.set(ref('operations',scope.token),next);tx.set(ref('audits','attempt_'+scope.token),{ownerUid:context.actorUid,purpose,imageId:input.imageId,nonce:scope.expected.nonce});return {...scope,row:next,claimed:true};
   });
  }
- async function persist(input,context,purpose,proof){
+ async function persist(input,context,purpose,proof,provider=null){
   context.markMutationAttempted();
   return transaction(context,async tx=>{
    const scope=await lease(tx,input,context,purpose),row=await read(tx,ref('operations',scope.token));
    const validated=snapshotVerifiedMediaProof(proof,scope.expected);
    if(!row||row.ownerUid!==context.actorUid||!validated||hash(row.expected)!==hash(scope.expected))return false;
-   if(row.phase==='complete')return hash(row.proof)===hash(validated);
+   if(row.phase==='complete')return hash(row.proof)===hash(validated)&&hash(row.provider??null)===hash(provider);
    if(row.phase!=='attempting'||scope.asset.revision!==input.expectedRevision||scope.asset.state!==(purpose==='upload'?'uploading':'deleting'))return false;
    if(purpose==='upload'){
     const p=row.processed;
     if(!p||proof.processedDigest!==p.digest||proof.byteSize!==p.byteSize||proof.width!==p.width||proof.height!==p.height||proof.contentType!==p.contentType||proof.metadataStripped!==true||proof.contentScanned!==true||proof.deliveryType!=='authenticated'||!safeId(proof.assetId))return false;
    }else if(scope.asset.references.length!==0||proof.status!=='absent'||proof.definitive!==true||proof.operationSettled!==true)return false;
-   tx.set(ref('operations',scope.token),{...row,phase:'complete',proof:{...validated}});tx.set(ref('audits',scope.token),{ownerUid:context.actorUid,proofDigest:hash(validated),committedAt:sdk.serverTimestamp()});return true;
+   tx.set(ref('operations',scope.token),{...row,phase:'complete',proof:{...validated},provider});tx.set(ref('audits',scope.token),{ownerUid:context.actorUid,proofDigest:hash(validated),providerDigest:hash(provider),committedAt:sdk.serverTimestamp()});return true;
   });
  }
  async function acceptUpload(input,context,inspection){
   const scope=await stored(input,context,'upload'),v=copyRecord(inspection,['assetId','publicId','version','resourceType','deliveryType','format','byteSize','width','height','digest']),p=scope.row?.processed;
   if(!v||!p||v.publicId!==scope.expected.publicId||!Number.isSafeInteger(v.version)||v.version<1||v.resourceType!=='image'||v.deliveryType!=='authenticated'||v.format!=='webp'||v.digest!==p.digest)return false;
-  return persist(input,context,'upload',{...scope.expected,status:'present',assetId:v.assetId,deliveryType:'authenticated',metadataStripped:true,contentScanned:true,byteSize:v.byteSize,width:v.width,height:v.height,contentType:'image/webp',processedDigest:v.digest});
+  return persist(input,context,'upload',{...scope.expected,status:'present',assetId:v.assetId,deliveryType:'authenticated',metadataStripped:true,contentScanned:true,byteSize:v.byteSize,width:v.width,height:v.height,contentType:'image/webp',processedDigest:v.digest},{assetId:v.assetId,publicId:v.publicId,version:v.version,digest:v.digest});
  }
  const valid=request=>{const r=copyRecord(request,['requestId','imageId','expectedRevision']);return r&&safeId(r.requestId)&&imageId(r.imageId)&&Number.isSafeInteger(r.expectedRevision)&&r.expectedRevision>0?r:null;};
  const run=(request,options,purpose,work)=>{

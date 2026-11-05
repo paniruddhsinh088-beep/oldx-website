@@ -1,5 +1,5 @@
 // Web-standard Vercel handler artifact. No root api/ entrypoints are installed.
-const routes={marketplace:new Set(['save','owner','archive']),media:new Set(['status','recover','remove','reconcileUpload','reconcileDelete'])};
+const routes={marketplace:new Set(['save','owner','archive']),media:new Set(['ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete'])};
 const response=(status,code)=>Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 function createCommandFetchHandler({namespace,operation,options={enabled:false},loadRuntime,bodyTimeoutMs=5000}={}){
  return Object.freeze({async fetch(request){

@@ -27,3 +27,9 @@ test('uploading status with an existing durable proof finalizes through recover,
  assert.equal((await p.upload(request)).ok,false);assert.equal((await p.upload(request)).ok,true);assert.equal(sends,1);assert.deepEqual(commands,['status','recover']);
  const restored=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>identity(s),sendUpload:()=>assert.fail('no file upload on refresh'),sendCommand:async op=>op==='status'?{status:200,body:{ok:true,state:'uploading',parentRevision:1}}:ok});restored.setScope(scope);assert.equal((await restored.recover(request)).ok,true);
 });
+test('owner references restore saved managed IDs without making the draft dirty; late account reads are rejected',async()=>{
+ let release;const p=createAuthenticatedPhotoClient({enabled:true,getToken:async s=>identity(s),sendCommand:async op=>{assert.equal(op,'ownerPhotos');return new Promise(r=>release=r);}});p.setScope(scope);
+ const pending=p.ownerReferences({kind:'product',parentId:'parent',expectedParentRevision:1});await new Promise(r=>setTimeout(r,0));release({status:200,body:{ok:true,parentId:'parent',parentRevision:1,photoRevision:1,photos:[{kind:'managed',imageId}]}});const result=await pending;assert.equal(result.ok,true);
+ const model=createMandatoryPhotos({enabled:true,kind:'product'});model.setScope(scope);assert.equal(model.restoreReferences(result.photos),true);assert.equal(model.snapshot().changed,false);assert.equal(model.references()[0].imageId,imageId);
+ const stale=p.ownerReferences({kind:'product',parentId:'parent',expectedParentRevision:1});await new Promise(r=>setTimeout(r,0));p.setScope({...scope,uid:'other'});release({status:200,body:{ok:true,parentId:'parent',parentRevision:1,photoRevision:1,photos:[{kind:'managed',imageId}]}});assert.equal((await stale).ok,false);
+});

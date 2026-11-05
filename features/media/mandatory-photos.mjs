@@ -3,6 +3,7 @@ export const PHOTO_LIMITS=Object.freeze({product:Object.freeze({count:6,bytes:3*
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v);
 export const isManagedPhoto=v=>{try{return v&&Object.getPrototypeOf(v)===Object.prototype&&Reflect.ownKeys(v).sort().join(',')==='imageId,kind'&&['kind','imageId'].every(k=>Object.hasOwn(Object.getOwnPropertyDescriptor(v,k),'value'))&&v.kind==='managed'&&/^[A-Za-z0-9_-]{20,80}$/.test(v.imageId);}catch{return false;}};
 const typeOf=b=>b[0]===255&&b[1]===216&&b[2]===255?'image/jpeg':b.length>=8&&[137,80,78,71,13,10,26,10].every((v,i)=>b[i]===v)?'image/png':b.length>=12&&String.fromCharCode(...b.slice(0,4))==='RIFF'&&String.fromCharCode(...b.slice(8,12))==='WEBP'?'image/webp':null;
+export const imageContentType=typeOf;
 // Local selection/progress only. It cannot prove decoding, ownership, moderation
 // or public release. Those are independently enforced by the injected server.
 export function createMandatoryPhotos({enabled=false,kind,upload,recover,makeRequestId=()=>globalThis.crypto.randomUUID(),createPreview=()=>null,revokePreview=()=>{},onChange=()=>{},timeoutMs=10000}={}){
@@ -27,6 +28,7 @@ export function createMandatoryPhotos({enabled=false,kind,upload,recover,makeReq
  emit();return Object.freeze({snapshot,select,upload:send,retry:send,clear,setOnline(value){online=value===true;if(!online){epoch++;selectionVersion++;for(const item of items){item.reader?.clear();if(item.status==='uploading')item.status='retry';}error='offline';}else error=null;emit();},
   setScope(value){const next=value&&id(value.uid)&&id(value.sessionId)&&id(value.parentId)&&Number.isSafeInteger(value.revision)&&value.revision>=0?{uid:value.uid,sessionId:value.sessionId,parentId:value.parentId,revision:value.revision}:null;if(!sameScope(next)){clear();scope=next;}},
   remove(key){const index=items.findIndex(i=>i.key===key);if(index<0)return false;dispose(items[index]);items.splice(index,1);changed=true;error=null;emit();return true;},
+  restoreReferences(photos){if(!enabled||!scope||changed||items.length||!Array.isArray(photos)||photos.length>policy.count||!photos.every(isManagedPhoto))return false;items=photos.map(p=>({key:'photo-'+(++sequence),requestId:null,bytes:null,contentType:null,preview:null,status:'uploaded',progress:100,imageId:p.imageId,reader:null}));emit();return true;},
   pendingReceipts(){return items.filter(i=>i.requestId).map(i=>({requestId:i.requestId}));},
   restoreReceipts(tickets){if(!enabled||!scope||!Array.isArray(tickets)||tickets.length>policy.count||items.length||tickets.some(t=>!t||Object.keys(t).join(',')!=='requestId'||!id(t.requestId))||new Set(tickets.map(t=>t.requestId)).size!==tickets.length)return false;items=tickets.map(t=>({key:'photo-'+(++sequence),requestId:t.requestId,bytes:null,contentType:null,preview:null,status:'retry',progress:0,imageId:null,reader:null}));changed=items.length>0;emit();return true;},
   references(){return items.filter(i=>i.status==='uploaded').map(i=>({kind:'managed',imageId:i.imageId}));}

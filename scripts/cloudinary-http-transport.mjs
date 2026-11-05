@@ -118,11 +118,11 @@ export function createCloudinaryHttpTransport({enabled=false,mode,fetchImpl,getC
   },
   async readApprovedDerivative(input,context){
    const r=copyRecord(input,['derivativeId','version','maxBytes']);if(!active||!r||!safeId(r.derivativeId)||!positive(r.version)||r.maxBytes!==MAX||typeof resolveDerivative!=='function')fail();
-   const target=copyRecord(await resolveDerivative({derivativeId:r.derivativeId,version:r.version},context),['assetId','publicId','version','digest']);
-   if(!target||target.version!==r.version||!same(target.digest,target.digest))fail();
-   const {digest:expected,...scope}=target;await authorized('deliver',scope,context);const result=await inspect(scope,context);
+   const value=await resolveDerivative({derivativeId:r.derivativeId,version:r.version},context),target=copyRecord(value,['assetId','publicId','version','digest',...(Object.hasOwn(value??{},'releaseVersion')?['releaseVersion']:[])]);
+   if(!target||(target.releaseVersion??target.version)!==r.version||!same(target.digest,target.digest))fail();
+   const {digest:expected,releaseVersion,...scope}=target;await authorized('deliver',scope,context);const result=await inspect(scope,context);
    if(!same(result.digest,expected))fail();await authorized('deliver',scope,context);
-   const fresh=await resolveDerivative({derivativeId:r.derivativeId,version:r.version},context);if(!fresh||fresh.assetId!==target.assetId||fresh.publicId!==target.publicId||fresh.version!==target.version||fresh.digest!==target.digest)fail();
+   const fresh=await resolveDerivative({derivativeId:r.derivativeId,version:r.version},context);if(!fresh||fresh.assetId!==target.assetId||fresh.publicId!==target.publicId||fresh.version!==target.version||fresh.digest!==target.digest||fresh.releaseVersion!==target.releaseVersion)fail();
    return {derivativeId:r.derivativeId,version:r.version,contentType:'image/webp',bytes:result.bytes};
   }
  });

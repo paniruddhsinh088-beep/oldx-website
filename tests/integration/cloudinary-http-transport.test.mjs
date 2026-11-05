@@ -86,3 +86,8 @@ test('revoked delete lease and ambiguous delete acknowledgement never release qu
  for(const mode of ['revoked','unknown']){const f=fixture(),fetch=f.options.fetchImpl;let authorizations=0,deleteAttempts=0;f.options.authorizeAsset=async()=>mode!=='revoked'||++authorizations<2;f.options.fetchImpl=async(url,init)=>{if(init.method==='DELETE'){deleteAttempts++;if(mode==='unknown')return json({deleted:{foreign:'deleted'}});}return fetch(url,init);};
  await assert.rejects(f.create().destroy(request,ctx()));assert.equal(deleteAttempts,mode==='unknown'?1:0);}
 });
+test('approved release version maps to independently verified provider version, never to a guessed CDN version',async()=>{
+ const f=fixture({resolveDerivative:async()=>({...identity,digest:hash(bytes),releaseVersion:2})});
+ const result=await f.create().readApprovedDerivative({derivativeId:'approved-1',version:2,maxBytes:3*1024*1024},ctx());assert.equal(result.version,2);assert.ok(f.calls.some(c=>c.url.includes('/v120/')));assert.ok(!f.calls.some(c=>c.url.includes('/v2/')));
+ await assert.rejects(f.create().readApprovedDerivative({derivativeId:'approved-1',version:3,maxBytes:3*1024*1024},ctx()));
+});

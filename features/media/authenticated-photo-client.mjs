@@ -1,3 +1,4 @@
+import {isManagedPhoto} from './mandatory-photos.mjs';
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v);
 const failed=code=>({ok:false,code});
 const scopeOf=v=>v&&id(v.uid)&&id(v.sessionId)&&id(v.parentId)&&Number.isSafeInteger(v.revision)&&v.revision>0?{uid:v.uid,sessionId:v.sessionId,parentId:v.parentId,revision:v.revision}:null;
@@ -31,6 +32,10 @@ export function createAuthenticatedPhotoClient({enabled=false,getToken,sendUploa
  }
  return Object.freeze({
   setScope(value){const next=scopeOf(value);if(JSON.stringify(next)!==JSON.stringify(scope)){epoch++;for(const controller of requests)controller.abort();requests.clear();pending.clear();scope=next;}},
+  ownerReferences(r,context={}){return run({...r,requestId:'owner-photos'},context,async(auth,current)=>{
+   if(typeof sendCommand!=='function')return failed('UNAVAILABLE');const response=await sendCommand('ownerPhotos',{kind:r.kind,parentId:r.parentId,expectedParentRevision:r.expectedParentRevision},auth);if(!current())return failed('CANCELLED');const v=response?.body;
+   return response?.status===200&&v?.ok===true&&v.parentId===r.parentId&&v.parentRevision===r.expectedParentRevision&&Number.isSafeInteger(v.photoRevision)&&v.photoRevision>=0&&Array.isArray(v.photos)&&v.photos.length<=(r.kind==='store'?1:6)&&v.photos.every(isManagedPhoto)?{ok:true,photos:v.photos.map(p=>({...p})),photoRevision:v.photoRevision}:failed('UNAVAILABLE');
+  });},
   recover:(r,context={})=>run(r,context,(auth,current)=>recoverStatus(r,auth,current)),
   upload(r,context={}){return run(r,context,async(auth,current)=>{
    if(typeof sendUpload!=='function'||!(r.bytes instanceof Uint8Array)||r.bytes.length<1||r.bytes.length>3*1024*1024)return failed('INVALID_IMAGE');
