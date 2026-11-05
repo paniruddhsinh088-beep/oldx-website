@@ -6,7 +6,7 @@ import {getAuth as webAuth,connectAuthEmulator,signInWithEmailAndPassword,signOu
 import {getFirestore as webFirestore,connectFirestoreEmulator,doc,getDoc} from 'firebase/firestore';
 import {createEmulatorMarketplaceRuntime,createStagingMarketplaceRuntime} from '../../functions/staging-marketplace/runtime.mjs';
 import {STAGING_MARKETPLACE_COLLECTIONS as c} from '../../scripts/staging-marketplace-context.mjs';
-let app,client,db,auth,runtime,ownerToken,otherToken,productId,failAtomic=false;
+let app,client,db,auth,runtime,ownerToken,otherToken,foreignToken,productId,failAtomic=false;
 const projectId='demo-oldx-admin-runtime';
 const profile={title:'મૂળ हिन्दी',description:'Synthetic',category:'cars',locationLabel:'Sample',basePrice:100,isSold:false,storeId:null,photos:[]};
 const body={kind:'product',requestId:'native-create',id:null,expectedRevision:0,publication:'draft',profile};
@@ -17,10 +17,10 @@ before(async()=>{
  if(process.env.FIRESTORE_EMULATOR_HOST!=='127.0.0.1:8088'||process.env.FIREBASE_AUTH_EMULATOR_HOST!=='127.0.0.1:9098'||process.env.GCLOUD_PROJECT!==projectId)throw Error('Isolated demo Emulators required');
  app=initializeApp({projectId},'native-runtime');db=getFirestore(app);db.settings({host:'127.0.0.1:8088',ssl:false});auth=getAuth(app);
  client=webApp({projectId,apiKey:'fake-api-key'},'native-web');const a=webAuth(client);connectAuthEmulator(a,'http://127.0.0.1:9098',{disableWarnings:true});connectFirestoreEmulator(webFirestore(client),'127.0.0.1',8088);
- for(const uid of ['owner','other']){
+ for(const uid of ['owner','other','foreign']){
   await auth.createUser({uid,email:uid+'@example.test',password:'Synthetic-Test-Only-123'});
   const user=(await signInWithEmailAndPassword(a,uid+'@example.test','Synthetic-Test-Only-123')).user;
-  if(uid==='owner')ownerToken=await user.getIdToken();else otherToken=await user.getIdToken();
+  if(uid==='owner')ownerToken=await user.getIdToken();else if(uid==='other')otherToken=await user.getIdToken();else foreignToken=await user.getIdToken();
   await db.collection(c.actors).doc(uid).set({uid,canWrite:true,canPublish:true,suspended:false});
  }
  await db.collection(c.generations).doc('current').set({value:0});runtime=createEmulatorMarketplaceRuntime(options());
@@ -124,6 +124,11 @@ test('REAL native Provider public discovery/detail validates projection, paginat
 });
 test('REAL native Provider media journal, references, album quotas and safe deletion',async()=>{
  const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs'),{exerciseProviderMedia}=await import('../integration/provider-media-cases.mjs');await exerciseProviderMedia({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value),read:async(c,id)=>(await db.collection(c).doc(id).get()).data()});
+});
+test('REAL native Provider contact, private inbox and two-way conversation host',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs'),{createEmulatorMarketplaceEnforcement}=await import('../../scripts/provider-enforcement-adapters.mjs'),{exerciseNativeProviderContact}=await import('../integration/provider-native-contact-cases.mjs');
+ const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
+ await exerciseNativeProviderContact({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value),verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,buyerToken:otherToken,foreignToken,adminAuth:auth});
 });
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');

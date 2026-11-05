@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {getIsolatedProviderSdkContext} from './firebase-provider-repository.mjs';
 import {isolatedFirestoreContext,safeId,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
@@ -14,17 +15,22 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const chat=conversationSchema?isolatedFirestoreContext({firestore,sdk,schema:conversationSchema,roles:['threads','messages','receipts','audits']}).collections:null;
  if(chat&&Object.values(chat).some(path=>[...Object.values(p),...Object.values(c)].includes(path)))throw new Error('Overlapping conversation mapping');
+ return enquiryRepository({sdk,catalog,now},{db,p,c,chat});
+}
+function enquiryRepository({sdk,catalog,now=Date.now},{db,p,c,chat,native}){
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid canonical identity');return sdk.doc(db,paths[role],id);};
  const receipt=(uid,key,operation)=>ref(c,'receipts',hash([uid,operation,key]));
  return Object.freeze({async findEnquiryIds({providerId,actorUid,role,after,limit},context){
   if(!safeId(providerId)||!safeId(actorUid)||!['buyer','provider'].includes(role)||after!==null&&!safeId(after)||!Number.isInteger(limit)||limit<1||limit>21)throw new Error('Invalid bounded inbox');
-  isolatedTransactionCheck(context.signal,context.deadlineAt,now);const result=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.enquiries),sdk.where('providerId','==',providerId),sdk.where(role==='provider'?'providerUid':'buyerUid','==',actorUid),sdk.orderBy('id','asc'),...(after?[sdk.startAfter(after)]:[]),sdk.limit(limit)));isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.metadata?.fromCache!==false||result.metadata?.hasPendingWrites!==false||result.docs.length>limit)throw new Error('Untrusted inbox snapshot');return result.docs.map(doc=>doc.id);
+  isolatedTransactionCheck(context.signal,context.deadlineAt,now);
+  if(native){native.check();let query=db.collection(c.enquiries).where('providerId','==',providerId).where(role==='provider'?'providerUid':'buyerUid','==',actorUid).orderBy('id','asc').select('id');if(after!==null)query=query.startAfter(after);const result=await query.limit(limit).get();native.check();isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.docs.length>limit||result.docs.some(doc=>!safeId(doc.id)||doc.data()?.id!==doc.id))throw Error('Invalid private query');return result.docs.map(doc=>doc.id);}
+  const result=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.enquiries),sdk.where('providerId','==',providerId),sdk.where(role==='provider'?'providerUid':'buyerUid','==',actorUid),sdk.orderBy('id','asc'),...(after?[sdk.startAfter(after)]:[]),sdk.limit(limit)));isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.metadata?.fromCache!==false||result.metadata?.hasPendingWrites!==false||result.docs.length>limit)throw new Error('Untrusted inbox snapshot');return result.docs.map(doc=>doc.id);
  },async runTransaction(work,{signal,deadlineAt}={}){
   const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
   return sdk.runTransaction(db,async raw=>{
    const cache=new Map();let mutation=null,update=false,conversationMutation=null;check();
    async function get(reference){check();if(!cache.has(reference.path)){const snap=await raw.get(reference);check();const value=snap.exists()?snap.data():null;if(value){const {committedAt,...facts}=value;cache.set(reference.path,facts);}else cache.set(reference.path,null);}return cache.get(reference.path);}
-   const actor=uid=>get(ref(c,'actors',uid));
+   const actor=async uid=>{const value=await get(ref(c,'actors',uid));return native&&value?{uid:value.uid,canEnquire:value.canEnquire,suspended:value.suspended}:value;};
    async function provider(providerId){
     const publication=await get(ref(p,'publications',providerId)),identity=await get(ref(p,'identities',providerId)),view=await get(ref(p,'publicViews',providerId)),generation=await get(ref(p,'generations','current'));
     if(!publication||!identity||!view||!generation||!safeId(publication.ownerUid))return null;
@@ -49,4 +55,11 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
    check();raw.set(historyRef,{enquiryId:m.record.id,providerId:m.record.providerId,buyerUid:m.record.buyerUid,providerUid:m.record.providerUid,revision:m.record.revision,actorUid:m.audit.actorUid,status:m.record.status,text:update?(m.audit.action==='reply'?m.record.reply:null):m.record.note});raw.set(rowRef,{...m.record,committedAt:sdk.serverTimestamp()});raw.set(receiptRef,{...m.receipt,committedAt:sdk.serverTimestamp()});raw.set(auditRef,{...m.audit,committedAt:sdk.serverTimestamp()});check();return result;
   },{maxAttempts:3});
  }});
+}
+
+// Fixed staging-only namespaces; no initialization, credentials or live enablement.
+export function createStagingProviderEnquiryRepository({enabled=false,binding,catalog,now=Date.now}={}){
+ if(enabled!==true)return Object.freeze({runTransaction:async()=>{throw Error('Enquiry repository disabled');}});
+ const b=requireStagingMarketplaceBinding(binding);
+ return enquiryRepository({sdk:b.sdk,catalog,now},{db:b.db,p:b.providerCollections,c:b.enquiryCollections,chat:b.conversationCollections,native:b});
 }

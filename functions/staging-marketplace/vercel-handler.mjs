@@ -1,5 +1,5 @@
 // Web-standard Vercel handler artifact. No root api/ entrypoints are installed.
-const routes={'provider-media':new Set(['moderate','references','ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete','photos','photo']),marketplace:new Set(['save','owner','archive']),media:new Set(['ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete'])};
+const routes={provider:new Set(['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel','enquiry.change','enquiry.detail','enquiry.inbox']),'provider-conversation':new Set(['read','send']),'provider-media':new Set(['moderate','references','ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete','photos','photo']),marketplace:new Set(['save','owner','archive']),media:new Set(['ownerPhotos','status','recover','remove','reconcileUpload','reconcileDelete'])};
 const response=(status,code)=>Response.json({ok:false,error:{code}},{status,headers:{'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'}});
 function createCommandFetchHandler({namespace,operation,options={enabled:false},loadRuntime,bodyTimeoutMs=5000}={}){
  return Object.freeze({async fetch(request){
@@ -38,3 +38,6 @@ export const createMarketplaceFetchHandler=options=>createCommandFetchHandler({.
 export const createMediaCommandFetchHandler=options=>createCommandFetchHandler({...options,namespace:"media"});
 
 export const createProviderMediaCommandFetchHandler=options=>createCommandFetchHandler({...options,namespace:"provider-media"});
+
+export function createProviderCommandFetchHandler(options={}){return createCommandFetchHandler({...options,namespace:'provider',loadRuntime:async()=>{const host=await options.loadRuntime();return {handle:(_path,request,context)=>host.providerCommands.handle(options.operation,request,context)};}});}
+export function createProviderConversationFetchHandler(options={}){return createCommandFetchHandler({...options,namespace:'provider-conversation',loadRuntime:async()=>{const host=await options.loadRuntime();return {handle:(_path,request,context)=>host.conversation.handle(options.operation,request,context)};}});}

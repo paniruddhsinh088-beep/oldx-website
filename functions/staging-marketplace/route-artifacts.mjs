@@ -22,3 +22,8 @@ export function stagingProviderMediaRouteArtifacts(){
   `import {createProviderMediaFetchHandler} from '../../../functions/staging-marketplace/media-handler.mjs';\nexport default createProviderMediaFetchHandler({operation:'${operation}'});\n`
  ])));
 }
+
+export function stagingProviderRouteArtifacts(){
+ const groups=[['provider',['draft.save','publication.manage','owner.bootstrap','enquiry.create','enquiry.cancel','enquiry.change','enquiry.detail','enquiry.inbox'],'createProviderCommandFetchHandler'],['provider-conversation',['read','send'],'createProviderConversationFetchHandler']];
+ return Object.freeze(Object.fromEntries(groups.flatMap(([namespace,operations,factory])=>operations.map(operation=>[`api/staging/${namespace}/${operation}.mjs`,`import {${factory}} from '../../../functions/staging-marketplace/vercel-handler.mjs';\nexport default ${factory}({operation:'${operation}'});\n`]))));
+}

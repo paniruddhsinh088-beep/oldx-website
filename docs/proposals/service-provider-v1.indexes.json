@@ -3,7 +3,9 @@
     {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
     {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"services","arrayConfig":"CONTAINS"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
     {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"serviceArea","order":"ASCENDING"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
-    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"services","arrayConfig":"CONTAINS"},{"fieldPath":"serviceArea","order":"ASCENDING"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]}
+    {"collectionGroup":"serviceProviderPublic_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"services","arrayConfig":"CONTAINS"},{"fieldPath":"serviceArea","order":"ASCENDING"},{"fieldPath":"published","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
+    {"collectionGroup":"providerEnquiries_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"providerId","order":"ASCENDING"},{"fieldPath":"buyerUid","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]},
+    {"collectionGroup":"providerEnquiries_v1","queryScope":"COLLECTION","fields":[{"fieldPath":"providerId","order":"ASCENDING"},{"fieldPath":"providerUid","order":"ASCENDING"},{"fieldPath":"id","order":"ASCENDING"}]}
   ],
   "fieldOverrides": [
     {"collectionGroup":"serviceProviderDrafts_v1","fieldPath":"profile.description","indexes":[]},
