@@ -1660,6 +1660,8 @@
         let activeChatOtherUserId = null;
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
+        let activeTypingUnsubscribe = null;
+        let activeTypingGeneration = 0;
         let inboxListenerUnsubscribe = null;
         let userSavedAdsUnsubscribe = null;
 
@@ -2174,6 +2176,7 @@
         };
 
         auth.onAuthStateChanged(user => {
+            stopTypingStatus();
             window.currentUser = user;
             refreshStoreHeader(user);
             const container = document.getElementById('authContainer');
@@ -2535,6 +2538,7 @@
         }
 
         function closeFullChatPage() {
+            stopTypingStatus();
             if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
@@ -2627,10 +2631,20 @@
             });
         }
 
-        function watchTypingStatus(chatRoomId, otherUserId) {
-            if(!chatRoomId || !otherUserId) return;
+        function stopTypingStatus() {
+            // Invalidate queued callbacks before detaching the previous room.
+            activeTypingGeneration++;
+            if (activeTypingUnsubscribe) activeTypingUnsubscribe();
+            activeTypingUnsubscribe = null;
+        }
 
-            db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+        function watchTypingStatus(chatRoomId, otherUserId) {
+            stopTypingStatus();
+            if(!chatRoomId || !otherUserId) return;
+            const generation = activeTypingGeneration;
+
+            activeTypingUnsubscribe = db.collection('chats').doc(chatRoomId).onSnapshot(doc => {
+                if (generation !== activeTypingGeneration) return;
                 const statusEl = document.getElementById('chatUserStatus');
                 if (!statusEl) return;
 

@@ -29,8 +29,8 @@ test("review CI runs tests only and has read-only repository permissions", () =>
   assert.doesNotMatch(workflow, /firebase\s+deploy|vercel\s+deploy|gcloud\s+deploy/i);
 });
 
-test('owner-approved review Preview deployments leave Production policy unchanged', () => {
-  assert.deepEqual(vercelConfig.git?.deploymentEnabled, { 'security-hardening-review': true });
+test('review pushes cannot trigger deployments and leave Production policy unchanged', () => {
+  assert.deepEqual(vercelConfig.git?.deploymentEnabled, { 'security-hardening-review': false });
   // Other branch policies must not be changed through this review-only guard.
   assert.equal(Object.hasOwn(vercelConfig.git.deploymentEnabled, 'main'), false);
 });

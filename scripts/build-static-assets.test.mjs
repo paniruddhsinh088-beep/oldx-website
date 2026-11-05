@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { copyFile, mkdtemp, mkdir, readFile, readdir, rm, writeFile, symlink } from 'node:fs/promises';
+import { copyFile, mkdtemp, mkdir, readFile, readdir, rm, writeFile, symlink, rename, lstat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname, posix } from 'node:path';
 import { buildStaticAssets, BROWSER_ASSETS } from './build-static-assets.mjs';
@@ -56,17 +56,58 @@ test('rebuild removes stale private output and never copies server modules or pr
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
-test('missing config or symlinked asset fails before replacing any existing output', async () => {
+test('missing config fails before replacing any existing output', async () => {
   const root = await fixture();
   try {
     await mkdir(join(root, 'public'), { recursive: true });
     await writeFile(join(root, 'public', 'previous.html'), 'previous');
     await rm(join(root, 'firebase-env.js'));
     await assert.rejects(buildStaticAssets(root));
+    assert.deepEqual(await files(join(root, 'public')), ['previous.html']);
     assert.equal(await readFile(join(root, 'public', 'previous.html'), 'utf8'), 'previous');
-    await writeFile(join(root, 'private.json'), 'synthetic private material');
-    await symlink(join(root, 'private.json'), join(root, 'firebase-env.js'));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('linked asset ancestor is rejected before replacing output, including Windows junctions', async () => {
+  const root = await fixture();
+  try {
+    await mkdir(join(root, 'public'), { recursive: true });
+    await writeFile(join(root, 'public', 'previous.html'), 'previous');
+    const target = join(root, 'private-tree');
+    await rename(join(root, 'features'), target);
+    await writeFile(join(target, 'private-secret.json'), 'synthetic private material');
+    // Directory junctions need no Windows file-symlink privilege. Both forms are
+    // real filesystem links; exercise ancestor traversal, not a mocked stat.
+    await symlink(target, join(root, 'features'), process.platform === 'win32' ? 'junction' : 'dir');
+    assert.equal((await lstat(join(root, 'features'))).isSymbolicLink(), true);
+    assert.equal(await readFile(join(root, 'features', 'private-secret.json'), 'utf8'), 'synthetic private material');
+    await assert.rejects(buildStaticAssets(root), /Expected regular browser asset: features\//);
+    assert.deepEqual(await files(join(root, 'public')), ['previous.html']);
+    assert.equal(await readFile(join(root, 'public', 'previous.html'), 'utf8'), 'previous');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+// Exercise leaf-link rejection on every platform without privileged file links.
+test('linked config cannot package private file bytes', async () => {
+  const root = await fixture();
+  try {
+    await mkdir(join(root, 'public'), { recursive: true });
+    await writeFile(join(root, 'public', 'previous.html'), 'previous');
+    await rm(join(root, 'firebase-env.js'));
+    if (process.platform === 'win32') {
+      const target = join(root, 'private-config');
+      await mkdir(target);
+      await writeFile(join(target, 'private.json'), 'synthetic private material');
+      await symlink(target, join(root, 'firebase-env.js'), 'junction');
+      assert.equal(await readFile(join(root, 'firebase-env.js', 'private.json'), 'utf8'), 'synthetic private material');
+    } else {
+      await writeFile(join(root, 'private.json'), 'synthetic private material');
+      await symlink(join(root, 'private.json'), join(root, 'firebase-env.js'));
+      assert.equal(await readFile(join(root, 'firebase-env.js'), 'utf8'), 'synthetic private material');
+    }
+    assert.equal((await lstat(join(root, 'firebase-env.js'))).isSymbolicLink(), true);
     await assert.rejects(buildStaticAssets(root), /regular browser asset/);
+    assert.deepEqual(await files(join(root, 'public')), ['previous.html']);
     assert.equal(await readFile(join(root, 'public', 'previous.html'), 'utf8'), 'previous');
   } finally { await rm(root, { recursive: true, force: true }); }
 });

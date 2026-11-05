@@ -11,7 +11,6 @@
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <!-- Environment-specific config is generated during the Vercel build. -->
     <script src="firebase-env.js"></script>
     <script src="firebase-config-guard.js"></script>
@@ -61,6 +60,7 @@
     </header>
 
     <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <p id="adminBackendStatus" role="status" class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900">Admin data and deletion are unavailable until the secure Admin service is connected.</p>
         
         <!-- DASHBOARD STATS COUNTERS -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -195,7 +195,6 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const db = firebase.firestore();
 
         let allAdsCache = [];
         let allUsersCache = [];
@@ -240,40 +239,16 @@
         }
 
         async function fetchAllAdminData() {
-            try {
-                // 1. Fetch Stats & Traffic
-                const statsSnap = await db.collection('stats').doc('traffic').get();
-                if (statsSnap.exists) {
-                    document.getElementById('statTotalViews').innerText = statsSnap.data().totalViews || 0;
-                }
-
-                // 2. Fetch Ads
-                const adsSnap = await db.collection('products').get();
-                allAdsCache = [];
-                let featuredCount = 0;
-                adsSnap.forEach(doc => {
-                    const data = doc.id ? { docId: doc.id, ...doc.data() } : null;
-                    if(data) {
-                        allAdsCache.push(data);
-                        if (data.isFeatured) featuredCount++;
-                    }
-                });
-                document.getElementById('statTotalAds').innerText = allAdsCache.length;
-                document.getElementById('statFeaturedAds').innerText = featuredCount;
-                renderAdsTable(allAdsCache);
-
-                // 3. Fetch Users
-                const usersSnap = await db.collection('users').get();
-                allUsersCache = [];
-                usersSnap.forEach(doc => {
-                    allUsersCache.push({ uid: doc.id, ...doc.data() });
-                });
-                document.getElementById('statTotalUsers').innerText = allUsersCache.length;
-                renderUsersTable(allUsersCache);
-
-            } catch (err) {
-                console.error("Error fetching admin data:", err);
+            // The legacy browser UID gate is presentation only, never authority.
+            // No Firestore fallback before a reviewed trusted API is bound.
+            allAdsCache = [];
+            allUsersCache = [];
+            for (const id of ['statTotalViews', 'statTotalAds', 'statFeaturedAds', 'statTotalUsers']) {
+                document.getElementById(id).textContent = '—';
             }
+            renderAdsTable([]);
+            renderUsersTable([]);
+            return { ok: false, code: 'ADMIN_BACKEND_NOT_CONFIGURED' };
         }
 
         function addTextCell(row, value, className) {
@@ -327,18 +302,9 @@
         }
 
         function deleteAdminAd(docId) {
-            if (confirm("Are you sure you want to permanently delete this ad?")) {
-                db.collection('products').doc(docId).delete().then(() => {
-                    console.log("Successfully deleted from Firestore:", docId);
-                    allAdsCache = allAdsCache.filter(a => a.docId !== docId);
-                    document.getElementById('statTotalAds').innerText = allAdsCache.length;
-                    renderAdsTable(allAdsCache);
-                    alert("Ad successfully deleted!");
-                }).catch((error) => {
-                    console.error("Delete failed due to permission or network:", error);
-                    alert("Delete Failed! Error: " + error.message + "\n(Check Firebase Security Rules or Admin UID)");
-                });
-            }
+            // Deletion needs trusted authorization and an atomic mutation/audit.
+            // A caller-supplied ID or a visible UI button cannot grant access.
+            return { ok: false, code: 'ADMIN_BACKEND_NOT_CONFIGURED' };
         }
 
         function renderUsersTable(users) {

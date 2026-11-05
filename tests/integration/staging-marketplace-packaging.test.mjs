@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mkdtemp,readFile,writeFile,mkdir,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {resolve,dirname,relative} from 'node:path';
+import {resolve,dirname,relative,sep,isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {stagingMarketplaceRouteArtifacts,stagingMediaRouteArtifacts,stagingProviderMediaRouteArtifacts,stagingProviderRouteArtifacts} from '../../functions/staging-marketplace/route-artifacts.mjs';
@@ -10,7 +10,7 @@ const root=resolve(import.meta.dirname,'../..');
 test('generated staging routes package complete server import closure and remain disabled',async()=>{
  const output=await mkdtemp(resolve(tmpdir(),'oldx-staging-package-')),seen=new Set();
  async function copy(file){
-  if(seen.has(file))return;seen.add(file);assert.ok(file.startsWith(root+'/scripts/')||file.startsWith(root+'/functions/')||file.startsWith(root+'/features/'),relative(root,file));
+  if(seen.has(file))return;seen.add(file);const local=relative(root,file),parts=local.split(sep);assert.ok(!isAbsolute(local)&&!parts.includes('..')&&parts.length>1&&['scripts','functions','features'].includes(parts[0]),local);
   const source=await readFile(file,'utf8'),target=resolve(output,relative(root,file));await mkdir(dirname(target),{recursive:true});await writeFile(target,source);
   for(const match of source.matchAll(/(?:from\s*|import\s*\()(['"])(\.[^'"]+)\1/g))await copy(resolve(dirname(file),match[2]));
  }

@@ -4,7 +4,19 @@
 **Status:** Static source inspection; no runtime or deployed authorization claim.  
 **Safety:** No Firebase Rules, projects, user records, or deployments changed.
 
-## Confirmed legacy browser-side access
+## 6 November 2026 source-only follow-up
+
+The earlier inventory below describes the base revision. This local review removes
+Firestore SDK initialization, full collection reads and direct deletes from admin.html.
+The existing UI gate remains presentation only. Data/delete entry points return
+ADMIN_BACKEND_NOT_CONFIGURED with no network fallback; the page displays an
+unavailable-service notice. This intentionally leaves Admin unavailable until the
+reviewed trusted API is bound. It does not implement or activate an Admin backend.
+Two new no-I/O/source regressions pass as part of 117 Admin tests. Trusted role
+verification, bounded read DTOs, operation-specific validation and atomic mutation/
+audit deployment acceptance remain launch blockers. See docs/independent-audit-2026-11-06.md.
+
+## Historical confirmed legacy browser-side access
 
 Inspection of `admin.html` found:
 

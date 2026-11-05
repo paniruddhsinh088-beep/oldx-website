@@ -3,7 +3,7 @@
   "outputDirectory": "public",
   "git": {
     "deploymentEnabled": {
-      "security-hardening-review": true
+      "security-hardening-review": false
     }
   }
 }
