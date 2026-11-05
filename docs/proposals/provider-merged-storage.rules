@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // INACTIVE staging-only proposal. No Firebase Storage activation/Blaze.
+    // No browser reads/uploads/deletes for Product/Store/Provider/Chat media.
+    // Cloudinary signatures, managed references, moderation/quarantine and
+    // authenticated/private delivery are enforced by trusted server contracts.
+    // Existing provider URLs/Base64 are not rewritten or migrated by this file.
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

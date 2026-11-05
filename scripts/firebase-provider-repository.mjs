@@ -1,3 +1,4 @@
+import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {DISCOVERY_FIELDS} from '../features/service-providers/provider-discovery.mjs';
 const names=['actors','owners','identities','drafts','receipts','audits','permissions','publications','publicViews','generations'];
@@ -5,10 +6,8 @@ const id=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(value);
 const digest=values=>createHash('sha256').update(JSON.stringify(values)).digest('hex');
 // Actual modular Firebase transaction API, injection only. No SDK initialization,
 // environment credentials, network construction or production-enable mode.
-export function createIsolatedFirebaseProviderRepository({enabled=false,firestore,sdk,schema,photoPolicy,now=Date.now}={}){
- const unavailable=()=>{throw new Error('Isolated Provider repository unavailable');};
- if(enabled!==true)return Object.freeze({runTransaction:unavailable});
- const {db,collections}=getIsolatedProviderSdkContext({firestore,sdk,schema});
+function providerRepository({sdk,photoPolicy,publicationAllowed=true,now=Date.now}={}, {db,collections}){
+ const unavailable=()=>{throw new Error('Provider repository unavailable');};
  const ref=(name,key)=>{if(!id(key)&&!/^[a-f0-9]{64}$/.test(key))unavailable();return sdk.doc(db,collections[name],key);};
  const receiptRef=(uid,operation,key)=>ref('receipts',digest([uid,operation,key]));
  return Object.freeze({async runTransaction(callback,{signal,deadlineAt}={}){
@@ -30,7 +29,7 @@ export function createIsolatedFirebaseProviderRepository({enabled=false,firestor
     getGeneration:()=>fields(ref('generations','current'),['value']),
     getPublication:providerId=>get(ref('publications',providerId)),
     stagePrivateDraft:value=>{if(mutation)throw new Error('Duplicate staging');kind='draft';mutation=value;},
-    stagePublication:value=>{if(mutation)throw new Error('Duplicate staging');kind='publication';mutation=value;}
+    stagePublication:value=>{if(!publicationAllowed)throw Error('Provider publication media integration unavailable');if(mutation)throw new Error('Duplicate staging');kind='publication';mutation=value;}
    };
    const result=await callback(Object.freeze(tx));check();if(!mutation)return result;
    if(result?.ok!==true)throw new Error('Denied transaction cannot stage writes');
@@ -61,4 +60,17 @@ export function getIsolatedProviderSdkContext({firestore,sdk,schema}={}){
  if(!schema||Reflect.ownKeys(schema).sort().join(',')!==[...names].sort().join(',')||names.some(k=>typeof schema[k]!=='string'||!/^testProvider[A-Za-z0-9]{1,48}$/.test(schema[k]))||new Set(Object.values(schema)).size!==names.length||!['doc','runTransaction','serverTimestamp'].every(k=>typeof sdk?.[k]==='function'))unavailable();
  const collections=Object.freeze({...schema});
  return {db,collections};
+}
+
+const disabledProvider=()=>Object.freeze({runTransaction:()=>{throw Error('Provider repository unavailable');}});
+export function createIsolatedFirebaseProviderRepository(options={}){
+ if(options.enabled!==true)return disabledProvider();
+ return providerRepository(options,getIsolatedProviderSdkContext(options));
+}
+// Real Admin SDK facade; default-off and constrained by the existing branded
+// exact-project/Preview/namespace/transport checks. Never initializes an app.
+export function createStagingFirebaseProviderRepository(options={}){
+ if(options.enabled!==true)return disabledProvider();
+ const binding=requireStagingMarketplaceBinding(options.binding);
+ return providerRepository({...options,sdk:binding.sdk,publicationAllowed:false},{db:binding.db,collections:binding.providerCollections});
 }

@@ -1,3 +1,4 @@
+import {createProviderFirebaseSessionPorts} from './firebase-session-ports.mjs';
 import {mountWebsiteProviderPhotos} from './website-photos.mjs';
 import {mountProviderUiIntegration} from './ui-integration-dom.mjs';
 import { inspectSampleEnquiry } from './preview-enquiry.mjs';
@@ -20,7 +21,7 @@ import {
 
 // Only explicitly projected synthetic public data reaches rendering/share state.
 const websiteMode=new URL(location.href).searchParams.get('mode')==='website';
-let websitePhotos=null;
+let websitePhotos=null,websiteFirebase=null;
 let publicProfiles = (websiteMode?[]:demoProviders).map(provider => buildPublicProviderProfile({
   id: provider.id, displayName: provider.name, city: provider.city,
   serviceArea: provider.area, description: provider.about, services: provider.services,
@@ -472,6 +473,18 @@ export function configureProviderIntegration(options={}){
    render();if(state.status!=='ready'){const message=document.createElement('p');message.setAttribute('role','status');message.textContent=t('integration.read_'+state.status);$('results').replaceChildren(message);$('profileShareStatus').textContent=message.textContent;}
   }
  });const binding=providerIntegration;return Object.freeze({...binding,setSession(value){binding.setSession(value);if(providerIntegrationEnabled)syncRoute({force:true,focus:false});},restoreRoute:()=>syncRoute({force:true}),discover:()=>navigate('#services'),detail:request=>navigate('#provider/'+request.providerId),async openEnquiry(providerId){await navigate('#provider/'+providerId);if(currentProfile?.id===providerId)$('enquiryService').focus();},changeScope:()=>binding.changeScope()});
+}
+// Explicit source-only composition: the host supplies its EXISTING Auth instance
+// and approved server transport/public repository. No automatic live bootstrap.
+export function configureWebsiteProviderFirebase({enabled=false,auth,sendCommand,reads,catalog,...options}={}){
+ websiteFirebase?.destroy();websiteFirebase=null;
+ const ready=websiteMode&&enabled===true&&auth?.app?.options?.projectId==='oldx-staging'&&typeof sendCommand==='function'&&typeof reads?.discover==='function'&&typeof reads?.detail==='function';
+ let binding=null,session=null;
+ const ports=createProviderFirebaseSessionPorts({enabled:ready,auth,sendCommand,onSession:value=>{session=value;binding?.setSession(value);}});
+ binding=configureProviderIntegration({...options,enabled:ready,catalog,reads:ready?reads:undefined,commands:ports.commands,owner:ports.owner,buyer:{...options.buyer,commands:ports.commands}});
+ binding.setSession(session);
+ websiteFirebase=Object.freeze({...binding,destroy(){ports.destroy();binding.destroy();}});
+ return websiteFirebase;
 }
 if(websiteMode){
  const back=document.createElement('a');back.href='./index.html';back.className='btn';back.textContent='OLDX';document.querySelector('.nav-actions').prepend(back);

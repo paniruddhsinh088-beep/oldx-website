@@ -8,3 +8,8 @@ test('image preparation bounds decoded pixels and releases bitmap on cancellatio
  await assert.rejects(compressProviderPhoto(file,{document:{createElement:()=>assert.fail('no canvas for oversized dimensions')},createBitmap:async()=>({width:9000,height:100,close:()=>closed++})}));assert.equal(closed,1);
  const controller=new AbortController();await assert.rejects(compressProviderPhoto(file,{signal:controller.signal,document:{createElement:()=>assert.fail('no cancelled draw')},createBitmap:async()=>{controller.abort();return {width:1,height:1,close:()=>closed++};}}));assert.equal(closed,2);
 });
+
+test('merged staging Rules proposal preserves deny-all and is never selected for deployment',async()=>{
+ const config=JSON.parse(await readFile(new URL('../../firebase.json',import.meta.url),'utf8'));assert.equal(config.firestore,undefined);assert.equal(config.storage,undefined);
+ for(const name of ['provider-merged-firestore.rules','provider-merged-storage.rules']){const rules=await readFile(new URL('../../docs/proposals/'+name,import.meta.url),'utf8');assert.match(rules,/allow read, write: if false;/);assert.doesNotMatch(rules,/allow[^;]+if true/);}
+});

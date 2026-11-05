@@ -1,0 +1,38 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {createProviderFirebaseSessionPorts} from '../../features/service-providers/firebase-session-ports.mjs';
+import {createStagingFirebaseProviderRepository} from '../../scripts/firebase-provider-repository.mjs';
+import {createStagingMarketplaceBinding} from '../../scripts/staging-marketplace-context.mjs';
+import {createProviderV1Integration} from '../../scripts/provider-schema-v1.mjs';
+import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';
+import {providerJourneyFixture} from './provider-journey-acceptance.mjs';
+import {createProviderJourneyIntegration} from '../../features/service-providers/enquiry-integration.mjs';
+test('native Provider adapter reuses real transaction core but refuses production, forged binding and publication',async()=>{
+ assert.throws(()=>createStagingFirebaseProviderRepository().runTransaction());assert.throws(()=>createStagingFirebaseProviderRepository({enabled:true,binding:{}}));
+ const f=fakeFirestoreSdk(),adminFirestore={projectId:'oldx-staging',collection:name=>({doc:id=>f.sdk.doc(f.db,name,id)}),runTransaction:(work,opts)=>f.sdk.runTransaction(f.db,tx=>work({get:async ref=>{const snap=await tx.get(ref);return {exists:snap.exists(),data:snap.data};},set:(...a)=>tx.set(...a),delete:(...a)=>tx.delete(...a)}),opts)};
+ assert.throws(()=>createStagingMarketplaceBinding({projectId:'oldx-1c983',deploymentEnvironment:'preview',adminFirestore,FieldValue:{serverTimestamp:f.sdk.serverTimestamp}}));
+ const binding=createStagingMarketplaceBinding({projectId:'oldx-staging',deploymentEnvironment:'preview',adminFirestore,FieldValue:{serverTimestamp:f.sdk.serverTimestamp}}),c=binding.providerCollections;
+ f.seed(c.actors,'owner',{uid:'owner',canWrite:true,suspended:false});f.seed(c.permissions,'owner',{uid:'owner',canPublish:true,canWithdraw:true,suspended:false});f.seed(c.generations,'current',{value:0});
+ const repo=createStagingFirebaseProviderRepository({enabled:true,binding}),catalog={version:1,stateCode:'GJ',services:['Repair'],localities:[{city:'Ahmedabad',serviceArea:'Sample area'}]},owner=createProviderV1Integration({enabled:true,repository:repo,catalog,authenticate:()=>({uid:'owner'}),randomId:()=> 'opaque-native'});
+ const input={requestId:'native',expectedRevision:0,profile:{displayName:'મૂળ हिन्दी',city:'Ahmedabad',serviceArea:'Sample area',services:['Repair'],description:'Original',available:true,experienceYears:null,languages:['gu']}};
+ assert.equal((await owner.saveDraft(input)).ok,true);assert.equal((await owner.saveDraft(input)).status,'replayed');assert.equal((await owner.bootstrap({operation:null,requestId:null})).draft.displayName,input.profile.displayName);
+ assert.equal((await owner.managePublication({requestId:'publish',expectedRevision:1,expectedGeneration:0,action:'publish'})).ok,false);assert.equal(f.get(c.publicViews,'sp_opaque-native'),null);
+});
+
+test('existing Firebase Auth bridge preserves refresh scope and same-key retry through existing HTTP journey',async()=>{
+ const f=fakeFirestoreSdk(),fixture=await providerJourneyFixture({sdk:f.sdk,db:f.db,seed:(...a)=>f.seed(...a)});let listener,journey,session,count=0,lost=true;
+ const user={uid:'journey-provider',getIdToken:async()=> 'fake.test.token'},auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged:fn=>{listener=fn;return ()=>{};}};
+ const bridge=createProviderFirebaseSessionPorts({enabled:true,auth,makeSessionId:()=> 'session-'+(++count),onSession:value=>{session=value;journey?.setSession(value);},sendCommand:async(op,body,{credential})=>{assert.equal(credential,'fake.test.token');const r=await fixture.execute(op,body);if(lost&&op==='draft.save'){lost=false;throw Error('lost acknowledgement');}return r;}});
+ journey=createProviderJourneyIntegration({enabled:true,commands:bridge.commands,owner:bridge.owner,makeRequestId:()=> 'same-key'});listener(user);
+ await journey.owner.saveDraft(fixture.profile);assert.equal(journey.owner.snapshot().command.status,'unknown');const original=session.sessionId;listener({...user});assert.equal(session.sessionId,original);assert.equal(count,1);
+ await journey.owner.retry();assert.equal(journey.owner.snapshot().command.status,'saved');await journey.owner.bootstrap({restoreDraft:true});assert.equal(journey.owner.snapshot().owner.status,'ready');
+ auth.currentUser=null;listener(null);assert.equal(session,null);assert.equal(journey.owner.snapshot().owner.status,'idle');assert.equal((await bridge.commands.execute('draft.save',{}, {session:{uid:user.uid,sessionId:original}})).status,401);bridge.destroy();
+});
+
+test('Auth bridge rejects production/defaults, foreign scopes and stale token acquisition',async()=>{
+ let listener,resolve,sends=0;const user={uid:'owner',getIdToken:()=>new Promise(r=>resolve=r)},auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged:fn=>{listener=fn;return ()=>{};}};let session;
+ assert.equal((await createProviderFirebaseSessionPorts().commands.execute('draft.save',{})).status,503);
+ assert.equal((await createProviderFirebaseSessionPorts({enabled:true,auth:{...auth,app:{options:{projectId:'oldx-1c983'}}},sendCommand:()=>assert.fail()}).commands.execute('draft.save',{})).status,503);
+ const bridge=createProviderFirebaseSessionPorts({enabled:true,auth,makeSessionId:()=> 'safe-session',onSession:s=>session=s,sendCommand:()=>{sends++;}});listener(user);
+ assert.equal((await bridge.commands.execute('draft.save',{}, {session:{uid:'other',sessionId:'safe-session'}})).status,401);
+ const pending=bridge.commands.execute('draft.save',{}, {session});await Promise.resolve();auth.currentUser=null;listener(null);resolve('fake.test.token');assert.equal((await pending).status,401);assert.equal(sends,0);bridge.destroy();
+});

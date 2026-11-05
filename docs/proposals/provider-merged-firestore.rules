@@ -1,0 +1,16 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // INACTIVE staging-only MERGE PROPOSAL: preserve the reviewed deny-all
+    // baseline for legacy products/stores/users/chats/Admin and marketplace*_v1.
+    // serviceProviderActors/Owners/Identities/Drafts/Receipts/Audit/Permissions/
+    // Publications/Public/Generations_v1 remain SERVER-ONLY, including public
+    // projections: the bounded trusted server read port enforces publication.
+    // Never expose mixed legacy documents or allow browser ownership/role writes.
+    // Admin SDK bypasses client Rules; trusted server auth/rates/transactions
+    // remain mandatory. This file is NOT selected by firebase.json or deployed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

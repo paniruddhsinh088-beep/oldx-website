@@ -11,6 +11,11 @@ const fixtures=[
  ['stores/readiness-store',{ownerUid:'sample-owner',name:'Sample Store',published:true}],
  ['serviceProviders/readiness-legacy',{ownerUid:'sample-owner',status:'active'}],
  ['serviceProviderDrafts_v1/readiness-provider',{ownerUid:'sample-owner',revision:1}],
+ ['serviceProviderOwners_v1/sample-owner',{ownerUid:'sample-owner',providerId:'readiness-provider'}],
+ ['serviceProviderIdentities_v1/readiness-provider',{ownerUid:'sample-owner',providerId:'readiness-provider'}],
+ ['serviceProviderReceipts_v1/readiness-receipt',{actorUid:'sample-owner'}],
+ ['serviceProviderAudit_v1/readiness-audit',{actorUid:'sample-owner'}],
+ ['serviceProviderPermissions_v1/sample-owner',{uid:'sample-owner',canPublish:true}],
  ['serviceProviderPublic_v1/readiness-provider',{id:'readiness-provider',published:true,publicationEpoch:1}],
  ['users/sample-owner',{displayName:'Synthetic only',role:'user'}],
  ['chats/readiness-chat',{participants:['sample-owner','sample-buyer']}],
@@ -21,7 +26,7 @@ const fixtures=[
 let env;
 before(async()=>{
  if(process.env.FIRESTORE_EMULATOR_HOST!=='127.0.0.1:8080'||[process.env.GCLOUD_PROJECT,process.env.GOOGLE_CLOUD_PROJECT].some(p=>p&&p!=='demo-oldx-emulator'))throw Error('Loopback demo Emulator required');
- env=await initializeTestEnvironment({projectId:'demo-oldx-emulator',firestore:{rules:await readFile(new URL('./deny-all.rules',import.meta.url),'utf8')}});
+ env=await initializeTestEnvironment({projectId:'demo-oldx-emulator',firestore:{rules:await readFile(new URL('../../docs/proposals/provider-merged-firestore.rules',import.meta.url),'utf8')}});
  await env.withSecurityRulesDisabled(async context=>{for(const [path,value] of fixtures)await setDoc(doc(context.firestore(),path),value);});
 });
 after(async()=>{await env?.cleanup();});
