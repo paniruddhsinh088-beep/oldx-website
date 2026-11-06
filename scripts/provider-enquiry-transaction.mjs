@@ -44,14 +44,17 @@ export function createProviderEnquiryTransaction({enabled=false,authenticate,rep
 }
 
 // Private read mapping into the existing enquiry DTO/model; actor role is derived
-// from verified UID, never a request role. canonical/blocks are trusted fresh facts.
-export function projectProviderEnquiryRead(request,canonical,record,blocks,actorUid,{enabled=false}={}){
+// from verified UID, never a request role. Server-only business projection; public reads
+// must use the block-gated wrapper below. Notification policy checks both real edges.
+export function projectProviderEnquiryParticipant(request,canonical,record,actorUid,{enabled=false}={}){
  if(enabled!==true||!id(actorUid))return fail('UNAVAILABLE');
  const c=copy(canonical,['providerId','ownerUid','published','suspended','ownerActive','generation','services']);
  const r=copy(record,['id','providerId','providerUid','buyerUid','service','note','timing','status','revision','reply','buyerConfirmed','publicationGeneration']);
- const b=copy(blocks,['buyerBlocked','providerBlocked']);
- if(!c||!r||!b||b.buyerBlocked!==false||b.providerBlocked!==false||!id(c.ownerUid)||!id(r.buyerUid)||r.buyerUid===c.ownerUid||r.providerUid!==c.ownerUid||r.providerId!==c.providerId||c.published!==true||c.suspended!==false||c.ownerActive!==true||!Number.isSafeInteger(c.generation)||c.generation<r.publicationGeneration||!Number.isSafeInteger(r.publicationGeneration)||r.publicationGeneration<1||!['flexible','this-week'].includes(r.timing))return fail('UNAVAILABLE');
+ if(!c||!r||!id(c.ownerUid)||!id(r.buyerUid)||r.buyerUid===c.ownerUid||r.providerUid!==c.ownerUid||r.providerId!==c.providerId||c.published!==true||c.suspended!==false||c.ownerActive!==true||!Number.isSafeInteger(c.generation)||c.generation<r.publicationGeneration||!Number.isSafeInteger(r.publicationGeneration)||r.publicationGeneration<1||!['flexible','this-week'].includes(r.timing))return fail('UNAVAILABLE');
  const actor=actorUid===r.buyerUid?{role:'buyer',id:actorUid}:actorUid===c.ownerUid?{role:'provider',id:c.providerId}:null;if(!actor)return fail('DENIED');
  const context={provider:{id:c.providerId,published:true,services:c.services},records:[{id:r.id,providerId:r.providerId,buyerId:r.buyerUid,service:r.service,note:r.note,status:r.status,revision:r.revision,reply:r.reply,buyerConfirmed:r.buyerConfirmed}]};
  return projectServiceIntegrationResponse(request,{providerId:c.providerId,revision:r.revision,published:true,context},actor,{enabled:true});
 }
+
+// All existing public read callers retain the original two-edge deny-by-default gate.
+export function projectProviderEnquiryRead(request,canonical,record,blocks,actorUid,options={}){const b=copy(blocks,['buyerBlocked','providerBlocked']);if(!b||b.buyerBlocked!==false||b.providerBlocked!==false)return fail('UNAVAILABLE');return projectProviderEnquiryParticipant(request,canonical,record,actorUid,options);}

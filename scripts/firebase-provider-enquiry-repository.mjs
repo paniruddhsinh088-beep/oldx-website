@@ -1,7 +1,10 @@
+import {readProviderConversationAuthority} from './provider-conversation-repository.mjs';
+import {validReadState} from './trusted-chat-read-state.mjs';
+import {providerMessageFacts} from './provider-message-facts.mjs';
 import {requireStagingMarketplaceBinding} from './staging-marketplace-context.mjs';
 import {createHash} from 'node:crypto';
 import {getIsolatedProviderSdkContext} from './firebase-provider-repository.mjs';
-import {isolatedFirestoreContext,safeId,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
+import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 import {projectPublicRow} from '../features/service-providers/provider-discovery.mjs';
 const roles=['actors','blocks','enquiries','receipts','audits','history'];
 export const ENQUIRY_TEST_SCHEMA=Object.freeze(Object.fromEntries(roles.map(k=>[k,'testOldxEnquiry'+k[0].toUpperCase()+k.slice(1)])));
@@ -22,15 +25,9 @@ export function createIsolatedProviderEnquiryRepository({enabled=false,firestore
 function enquiryRepository({sdk,catalog,now=Date.now,notificationOutbox=null,inboxIndex=null},{db,p,c,chat,native}){
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid canonical identity');return sdk.doc(db,paths[role],id);};
  const receipt=(uid,key,operation)=>ref(c,'receipts',hash([uid,operation,key]));
- return Object.freeze({async findEnquiryIds({providerId,actorUid,role,after,limit},context){
-  if(!safeId(providerId)||!safeId(actorUid)||!['buyer','provider'].includes(role)||after!==null&&!safeId(after)||!Number.isInteger(limit)||limit<1||limit>21)throw new Error('Invalid bounded inbox');
-  isolatedTransactionCheck(context.signal,context.deadlineAt,now);
-  if(native){native.check();let query=db.collection(c.enquiries).where('providerId','==',providerId).where(role==='provider'?'providerUid':'buyerUid','==',actorUid).orderBy('id','asc').select('id');if(after!==null)query=query.startAfter(after);const result=await query.limit(limit).get();native.check();isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.docs.length>limit||result.docs.some(doc=>!safeId(doc.id)||doc.data()?.id!==doc.id))throw Error('Invalid private query');return result.docs.map(doc=>doc.id);}
-  const result=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.enquiries),sdk.where('providerId','==',providerId),sdk.where(role==='provider'?'providerUid':'buyerUid','==',actorUid),sdk.orderBy('id','asc'),...(after?[sdk.startAfter(after)]:[]),sdk.limit(limit)));isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.metadata?.fromCache!==false||result.metadata?.hasPendingWrites!==false||result.docs.length>limit)throw new Error('Untrusted inbox snapshot');return result.docs.map(doc=>doc.id);
- },async runTransaction(work,{signal,deadlineAt}={}){
-  const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
-  return sdk.runTransaction(db,async raw=>{
-   const cache=new Map();let mutation=null,update=false,conversationMutation=null,conversationReadMutation=null;check();
+ const contexts=new WeakMap();
+ function readContext(raw,check=()=>{}){if(contexts.has(raw))return contexts.get(raw);
+   const cache=new Map();check();
    async function get(reference){check();if(!cache.has(reference.path)){const snap=await raw.get(reference);check();const value=snap.exists()?snap.data():null;if(value){const {committedAt,...facts}=value;cache.set(reference.path,facts);}else cache.set(reference.path,null);}return cache.get(reference.path);}
    const actor=async uid=>{const value=await get(ref(c,'actors',uid));return native&&value?{uid:value.uid,canEnquire:value.canEnquire,suspended:value.suspended}:value;};
    async function provider(providerId){
@@ -43,10 +40,28 @@ function enquiryRepository({sdk,catalog,now=Date.now,notificationOutbox=null,inb
    const tx={getEnquiryActor:actor,getPublishedProvider:provider,
     async getParticipantBlocks(buyerUid,providerUid){const a=await get(ref(c,'blocks',enquiryBlockKey(buyerUid,providerUid))),b=await get(ref(c,'blocks',enquiryBlockKey(providerUid,buyerUid)));return a?.blockerUid===buyerUid&&a.blockedUid===providerUid&&typeof a.blocked==='boolean'&&b?.blockerUid===providerUid&&b.blockedUid===buyerUid&&typeof b.blocked==='boolean'?{buyerBlocked:a.blocked,providerBlocked:b.blocked}:null;},
     async getEnquiryHistory(id,after,limit){const events=[];for(let revision=after+1;revision<=after+limit;revision++){const event=await get(ref(c,'history',hash([id,revision])));if(!event)break;events.push(event);}return events;},
-    getEnquiryReceipt:(uid,key,operation='create-provider-private-enquiry')=>get(receipt(uid,key,operation)),getEnquiryAudit:id=>get(ref(c,'audits',id)),getEnquiry:id=>get(ref(c,'enquiries',id)),
+    getEnquiryReceipt:(uid,key,operation='create-provider-private-enquiry')=>get(receipt(uid,key,operation)),getEnquiryAudit:id=>get(ref(c,'audits',id)),getEnquiry:id=>get(ref(c,'enquiries',id))
+   };
+   if(chat)Object.assign(tx,{getConversation:id=>get(ref(chat,'threads',id)),getConversationMessage:(id,n)=>get(ref(chat,'messages',hash([id,n]))),authorizeIndexedConversation:(id,uid,revision)=>inboxIndex?inboxIndex.assertAccessible(raw,{actorUid:uid,kind:'provider',threadId:id,revision}):false});
+   const value={tx,get};contexts.set(raw,value);return value;
+ }
+ const notificationReaders=chat?Object.freeze({
+  async readThread(raw,event){if(event?.kind!=='provider'||!safeId(event.threadId)||!safeId(event.recipientUid))return null;const {tx}=readContext(raw),t=await tx.getConversation(event.threadId);if(!t)return null;const a=await readProviderConversationAuthority(tx,{actorUid:event.recipientUid},{providerId:t.providerId,enquiryId:t.enquiryId},{notification:true});if(!a)return null;return {kind:'provider',threadId:a.thread.enquiryId,participantUids:[a.thread.buyerUid,a.thread.providerUid],active:true,revision:a.thread.revision};},
+  async readMessage(raw,event){if(event?.kind!=='provider'||!safeId(event.threadId)||!Number.isSafeInteger(event.sequence)||event.sequence<1||event.sequence>9999)return null;const {tx}=readContext(raw),t=await tx.getConversation(event.threadId),m=await tx.getConversationMessage(event.threadId,event.sequence);const canonical=t&&{id:t.enquiryId,buyerUid:t.buyerUid,sellerUid:t.providerUid,revision:t.revision,readState:t.readState};if(!canonical||!validReadState(canonical)||m?.providerId!==t.providerId||m.enquiryId!==t.enquiryId)return null;const prefix=copyRecord(m.readPrefix,['buyerReceived','sellerReceived']);if(!prefix||!['buyer','seller'].every(r=>Number.isSafeInteger(prefix[r+'Received'])&&prefix[r+'Received']>=0&&prefix[r+'Received']<=t.readState[r+'Received'])||prefix.buyerReceived+prefix.sellerReceived!==event.sequence)return null;return providerMessageFacts(m,t);},
+  async readBlock(raw,from,to){if(!safeId(from)||!safeId(to)||from===to)return null;return readContext(raw).get(ref(c,'blocks',enquiryBlockKey(from,to)));}
+ }):null;
+ return Object.freeze({notificationReaders,async findEnquiryIds({providerId,actorUid,role,after,limit},context){
+  if(!safeId(providerId)||!safeId(actorUid)||!['buyer','provider'].includes(role)||after!==null&&!safeId(after)||!Number.isInteger(limit)||limit<1||limit>21)throw new Error('Invalid bounded inbox');
+  isolatedTransactionCheck(context.signal,context.deadlineAt,now);
+  if(native){native.check();let query=db.collection(c.enquiries).where('providerId','==',providerId).where(role==='provider'?'providerUid':'buyerUid','==',actorUid).orderBy('id','asc').select('id');if(after!==null)query=query.startAfter(after);const result=await query.limit(limit).get();native.check();isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.docs.length>limit||result.docs.some(doc=>!safeId(doc.id)||doc.data()?.id!==doc.id))throw Error('Invalid private query');return result.docs.map(doc=>doc.id);}
+  const result=await sdk.getDocsFromServer(sdk.query(sdk.collection(db,c.enquiries),sdk.where('providerId','==',providerId),sdk.where(role==='provider'?'providerUid':'buyerUid','==',actorUid),sdk.orderBy('id','asc'),...(after?[sdk.startAfter(after)]:[]),sdk.limit(limit)));isolatedTransactionCheck(context.signal,context.deadlineAt,now);if(result.metadata?.fromCache!==false||result.metadata?.hasPendingWrites!==false||result.docs.length>limit)throw new Error('Untrusted inbox snapshot');return result.docs.map(doc=>doc.id);
+ },async runTransaction(work,{signal,deadlineAt}={}){
+  const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
+  return sdk.runTransaction(db,async raw=>{
+   let mutation=null,update=false,conversationMutation=null,conversationReadMutation=null;check();const {tx,get}=readContext(raw,check);Object.assign(tx,{
     stageEnquiry:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;},
     stageEnquiryUpdate:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;update=true;}
-   };
+   });
    if(chat)Object.assign(tx,{getConversation:id=>get(ref(chat,'threads',id)),authorizeIndexedConversation:(id,uid,revision)=>inboxIndex?inboxIndex.assertAccessible(raw,{actorUid:uid,kind:'provider',threadId:id,revision}):false,getConversationMessage:(id,n)=>get(ref(chat,'messages',hash([id,n]))),getConversationReceipt:(uid,key)=>get(ref(chat,'receipts',hash([uid,key]))),getConversationAudit:(uid,key)=>get(ref(chat,'audits',hash([uid,key]))),getConversationReadReceipt:(uid,key)=>get(ref(chat,'receipts',hash(['read-state',uid,key]))),getConversationReadAudit:(uid,key)=>get(ref(chat,'audits',hash(['read-state',uid,key]))),stageConversationRead:value=>{if(conversationMutation||conversationReadMutation)throw Error('Duplicate conversation mutation');conversationReadMutation=value;},stageConversation:value=>{if(conversationMutation||conversationReadMutation)throw new Error('Duplicate conversation mutation');conversationMutation=value;}});
    const result=await work(Object.freeze(tx));check();
    if(conversationReadMutation){

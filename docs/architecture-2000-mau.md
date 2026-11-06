@@ -437,3 +437,46 @@ real worker roles/preferences, durable provider/device acceptance, Store/Provide
 reviews/Media/Admin/Maps acceptance, staging inventory/Rules/rollback and realistic
 capacity. No live access/deployment/Rules/IAM/billing/secrets/main changes, no new
 dependency or design change. All new runtime paths remain OFF; HOLD/NO-GO.
+
+### 2026-11-06 — canonical Provider notification boundary (repository only)
+Start: 142f29e31f30904d20379d5bc28b9514e95e85a1; fetched remote equal before commit.
+Provider notification readers now reuse the canonical publication, multi-service,
+enquiry, participant and Chat authorization graph. Public reads/sends retain both
+block-edge gates; notification policy evaluates the actual edges and fresh worker/
+recipient ports. Strict shared message facts suppress hidden/deleted content and
+reject unknown/private fields, foreign participants, stale services and missing
+legacy prefixes. Provider Chat raw reads also fail closed for invisible messages.
+Two-way recording delivery is verified; real provider delivery remains disabled.
+Transaction-local facts are reused, never cached across requests or retry attempts.
+No history scans: measured Provider policy 15 point reads; message+queue 16R/5W;
+successful single-event worker 52R/4W (including 1 query document, enqueue excluded).
+This adds a missing secure integration, not a proven before/after aggregate saving.
+
+62 distinct checks passed, 0 final failures/skips: 45 Node/static, 12 Chrome,
+4 actual baseline Firestore Emulator, 1 native Admin SDK/Auth Emulator. An initial
+Emulator failure exposed a missing delete method in the metered SDK test wrapper;
+the wrapper was fixed, security assertions retained, and affected checks repeated.
+Commands/evidence:
+- Focused Node command: .firebase/provider-canonical-focused.log (45)
+- node --test tests/browser/service-messaging-integration.test.mjs tests/browser/provider-conversation-integration.test.mjs tests/browser/unified-inbox.test.mjs (12)
+- Baseline Emulator child: node --test tests/firestore-emulator/canonical-provider-notification-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs (4)
+- Native Emulator child: node --test --test-name-pattern="REAL native Provider contact" tests/firestore-emulator/admin-runtime-native.test.mjs (1)
+- Logs: .firebase/provider-canonical-browser.log, provider-canonical-baseline.log, provider-canonical-admin-runtime.log.
+
+2,000 MAU trace model is regression-tested, NOT hosted traffic or complete capacity
+acceptance. Assumptions: 5 messages/DAU/day, 50:50 Product/Provider, 20% retry/abuse,
+one discovery/retirement candidate per query, index OFF; lifecycle includes enqueue,
+worker, assumed retirement 5R/2W and API quota 2R/2W. Mixed message: 67R/13W.
+DAU 200 / 400 / 600 => daily reads 80,400 / 160,800 / 241,200; writes
+15,600 / 31,200 / 46,800. Excludes browsing, images, storage, read acknowledgments,
+index operations, idle polling, hosting/Auth/provider costs. All exceed the 70%
+Firestore free operating budget (35kR/14kW); zero-cost success is NOT established.
+Official quota checked 2026-11-06: https://firebase.google.com/docs/firestore/quotas
+(50k reads and 20k writes/day). No billing or architecture change made.
+
+Next: authoritative legacy hide/delete/block writers with index invalidation and
+signed-cursor/unread/tombstone parity; then real worker roles/preferences and
+provider/device acceptance. Store/Media/Admin/Maps and staging inventory/Rules/
+rollback acceptance still gate launch. Synthetic worker identities, recording
+transport and loopback Auth are not staging/live acceptance. No live access,
+deployment, Rules, IAM, credentials, billing, main or runtime activation; HOLD/NO-GO.
