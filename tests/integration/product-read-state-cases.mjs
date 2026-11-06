@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';import {createHash} from 'node:crypto';
 import {createIsolatedMarketplaceRepository,MARKETPLACE_TEST_SCHEMA as m} from '../../scripts/firebase-marketplace-repository.mjs';
 import {createIsolatedProductConversationRepository,PRODUCT_CONVERSATION_TEST_SCHEMA as c,productConversationBlockKey} from '../../scripts/firebase-product-conversation-repository.mjs';
 import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';
-export async function productReadStateAcceptance({sdk,db,seed,get,marketplaceSchema=m,chatSchema=c}){
+export async function productReadStateAcceptance({sdk,db,seed,get,marketplaceSchema=m,chatSchema=c,notificationOutbox=null}){
  const m=marketplaceSchema,c=chatSchema;
  let uid='read-buyer',ops={reads:0,writes:0,paths:[]};const metered={...sdk,runTransaction:(db,work,options)=>sdk.runTransaction(db,tx=>work({...tx,get:async ref=>{ops.reads++;ops.paths.push(ref.path);return tx.get(ref);},set:(...args)=>{ops.writes++;return tx.set(...args);}}),options)};
- const codec=createProviderDiscoveryCursorCodec({key:new Uint8Array(32).fill(7)}),base={enabled:true,firestore:db,sdk:metered,schema:c,marketplaceSchema:m,authenticate:()=>uid?{uid}:null,...codec};
+ const codec=createProviderDiscoveryCursorCodec({key:new Uint8Array(32).fill(7)}),base={enabled:true,firestore:db,sdk:metered,schema:c,marketplaceSchema:m,notificationOutbox,authenticate:()=>uid?{uid}:null,...codec};
  for(const actor of ['read-buyer','read-seller','read-foreign'])await seed(c.actors,actor,{uid:actor,canInteract:true,suspended:false});
  await seed(m.actors,'read-seller',{uid:'read-seller',canWrite:true,canPublish:true,suspended:false});await seed(m.generations,'current',{value:0});
  for(const[a,b]of[['read-buyer','read-seller'],['read-seller','read-buyer']])await seed(c.blocks,productConversationBlockKey(a,b),{blockerUid:a,blockedUid:b,blocked:false});

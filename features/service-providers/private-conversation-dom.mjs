@@ -40,10 +40,10 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('conversationHeading').textContent=translate(textMessaging?'market.provider.messages':'market.provider.privateHistory');if(textMessaging){root.querySelector('label[for=messageDraft]').textContent=translate('market.provider.messageDraft');root.querySelector('#main > p.notice').textContent=translate('market.provider.messageNotice');}
   $('inboxLink').textContent=translate('conversation.back');if(selected)history(selected);
  }
- model=(textMessaging?createServiceConversationIntegration:createProviderPrivateIntegration)({...options,...(textMessaging?messaging:{}),enabled,onChange:render,onPrivate:value=>{
+ model=(textMessaging?createServiceConversationIntegration:createProviderPrivateIntegration)({...options,...(textMessaging?messaging:{}),enabled,onAcknowledged:()=>{(textMessaging?messaging.onAcknowledged:options.onAcknowledged)?.();root.dispatchEvent(new view.CustomEvent('oldx:chat-read-state-changed'));},onChange:render,onPrivate:value=>{
   clear();if(!value)return;selected=value;const thread=textMessaging?value.thread:value;
   $('conversationService').textContent=(textMessaging?thread.service:value.detail.service)+' · '+thread.enquiryId;
-  history(value);
+  history(value);if(textMessaging)queueMicrotask(()=>{if(root.visibilityState!=='hidden'&&$('messages').getClientRects().length)model.acknowledgeVisible();});
   $('conversationEmpty').hidden=(textMessaging?value.messages:value.events).length!==0;
  }});
  async function restore(){
@@ -62,6 +62,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  listen($('inboxLink'),'click',event=>{if(typeof openInbox!=='function')return;event.preventDefault();event.stopImmediatePropagation();const current=route();if(current){model.changeScope();openInbox({providerId:current.providerId,enquiryId:current.enquiryId});}});
  listen($('localeSelect'),'change',async event=>{event.stopImmediatePropagation();const version=++localeRevision,catalog=await loadTranslator(event.target.value);if(!active||version!==localeRevision)return;translate=key=>catalog.t(key);applyCatalog(root,catalog);render(model.snapshot());});
  for(const type of ['popstate','hashchange'])listen(view,type,event=>{event.stopImmediatePropagation();restore();});
+ listen(root,'visibilitychange',()=>{if(root.visibilityState!=='hidden'&&$('messages').getClientRects().length)model.acknowledgeVisible?.();});
  listen(view,'offline',()=>model.setOnline(false));listen(view,'online',()=>model.setOnline(true));
  listen(view,'pagehide',()=>{active=false;localeRevision++;model.clear();clear();session=null;});
  const api=Object.freeze({model,restoreRoute:restore,changeScope(){model.changeScope();clear();},

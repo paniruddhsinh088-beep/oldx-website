@@ -1,3 +1,4 @@
+import {createReadAcknowledgement,validReadReceipt} from '../chat/read-acknowledgement.mjs';
 import {isManagedPhoto} from '../media/mandatory-photos.mjs';
 import {createBoundedRead} from '../shared/bounded-read.mjs';
 import {normalizeMessageDraft} from '../chat/message-text.mjs';
@@ -8,12 +9,13 @@ export function projectProduct(value){if(!exact(value,publicKeys)||!id(value.id)
 const thread=v=>exact(v,['id','productId','productRevision','revision','role'])&&id(v.id)&&id(v.productId)&&rev(v.productRevision)&&rev(v.revision)&&['buyer','seller'].includes(v.role)?{...v}:null;
 // Session is a cancellation scope only. All ownership/authentication is enforced
 // by injected trusted ports. No Firebase, fetch, storage, credentials or globals.
-export function createProductIntegration({enabled=false,ports={},onChange=()=>{},onPrivate=()=>{},onOwnerDraft=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),timeoutMs=5000}={}){
+export function createProductIntegration({enabled=false,readStateEnabled=false,ports={},onAcknowledged=()=>{},onChange=()=>{},onPrivate=()=>{},onOwnerDraft=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),timeoutMs=5000}={}){
  let session=null,online=true,epoch=0,pending=null,commandRead=null,command={status:enabled?'idle':'disabled',canRetry:false},owner=null,detail=null,items=[],nextCursor=null,lastCategory='',inbox=[],inboxCursor=null,lastInboxRole='seller',privateThread=null,historyAfter=0,historyHasMore=false;
+ const ack=createReadAcknowledgement({enabled:enabled===true&&readStateEnabled===true,timeoutMs,execute:(body,ctx)=>ports.acknowledge(body,{...ctx,session:session&&{...session}}),onAcknowledged,onChange:()=>emit()});let delivery=null;
  const readers=new Map(),statuses={};
- const snapshot=()=>structuredClone({command,owner,detail,items,nextCursor,authenticated:!!session,inbox,inboxCursor,historyHasMore,thread:privateThread,statuses});
+ const snapshot=()=>structuredClone({readAcknowledgement:ack.snapshot(),command,owner,detail,items,nextCursor,authenticated:!!session,inbox,inboxCursor,historyHasMore,thread:privateThread,statuses});
  const emit=()=>onChange(snapshot());
- function clearReads(){for(const r of readers.values())r.clear();readers.clear();items=[];nextCursor=null;detail=null;inbox=[];inboxCursor=null;privateThread=null;historyAfter=0;historyHasMore=false;onOwnerDraft(null);onPrivate(null);for(const k of Object.keys(statuses))delete statuses[k];}
+ function clearReads(){ack.clear();delivery=null;for(const r of readers.values())r.clear();readers.clear();items=[];nextCursor=null;detail=null;inbox=[];inboxCursor=null;privateThread=null;historyAfter=0;historyHasMore=false;onOwnerDraft(null);onPrivate(null);for(const k of Object.keys(statuses))delete statuses[k];}
  function invalidate({logout=false}={}){epoch++;commandRead?.clear();commandRead=null;clearReads();if(logout){pending=null;owner=null;}command={status:pending?'unknown':enabled?'idle':'disabled',canRetry:!!pending};emit();}
  async function load(channel,request,project){
   if(!enabled||!online||typeof ports[channel]!=='function')return;readers.get(channel)?.clear();const version=epoch;
@@ -23,7 +25,7 @@ export function createProductIntegration({enabled=false,ports={},onChange=()=>{}
    if(channel==='inbox'||channel==='inboxPage'){inbox=state.status==='ready'?state.snapshot.items:[];inboxCursor=state.status==='ready'?state.snapshot.nextCursor??null:null;}
    if(channel==='owner'){owner=state.status==='ready'?{id:state.snapshot.id,revision:state.snapshot.revision}:state.status==='idle'?owner:null;onOwnerDraft(state.status==='ready'?state.snapshot:null);}
    if(channel==='thread'){privateThread=state.status==='ready'?state.snapshot.thread:null;onPrivate(null);}
-   if(channel==='read'){historyAfter=state.status==='ready'?(state.snapshot.messages.at(-1)?.sequence??0):0;historyHasMore=state.status==='ready'&&state.snapshot.hasMore;privateThread=state.status==='ready'?state.snapshot.thread:null;onPrivate(state.status==='ready'?state.snapshot:null);}
+   if(channel==='read'){delivery=state.status==='ready'?state.snapshot:null;historyAfter=state.status==='ready'?(state.snapshot.messages.at(-1)?.sequence??0):0;historyHasMore=state.status==='ready'&&state.snapshot.hasMore;privateThread=state.status==='ready'?state.snapshot.thread:null;onPrivate(state.status==='ready'?state.snapshot:null);}
    emit();}});readers.set(channel,reader);return reader.load(request);
  }
  async function dispatch(){
@@ -38,9 +40,9 @@ export function createProductIntegration({enabled=false,ports={},onChange=()=>{}
    emit();}});return commandRead.load({});
  }
  function write(operation,body){if(enabled&&!session){command={status:'denied',canRetry:false};emit();return Promise.resolve();}if(!enabled||!session||!online||pending||typeof ports[operation]!=='function')return Promise.resolve();let key;try{key=makeRequestId();}catch{return Promise.resolve();}if(!id(key))return Promise.resolve();pending={operation,scope:privateThread&&{...privateThread},body:{...structuredClone(body),requestId:key},dispatched:false};return dispatch();}
- return Object.freeze({snapshot,
+ return Object.freeze({snapshot,acknowledgeVisible:()=>delivery?.readReceipt?ack.accept({threadId:delivery.thread.id,readReceipt:delivery.readReceipt},delivery.messages.at(-1)?.sequence):Promise.resolve(),retryReadAcknowledgement:()=>ack.retry(),
   setSession(value){const next=value&&id(value.uid)&&id(value.sessionId)?{uid:value.uid,sessionId:value.sessionId}:null;if(JSON.stringify(next)!==JSON.stringify(session)){invalidate({logout:true});session=next;emit();}},
-  changeScope(){invalidate();},setOnline(value){online=value===true;if(!online)invalidate();},clear(){invalidate({logout:true});session=null;},retry:()=>dispatch(),
+  changeScope(){invalidate();},setOnline(value){online=value===true;if(!online)invalidate();},clear(){invalidate({logout:true});session=null;},retry:()=>pending?dispatch():ack.retry(),
   pendingReceipt(){return pending?.operation==='save'?{id:pending.body.id,requestId:pending.body.requestId}:null;},
   loadOwner(productId,{requestId=null}={}){if(!session){command={status:'denied',canRetry:false};onOwnerDraft(null);emit();return Promise.resolve();}if(pending||productId!==null&&!id(productId)||requestId!==null&&!id(requestId))return Promise.resolve();clearReads();command={status:'idle',canRetry:false};return load('owner',{kind:'product',id:productId,requestId},r=>{
    if(!exact(r,['ok','id','revision','profile','published','publicationRevision','receipt'])||r.ok!==true||!id(r.id)||productId!==null&&r.id!==productId||!rev(r.revision)||typeof r.published!=='boolean'||!Number.isSafeInteger(r.publicationRevision)||r.publicationRevision<0||r.publicationRevision>r.revision||!exact(r.profile,['title','description','category','locationLabel','basePrice','isSold','storeId','photos']))return null;
@@ -57,6 +59,6 @@ export function createProductIntegration({enabled=false,ports={},onChange=()=>{}
   enquire(text){const normalized=normalizeMessageDraft(text);return detail&&normalized?write('open',{productId:detail.id,expectedProductRevision:detail.revision,text:normalized}):Promise.resolve();},
   reply(text){const normalized=normalizeMessageDraft(text);return privateThread&&normalized?write('send',{threadId:privateThread.id,expectedRevision:privateThread.revision,text:normalized}):Promise.resolve();},
   loadInbox(role='seller',cursor=null){lastInboxRole=role;const paged=typeof ports.inboxPage==='function';return session&&['buyer','seller'].includes(role)?load(paged?'inboxPage':'inbox',{role,limit:20,...(paged?{cursor}:{})},r=>{if(!r?.ok||!Array.isArray(r.items)||r.items.length>20||r.nextCursor!==undefined&&r.nextCursor!==null&&(typeof r.nextCursor!=='string'||r.nextCursor.length<1||r.nextCursor.length>1024))return null;const items=r.items.map(thread);return items.every(Boolean)&&items.every(t=>t.role===role)?{items,nextCursor:r.nextCursor??null}:null;}):Promise.resolve();},
-  loadThread(value,{afterSequence=0}={}){const t=thread(value);if(!session||!t||!Number.isInteger(afterSequence)||afterSequence<0||afterSequence>=t.revision)return Promise.resolve();return load('read',{threadId:t.id,expectedRevision:t.revision,afterSequence,limit:20},r=>{const current=thread(r?.thread);if(!r?.ok||!current||current.id!==t.id||current.productId!==t.productId||current.productRevision!==t.productRevision||current.revision!==t.revision||current.role!==t.role||!Array.isArray(r.messages)||r.messages.length>20||typeof r.hasMore!=='boolean')return null;let seq=afterSequence;for(const msg of r.messages){if(!exact(msg,['sequence','senderRole','text'])||msg.sequence!==++seq||msg.sequence>current.revision||!['buyer','seller'].includes(msg.senderRole)||normalizeMessageDraft(msg.text)!==msg.text)return null;}return {thread:current,messages:structuredClone(r.messages),hasMore:r.hasMore};});}
+  loadThread(value,{afterSequence=0}={}){const t=thread(value);if(!session||!t||!Number.isInteger(afterSequence)||afterSequence<0||afterSequence>=t.revision)return Promise.resolve();return load('read',{threadId:t.id,expectedRevision:t.revision,afterSequence,limit:20},r=>{const current=thread(r?.thread);if(!r?.ok||!current||current.id!==t.id||current.productId!==t.productId||current.productRevision!==t.productRevision||current.revision!==t.revision||current.role!==t.role||!Array.isArray(r.messages)||r.messages.length>20||typeof r.hasMore!=='boolean')return null;let seq=afterSequence;for(const msg of r.messages){if(!exact(msg,['sequence','senderRole','text'])||msg.sequence!==++seq||msg.sequence>current.revision||!['buyer','seller'].includes(msg.senderRole)||normalizeMessageDraft(msg.text)!==msg.text)return null;}if(readStateEnabled===true&&!validReadReceipt(r.readReceipt))return null;return {thread:current,messages:structuredClone(r.messages),hasMore:r.hasMore,...(readStateEnabled===true?{readReceipt:r.readReceipt}:{})};});}
  });
 }

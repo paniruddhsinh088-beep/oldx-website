@@ -270,3 +270,13 @@ are covered; legacy hidden/deleted messages and unified inbox integration remain
 Product/Store/Media/Admin hosted acceptance, notifications delivery, staging snapshot/
 inventory/rollback/permissions and realistic zero-cost capacity acceptance remain open.
 HOLD/NO-GO. No live Firebase, Rules, billing, IAM, production or deployment changes.
+
+## 6 November — unified Inbox / outbox follow-up
+
+Default-off UI now binds signed Product/Provider read cursors and optional unified
+Inbox host/session ownership; atomic message outbox and cheaper actor-rejected quotas
+are locally tested. The cross-kind trusted index/exact totals, sparse/deleted/hidden
+legacy parity and actual notification worker/delivery are NOT complete or live.
+See architecture-2000-mau.md latest checkpoint for exact focused evidence, operation
+counts and resume tasks. Queue work adds writes; zero-cost capacity remains unproven.
+HOLD/NO-GO; staging prerequisites and all existing release gates remain open.

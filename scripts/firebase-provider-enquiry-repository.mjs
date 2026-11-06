@@ -9,15 +9,16 @@ const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
 export const enquiryBlockKey=(blockerUid,blockedUid)=>hash([blockerUid,blockedUid]);
 // Durable transaction mapping, isolated demo + loopback only. Production paths,
 // Firebase initialization, authentication and browser execution are not supplied.
-export function createIsolatedProviderEnquiryRepository({enabled=false,firestore,sdk,providerSchema,schema,conversationSchema,catalog,now=Date.now}={}){
+export function createIsolatedProviderEnquiryRepository({enabled=false,firestore,sdk,providerSchema,schema,conversationSchema,notificationOutbox=null,catalog,now=Date.now}={}){
  if(enabled!==true)return Object.freeze({runTransaction:async()=>{throw new Error('Enquiry repository disabled');}});
  const {collections:p}=getIsolatedProviderSdkContext({firestore,sdk,schema:providerSchema});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  const chat=conversationSchema?isolatedFirestoreContext({firestore,sdk,schema:conversationSchema,roles:['threads','messages','receipts','audits']}).collections:null;
  if(chat&&Object.values(chat).some(path=>[...Object.values(p),...Object.values(c)].includes(path)))throw new Error('Overlapping conversation mapping');
- return enquiryRepository({sdk,catalog,now},{db,p,c,chat});
+ notificationOutbox?.assertCompatible(db,[...Object.values(p),...Object.values(c),...Object.values(chat??{})]);
+ return enquiryRepository({sdk,catalog,now,notificationOutbox},{db,p,c,chat});
 }
-function enquiryRepository({sdk,catalog,now=Date.now},{db,p,c,chat,native}){
+function enquiryRepository({sdk,catalog,now=Date.now,notificationOutbox=null},{db,p,c,chat,native}){
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid canonical identity');return sdk.doc(db,paths[role],id);};
  const receipt=(uid,key,operation)=>ref(c,'receipts',hash([uid,operation,key]));
  return Object.freeze({async findEnquiryIds({providerId,actorUid,role,after,limit},context){
@@ -53,7 +54,7 @@ function enquiryRepository({sdk,catalog,now=Date.now},{db,p,c,chat,native}){
     if(!old||old.revision!==m.expectedRevision||JSON.stringify(old.readState)!==JSON.stringify(m.expectedReadState)||['providerId','enquiryId','buyerUid','providerUid','service','revision'].some(k=>old[k]!==m.thread[k])||await get(receiptRef)||await get(auditRef))return {ok:false,code:'REVISION_CONFLICT'};
     check();for(const [r,v]of [[threadRef,m.thread],[receiptRef,m.record],[auditRef,{...m.record,operation:'read.acknowledge'}]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});check();return result;
    }
-   if(conversationMutation){if(mutation||result?.ok!==true)throw new Error('Invalid conversation mutation');const m=conversationMutation,id=m.thread.enquiryId,threadRef=ref(chat,'threads',id),old=await get(threadRef),messageRef=ref(chat,'messages',hash([id,m.thread.revision])),key=hash([m.receipt.actorUid,m.receipt.requestId]),receiptRef=ref(chat,'receipts',key),auditRef=ref(chat,'audits',key);if((old?.revision??0)!==m.expectedRevision||m.thread.revision!==m.expectedRevision+1||await get(messageRef)||await get(receiptRef)||await get(auditRef))return {ok:false,code:'REVISION_CONFLICT'};check();for(const [r,v] of [[threadRef,m.thread],[messageRef,m.message],[receiptRef,m.receipt],[auditRef,m.audit]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});check();return result;}
+   if(conversationMutation){if(mutation||result?.ok!==true)throw new Error('Invalid conversation mutation');const m=conversationMutation,id=m.thread.enquiryId,threadRef=ref(chat,'threads',id),old=await get(threadRef),messageRef=ref(chat,'messages',hash([id,m.thread.revision])),key=hash([m.receipt.actorUid,m.receipt.requestId]),receiptRef=ref(chat,'receipts',key),auditRef=ref(chat,'audits',key);if((old?.revision??0)!==m.expectedRevision||m.thread.revision!==m.expectedRevision+1||await get(messageRef)||await get(receiptRef)||await get(auditRef))return {ok:false,code:'REVISION_CONFLICT'};const enqueue=notificationOutbox?await notificationOutbox.stage(raw,{kind:'provider',threadId:id,sequence:m.thread.revision,senderUid:m.message.senderUid,recipientUid:m.message.senderUid===m.thread.buyerUid?m.thread.providerUid:m.thread.buyerUid}):null;check();for(const [r,v] of [[threadRef,m.thread],[messageRef,m.message],[receiptRef,m.receipt],[auditRef,m.audit]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});enqueue?.();check();return result;}
    if(!mutation)return result;if(result?.ok!==true)throw new Error('Denied enquiry cannot write');
    const m=mutation,rowRef=ref(c,'enquiries',m.record.id),old=await get(rowRef),receiptRef=receipt(m.receipt.actorUid,m.receipt.requestId,m.receipt.operation),auditRef=ref(c,'audits',m.audit.id);
    if(await get(receiptRef)!==null||await get(auditRef)!==null||m.record.id!==m.receipt.enquiryId||m.record.id!==m.audit.enquiryId||m.record.providerId!==m.receipt.providerId||m.record.providerId!==m.audit.providerId||(update?(!old||old.revision!==m.record.revision-1||old.buyerUid!==m.record.buyerUid||old.providerUid!==m.record.providerUid||old.providerId!==m.record.providerId||old.service!==m.record.service):old!==null))throw new Error('Enquiry precondition conflict');

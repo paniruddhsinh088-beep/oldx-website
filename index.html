@@ -2350,6 +2350,7 @@
         }
 
         function refreshLegacyInboxBadge(user) {
+            if (document.documentElement?.dataset?.oldxUnifiedInbox === 'true') return Promise.resolve(null);
             const generation = legacyInboxGeneration;
             return readLegacyInboxSummaries(user).then(rows => {
                 if (generation === legacyInboxGeneration && user === window.currentUser) { const total = rows.reduce((sum,row) => sum + row.unreadCount, 0); updateInboxBadge(total); return total; }
@@ -2357,9 +2358,17 @@
             }).catch(() => { if (generation === legacyInboxGeneration && user === window.currentUser) updateInboxBadge(null); });
         }
 
+        // Explicit trusted mount owns the badge/list; stop legacy scans rather than
+        // running a second private inbox reader in parallel. Default remains unchanged.
+        document.addEventListener('oldx:unified-inbox-mode', event => {
+            if (event.detail?.enabled === true) {
+                if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
+                inboxListenerUnsubscribe = null; invalidateLegacyInbox(); inboxViewGeneration++;
+            } else if (window.currentUser) startGlobalUnreadMessagesListener(window.currentUser.uid);
+        });
         function startGlobalUnreadMessagesListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
-            invalidateLegacyInbox(); const user = window.currentUser;
+            invalidateLegacyInbox(); if (document.documentElement?.dataset?.oldxUnifiedInbox === 'true') return; const user = window.currentUser;
             if (!user || user.uid !== userId) return;
             let previous = null, lastNotified = 0;
             // Metadata only signals refresh; counts come from complete server reads.
@@ -2377,6 +2386,7 @@
         }
 
         function updateInboxBadge(count) {
+            if (document.documentElement?.dataset?.oldxUnifiedInbox === 'true') return;
             const badge = document.getElementById('inboxBadgeCount'); if (!badge) return;
             badge.title = Number.isSafeInteger(count) ? '' : legacyReadCopy('unknown');
             badge.innerText = Number.isSafeInteger(count) ? String(count) : '?';

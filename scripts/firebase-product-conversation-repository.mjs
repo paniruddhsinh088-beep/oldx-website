@@ -14,7 +14,7 @@ export const productConversationBlockKey=(from,to)=>hash([from,to]);
 const fail=code=>({ok:false,code}),revision=v=>Number.isSafeInteger(v)&&v>0&&v<10000;
 // Server-only, default off, demo-project/loopback locked. No SDK initialization,
 // endpoint, credential handling, persistence in the browser or production mode.
-export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,timeoutMs=5000,now=Date.now}={}){
+export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,notificationOutbox=null,timeoutMs=5000,now=Date.now}={}){
  if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox','inboxPage','inboxSummaries','thread','summary','acknowledge'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
  if(typeof readStateEnabled!=='boolean')throw Error('Explicit read-state gate required');
  if(readStateEnabled&&![readCursor,issueCursor].every(f=>typeof f==='function'))throw Error('Verified read receipt ports required');
@@ -33,6 +33,7 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
   const a=await get(raw,ref(c,'blocks',hash([thread.buyerUid,thread.sellerUid]))),b=await get(raw,ref(c,'blocks',hash([thread.sellerUid,thread.buyerUid])));
   return a?.blockerUid===thread.buyerUid&&a.blockedUid===thread.sellerUid&&a.blocked===false&&b?.blockerUid===thread.sellerUid&&b.blockedUid===thread.buyerUid&&b.blocked===false;
  }
+ notificationOutbox?.assertCompatible(db,[...Object.values(c),...Object.values(m)]);
  const roleOf=(thread,uid)=>uid===thread.buyerUid?'buyer':'seller';
  const deliveryScope=(thread,uid)=>hash(['product-read-v1',thread.id,uid,thread.productId,thread.productRevision]);
  const dto=(thread,uid)=>({id:thread.id,productId:thread.productId,productRevision:thread.productRevision,revision:thread.revision,role:uid===thread.buyerUid?'buyer':'seller'});
@@ -61,7 +62,8 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
    if(audit||operation==='open'&&previous||operation==='send'&&thread.revision!==input.expectedRevision)return fail('REVISION_CONFLICT');
    const sequence=operation==='open'?1:thread.revision+1;if(!revision(sequence))return fail('LIMIT_REACHED');
    const messageRef=ref(c,'messages',hash([thread.id,sequence]));if(await get(raw,messageRef))return fail('REVISION_CONFLICT');const state=readStateEnabled?{...(previous?.readState??initialReadState())}:null;if(state){const recipient=context.actorUid===thread.buyerUid?'seller':'buyer';state[recipient+'Received']++;state.lastSenderUid=context.actorUid;state.lastPreview=text.slice(0,160);state.lastMessageAtMillis=now();}const next={...thread,revision:sequence,messageCount:sequence,...(state?{readState:state}:{})};if(state&&!validReadState(next))return fail('READ_STATE_UNAVAILABLE');check(context);
-   raw.set(ref(c,'threads',thread.id),next);raw.set(messageRef,{threadId:thread.id,sequence,senderUid:context.actorUid,text,...(state?{readPrefix:{buyerReceived:state.buyerReceived,sellerReceived:state.sellerReceived}}:{}),committedAt:sdk.serverTimestamp()});raw.set(ref(c,'receipts',key),{actorUid:context.actorUid,fingerprint,threadId:thread.id,revision:sequence});raw.set(ref(c,'audits',key),{requestKey:key,actorUid:context.actorUid,threadId:thread.id,revision:sequence,operation});check(context);
+   const enqueue=notificationOutbox?await notificationOutbox.stage(raw,{kind:'product',threadId:thread.id,sequence,senderUid:context.actorUid,recipientUid:context.actorUid===thread.buyerUid?thread.sellerUid:thread.buyerUid}):null;check(context);
+   raw.set(ref(c,'threads',thread.id),next);raw.set(messageRef,{threadId:thread.id,sequence,senderUid:context.actorUid,text,...(state?{readPrefix:{buyerReceived:state.buyerReceived,sellerReceived:state.sellerReceived}}:{}),committedAt:sdk.serverTimestamp()});raw.set(ref(c,'receipts',key),{actorUid:context.actorUid,fingerprint,threadId:thread.id,revision:sequence});raw.set(ref(c,'audits',key),{requestKey:key,actorUid:context.actorUid,threadId:thread.id,revision:sequence,operation});enqueue?.();check(context);
    return {ok:true,status:'sent',thread:dto(next,context.actorUid)};
   },{maxAttempts:3});});
  }

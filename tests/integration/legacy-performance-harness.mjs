@@ -13,7 +13,8 @@ export function feedHarness(read,user=null){
 }
 export function inboxHarness(read,listen){
  const badge={style:{}},user={uid:'viewer'},context={window:{currentUser:user},document:{getElementById:()=>badge},db:queryDb(read,listen),firebase:{firestore:{FieldPath:{documentId:()=> '__name__'}}},legacyReadCopy:key=>key};
- runInNewContext('let legacyInboxGeneration=0,legacyInboxJob=null,inboxListenerUnsubscribe=null;'+part('function invalidateLegacyInbox()', 'function calculatePrices(')+';this.read=readLegacyInboxSummaries;this.badge=refreshLegacyInboxBadge;this.invalidate=invalidateLegacyInbox;this.watch=startGlobalUnreadMessagesListener;',context);return {context,user,badge};
+ const events=new EventTarget();Object.assign(context.document,{documentElement:{dataset:{}},addEventListener:events.addEventListener.bind(events),dispatchEvent:events.dispatchEvent.bind(events)});
+ runInNewContext('let legacyInboxGeneration=0,legacyInboxJob=null,inboxListenerUnsubscribe=null,inboxViewGeneration=0;'+part('function invalidateLegacyInbox()', 'function calculatePrices(')+';this.read=readLegacyInboxSummaries;this.badge=refreshLegacyInboxBadge;this.invalidate=invalidateLegacyInbox;this.watch=startGlobalUnreadMessagesListener;',context);return {context,user,badge};
 }
 export const document=(id,data)=>({id,data:()=>data});
 export function syntheticRead(records,requests=[]){return async plan=>{

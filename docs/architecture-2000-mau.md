@@ -237,3 +237,64 @@ do not repeat unavailable access investigation or activate routes by inference.
 Next priorities: (1) unified inbox/deletion parity acceptance, (2) bounded audited quota
 and notification outbox budget, (3) remaining feature and staging/device workload acceptance.
 Launch remains HOLD/NO-GO; retain all disabled gates pending those checks.
+
+## 6 November — unified Inbox, quota and notification batch
+
+Start: 2866e19239a9185b28afe3cf810c5f6b5ed2dd69; default-off gates unchanged.
+- Existing Product/Provider conversation UI now consumes signed delivered-page read
+  receipts, acknowledges only visible rendered history, retries the same proof after
+  unknown outcomes, and clears proof/retry state on scope/logout. No browser counts.
+- Optional existing-host unified Inbox owns the current list/next/badge nodes and
+  shared Auth lifecycle. Strict maximum-20 pages, unread-first/newest/stable ordering,
+  exact server total, snapshot-bound pagination, stale-session suppression, single
+  flight, offline/focus recovery and read-ack refresh events are implemented. Unknown
+  totals display '?' rather than zero. Localized existing status strings and text-only
+  user content preserve mobile layouts. Trusted mounting stops legacy scans/listeners
+  and prevents Product rerenders/legacy badge callbacks overwriting its state.
+- IMPORTANT unfinished backend gate: loadPage still needs a trusted cross-kind index
+  with exact authorized global totals, signed snapshot/cursor validation and atomic
+  updates. Existing Product id-order pages/Provider partial lists cannot safely
+  supply unread-first global pagination. Browser tests use synthetic snapshot pages;
+  do NOT interpret those pages as a deployed/complete index. Hidden/deleted/sparse
+  legacy reconciliation, typing/deletion parity, real-time multi-device refresh and
+  staged migration remain acceptance gates; no legacy feature was removed or bypassed.
+- Atomic rate core reads the actor before the global counter: exhausted/malformed
+  actor rejection 2 -> 1 document reads, still 0 writes; accepted requests remain
+  2 reads + 2 atomic writes. Global exhaustion remains 2 reads/0 writes. No leasing,
+  in-memory allowance, audit removal or changed quota/window semantics. Allowed-path
+  sequential-read latency and transaction retry overhead still require hosted testing.
+- Isolated notification queue is optionally staged in SAME Product/Provider message
+  transaction: 4 -> 5 committed records, +1 existence read. Existing send audit binds
+  the event; replay creates no second event. Only participant/thread/sequence metadata
+  is stored, no text/contact/token. Worker-role/privacy ports must authorize freshly
+  within each transaction; missing policy fails closed. Fenced leases, bounded attempts,
+  audited retry/suppression/settlement, orphan detection and database/namespace guards
+  are implemented. There is NO worker transport, actual push or notification activation.
+  Stable provider idempotency keys plus delivery-time privacy checks are mandatory
+  before real dispatch; leases alone do not guarantee exactly-once external delivery.
+
+Cost model update (assumptions, NOT demonstrated hosted capacity): each successful
+queued notification adds 1 queue write plus 2 claim and 2 settlement writes, and at
+least 1 + 4 + 4 reads in the test worker policy; real block/visibility/auth checks and
+retries add more. Assuming 5 notifications/DAU/day adds 25 writes and at least 45 reads
+per DAU. Prior 90-write baseline would become at least 115 writes/DAU: 23k/46k/69k
+writes/day at 200/400/600 DAU if enabled, before extra retries. No claim of aggregate
+quota reduction or proven 2,000-MAU zero-cost operation. Images/storage assumptions
+remain unchanged; no pricing, live telemetry or hosted QoS was reverified this batch.
+
+Focused final evidence: 80 Node/static checks (75 Node + 5 packaging), 24 Chrome
+checks, 5 distinct actual loopback Firestore Emulator cases; zero final failures/skips.
+During development tests exposed a missing enqueue invocation, focus rerender click
+race and raw-result/HTTP-result retry discrimination; all fixed with regressions.
+Node/static command: node --test tests/integration/unified-inbox.test.mjs tests/integration/chat-outbox-rate.test.mjs tests/integration/product-ui.test.mjs tests/integration/service-conversation-client.test.mjs tests/integration/staging-marketplace-runtime.test.mjs tests/integration/provider-journey.test.mjs tests/integration/store-ui.test.mjs tests/integration/product-conversation.test.mjs tests/integration/service-conversation.test.mjs tests/integration/provider-enforcement.test.mjs scripts/emulator-test-plan.test.mjs tests/integration/marketplace-session.test.mjs tests/integration/staging-marketplace-packaging.test.mjs tests/firestore-emulator/legacy-performance.test.mjs scripts/build-static-assets.test.mjs.
+Browser: node --test tests/browser/unified-inbox.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/product-integration.test.mjs tests/browser/legacy-performance.test.mjs.
+Guarded baseline Emulator child: node --test tests/firestore-emulator/product-read-state-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs tests/firestore-emulator/chat-outbox-rate-runtime.test.mjs. Only the last file was rerun after canonical event hashing/fresh worker-policy assertions. Synthetic identity ports are not live JWT/runtime acceptance.
+Ignored evidence: .firebase/unified-verified-node.log, unified-verified-browser.log, unified-native.log, unified-outbox-final.log.
+
+Resume priorities: (1) trusted cross-kind index + deletion/visibility reconciliation
+and exact-total acceptance; (2) concrete worker/privacy/provider-idempotency transport
+and bounded queue discovery/retention with delivery STILL off; (3) remaining Product,
+Store, Provider reviews/media, Admin and staging/device/capacity acceptance. Staging
+Rules/inventory/rollback/runtime gates remain unverified; do not repeat unavailable
+access investigation. No live Firebase, Rules, IAM, credentials, billing, deployments
+or production operations. Launch HOLD/NO-GO.
