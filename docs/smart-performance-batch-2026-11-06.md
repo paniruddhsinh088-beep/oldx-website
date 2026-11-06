@@ -174,3 +174,29 @@ investigation. Live deployment/activation, media operation, trusted Chat summari
 and real-device acceptance remain outstanding. Next: bind the existing owner journeys
 to an approved staging host/transport once prerequisites are verified; independently,
 add scoped media/gallery recovery acceptance using the existing media contracts.
+
+## Gallery/photo acceptance batch — 6 November 2026
+
+Started at 318f5f91fdb6f3931b150dfe851daac09309a09c; HOLD/NO-GO.
+Provider photo UI now restores profile/service gallery descriptors through existing
+ownerReferences, with the existing bounded-read deadline/retry contract. Recovered
+items show service labels without fetching private URLs/bytes. Session/parent changes
+clear previews and reject late reads; revision changes preserve only never-dispatched
+local selections. Completed galleries do not consume another service's local selection
+limit. Attach/removal retries retain request IDs; pending uploads resolve status rather
+than retransmitting bytes. No upload/publication gate or server contract was enabled.
+Store acceptance adds managed-reference recovery, pending replacement reload recovery
+without a second upload, and logout/history receipt cleanup. Multiple categories and
+multi-service profile/session work were not repeated or changed.
+
+38 distinct focused tests passed, zero failures/skips:
+- `node --test tests/integration/authenticated-photo-client.test.mjs tests/integration/mandatory-photos.test.mjs tests/integration/provider-photo-contract.test.mjs tests/integration/photo-lifecycle.test.mjs`: 18.
+- Store photo browser selection in `authenticated-photos.test.mjs`: 6 existing tests (`--test-name-pattern='authenticated store'` before adding new cases), then 3 added descriptor/replacement cases (`--test-name-pattern='authenticated store gallery'`).
+- `node --test tests/browser/provider-gallery-recovery.test.mjs`: 3, including stalled-read timeout/retry, same-key attach/remove retries, service isolation and late-read logout cleanup.
+- `node --test --test-name-pattern='Provider private photo upload' tests/browser/provider-website.test.mjs`: 3.
+- `node --test scripts/build-static-assets.test.mjs`: 5.
+Browser cases use loopback injected media responses across Gujarati/Hindi/English,
+320/375px and enlarged Provider text. These are not real uploads or staging acceptance.
+Server/Rules boundaries were unchanged, so unchanged native Emulator suites were not
+rerun. Existing staging access/activation, trusted processing, signed-token and media
+approval gates remain blockers; no cloud operations, Rules edits or deployment.
