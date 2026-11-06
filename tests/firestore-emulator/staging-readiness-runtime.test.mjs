@@ -2,6 +2,7 @@ import test,{before,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {initializeTestEnvironment,assertFails} from '@firebase/rules-unit-testing';
+import {STAGING_MARKETPLACE_COLLECTIONS,STAGING_RATE_COLLECTION} from '../../scripts/staging-marketplace-context.mjs';
 import {doc,getDoc,setDoc,updateDoc,deleteDoc,collection,getDocs,query,limit} from 'firebase/firestore';
 
 // Same exact deny-all policy proposed for the server-mediated staging slice.
@@ -23,6 +24,8 @@ const fixtures=[
  ['adminPermissions/sample-owner',{canModerate:false}],
  ['adminAudit/readiness-event',{action:'synthetic-only'}]
 ];
+// Canonical Product backend state and an orphan descendant remain server-only.
+fixtures.push(...Object.values(STAGING_MARKETPLACE_COLLECTIONS).map(name=>[name+'/readiness-canonical',{ownerUid:'sample-owner',revision:1,role:'admin'}]),[STAGING_RATE_COLLECTION+'/readiness-rate',{actorUid:'sample-owner'}],['marketplacePrivate_v1/orphan/hidden/readiness-secret',{ownerUid:'sample-owner',phone:'synthetic-private'}]);
 let env;
 before(async()=>{
  if(process.env.FIRESTORE_EMULATOR_HOST!=='127.0.0.1:8080'||[process.env.GCLOUD_PROJECT,process.env.GOOGLE_CLOUD_PROJECT].some(p=>p&&p!=='demo-oldx-emulator'))throw Error('Loopback demo Emulator required');
@@ -38,7 +41,7 @@ for(const role of ['guest','owner','other','admin-claim'])test(`staging server-o
   await assertFails(updateDoc(doc(db,path),{published:true,ownerUid:'sample-other',role:'admin'}));
   await assertFails(deleteDoc(doc(db,path)));
  }
- for(const name of ['products','stores','serviceProviderPublic_v1','users','chats','adminPermissions']){
+ for(const name of ['products','stores','serviceProviderPublic_v1','users','chats','adminPermissions',...Object.values(STAGING_MARKETPLACE_COLLECTIONS),STAGING_RATE_COLLECTION]){
   await assertFails(getDocs(query(collection(db,name),limit(20))));
   await assertFails(setDoc(doc(db,name,'readiness-injected'),{ownerUid:'sample-owner',published:true,role:'admin'}));
  }

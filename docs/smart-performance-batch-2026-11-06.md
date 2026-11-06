@@ -218,3 +218,37 @@ rollback, complete inventory, review, permissions and cost/feature evidence. Unk
 or non-empty data retains backup/restore requirements. ExecutionAuthorized always false.
 `node --test scripts/staging-preflight-evidence.test.mjs`: 7 passed, 0 failed/skipped.
 No deployment, data write, migration, Rules change or backend activation; HOLD/NO-GO.
+
+## First Product private-draft Rules decision — 6 November 2026
+
+Owner visual evidence: oldx-staging Console Data tab has no root collections,
+Rules tab shows deny-all, Spark/billing disabled. This is NOT a complete inventory
+or a captured full Rules release/rollback artifact; orphan descendants remain unknown.
+Reviewed existing schema and reused `docs/proposals/provider-merged-firestore.rules`
+unchanged for the prepared authenticated save/owner journey. It denies ALL client
+SDK access, including canonical marketplacePrivate/Actors/Owners/Receipts/Audit/
+Generations/Public_v1 and rate counters. Trusted backend verifies tokens/revocation,
+ownership, eligibility, revisions/rates and atomic audit; Admin SDK bypasses Rules.
+The old `stagingProductDrafts_v1` direct-client candidate is a DIFFERENT schema and
+must not be deployed as the Rules for this command-based UI. No duplicate Rules added.
+
+Static Rules audit (firebase-security-rules-auditor skill; this score is ONLY the
+selected client-denial policy, not backend or launch readiness):
+`{"score":5,"summary":"Existing server-mediated policy denies all direct client access; trusted server authorization remains mandatory.","findings":[]}`
+
+Added real denial regressions for canonical Product collections, rate counters and
+an orphan nested private document. Actual isolated Firestore/Auth Emulator results:
+- baseline plan, narrowed command `node --test tests/firestore-emulator/staging-readiness-runtime.test.mjs`: 5 passed.
+- admin-runtime plan, narrowed command `node --test --test-name-pattern="REAL Admin SDK/Auth Emulator creates|REAL token verification denies|REAL native withdrawal,|REAL client SDK remains denied|REAL trusted Product and Store|REAL scoped bridge|REAL Admin revocation" tests/firestore-emulator/admin-runtime-native.test.mjs`: 7 passed.
+Both commands used existing validated loopback/demo config/cache; 12 pass, 0 fail/skip.
+Native SDK/Auth tests establish owner allow/recovery/replay/atomic audit and foreign,
+guest, revoked/forged denial. Test fixtures are synthetic; no staging data accessed.
+
+Actual staging changes: NONE. Before a live step, obtain complete orphan-aware
+inventory, full deployed Rules snapshot/release and verified rollback access, inspect
+canonical namespace compatibility, and verify runtime/deployment permissions and
+zero-cost eligibility without IAM/secrets/billing changes. Actor eligibility setup
+must use a trusted authorized path, never client writes. Keep deny-all unchanged;
+minimum future integration is authenticated private save/owner with publication/media
+closed. Owner approval does not substitute for these unavailable safety checks.
+HOLD/NO-GO. No production operation or deployment.
