@@ -79,3 +79,64 @@ The static HTML/form shell before Firebase initialization matches the starting H
 - Live Cloudinary/media operation, real device/Capacitor acceptance and staging feature
   journeys remain unverified. No billing, IAM, secrets, deployment settings, main or
   production operations. Production requires separate final owner approval.
+
+## Next smart integration batch — 6 November 2026
+
+Starting HEAD: ccb84374ce59a97526f99870f2d349d281932ce2. HOLD/NO-GO remains.
+No homepage/Chat pagination changes, live access, route activation, Rules edits,
+new dependencies, backup infrastructure or design rewrite in this batch.
+
+Implemented `features/marketplace/firebase-integration.mjs` as a small composition
+of the existing Provider Auth bridge, authenticated Product/Store command client and
+public projection client. The existing Product form can now save/recover private
+drafts using those composed ports in an explicitly bound host. Product/Store kinds
+are supplied by the adapters; credentials remain transport-only. Existing Provider
+command/owner/media ports are reused, and the existing Admin API client can consume
+the same session-scoped token dependency. No browser role grants authorization.
+The new browser module is included in the existing static asset allowlist.
+
+Fixed a confirmed shared Auth boundary issue: a replacement Firebase user object
+with the SAME UID previously retained the old session scope. Exact user identity now
+rotates the scope and rejects old token acquisition, including before observer
+notification. Product/Store requests are cancelled on session changes; already
+sent mutations retain unknown-outcome semantics and are not automatically replayed.
+Normal token refresh preserves the scope. Public response projection rejects private
+contact fields. Existing Admin direct Firestore access/deletes remain disabled.
+
+Final relevant tests: all pass, zero failures/skips:
+
+- `node --test tests/integration/firebase-marketplace-integration.test.mjs tests/integration/provider-native-session.test.mjs tests/integration/marketplace-session.test.mjs`: 18.
+- `node --test functions/admin-backend/*.test.mjs` (expanded filenames): 117.
+- `node --test scripts/build-static-assets.test.mjs`: 5.
+- `node --test tests/browser/product-integration.test.mjs`: 10; existing form at
+  320px, Gujarati draft recovery/logout and other existing responsive/locale journeys.
+- `node --test tests/browser/store-integration.test.mjs`: 3 (passed in the combined
+  browser run; unchanged by the subsequent Product fixture correction).
+- `node scripts/run-emulator-tests.mjs admin-runtime`: 17 REAL loopback Firestore
+  and Auth Emulator tests, including native transactions/audits, private ownership,
+  participant journeys, forged field denial, revoked-token rejection and deny-all.
+
+The initial new browser fixture incorrectly stripped the owner request's required
+kind field; corrected without removing assertions. The initial new Emulator test
+incorrectly expected unsigned Auth Emulator tokens to pass the browser bridge's
+signed-token syntax. Final test explicitly requires rejection BEFORE dispatch and
+separately verifies real native runtime save/recovery using its existing tightly
+gated demo-only unsigned-token support. No production/browser token check was
+relaxed. The staging-labelled Auth facade exists ONLY in that test around the demo
+Auth instance; it does not initialize or access staging. Thus the browser bridge
+journey is SDK-double evidence; a signed-token staging end-to-end journey is still
+unverified. Native runtime tests are actual Emulator evidence, not deployed acceptance.
+
+Next smallest Chat path: reuse existing inbox-summary/read-cursor contracts and
+server-owned private state. Integrate verified participant lookup plus an atomic
+message/summary/cursor update with idempotent replay, blocking and deletion semantics,
+then reconcile legacy history before switching the reader. A browser count or cursor
+must never be the authority. This server integration remains unimplemented/default-off.
+Next useful feature task: extend the composed Store owner draft/recovery and Provider
+host session fanout through existing UI acceptance; retain deployment/publication gates.
+
+Staging Rules snapshot and inventory remain unavailable as previously recorded; no
+repeated tool investigation, emptiness assumption, reset or migration. Product/Store/
+Provider live routes, trusted unread summaries, Admin role/audit acceptance, media
+operation and real-device/Capacitor acceptance remain blockers. This batch does not
+mount the prepared host in the live legacy page or enable any backend route.

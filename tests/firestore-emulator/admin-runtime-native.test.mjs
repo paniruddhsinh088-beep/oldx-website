@@ -139,6 +139,18 @@ test('REAL trusted Product and Store commands reject forged flags/private fields
  assert.equal((await db.collection(c.privateRecords).get()).size,before.size);assert.equal((await db.collection(c.audits).get()).size,audits.size);
 });
 
+test('REAL scoped bridge rejects unsigned Emulator tokens while native runtime preserves owner authorization',async()=>{
+ const {createFirebaseMarketplaceIntegration}=await import('../../features/marketplace/firebase-integration.mjs');
+ const {createProductIntegration}=await import('../../features/marketplace/product-integration.mjs');
+ const a=webAuth(client);await signInWithEmailAndPassword(a,'other@example.test','Synthetic-Test-Only-123');
+ // Test-only staging-labelled facade around the real demo Auth instance. The
+ // runtime still verifies the REAL demo token; no staging app is initialized.
+ const facade={app:{options:{projectId:'oldx-staging'}},get currentUser(){return a.currentUser;},onIdTokenChanged:fn=>a.onIdTokenChanged(fn)};
+ let model,scope,dispatches=0;const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth:facade,makeSessionId:()=> 'native-bridge',onSession:s=>{scope=s;model?.setSession(s);},sendCommand:(op,value,ctx)=>{dispatches++;return runtime.handle('/api/staging/marketplace/'+op,request(value,ctx.credential),{signal:ctx.signal});}});
+ try{model=createProductIntegration({enabled:true,ports:bridge.product,makeRequestId:()=> 'native-bridge-save'});for(let i=0;!scope&&i<200;i++)await new Promise(r=>setTimeout(r,5));assert.ok(scope,'Auth scope must initialize');model.setSession(scope);assert.equal((await a.currentUser.getIdToken()).split('.')[2],'','Auth Emulator deliberately issues unsigned tokens');await model.save(profile);assert.equal(model.snapshot().command.status,'unavailable');assert.equal(dispatches,0,'Do not relax signed-token syntax for Emulator convenience');const token=await a.currentUser.getIdToken();const saved=await call('save',{...body,requestId:'native-bridge-runtime'},token);assert.equal(saved.status,200);const id=saved.body.id;assert.equal((await call('owner',{kind:'product',id,requestId:null},token)).status,200);assert.equal((await db.collection(c.privateRecords).doc('product_'+id).get()).data().ownerUid,'other');await signOut(a);for(let i=0;scope&&i<200;i++)await new Promise(r=>setTimeout(r,5));assert.equal(scope,null,'Logout scope must clear');await model.loadOwner(id);assert.equal(model.snapshot().command.status,'denied');assert.equal(model.snapshot().owner,null);}
+ finally{bridge.destroy();}
+});
+
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);
