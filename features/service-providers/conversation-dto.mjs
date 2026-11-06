@@ -8,3 +8,5 @@ export function projectServiceConversation(operation,r){try{
  else if(operation!=='send'||!['sent','replayed'].includes(r.status)||t.revision<1)return null;
  return structuredClone(r);
 }catch{return null;}}
+// Opt-in sparse pages preserve physical cursor progress without exposing hidden text.
+export function projectServiceConversationRead(r,{reconciled=false}={}){try{if(!Object.hasOwn(r??{},'throughSequence'))return projectServiceConversation('read',r);if(reconciled!==true||!exact(r,['ok','thread','messages','hasMore','throughSequence']))return null;const {throughSequence,...base}=r,p=projectServiceConversation('read',base);return p&&int(throughSequence)&&throughSequence<=p.thread.revision&&p.messages.every(m=>m.sequence<=throughSequence)&&p.hasMore===(throughSequence<p.thread.revision)?{...p,throughSequence}:null;}catch{return null;}}

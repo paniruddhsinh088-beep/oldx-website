@@ -1,11 +1,11 @@
 import {createReadAcknowledgement,validReadReceipt} from '../chat/read-acknowledgement.mjs';
 import {createBoundedRead} from '../shared/bounded-read.mjs';
-import {projectServiceConversation} from './conversation-dto.mjs';
+import {projectServiceConversation,projectServiceConversationRead} from './conversation-dto.mjs';
 import {normalizeMessageDraft} from '../chat/message-text.mjs';
 const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v);
 // Message lifecycle only, not another enquiry state machine. No SDK, token,
 // transport, private-text storage or auth grant. All ports are explicit and off.
-export function createServiceConversationIntegration({enabled=false,readStateEnabled=false,execute,onAcknowledged=()=>{},onChange=()=>{},onPrivate=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),timeoutMs=5000}={}){
+export function createServiceConversationIntegration({enabled=false,readStateEnabled=false,reconciledHistoryEnabled=false,execute,onAcknowledged=()=>{},onChange=()=>{},onPrivate=()=>{},makeRequestId=()=>globalThis.crypto.randomUUID(),timeoutMs=5000}={}){
  let session=null,providerId=null,enquiryId=null,role='buyer',online=true,epoch=0,reader=null,command=null,pending=null,view=null,status=enabled?'idle':'disabled';
  const ack=createReadAcknowledgement({enabled:enabled===true&&readStateEnabled===true,timeoutMs,execute:(body,ctx)=>execute('acknowledge',body,{...ctx,session:session&&{...session}}),onAcknowledged,onChange:()=>emit()});
  const same=()=>pending&&pending.providerId===providerId&&pending.enquiryId===enquiryId;
@@ -17,10 +17,10 @@ export function createServiceConversationIntegration({enabled=false,readStateEna
  async function read(after=0,expectedRevision=null){
   if(!enabled||!session||!online||!providerId||!enquiryId||typeof execute!=='function')return;
   clearView();const current=epoch,scope={providerId,enquiryId};
-  reader?.clear();reader=createBoundedRead({timeoutMs,read:(_,ctx)=>execute('read',{...scope,expectedRevision,afterSequence:after,limit:20},{...ctx,session:{...session}}),project:r=>{const v=response(r);if(readStateEnabled===true){if(!validReadReceipt(v?.readReceipt))return null;const {readReceipt,...base}=v,p=projectServiceConversation('read',base);return p?{...p,readReceipt}:null;}return projectServiceConversation('read',v);},onChange:state=>{
+  reader?.clear();reader=createBoundedRead({timeoutMs,read:(_,ctx)=>execute('read',{...scope,expectedRevision,afterSequence:after,limit:20},{...ctx,session:{...session}}),project:r=>{const v=response(r);if(readStateEnabled===true){if(!validReadReceipt(v?.readReceipt))return null;const {readReceipt,...base}=v,p=projectServiceConversationRead(base,{reconciled:reconciledHistoryEnabled===true});return p?{...p,readReceipt}:null;}return projectServiceConversation('read',v);},onChange:state=>{
    if(current!==epoch||state.status==='idle')return;status=state.status;
    if(state.status==='ready'){const v=state.snapshot,t=v.thread;let next=after;
-    if(t.providerId!==scope.providerId||t.enquiryId!==scope.enquiryId||t.role!==role||expectedRevision!==null&&t.revision!==expectedRevision||v.messages.some(m=>m.sequence!==++next)||v.hasMore!==(next<t.revision)){status='unavailable';emit();return;}
+    if(t.providerId!==scope.providerId||t.enquiryId!==scope.enquiryId||t.role!==role||expectedRevision!==null&&t.revision!==expectedRevision||(Object.hasOwn(v,'throughSequence')?(!reconciledHistoryEnabled||v.throughSequence<=after||v.throughSequence>Math.min(t.revision,after+20)||v.messages.some(m=>{if(m.sequence<=next)return true;next=m.sequence;return false;})||v.hasMore!==(v.throughSequence<t.revision)):(v.messages.some(m=>m.sequence!==++next)||v.hasMore!==(next<t.revision)))){status='unavailable';emit();return;}
     view=v;onPrivate(structuredClone(v));
    }emit();
   }});return reader.load({});
@@ -36,12 +36,12 @@ export function createServiceConversationIntegration({enabled=false,readStateEna
    else {status='unknown';emit();return;}emit();
   }});return command.load({});
  }
- return Object.freeze({snapshot,acknowledgeVisible:()=>view?.readReceipt?ack.accept({providerId,enquiryId,readReceipt:view.readReceipt},view.messages.at(-1)?.sequence):Promise.resolve(),retryReadAcknowledgement:()=>ack.retry(),clear:()=>invalidate(true),changeScope:()=>invalidate(),
+ return Object.freeze({snapshot,acknowledgeVisible:()=>view?.readReceipt?ack.accept({providerId,enquiryId,readReceipt:view.readReceipt},view.throughSequence??view.messages.at(-1)?.sequence):Promise.resolve(),retryReadAcknowledgement:()=>ack.retry(),clear:()=>invalidate(true),changeScope:()=>invalidate(),
   setSession(value){const next=value&&id(value.uid)&&id(value.sessionId)?{uid:value.uid,sessionId:value.sessionId}:null;if(JSON.stringify(session)!==JSON.stringify(next)){invalidate(true);session=next;}},
   select(value,audience='buyer'){invalidate();providerId=id(value)?value:null;role=['buyer','provider'].includes(audience)?audience:'buyer';},
   setOnline(value){online=value===true;if(!online){invalidate();status=pending?'unknown':'offline';emit();}},
   detail(value){if(enquiryId!==value)invalidate();if(!id(value)){invalidate();status='unavailable';emit();return Promise.resolve();}enquiryId=value;return read();},
-  nextHistory(){return !ack.snapshot().queueFull&&view?.hasMore?read(view.messages.at(-1).sequence,view.thread.revision):Promise.resolve();},
+  nextHistory(){return !ack.snapshot().queueFull&&view?.hasMore?read(view.throughSequence??view.messages.at(-1).sequence,view.thread.revision):Promise.resolve();},
   send(text){if(!view?.thread.canSend||pending||status==='loading')return Promise.resolve();if(normalizeMessageDraft(text)===null){status='invalid';emit();return Promise.resolve();}let requestId;try{requestId=makeRequestId();}catch{}if(!id(requestId)){status='unavailable';emit();return Promise.resolve();}pending={providerId,enquiryId,expectedRevision:view.thread.revision,expectedEnquiryRevision:view.thread.enquiryRevision,expectedGeneration:view.thread.generation,requestId,text};return dispatch();},retry:()=>pending?dispatch():ack.retry()
  });
 }

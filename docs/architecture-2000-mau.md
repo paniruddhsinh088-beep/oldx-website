@@ -616,3 +616,46 @@ Transport/rate-limit/hosted/device/staging acceptance is not proven by local por
 No live Firebase/Rules/deployment/billing/main changes. HOLD/NO-GO.
 Next: equivalent Provider writer/epoch parity, then reconciled notification/HTTP
 acceptance using existing contracts, without activation.
+
+### 7 November — Provider Chat parity (local/Emulator; OFF)
+Start 8e57ad0022803af48087919481cca9141052d6cb; clean, fetched remote equal.
+Provider now reuses Product's shared prefix/proof checks and reconciled Inbox stages.
+Default-off privacy writers perform self-hide, sender-only deletion and own-edge
+block/unblock CAS, atomically updating source, exact receipt/audit and both inventory
+heads. Publication, selected service, participant eligibility and fresh block checks
+remain mandatory. Privacy edits/unblock may run during invalidation; read/send/ack
+require ready canonical or explicitly gated reconciled server rows.
+Reconciled Provider send/summary/read/ack preserve exact visible unread totals,
+physical read prefixes, scoped signed epochs, bounded/sparse/empty pages, gaps,
+newer incoming messages, lost acknowledgments and multi-device idempotent retries.
+Old canonical receipts are rejected after reconciliation. Unknown block fields are
+preserved by rejecting writes; unknown messages/missing prefixes stay unavailable.
+Existing Provider HTTP/DTO/model/DOM accept these paths only with explicit gates.
+No live route or default changed. Multi-service profiles and existing locales remain.
+
+Measured: privacy 5 atomic writes; reconciled send 8 writes + 1 message existence
+read; ack 5 writes + 0 message/history reads; exact replay 0 writes. Pages read at
+most 20 physical messages. No hosted capacity or aggregate cost saving is claimed.
+62 distinct checks pass, 0 final failures/skips: 42 Node/static, 13 Chrome,
+6 actual baseline Firestore Emulator + 1 native Provider/Auth Emulator smoke test.
+New parity cases cover rollback (including failed ack audit), unknown commit replay,
+concurrent block CAS/read ack, foreign/revoked users, service tampering, missing
+prefixes, privacy epochs and the actual gated HTTP-to-mobile-DOM flow. Fixture
+identities/inventory are synthetic; native Auth smoke covers the existing native
+Provider journey, not deployment acceptance of these new paths.
+Focused commands/evidence:
+- Node focused file list/result: .firebase/provider-parity-focused.log (42).
+- node --test tests/browser/service-messaging-integration.test.mjs tests/browser/provider-conversation-integration.test.mjs tests/browser/unified-inbox.test.mjs (13).
+- Baseline child: node --test tests/firestore-emulator/provider-chat-parity-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs tests/firestore-emulator/reconciled-product-cursor-runtime.test.mjs (6).
+- Native child: node --test --test-name-pattern="REAL native Provider contact" tests/firestore-emulator/admin-runtime-native.test.mjs (1).
+- Logs: .firebase/provider-parity-browser.log, provider-parity-emulator.log,
+  provider-parity-native.log; only new browser/Emulator cases repeated in *-final.log
+  after stale-proof/unknown-edge/audit-rollback hardening. No weakened assertions.
+
+Remaining: complete revision-fenced inventory/missing-prefix legacy migration,
+authoritative cross-kind source/block/epoch mapping, reconciled notification readers
+and real provider/device/hosted staging acceptance. Unknown legacy attachments and
+schemas are not guessed. Next smallest safe task: isolated missing-prefix migration
+planner/rehearsal using complete canonical inventories; no live migration approval
+inferred. New backend/transport gates remain OFF. No live Firebase/Rules, deployment,
+production/main, billing, IAM, credentials or dependency changes. HOLD/NO-GO.
