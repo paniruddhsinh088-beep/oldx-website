@@ -1462,10 +1462,11 @@
         }
 
         // Global variables for Infinite Scroll & Pagination
-        let productLimit = 12;
+        const PRODUCT_PAGE_SIZE = 12;
+        let productFeedState = null;
         let isFetchingProducts = false;
         let hasMoreProducts = true;
-        let productsUnsubscribe = null;
+
 
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('button, a, .clickable').forEach(el => {
@@ -1497,12 +1498,7 @@
         }
 
         function loadMoreProducts() {
-            if (isFetchingProducts || !hasMoreProducts) return;
-            const spinner = document.getElementById('scrollLoadingSpinner');
-            if (spinner) spinner.style.display = 'inline-block';
-            
-            productLimit += 12;
-            listenToProductsFromFirebase();
+            return productFeedState ? loadProductPage(productFeedState) : listenToProductsFromFirebase();
         }
 
         // 3. HARDWARE BACK BUTTON & NATIVE PERMISSIONS HANDLING
@@ -1667,6 +1663,12 @@
         let activeTypingUnsubscribe = null;
         let activeTypingGeneration = 0;
         let inboxListenerUnsubscribe = null;
+        let legacyInboxGeneration = 0;
+        let legacyInboxJob = null;
+        let inboxViewGeneration = 0;
+        let legacyChatGeneration = 0;
+        let legacyChatState = null;
+        let legacyReadReceiptTimer = null;
         let userSavedAdsUnsubscribe = null;
 
         let currentSelectedState = 'Gujarat';
@@ -2180,8 +2182,13 @@
         };
 
         auth.onAuthStateChanged(user => {
+            const previousUser = window.currentUser;
             stopTypingStatus();
+            stopLegacyChatRead();
+            invalidateLegacyInbox();
+            inboxViewGeneration++;
             window.currentUser = user;
+            if (previousUser !== user) listenToProductsFromFirebase();
             refreshStoreHeader(user);
             const container = document.getElementById('authContainer');
             const adminBtn = document.getElementById('headerAdminBtn');
@@ -2288,63 +2295,92 @@
             }
         });
 
+        function invalidateLegacyInbox() {
+            legacyInboxGeneration++; legacyInboxJob = null;
+        }
+
+        async function readLegacyPages(query, size, current, visit) {
+            let cursor = null; const seen = new Set();
+            while (current()) {
+                const page = await (cursor ? query.startAfter(cursor) : query).limit(size).get({ source: 'server' });
+                if (!current()) throw new Error('Stale read');
+                if (!Array.isArray(page.docs) || page.docs.length > size || page.metadata?.fromCache || page.metadata?.hasPendingWrites) throw new Error('Unconfirmed page');
+                for (const doc of page.docs) { if (typeof doc.id !== 'string' || !doc.id || typeof doc.data !== 'function') throw new Error('Invalid document'); if (!seen.has(doc.id)) { visit(doc); seen.add(doc.id); } }
+                if (page.docs.length < size) return;
+                const next = page.docs.at(-1);
+                if (cursor && next.id === cursor.id) throw new Error('Cursor did not advance');
+                cursor = next;
+            }
+            throw new Error('Stale read');
+        }
+
+        function readLegacyInboxSummaries(user) {
+            if (!user || user !== window.currentUser) return Promise.reject(new Error('Session changed'));
+            if (legacyInboxJob?.user === user) return legacyInboxJob.promise;
+            const job = { user, generation: legacyInboxGeneration, failed: false, promise: null };
+            const current = () => !job.failed && user === window.currentUser && job.generation === legacyInboxGeneration;
+            job.promise = (async () => {
+                const rooms = [];
+                await readLegacyPages(db.collection('chats').where('participants', 'array-contains', user.uid).orderBy(firebase.firestore.FieldPath.documentId()), 30, current, doc => {
+                    const room = doc.data();
+                    if (!Array.isArray(room.participants) || room.participants.length !== 2 || new Set(room.participants).size !== 2 || !room.participants.every(id => typeof id === 'string' && id) || !room.participants.includes(user.uid)) throw new Error('Invalid room');
+                    rooms.push({ ...room, chatRoomId: doc.id });
+                });
+                const summaries = []; let index = 0;
+                await Promise.all(Array.from({ length: Math.min(4, rooms.length) }, async () => {
+                    while (current()) {
+                        const chat = rooms[index++]; if (!chat) return;
+                        const messages = db.collection('chats').doc(chat.chatRoomId).collection('messages');
+                        let unreadCount = 0;
+                        // Missing legacy status still means unread; never truncate this count.
+                        await readLegacyPages(messages.where('senderUid', '!=', user.uid).orderBy('senderUid').orderBy(firebase.firestore.FieldPath.documentId()), 50, current, doc => {
+                            if (doc.data().status !== 'read') unreadCount++;
+                        });
+                        const last = await messages.orderBy('createdAt', 'desc').limit(1).get({ source: 'server' });
+                        if (!current() || last.metadata?.fromCache || last.metadata?.hasPendingWrites || !Array.isArray(last.docs) || last.docs.length > 1) throw new Error('Unconfirmed preview');
+                        const latest = last.docs[0]?.data() || null;
+                        summaries.push({ chat, latest, unreadCount, createdAt: latest?.createdAt?.toMillis?.() || 0 });
+                    }
+                    throw new Error('Session changed');
+                }));
+                if (!current()) throw new Error('Stale inbox');
+                return summaries.sort((a,b) => (b.unreadCount > 0) - (a.unreadCount > 0) || b.createdAt - a.createdAt || a.chat.chatRoomId.localeCompare(b.chat.chatRoomId));
+            })().catch(error => { job.failed = true; throw error; }).finally(() => { if (legacyInboxJob === job) legacyInboxJob = null; });
+            legacyInboxJob = job; return job.promise;
+        }
+
+        function refreshLegacyInboxBadge(user) {
+            const generation = legacyInboxGeneration;
+            return readLegacyInboxSummaries(user).then(rows => {
+                if (generation === legacyInboxGeneration && user === window.currentUser) { const total = rows.reduce((sum,row) => sum + row.unreadCount, 0); updateInboxBadge(total); return total; }
+                return null;
+            }).catch(() => { if (generation === legacyInboxGeneration && user === window.currentUser) updateInboxBadge(null); });
+        }
+
         function startGlobalUnreadMessagesListener(userId) {
             if (inboxListenerUnsubscribe) inboxListenerUnsubscribe();
-
-            inboxListenerUnsubscribe = db.collection('chats')
-                .where('participants', 'array-contains', userId)
-                .onSnapshot(snapshot => {
-                    if (snapshot.empty) {
-                        updateInboxBadge(0);
-                        return;
-                    }
-
-                    let chatRooms = [];
-                    snapshot.forEach(docSnap => {
-                        chatRooms.push({ id: docSnap.id, ...docSnap.data() });
-                    });
-
-                    let totalUnread = 0;
-                    let processed = 0;
-
-                    chatRooms.forEach(room => {
-                        db.collection('chats').doc(room.id).collection('messages')
-                            .where('senderUid', '!=', userId)
-                            .get().then(msgSnap => {
-                                msgSnap.forEach(mDoc => {
-                                    const mData = mDoc.data();
-                                    if (mData.status !== 'read') {
-                                        totalUnread++;
-                                    }
-                                });
-                                processed++;
-                                if (processed === chatRooms.length) {
-                                    updateInboxBadge(totalUnread);
-                                    if (totalUnread > 0) {
-                                        triggerPushNotification("New Messages on OldX", `You have ${totalUnread} unread message(s)!`);
-                                    }
-                                }
-                            }).catch(() => {
-                                processed++;
-                                if (processed === chatRooms.length) {
-                                    updateInboxBadge(totalUnread);
-                                }
-                            });
-                    });
-                }, error => {
-                    console.log("Global unread listener error:", error);
+            invalidateLegacyInbox(); const user = window.currentUser;
+            if (!user || user.uid !== userId) return;
+            let previous = null, lastNotified = 0;
+            // Metadata only signals refresh; counts come from complete server reads.
+            inboxListenerUnsubscribe = db.collection('chats').where('participants', 'array-contains', userId).onSnapshot(snapshot => {
+                if (user !== window.currentUser) return;
+                const signature = JSON.stringify(snapshot.docs.map(doc => { const room=doc.data(); return [doc.id,room.participants,room.lastUpdated?.seconds,room.lastUpdated?.nanoseconds]; }).sort((a,b) => a[0].localeCompare(b[0])));
+                if (signature === previous) return; previous = signature;
+                invalidateLegacyInbox();
+                refreshLegacyInboxBadge(user).then(total => {
+                    if (user !== window.currentUser || !Number.isSafeInteger(total)) return;
+                    if (total > lastNotified && typeof triggerPushNotification === 'function') triggerPushNotification('New Messages on OldX', 'You have ' + total + ' unread message(s)!');
+                    lastNotified = total;
                 });
+            }, () => { if (user === window.currentUser) { invalidateLegacyInbox(); updateInboxBadge(null); } });
         }
 
         function updateInboxBadge(count) {
-            const badge = document.getElementById('inboxBadgeCount');
-            if (!badge) return;
-            if (count > 0) {
-                badge.innerText = count;
-                badge.style.display = 'inline-block';
-            } else {
-                badge.style.display = 'none';
-            }
+            const badge = document.getElementById('inboxBadgeCount'); if (!badge) return;
+            badge.title = Number.isSafeInteger(count) ? '' : legacyReadCopy('unknown');
+            badge.innerText = Number.isSafeInteger(count) ? String(count) : '?';
+            badge.style.display = count === 0 ? 'none' : 'inline-block';
         }
 
         function calculatePrices(source) {
@@ -2367,62 +2403,21 @@
         }
 
         function openInboxModal() {
-            if(!window.currentUser) {
-                showCustomAlert("Login Required", "Please login to view your messages!", "error");
-                openAuthModal();
-                return;
-            }
-
-            const currentUid = window.currentUser.uid;
+            const user = window.currentUser;
+            if (!user) { showCustomAlert('Login Required', 'Please login to view your messages!', 'error'); openAuthModal(); return; }
+            const currentUid = user.uid, generation = ++inboxViewGeneration;
+            const current = () => window.currentUser === user && generation === inboxViewGeneration;
             const container = document.getElementById('inboxConversationsList');
-            container.innerHTML = `
-                <div class="text-center py-10">
-                    <i class="fa-solid fa-spinner fa-spin text-2xl text-teal-600 mb-2"></i>
-                    <p class="text-xs text-gray-400 font-medium">Loading conversations...</p>
-                </div>
-            `;
+            container.textContent = legacyReadCopy('loading');
             document.getElementById('inboxModal').style.display = 'flex';
-
-            db.collection('chats')
-              .where('participants', 'array-contains', currentUid)
-              .get().then(async snapshot => {
-                  const myChats = snapshot.docs.map(doc => ({ chatRoomId: doc.id, ...doc.data() }));
-
-                  if(myChats.length === 0) {
-                      container.innerHTML = `
-                          <div class="text-center py-14 space-y-2">
-                              <div class="w-14 h-14 bg-gray-50 dark:bg-gray-700/50 rounded-full flex items-center justify-center mx-auto text-gray-300 dark:text-gray-500 text-2xl">
-                                  <i class="fa-solid fa-inbox"></i>
-                              </div>
-                              <p class="text-gray-800 dark:text-gray-200 font-bold text-xs">No messages yet</p>
-                              <p class="text-gray-400 text-[11px] max-w-[200px] mx-auto">Start a conversation with a seller from any product page.</p>
-                          </div>
-                      `;
-                      return;
-                  }
-
-                  try {
-                      // Load each conversation's messages so unread chats can be sorted first.
-                      const conversations = await Promise.all(myChats.map(async chat => {
-                          const messagesSnapshot = await db.collection('chats').doc(chat.chatRoomId)
-                              .collection('messages').orderBy('createdAt', 'desc').get();
-                          const docs = messagesSnapshot.docs;
-                          const latestDoc = docs[0];
-                          const latest = latestDoc ? latestDoc.data() : null;
-                          const unreadCount = docs.filter(doc => {
-                              const data = doc.data();
-                              return data.senderUid !== currentUid && data.status !== 'read';
-                          }).length;
-                          const createdAt = latest && latest.createdAt && latest.createdAt.toMillis
-                              ? latest.createdAt.toMillis() : 0;
-                          return { chat, latest, unreadCount, createdAt };
-                      }));
-
-                      // Unread conversations first; within each group, newest activity first.
-                      conversations.sort((a, b) => (b.unreadCount > 0) - (a.unreadCount > 0) || b.createdAt - a.createdAt);
-                      container.innerHTML = '';
-
-                      conversations.forEach(item => {
+            return readLegacyInboxSummaries(user).then(conversations => {
+                if (!current()) return;
+                let visibleCount = 20;
+                const render = () => {
+                    if (!current()) return;
+                    container.replaceChildren();
+                    if (!conversations.length) { container.textContent = 'No messages yet'; return; }
+                      conversations.slice(0, visibleCount).forEach(item => {
                           const chat = item.chat;
                           const lastMsgData = item.latest;
                           let lastMsgText = "Tap to view conversation";
@@ -2436,6 +2431,7 @@
                           const div = document.createElement('div');
                           div.className = "flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-4 rounded-2xl gap-3 cursor-pointer hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-lg transition group shadow-sm min-h-[82px]";
                           div.onclick = () => {
+                              if (!current()) return;
                               closeInboxModal();
                               activeChatRoomId = chat.chatRoomId;
                               const otherUid = (chat.participants || []).find(id => id !== currentUid && id !== 'guest');
@@ -2491,17 +2487,22 @@
                           div.append(mainRow, actionRow);
                           container.appendChild(div);
                       });
-                  } catch (err) {
-                      console.error("Inbox loading error:", err);
-                      container.innerHTML = '<p class="text-center text-xs text-red-500 py-8">Could not load conversations. Please try again.</p>';
-                  }
-              }).catch(err => {
-                  console.error("Inbox loading error:", err);
-                  container.innerHTML = '<p class="text-center text-xs text-red-500 py-8">Could not load conversations. Please try again.</p>';
-              });
+                    if (visibleCount < conversations.length) {
+                        const more = document.createElement('button'); more.type = 'button'; more.className = 'px-4 py-3 rounded-xl bg-primary text-white'; more.textContent = legacyReadCopy('more');
+                        more.addEventListener('click', () => { visibleCount += 20; render(); }); container.appendChild(more);
+                    }
+                };
+                render();
+            }).catch(() => {
+                if (!current()) return;
+                container.textContent = legacyReadCopy('unavailable');
+                const retry = document.createElement('button'); retry.type = 'button'; retry.textContent = legacyReadCopy('retry'); retry.className = 'px-4 py-3 rounded-xl bg-primary text-white';
+                retry.addEventListener('click', openInboxModal); container.appendChild(retry);
+            });
         }
 
         function closeInboxModal() {
+            inboxViewGeneration++;
             document.getElementById('inboxModal').style.display = 'none';
         }
 
@@ -2543,6 +2544,7 @@
 
         function closeFullChatPage() {
             stopTypingStatus();
+            stopLegacyChatRead();
             if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
             document.getElementById('fullChatPage').style.display = 'none';
@@ -2669,29 +2671,89 @@
             });
         }
 
+        function stopLegacyChatRead() {
+            legacyChatGeneration++; legacyChatState = null;
+            if (legacyReadReceiptTimer !== null) clearTimeout(legacyReadReceiptTimer);
+            legacyReadReceiptTimer = null;
+            if (activeChatUnsubscribe) activeChatUnsubscribe(); activeChatUnsubscribe = null;
+            const messages = document.getElementById('fullChatMessages'); if (messages) messages.replaceChildren();
+        }
+
         // The listener reads the latest bounded window; render it oldest first.
         function chronologicalChatDocuments(snapshot) {
             return Array.isArray(snapshot?.docs) ? snapshot.docs.slice().reverse() : [];
         }
 
         function loadChatMessages(chatRoomId) {
-            const container = document.getElementById('fullChatMessages');
-
-            setTimeout(() => {
-                db.collection('chats').doc(chatRoomId).collection('messages')
-                  .where('senderUid', '!=', window.currentUser.uid)
-                  .get().then(snapshot => {
-                      snapshot.forEach(doc => {
-                          doc.ref.update({ status: 'read' });
-                      });
-                  }).catch(err => console.warn('Read receipt update failed:', err));
-            }, 300);
-
-            if (activeChatUnsubscribe) activeChatUnsubscribe();
-
+            stopLegacyChatRead();
+            const user = window.currentUser;
+            if (!user || !chatRoomId) return;
+            const state = { generation: legacyChatGeneration, user, room: chatRoomId, cursor: null, hasMore: true, loading: false, historical: false, receiptsAttempted: new Set() };
+            legacyChatState = state;
             activeChatUnsubscribe = db.collection('chats').doc(chatRoomId).collection('messages')
-              .orderBy('createdAt', 'desc').limit(35)
-              .onSnapshot(snapshot => {
+              .orderBy('createdAt', 'desc').limit(35).onSnapshot(snapshot => {
+                if (!currentLegacyChat(state) || state.historical) return;
+                if (!Array.isArray(snapshot.docs) || snapshot.docs.length > 35) return;
+                state.cursor = snapshot.docs.at(-1) || null; state.hasMore = snapshot.docs.length === 35;
+                renderLegacyChatPage(state, snapshot);
+              }, () => { if (currentLegacyChat(state) && !state.historical) { document.getElementById('fullChatMessages').textContent = legacyReadCopy('unavailable'); updateLegacyChatPaging(state, true); } });
+        }
+
+        function currentLegacyChat(state) {
+            return state === legacyChatState && state.generation === legacyChatGeneration && state.user === window.currentUser;
+        }
+
+        function updateLegacyChatPaging(state, error = false) {
+            const container = document.getElementById('fullChatMessages');
+            if (!container || typeof container.before !== 'function') return;
+            let controls = document.getElementById('chatHistoryControls');
+            if (!controls) {
+                controls = document.createElement('div'); controls.id = 'chatHistoryControls'; controls.className = 'flex flex-wrap gap-2 p-2';
+                for (const type of ['older', 'latest']) {
+                    const button = document.createElement('button'); button.type = 'button'; button.dataset.chatPage = type; button.className = 'px-3 py-2 rounded-xl bg-gray-100 text-sm';
+                    button.addEventListener('click', () => { const active = legacyChatState; if (!active) return; if (type === 'older' && active.cursor) loadOlderLegacyChat(active); else loadChatMessages(active.room); }); controls.appendChild(button);
+                }
+                container.before(controls);
+            }
+            const older = controls.querySelector('[data-chat-page="older"]'); older.hidden = !state.hasMore && !error; older.disabled = state.loading;
+            older.textContent = legacyReadCopy(error ? 'retry' : state.loading ? 'loading' : 'older');
+            const latest = controls.querySelector('[data-chat-page="latest"]'); latest.textContent = legacyReadCopy('latest'); latest.disabled = state.loading;
+        }
+
+        async function loadOlderLegacyChat(state) {
+            if (!currentLegacyChat(state) || state.loading || !state.hasMore || !state.cursor) return;
+            state.loading = true; updateLegacyChatPaging(state);
+            let error = false;
+            try {
+                const page = await db.collection('chats').doc(state.room).collection('messages').orderBy('createdAt', 'desc').startAfter(state.cursor).limit(35).get({ source: 'server' });
+                if (!currentLegacyChat(state)) return;
+                if (!Array.isArray(page.docs) || page.docs.length > 35 || page.metadata?.fromCache || page.metadata?.hasPendingWrites) throw new Error('Unconfirmed history');
+                state.hasMore = page.docs.length === 35;
+                if (page.docs.length) {
+                    if (activeChatUnsubscribe) activeChatUnsubscribe(); activeChatUnsubscribe = null;
+                    state.historical = true; state.cursor = page.docs.at(-1);
+                    renderLegacyChatPage(state, page);
+                }
+            } catch (_) { error = true; }
+            finally { if (currentLegacyChat(state)) { state.loading = false; updateLegacyChatPaging(state, error); } }
+        }
+
+        function scheduleLegacyReadReceipts(state, snapshot) {
+            if (legacyReadReceiptTimer !== null) clearTimeout(legacyReadReceiptTimer);
+            const visible = snapshot.docs.filter(doc => { const msg=doc.data(); return !state.receiptsAttempted.has(doc.id) && typeof doc.ref?.update === 'function' && typeof msg.senderUid === 'string' && msg.senderUid !== state.user.uid && msg.status !== 'read' && msg.deletedForEveryone !== true && !(Array.isArray(msg.hiddenFor) && msg.hiddenFor.includes(state.user.uid)); });
+            if (!visible.length) return;
+            legacyReadReceiptTimer = setTimeout(() => {
+                legacyReadReceiptTimer = null;
+                if (!currentLegacyChat(state)) return;
+                Promise.all(visible.map(doc => Promise.resolve().then(() => { if (!currentLegacyChat(state)) return; state.receiptsAttempted.add(doc.id); return doc.ref.update({ status: 'read' }); }))).then(() => { if (currentLegacyChat(state)) { invalidateLegacyInbox(); refreshLegacyInboxBadge(state.user); } }).catch(() => { if (currentLegacyChat(state)) refreshLegacyInboxBadge(state.user); });
+            }, 300);
+        }
+
+        function renderLegacyChatPage(state, snapshot) {
+            if (!currentLegacyChat(state)) return;
+            const container = document.getElementById('fullChatMessages');
+            updateLegacyChatPaging(state);
+            scheduleLegacyReadReceipts(state, snapshot);
                   container.replaceChildren();
                   if (snapshot.empty) {
                       const empty = document.createElement('p');
@@ -2704,8 +2766,8 @@
                   }
                   chronologicalChatDocuments(snapshot).forEach(doc => {
                       const msg = doc.data() || {};
-                      const isMe = msg.senderUid === window.currentUser.uid;
-                      if (Array.isArray(msg.hiddenFor) && msg.hiddenFor.includes(window.currentUser.uid)) return;
+                      const isMe = msg.senderUid === state.user.uid;
+                      if (Array.isArray(msg.hiddenFor) && msg.hiddenFor.includes(state.user.uid)) return;
                       const deleted = msg.deletedForEveryone === true;
                       const card = document.createElement('div');
                       card.className = 'p-2.5 px-3 rounded-2xl max-w-[80%] text-xs shadow-sm relative ' +
@@ -2786,7 +2848,6 @@
                       for (const node of card.querySelectorAll('[data-i18n], [data-i18n-aria-label]')) node.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
                   });
                   container.scrollTop = container.scrollHeight;
-              }, error => console.error('Chat message listener failed:', error));
         }
         function openMessageActions(messageId, senderUid) {
             const choice = prompt("Message options:\n1 = Delete for me\n2 = Delete for everyone (only your own message)");
@@ -3103,9 +3164,12 @@
         }
 
         function toggleAdStockStatus(docId, currentStatus) {
+            const user = window.currentUser; if (!user) return;
             db.collection('products').doc(docId).update({
                 isSold: !currentStatus
             }).then(() => {
+                if (window.currentUser !== user) return;
+                syncAcknowledgedProduct(docId, { isSold: !currentStatus }); renderProducts();
                 openMyAdsModal();
             });
         }
@@ -3117,7 +3181,10 @@
             
             document.getElementById('confirmDeleteBtn').onclick = function() {
                 if (pendingDeleteDocId) {
-                    db.collection('products').doc(pendingDeleteDocId).delete().then(() => {
+                    const docId = pendingDeleteDocId, user = window.currentUser; if (!user) return;
+                    db.collection('products').doc(docId).delete().then(() => {
+                        if (window.currentUser !== user) return;
+                        syncAcknowledgedProduct(docId, null); renderProducts();
                         closeDeleteConfirmModal();
                         openMyAdsModal();
                         showCustomAlert("Deleted", "Ad removed successfully!", "success");
@@ -3320,6 +3387,7 @@
                 const updatedProduct = { ...p, title, basePrice, discountPercent, finalPriceStr, phone, location, desc, images: updatedImages };
                 if (cachedIndex >= 0) products[cachedIndex] = updatedProduct;
                 else products.push(updatedProduct);
+                if (typeof syncAcknowledgedProduct === 'function') syncAcknowledgedProduct(docId, updatedProduct);
 
                 // Keep the Recently Viewed localStorage cache in sync after editing a product.
                 // Preserve the viewing order and update only the matching product's saved fields.
@@ -3947,52 +4015,103 @@
             renderProducts(); 
         }
 
-        // Realtime Products Listener with Pagination Limit
-        function listenToProductsFromFirebase() {
-            const generation = ++productsReadGeneration;
-            isFetchingProducts = true;
-            if (productsUnsubscribe) productsUnsubscribe();
-
-            productsUnsubscribe = db.collection('products')
-              .orderBy('createdAt', 'desc')
-              .limit(productLimit)
-              .onSnapshot(snapshot => {
-                  if (generation !== productsReadGeneration) return;
-                  isFetchingProducts = false;
-                  const spinner = document.getElementById('scrollLoadingSpinner');
-                  if (spinner) spinner.style.display = 'none';
-
-                  if (snapshot.docs.length < productLimit) {
-                      hasMoreProducts = false;
-                  } else {
-                      hasMoreProducts = true;
-                  }
-
-                  products = [];
-                  snapshot.forEach(doc => products.push({ ...doc.data(), docId: doc.id }));
-                  
-                  // A bounded query is not proof of deletion. Preserve saved IDs.
-
-                  renderProducts();
-                  renderRecentlyViewed();
-                  if(window.currentUser) updateProfileDetails(window.currentUser);
-                  handleHashChange();
-              }, error => {
-                  if (generation !== productsReadGeneration) return;
-                  isFetchingProducts = false;
-                  const spinner = document.getElementById('scrollLoadingSpinner');
-                  if (spinner) spinner.style.display = 'none';
-                  console.error("[OLDX] Products listener failed:", error);
-                  showCustomAlert(
-                      "Products could not load",
-                      "We could not load products right now. Please check your connection and try refreshing the page. If the problem continues, contact support.",
-                      "error"
-                  );
-              });
+        function legacyReadCopy(key) {
+            const locale = document.documentElement.lang;
+            const copy = {
+                en: { more: 'Load more', refresh: 'Refresh', retry: 'Retry', loading: 'Loading...', unavailable: 'Could not finish loading. Retry without losing your place.', scope: 'Search covers loaded products. Load more to include undated legacy listings.', older: 'Older messages', latest: 'Latest messages', unknown: 'Unread count unavailable' },
+                gu: { more: 'વધુ લોડ કરો', refresh: 'ફરીથી જુઓ', retry: 'ફરી પ્રયાસ કરો', loading: 'લોડ થઈ રહ્યું છે...', unavailable: 'લોડ પૂર્ણ થયું નથી. અહીંથી ફરી પ્રયાસ કરો.', scope: 'શોધ લોડ થયેલા પ્રોડક્ટ માટે છે. તારીખ વિનાની જૂની જાહેરાતો માટે વધુ લોડ કરો.', older: 'જૂના સંદેશા', latest: 'નવા સંદેશા', unknown: 'ન વાંચેલા સંદેશાની ગણતરી ઉપલબ્ધ નથી' },
+                hi: { more: 'और लोड करें', refresh: 'ताज़ा करें', retry: 'फिर कोशिश करें', loading: 'लोड हो रहा है...', unavailable: 'लोड पूरा नहीं हुआ। यहीं से फिर कोशिश करें।', scope: 'खोज लोड किए उत्पादों में है। बिना तारीख वाले पुराने विज्ञापनों के लिए और लोड करें।', older: 'पुराने संदेश', latest: 'नए संदेश', unknown: 'अपठित संदेशों की संख्या उपलब्ध नहीं' }
+            };
+            return (copy[locale] || copy.en)[key];
         }
 
-        // Initial fetch call
-        listenToProductsFromFirebase();
+        function updateProductPaging(state, error = false) {
+            const sentinel = document.getElementById('scrollSentinel');
+            if (!sentinel) return;
+            let controls = document.getElementById('productPagingControls');
+            if (!controls) {
+                controls = document.createElement('div'); controls.id = 'productPagingControls';
+                controls.className = 'flex flex-wrap items-center gap-2 py-3';
+                const more = document.createElement('button'); more.type = 'button'; more.dataset.feedMore = '';
+                const refresh = document.createElement('button'); refresh.type = 'button'; refresh.dataset.feedRefresh = '';
+                for (const button of [more, refresh]) button.className = 'px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold';
+                more.addEventListener('click', loadMoreProducts);
+                refresh.addEventListener('click', () => listenToProductsFromFirebase());
+                const note = document.createElement('p'); note.dataset.feedStatus = ''; note.setAttribute('role', 'status'); note.className = 'w-full text-xs text-gray-500';
+                controls.append(more, refresh, note); sentinel.before(controls);
+            }
+            const more = controls.querySelector('[data-feed-more]');
+            more.disabled = state.loading; more.hidden = !hasMoreProducts && !error;
+            more.textContent = legacyReadCopy(error ? 'retry' : state.loading ? 'loading' : 'more');
+            controls.querySelector('[data-feed-refresh]').textContent = legacyReadCopy('refresh');
+            controls.querySelector('[data-feed-status]').textContent = legacyReadCopy(error ? 'unavailable' : 'scope');
+            const spinner = document.getElementById('scrollLoadingSpinner');
+            if (spinner) spinner.style.display = state.loading ? 'inline-block' : 'none';
+        }
+
+        function syncAcknowledgedProduct(docId, patch) {
+            const state = productFeedState;
+            if (patch === null) {
+                products = products.filter(row => row.docId !== docId);
+                if (state && state.user === window.currentUser) {
+                    state.deletedIds.add(docId); state.rows.delete(docId); state.datedSet.delete(docId);
+                    state.datedIds = state.datedIds.filter(id => id !== docId); state.undatedIds = state.undatedIds.filter(id => id !== docId);
+                }
+            } else {
+                products = products.map(row => row.docId === docId ? { ...row, ...patch, docId } : row);
+                if (state && state.user === window.currentUser) {
+                    const previous = state.rows.get(docId);
+                    if (previous) state.rows.set(docId, { ...previous, ...patch, docId });
+                }
+            }
+        }
+
+        function listenToProductsFromFirebase() {
+            const state = { generation: ++productsReadGeneration, user: window.currentUser, datedCursor: null, scanCursor: null, datedMore: true, scanMore: true, datedIds: [], datedSet: new Set(), undatedIds: [], deletedIds: new Set(), rows: new Map(), loading: false };
+            productFeedState = state; products = []; hasMoreProducts = true;
+            renderProducts();
+            return loadProductPage(state);
+        }
+
+        async function loadProductPage(state) {
+            const current = () => state === productFeedState && state.generation === productsReadGeneration && state.user === window.currentUser;
+            if (!current() || state.loading || !state.datedMore && !state.scanMore) return;
+            state.loading = true; isFetchingProducts = true; updateProductPaging(state);
+            const dated = state.datedMore, scan = state.scanMore;
+            try {
+                let byTime = db.collection('products').orderBy('createdAt', 'desc').orderBy(firebase.firestore.FieldPath.documentId(), 'desc').limit(PRODUCT_PAGE_SIZE);
+                let byId = db.collection('products').orderBy(firebase.firestore.FieldPath.documentId()).limit(PRODUCT_PAGE_SIZE);
+                if (state.datedCursor) byTime = byTime.startAfter(state.datedCursor);
+                if (state.scanCursor) byId = byId.startAfter(state.scanCursor);
+                const [timePage, idPage] = await Promise.all([dated ? byTime.get({ source: 'server' }) : { docs: [] }, scan ? byId.get({ source: 'server' }) : { docs: [] }]);
+                if (!current()) return;
+                for (const page of [timePage, idPage]) if (!Array.isArray(page.docs) || page.docs.length > PRODUCT_PAGE_SIZE || page.metadata?.fromCache || page.metadata?.hasPendingWrites) throw new Error('Unconfirmed Product page');
+                // orderBy excludes absent timestamps; scan by ID without inventing dates.
+                for (const doc of idPage.docs) {
+                    const row = doc.data();
+                    if (!state.deletedIds.has(doc.id) && !Object.hasOwn(row, 'createdAt') && !state.rows.has(doc.id)) { state.undatedIds.push(doc.id); state.rows.set(doc.id, { ...row, docId: doc.id }); }
+                }
+                for (const doc of timePage.docs) {
+                    if (state.deletedIds.has(doc.id)) continue;
+                    if (!state.datedSet.has(doc.id)) { state.datedSet.add(doc.id); state.datedIds.push(doc.id); }
+                    state.rows.set(doc.id, { ...doc.data(), docId: doc.id });
+                }
+                if (dated) { state.datedCursor = timePage.docs.at(-1) || state.datedCursor; state.datedMore = timePage.docs.length === PRODUCT_PAGE_SIZE; }
+                if (scan) { state.scanCursor = idPage.docs.at(-1) || state.scanCursor; state.scanMore = idPage.docs.length === PRODUCT_PAGE_SIZE; }
+                products = [...state.datedIds, ...state.undatedIds.filter(id => !state.datedSet.has(id))].map(id => state.rows.get(id));
+                hasMoreProducts = state.datedMore || state.scanMore;
+                renderProducts(); renderRecentlyViewed();
+                if (typeof handleHashChange === 'function') handleHashChange();
+                if (window.currentUser) updateProfileDetails(window.currentUser);
+            } catch (_) {
+                if (current()) state.failed = true;
+            } finally {
+                if (current()) { state.loading = false; isFetchingProducts = false; updateProductPaging(state, state.failed === true); state.failed = false; }
+            }
+        }
+
+        // Initial fetch call is Auth-scoped; online recovery starts a fresh cursor.
+        window.addEventListener('online', () => { listenToProductsFromFirebase(); invalidateLegacyInbox(); if (window.currentUser) refreshLegacyInboxBadge(window.currentUser); });
 
         function addToRecentlyViewed(p) {
             let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
@@ -5171,6 +5290,7 @@
                 publishStage = 'write';
                 await db.collection('products').add(adData);
                 if (!sameSession()) return;
+                if (typeof listenToProductsFromFirebase === 'function') listenToProductsFromFirebase();
                 document.getElementById('successAdModal').style.display = 'flex';
             } catch (err) {
                 if (!sameSession()) return;
