@@ -7,10 +7,10 @@ export function mountProviderUiIntegration({root=document,enabled=false,readProf
  const listen=(node,type,callback)=>{node.addEventListener(type,callback);listeners.push(()=>node.removeEventListener(type,callback));};
  function render(state){
   $('providerIntegrationStatus').textContent=translate('integration.'+state.command.status);
-  $('providerOwnerStatus').textContent=translate('owner.'+state.owner.status);$('loadProviderOwner').disabled=!enabled||state.command.status==='loading'||state.owner.status==='loading';
-  const busy=state.command.status==='loading'||state.owner.status==='loading',blocked=busy||state.command.canRetry||!enabled;
+  $('providerOwnerStatus').textContent=translate('owner.'+state.owner.status);$('loadProviderOwner').disabled=!enabled||!sessionKey||state.command.status==='loading'||state.owner.status==='loading';
+  const busy=state.command.status==='loading'||state.owner.status==='loading',blocked=busy||state.command.canRetry||!enabled||!sessionKey;
   for(const id of ['saveProviderDraft','publishProvider','withdrawProvider'])$(id).disabled=blocked;
-  $('retryProviderCommand').disabled=!enabled||!state.command.canRetry||busy;
+  $('retryProviderCommand').disabled=!enabled||!sessionKey||!state.command.canRetry||busy;
   $('providerIntegrationPanel').setAttribute('aria-busy',String(busy));
   if(enabled&&lastPublic!==state.public){lastPublic=state.public;onPublicState(state.public);}
  }
@@ -23,5 +23,5 @@ export function mountProviderUiIntegration({root=document,enabled=false,readProf
  listen($('categories'),'click',()=>{journey.changeScope();onSearchScope();});listen($('resetSearch'),'click',()=>{journey.changeScope();onSearchScope();});
  listen(window,'offline',()=>journey.setOnline(false));listen(window,'online',()=>journey.setOnline(true));
  listen(window,'pagehide',()=>{journey.clear();if(enabled)clearPrivateForm();});
- const api=Object.freeze({model,buyer:journey.buyer,inbox:journey.inbox,changeScope:()=>journey.changeScope(),setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;journey.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());journey.clear();bindings.delete(root);}});bindings.set(root,api);return api;
+ const api=Object.freeze({model,buyer:journey.buyer,inbox:journey.inbox,changeScope:()=>journey.changeScope(),setSession(value){const key=value?value.uid+'/'+value.sessionId:null;if(enabled&&key!==sessionKey)clearPrivateForm();sessionKey=key;journey.setSession(value);},render(){lastPublic=null;render(model.snapshot());},destroy(){listeners.forEach(remove=>remove());sessionKey=null;journey.clear();if(enabled)clearPrivateForm();bindings.delete(root);}});bindings.set(root,api);return api;
 }

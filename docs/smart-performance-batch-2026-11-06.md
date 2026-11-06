@@ -140,3 +140,37 @@ repeated tool investigation, emptiness assumption, reset or migration. Product/S
 Provider live routes, trusted unread summaries, Admin role/audit acceptance, media
 operation and real-device/Capacitor acceptance remain blockers. This batch does not
 mount the prepared host in the live legacy page or enable any backend route.
+
+## Store / Provider owner UI acceptance — 6 November 2026
+
+Starting HEAD 893b85fcf1173b304b7e282959ee967c6f7c0d02; HOLD/NO-GO.
+Reused existing Store Auth/command ports and configureWebsiteProviderFirebase;
+no new architecture, dependencies, live bootstrap, Rules or cloud changes.
+Store browser acceptance now exercises composed token ports, draft save, lost-ack
+same-key retry, owner-form recovery, multiple categories and logout cleanup across
+Gujarati/Hindi/English at 320/375px. Provider acceptance uses the actual existing
+website configurator for multi-service private draft edit/retry, full page reload
+and owner recovery, logout/destroy clearing and 200% text across the same locales.
+Store public catalogue/share/withdrawal assertions remain intact. Browser backends
+are isolated SDK doubles, not evidence that routes or media are live.
+
+Confirmed fixes: Store rejects malformed publication/receipt/photo recovery DTOs,
+including non-boolean success, before restoring a private draft. Late prior-session
+owner responses cannot restore the next session. Provider owner commands now disable
+without a session, and destroying an enabled binding clears private form contents.
+No existing design or approved feature was removed.
+
+Final focused results (60 distinct tests passed, no failures/skips):
+- `node --test tests/integration/store-owner-recovery.test.mjs tests/integration/store-ui.test.mjs tests/integration/firebase-marketplace-integration.test.mjs tests/integration/provider-native-session.test.mjs`: 21. The two Store recovery tests were also rechecked after the final strict-success assertion.
+- `node --test tests/browser/store-integration.test.mjs tests/browser/provider-owner-session.test.mjs`: 6; Provider 3 rechecked after destroy cleanup.
+- `node --test tests/integration/provider-owner-bootstrap.test.mjs scripts/build-static-assets.test.mjs`: 11.
+- `node --test --test-name-pattern='existing UI stays|session/page/search|integration feedback|owner bootstrap|existing owner binding' tests/browser/service-preview.test.mjs`: 5 selected affected cases.
+- `node scripts/run-emulator-tests.mjs admin-runtime`: 17 actual isolated Auth/Firestore Emulator tests; native Store/Provider authorization, audits, revocation and direct-client denial preserved. Signed browser token integration with live staging remains unverified; no Emulator-specific client security relaxation.
+
+The initial deferred-read test fixture invoked its resolver before the scheduled
+read; corrected the fixture's scheduling without changing security assertions.
+Staging Rules/inventory access remains blocked as previously recorded; no repeat
+investigation. Live deployment/activation, media operation, trusted Chat summaries
+and real-device acceptance remain outstanding. Next: bind the existing owner journeys
+to an approved staging host/transport once prerequisites are verified; independently,
+add scoped media/gallery recovery acceptance using the existing media contracts.
