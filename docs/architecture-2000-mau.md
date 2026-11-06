@@ -399,3 +399,41 @@ Chat parity; approved worker/provider/device acceptance; Product/Store/Provider 
 Media/Admin and realistic staging/cost/Capacitor acceptance. These live/approval gates
 were not retried or bypassed. Readiness remains pre-staging integration, HOLD/NO-GO;
 no defensible launch percentage/date or proven 2,000-MAU zero-cost capacity yet.
+
+## 6 November — canonical Product notification and visibility boundary
+
+Start 8cc041f9c684d2fae99358f1b3730864c9cd107a; remote/branch clean and equal.
+Product repository now supplies concrete transactional thread/message/block readers
+for the existing notification privacy policy, reusing Product/Store eligibility and
+participant authorization. Worker-role and recipient-preference readers are still
+mandatory server ports. No invented live policy schema or provider transport.
+Known private-message schemas reject malformed/unknown fields; hidden/deleted raw
+text and stale latest-message previews fail closed instead of escaping via prepared
+Chat reads. Missing legacy prefixes remain unavailable to notification delivery.
+This does NOT complete legacy tombstone rendering, unread reconciliation or writers.
+Fixed read-ack Inbox titles reverting from the Product name to a generic label.
+Existing fact caching now serves the whole SDK transaction/attempt, preserving fresh
+revocation/block/source checks across transactions and avoiding duplicate title reads.
+
+Measured: canonical policy 11 point reads with thread read once; successful recording
+worker 39 point reads + 1 query document, 4 domain writes, enqueue/quota excluded.
+Summary visibility intentionally adds one latest-message point read: Product 8 -> 9
+(or indexed 10 -> 11), independent of history length. Tests require that exact latest
+document, not a history scan. No aggregate cost saving or zero-cost capacity claimed.
+
+79 distinct checks pass, 0 final failures/skips: 53 Node/integration + 5 packaging,
+17 Chrome and 4 actual loopback Firestore Emulator cases. Synthetic identities and
+recording-only delivery are not staging/Auth/provider acceptance. Exact commands:
+- node --test tests/integration/canonical-product-notification.test.mjs tests/integration/product-read-state.test.mjs tests/integration/product-conversation.test.mjs tests/integration/product-ui.test.mjs tests/integration/inbox-worker.test.mjs tests/integration/worker-batch.test.mjs tests/integration/unified-inbox.test.mjs tests/integration/store-ui.test.mjs tests/integration/service-conversation.test.mjs tests/integration/staging-marketplace-packaging.test.mjs scripts/emulator-test-plan.test.mjs scripts/build-static-assets.test.mjs
+- node --test tests/browser/product-integration.test.mjs tests/browser/unified-inbox.test.mjs
+- Guarded baseline Emulator child: node --test tests/firestore-emulator/canonical-product-notification-runtime.test.mjs tests/firestore-emulator/product-read-state-runtime.test.mjs
+Only affected tests were repeated after title/cache corrections. Evidence logs:
+.firebase/canonical-product-focused.log, canonical-product-final-node.log,
+canonical-product-browser.log, canonical-product-browser-final.log, canonical-product-native-final.log.
+
+Next safe task: equivalent Provider canonical-domain adapter, then authoritative
+inventory/visibility/block/delete writers and legacy parity. Remaining gates include
+real worker roles/preferences, durable provider/device acceptance, Store/Provider
+reviews/Media/Admin/Maps acceptance, staging inventory/Rules/rollback and realistic
+capacity. No live access/deployment/Rules/IAM/billing/secrets/main changes, no new
+dependency or design change. All new runtime paths remain OFF; HOLD/NO-GO.
