@@ -575,3 +575,44 @@ binding and gated UI/HTTP/rate-limit integration remain. Unsupported attachments
 unknown message schemas are deliberately unavailable to these writers. No live
 Firebase/Rules/deployment/billing/main changes. Next safe task: reconciled-history
 cursor/tombstone adapter, then equivalent Provider source writers. HOLD/NO-GO.
+
+### 7 November — reconciled Product send/read-ack adapter (OFF)
+Start 75a4127ee06a21a21cd9d4213cb608a086f44171; clean and equal fetched remote.
+Existing Product repository/index now support reconciled-history send/read/ack via
+reconciledHistoryEnabled=false, requiring trusted read state and index. Counts stay
+visibility-aware in reconciled rows; physical prefixes remain separate server facts.
+Send atomically increments only recipient visible unread and retains both row modes.
+Bounded reads scan <=20 physical messages, omit invisible text and return a validated
+throughSequence, including empty pages. Epoch/actor/Product-scoped signed receipts
+advance only contiguous delivered ranges. Gaps fail closed; older completed receipts
+are no-ops; privacy/inventory epoch changes invalidate all previous receipts.
+Ack atomically updates physical read cursor, reconciled row/aggregate and receipt/
+audit, preserving newer incoming messages and later source reconciliation. No
+browser counts or identities trusted. Existing Product model/DOM accepts sparse
+pages only with explicit opt-in, paginates empty pages and clears on logout.
+No existing legacy writer was reimplemented, no route or live flag activated.
+
+Measured: two-message page exactly 2 message reads, 0 writes; send 8 atomic writes
+and 1 message-existence read; ack 5 atomic writes, 0 message/history reads; exact
+send/ack replay 0 writes. These are adapter-operation counts, not whole-site savings.
+65 distinct checks pass, 0 failures/skips: 43 Node/static, 18 Chrome, 4 actual local
+Firestore Emulator. Coverage: hidden/deleted/empty pages, epochs, foreign actor,
+block/unblock, missing prefixes, lost-ack, concurrent devices, new messages during
+ack, repeated reconciliation, bounded client projection and mobile DOM/logout.
+Focused Node command/tests and results: .firebase/reconciled-cursor-focused.log.
+Browser: node --test tests/browser/product-integration.test.mjs tests/browser/unified-inbox.test.mjs;
+new opt-in DOM case run separately by --test-name-pattern="opt-in reconciled Product DOM".
+Emulator child: node --test tests/firestore-emulator/reconciled-product-cursor-runtime.test.mjs tests/firestore-emulator/product-read-state-runtime.test.mjs;
+only new cases repeated after final block/prefix/operation assertions.
+Logs: .firebase/reconciled-cursor-browser.log, reconciled-cursor-browser-new.log,
+reconciled-cursor-emulator.log, reconciled-cursor-emulator-final.log.
+
+Scope: supported Product v1 histories with valid physical prefixes. Truly unknown/
+missing-prefix history needs verified migration; no counters guessed. Provider
+writers/adapter, authoritative deployed inventory/epoch binding, reconciled summary/
+notification readers and trusted HTTP acceptance remain. Legacy per-thread summary
+paths stay unavailable for reconciled rows; unified Inbox remains authoritative.
+Transport/rate-limit/hosted/device/staging acceptance is not proven by local ports.
+No live Firebase/Rules/deployment/billing/main changes. HOLD/NO-GO.
+Next: equivalent Provider writer/epoch parity, then reconciled notification/HTTP
+acceptance using existing contracts, without activation.
