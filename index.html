@@ -1122,10 +1122,10 @@
 
                     <div class="bg-blue-50 dark:bg-gray-700/60 p-3 rounded-xl border border-blue-200 space-y-1">
                         <label class="flex items-center gap-2 font-bold text-xs text-blue-900 dark:text-blue-200 cursor-pointer">
-                            <input type="checkbox" id="adIsShopVerified" class="w-4 h-4 text-blue-600 rounded">
+                            <input type="checkbox" id="adIsShopVerified" disabled aria-disabled="true" title="Requires trusted approval" class="w-4 h-4 text-blue-600 rounded">
                             <i class="fa-solid fa-store text-blue-600"></i> Post as Verified Local Dealer / Shop Owner
                         </label>
-                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Check this if you are posting from a local registered shop or business.</p>
+                        <p class="text-[10px] text-gray-500 dark:text-gray-400">Shop verification requires review and cannot be assigned by the seller.</p>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -1165,10 +1165,10 @@
                     <div class="bg-amber-50 dark:bg-gray-700/60 p-4 rounded-2xl border border-amber-200 space-y-2">
                         <div class="flex items-center justify-between">
                             <label class="flex items-center gap-2 font-bold text-xs text-amber-900 dark:text-amber-200 cursor-pointer">
-                                <input type="checkbox" id="adIsFeatured" class="w-4 h-4 text-amber-600 rounded">
-                                <i class="fa-solid fa-bolt text-amber-500"></i> Boost & Feature Ad on Top (+&#8377;99)
+                                <input type="checkbox" id="adIsFeatured" disabled aria-disabled="true" title="Requires trusted approval" class="w-4 h-4 text-amber-600 rounded">
+                                <i class="fa-solid fa-bolt text-amber-500"></i> Featured listing requires review
                             </label>
-                            <span class="bg-amber-200 text-amber-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">10x Views</span>
+                            <span class="bg-amber-200 text-amber-900 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Review required</span>
                         </div>
                         <p class="text-[10px] text-gray-600 dark:text-gray-300">Get your ad featured on the homepage banner for faster selling.</p>
                     </div>
@@ -1448,6 +1448,10 @@
         let publicStoreOwnerUid = null;
         let currentStoreProductsCache = [];
         let publicStoreMapInstance = null;
+        let storePageReadGeneration = 0;
+        let storeCatalogueGeneration = 0;
+        let storeCatalogueState = null;
+        let productsReadGeneration = 0;
 
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
@@ -3166,7 +3170,7 @@
             if (!p) {
                 try {
                     const snap = await db.collection('products').doc(docId).get();
-                    if (snap.exists) p = { docId: snap.id, ...snap.data() };
+                    if (snap.exists) p = { ...snap.data(), docId: snap.id };
                 } catch (err) {
                     console.error('Could not load product for editing:', err);
                     showCustomAlert('Edit Error', 'Product information could not be loaded. Please check your login and Firestore permissions.', 'error');
@@ -3765,6 +3769,10 @@
             if(currentProduct) toggleCartProduct(currentProduct.docId);
         }
 
+        function unloadedSavedAdsMessage() {
+            return ({ gu: 'સાચવેલી જાહેરાતો હાલની લોડ થયેલી યાદીમાં નથી. વધુ પ્રોડક્ટ લોડ કરો.', hi: 'सहेजे गए विज्ञापन अभी लोड की गई सूची में नहीं हैं। और उत्पाद लोड करें।', en: 'Saved ads are outside the loaded list. Load more products to find them.' })[document.documentElement.lang] || 'Saved ads are outside the loaded list. Load more products to find them.';
+        }
+
         function openCartModal() {
             const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
             if(!activeUser || !activeUser.uid) {
@@ -3780,15 +3788,15 @@
             const storageKey = getSavedAdsStorageKey();
             let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
             
-            // 🔥 FIXED: Automatically clean up items that no longer exist in the products list
+            const hasSavedOutsideWindow = rawList.length > 0;
+            // Filter the visible subset only; a partial feed cannot prove deletion.
             rawList = rawList.filter(item => {
                 const id = (typeof item === 'string') ? item : item.docId;
                 return products.some(p => p.docId === id);
             });
-            localStorage.setItem(storageKey, JSON.stringify(rawList));
             
             if(rawList.length === 0) { 
-                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">No saved ads found.</p>`; 
+                container.innerHTML = `<p class="text-center text-xs text-gray-400 py-8">${hasSavedOutsideWindow ? unloadedSavedAdsMessage() : 'No saved ads found.'}</p>`;
                 return;
             }
 
@@ -3941,6 +3949,7 @@
 
         // Realtime Products Listener with Pagination Limit
         function listenToProductsFromFirebase() {
+            const generation = ++productsReadGeneration;
             isFetchingProducts = true;
             if (productsUnsubscribe) productsUnsubscribe();
 
@@ -3948,6 +3957,7 @@
               .orderBy('createdAt', 'desc')
               .limit(productLimit)
               .onSnapshot(snapshot => {
+                  if (generation !== productsReadGeneration) return;
                   isFetchingProducts = false;
                   const spinner = document.getElementById('scrollLoadingSpinner');
                   if (spinner) spinner.style.display = 'none';
@@ -3959,28 +3969,16 @@
                   }
 
                   products = [];
-                  snapshot.forEach(doc => products.push({ docId: doc.id, ...doc.data() }));
+                  snapshot.forEach(doc => products.push({ ...doc.data(), docId: doc.id }));
                   
-                  // 🔥 Also clean up local saved ads storage when products update from Firebase
-                  const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
-                  if (activeUser) {
-                      const storageKey = getSavedAdsStorageKey();
-                      let rawList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                      let cleanedList = rawList.filter(item => {
-                          const id = (typeof item === 'string') ? item : item.docId;
-                          return products.some(p => p.docId === id);
-                      });
-                      if (cleanedList.length !== rawList.length) {
-                          localStorage.setItem(storageKey, JSON.stringify(cleanedList));
-                          db.collection('users').doc(activeUser.uid).set({ savedAds: cleanedList }, { merge: true }).catch(() => {});
-                      }
-                  }
+                  // A bounded query is not proof of deletion. Preserve saved IDs.
 
                   renderProducts();
                   renderRecentlyViewed();
                   if(window.currentUser) updateProfileDetails(window.currentUser);
                   handleHashChange();
               }, error => {
+                  if (generation !== productsReadGeneration) return;
                   isFetchingProducts = false;
                   const spinner = document.getElementById('scrollLoadingSpinner');
                   if (spinner) spinner.style.display = 'none';
@@ -4026,9 +4024,8 @@
 
             let history = JSON.parse(localStorage.getItem('oldx_recently_viewed') || '[]');
             
-            // Only keep items that actually exist in the active products database array
+            // Display loaded records only; preserve cache entries outside this partial feed.
             history = history.filter(item => products.some(p => p.docId === item.docId));
-            localStorage.setItem('oldx_recently_viewed', JSON.stringify(history));
 
             if (history.length === 0) {
                 section.style.display = 'none';
@@ -4055,6 +4052,9 @@
         }
 
         function handleHashChange() {
+            storePageReadGeneration++;
+            storeCatalogueGeneration++;
+            storeCatalogueState = null;
             const hash = window.location.hash;
 
             if (hash === '#store' || hash.startsWith('#store-')) {
@@ -4169,11 +4169,11 @@
             }
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Store';
             db.collection('stores').doc(user.uid).get().then(doc => {
-                if (window.currentUser && window.currentUser.uid === user.uid) {
-                    currentStoreData = doc.exists ? { uid: user.uid, ...doc.data() } : null;
-                    btn.innerHTML = currentStoreData ? '<i class="fa-solid fa-store mr-1"></i> My Store' : '<i class="fa-solid fa-store mr-1"></i> Create Store';
+                if (window.currentUser === user) {
+                    const hasStore = doc.exists;
+                    btn.innerHTML = hasStore ? '<i class="fa-solid fa-store mr-1"></i> My Store' : '<i class="fa-solid fa-store mr-1"></i> Create Store';
                 }
-            }).catch(() => { btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store'; });
+            }).catch(() => { if (window.currentUser === user) btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store'; });
         }
 
         function handleStoreHeaderClick() {
@@ -4200,6 +4200,7 @@
         }
 
         async function openOwnStorePage() {
+            const generation = ++storePageReadGeneration;
             const user = window.currentUser;
             if (!user) { openAuthModal(); return; }
             document.getElementById('storePageHeading').textContent = 'My Store';
@@ -4210,7 +4211,8 @@
             renderStoreCategoryChoices();
             try {
                 const snap = await db.collection('stores').doc(user.uid).get();
-                currentStoreData = snap.exists ? { uid: user.uid, ...snap.data() } : null;
+                if (generation !== storePageReadGeneration || window.currentUser !== user) return;
+                currentStoreData = snap.exists ? { ...snap.data(), uid: user.uid } : null;
                 const d = currentStoreData || {};
                 document.getElementById('storeShopName').value = d.shopName || '';
                 document.getElementById('storeOwnerName').value = d.ownerName || user.displayName || '';
@@ -4228,6 +4230,7 @@
                     renderOwnStoreSummary();
                 } else document.getElementById('saveStoreBtn').textContent = 'Save Store';
             } catch (err) {
+                if (generation !== storePageReadGeneration || window.currentUser !== user) return;
                 console.error('Store load error:', err);
                 // Keep the form and map usable even when Firestore denies reading this user's store.
                 currentStoreData = null;
@@ -4390,6 +4393,11 @@
         }
 
         async function openPublicStorePage(ownerUid) {
+            const generation = ++storePageReadGeneration;
+            storeCatalogueGeneration++;
+            storeCatalogueState = null;
+            currentStoreData = null;
+            currentStoreProductsCache = [];
             publicStoreOwnerUid = ownerUid;
             document.getElementById('storeFormWrap').style.display = 'none';
             document.getElementById('storePublicWrap').style.display = 'block';
@@ -4398,12 +4406,13 @@
             const wrap = document.getElementById('storePublicWrap'); wrap.innerHTML = '<div class="text-center py-16 text-gray-500"><i class="fa-solid fa-spinner fa-spin text-2xl"></i><p class="mt-3">Loading store...</p></div>';
             try {
                 const snap = await db.collection('stores').doc(ownerUid).get();
+                if (generation !== storePageReadGeneration) return;
                 if (!snap.exists) { wrap.innerHTML = '<div class="bg-white dark:bg-gray-800 rounded-2xl p-8 text-center"><h3 class="font-black text-lg">Store not found</h3><p class="text-sm text-gray-500 mt-2">This store is unavailable or has not been created.</p></div>'; return; }
-                const data = { uid: ownerUid, ...snap.data() };
+                const data = { ...snap.data(), uid: ownerUid };
                 currentStoreData = data;
                 document.getElementById('storePageHeading').textContent = data.shopName || 'Store';
                 renderStorePublicContent(data, !!window.currentUser && window.currentUser.uid === ownerUid);
-            } catch (err) { wrap.innerHTML = '<div class="p-8 text-center text-red-600">Could not load the store. Please check the Firestore rules.</div>'; console.error(err); }
+            } catch (err) { if (generation !== storePageReadGeneration) return; wrap.innerHTML = '<div class="p-8 text-center text-red-600">Could not load the store. Please check the Firestore rules.</div>'; console.error(err); }
         }
 
         function getValidStoreCoordinates(coords) {
@@ -4444,11 +4453,77 @@
                     setTimeout(() => publicStoreMapInstance && publicStoreMapInstance.invalidateSize(), 200);
                 }, 100);
             }
-            db.collection('products').where('sellerUid', '==', data.uid).get().then(snap => {
-                const grid = document.getElementById('storeProductsGrid'); if (!grid) return;
-                currentStoreProductsCache = []; snap.forEach(doc => currentStoreProductsCache.push({ docId: doc.id, ...doc.data() }));
-                filterStoreProducts('all');
-            }).catch(err => { const grid=document.getElementById('storeProductsGrid'); if(grid) grid.innerHTML='<p class="col-span-full text-xs text-red-500">Could not load products.</p>'; console.error(err); });
+            startStoreCatalogue(data.uid);
+        }
+
+        function storeCatalogueCopy(key) {
+            const locale = document.documentElement.lang;
+            const copy = {
+                en: { empty: 'No match in loaded products. Load more to continue.', loaded: 'loaded', more: 'Load more products', loading: 'Loading...', retry: 'Retry loading products', scope: 'Search and sort apply to loaded products. Load more to browse the rest.' },
+                gu: { empty: 'લોડ થયેલા પ્રોડક્ટમાં મેળ નથી. વધુ લોડ કરો.', loaded: 'લોડ થયેલા', more: 'વધુ પ્રોડક્ટ જુઓ', loading: 'લોડ થઈ રહ્યું છે...', retry: 'ફરી લોડ કરો', scope: 'શોધ અને ક્રમ લોડ થયેલા પ્રોડક્ટ માટે છે. બાકીના જોવા વધુ લોડ કરો.' },
+                hi: { empty: 'लोड किए उत्पादों में मिलान नहीं। और लोड करें।', loaded: 'लोड किए गए', more: 'और उत्पाद देखें', loading: 'लोड हो रहा है...', retry: 'फिर से लोड करें', scope: 'खोज और क्रम लोड किए गए उत्पादों पर लागू हैं। बाकी देखने के लिए और लोड करें।' }
+            };
+            return (copy[locale] || copy.en)[key];
+        }
+
+        function startStoreCatalogue(ownerUid) {
+            const state = { generation: ++storeCatalogueGeneration, ownerUid, cursor: null, hasMore: true, loading: false };
+            storeCatalogueState = state;
+            window.activeStoreCategoryFilter = 'all';
+            currentStoreProductsCache = [];
+            const grid = document.getElementById('storeProductsGrid');
+            if (!grid) return;
+            const controls = document.createElement('div');
+            controls.id = 'storeCataloguePaging';
+            controls.className = 'mt-3 space-y-2';
+            const note = document.createElement('p');
+            note.className = 'text-xs text-gray-500';
+            note.textContent = storeCatalogueCopy('scope');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold';
+            button.textContent = storeCatalogueCopy('more');
+            button.addEventListener('click', () => loadStoreCataloguePage(state));
+            controls.append(note, button);
+            document.getElementById('storeCataloguePaging')?.remove();
+            grid.after(controls);
+            loadStoreCataloguePage(state);
+        }
+
+        async function loadStoreCataloguePage(state) {
+            if (state !== storeCatalogueState || state.generation !== storeCatalogueGeneration || state.loading || !state.hasMore) return;
+            const grid = document.getElementById('storeProductsGrid');
+            const button = document.getElementById('storeCataloguePaging')?.querySelector('button');
+            if (!grid || !button) return;
+            state.loading = true;
+            button.disabled = true;
+            button.textContent = storeCatalogueCopy('loading');
+            try {
+                let query = db.collection('products').where('sellerUid', '==', state.ownerUid)
+                    .orderBy(firebase.firestore.FieldPath.documentId()).limit(24);
+                if (state.cursor) query = query.startAfter(state.cursor);
+                const snapshot = await query.get();
+                if (state !== storeCatalogueState || state.generation !== storeCatalogueGeneration) return;
+                if (!Array.isArray(snapshot.docs) || snapshot.docs.length > 24) throw new Error('Invalid bounded catalogue');
+                const rows = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
+                if (rows.some(row => row.sellerUid !== state.ownerUid)) throw new Error('Foreign catalogue row');
+                const ids = new Set(currentStoreProductsCache.map(row => row.docId));
+                rows.forEach(row => { if (!ids.has(row.docId)) { currentStoreProductsCache.push(row); ids.add(row.docId); } });
+                state.cursor = snapshot.docs.at(-1) || state.cursor;
+                state.hasMore = snapshot.docs.length === 24;
+                button.hidden = !state.hasMore;
+                button.textContent = storeCatalogueCopy('more');
+                filterStoreProducts(window.activeStoreCategoryFilter || 'all');
+            } catch (error) {
+                if (state !== storeCatalogueState || state.generation !== storeCatalogueGeneration) return;
+                button.textContent = storeCatalogueCopy('retry');
+                if (!currentStoreProductsCache.length) grid.textContent = storeCatalogueCopy('retry');
+            } finally {
+                if (state === storeCatalogueState && state.generation === storeCatalogueGeneration) {
+                    state.loading = false;
+                    button.disabled = false;
+                }
+            }
         }
 
         function filterStoreProducts(categoryId) {
@@ -4490,6 +4565,11 @@
             });
             const count = document.getElementById('storeProductsCount');
             if (count) count.textContent = search ? `${items.length} matching product(s)` : `${items.length} product(s) in this shop`;
+            if (count && storeCatalogueState?.hasMore) count.textContent += ' · ' + storeCatalogueCopy('loaded');
+            if (!items.length && storeCatalogueState?.hasMore) {
+                grid.textContent = storeCatalogueCopy('empty');
+                return;
+            }
             if (!items.length) {
                 grid.innerHTML = `<p class="col-span-full text-sm text-gray-500 py-5">${search ? 'No products match your search.' : (window.activeStoreCategoryFilter === 'all' ? 'No products are available in this store yet.' : 'No products are available in this category.')}</p>`;
                 return;
@@ -4617,7 +4697,8 @@
 
             const shopBadge = document.getElementById('detailShopBadge');
             if (shopBadge) {
-                shopBadge.style.display = p.isShopVerified ? 'flex' : 'none';
+                // Legacy documents/cache cannot prove trusted shop verification.
+                shopBadge.style.display = 'none';
             }
 
             const mrpElem = document.getElementById('detailMrpPrice');
@@ -5035,15 +5116,6 @@
 
             let publishStage = 'prepare';
             try {
-                let userIp = 'N/A';
-                try {
-                    const ipRes = await fetch('https://api.ipify.org?format=json');
-                    const ipData = await ipRes.json();
-                    userIp = ipData.ip || 'N/A';
-                } catch (ipErr) {
-                    console.log("IP fetch error on ad post:", ipErr);
-                }
-
                 if (!sameSession()) return;
                 const title = document.getElementById('adTitle').value;
                 const desc = document.getElementById('adDesc').value;
@@ -5055,8 +5127,6 @@
                 const district = document.getElementById('adDistrict').value;
                 const village = document.getElementById('adVillage').value;
                 const imgInput = document.getElementById('adImages');
-                const isFeatured = document.getElementById('adIsFeatured').checked;
-                const isShopVerified = document.getElementById('adIsShopVerified').checked;
 
                 let extraDetails = {
                     brand: document.getElementById('dynBrand')?.value || '',
@@ -5080,7 +5150,6 @@
                 const adData = {
                     sellerUid: actorUid,
                     sellerName: actorName,
-                    userIp: userIp,
                     category: selectedMainCat.id,
                     subCategory: selectedSubCat,
                     title, desc, basePrice, mrpPrice, discountPercent, finalPriceStr, phone,
@@ -5089,8 +5158,8 @@
                     location: `${village}, ${district}, ${state}`, 
                     state, 
                     images,
-                    isFeatured: isFeatured,
-                    isShopVerified: isShopVerified,
+                    isFeatured: false,
+                    isShopVerified: false,
                     isSold: false,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
@@ -5213,7 +5282,8 @@
             if(featuredGrid) featuredGrid.innerHTML = '';
 
             if (currentFilterCat === 'all' && !searchVal && featuredSection && featuredGrid) {
-                const featuredItems = products.filter(p => p.isFeatured && (!stateVal || p.state === stateVal)).slice(0, 6);
+                // Legacy promotion flags are seller-controlled; await a trusted curated port.
+                const featuredItems = [];
                 if (featuredItems.length > 0) {
                     featuredSection.style.display = 'block';
                     featuredItems.forEach(p => {
@@ -5319,19 +5389,7 @@
             }
 
             const badges = card.querySelector('[data-card-badges]');
-            if (p.isFeatured || p.isShopVerified) {
-                const badge = document.createElement('span');
-                badge.className = p.isFeatured
-                    ? "bg-amber-500 text-primary text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide"
-                    : "bg-blue-600 text-white text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide";
-                badge.textContent = p.isFeatured ? '⚡ FEATURED' : 'SHOP';
-                badges.appendChild(badge);
-            } else {
-                const badge = document.createElement('span');
-                badge.className = "bg-primary/90 text-amber-400 backdrop-blur-md text-[9px] font-black px-2 py-0.5 rounded shadow-sm tracking-wide";
-                badge.textContent = '★ VERIFIED';
-                badges.appendChild(badge);
-            }
+            // Legacy flags/cache cannot grant promotion or verification badges.
             if (p.discountPercent && p.discountPercent > 0) {
                 const discount = document.createElement('span');
                 discount.className = "bg-gradient-to-r from-red-500 to-amber-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase shadow-sm";

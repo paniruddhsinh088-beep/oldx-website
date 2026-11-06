@@ -101,3 +101,10 @@ test('bridge maps safe errors and rejects contaminated acknowledgements without 
   const client=make({enabled:true,getToken:s=>({...s,token:'fake.test.token'}),sendCommand:()=>response});assert.deepEqual(await client.save(body,context),{ok:false,code});
  }
 });
+
+test('Product and Store trusted commands reject private/privileged legacy fields before domain writes',async()=>{
+ const store={name:'Store',description:'Original',category:'cars',locationLabel:'Locality',photos:[]};
+ for(const kind of ['product','store'])for(const field of ['userIp','phone','mobile','whatsapp','coords','ownerUid','sellerUid','isFeatured','isShopVerified','role']){
+  const {http,f}=fixture();const original=kind==='product'?profile:store;const r=await http.handle('save',request({...save,kind,profile:{...original,[field]:field.startsWith('is')?true:'private'}}));assert.equal(r.status,400,kind+':'+field);assert.equal(f.commits,0);
+ }
+});

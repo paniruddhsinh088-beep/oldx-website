@@ -29,7 +29,7 @@ test('Product publication errors use real locale binding at 320/375px without le
    await page.evaluate(()=>document.body.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
   }
   await page.evaluate(()=>{
-   window.fetch=()=>new Promise(resolve=>window.finishLookup=()=>resolve({json:async()=>({ip:'sample'})}));
+   window.db.collection=()=>({add:()=>new Promise((resolve,reject)=>window.finishLookup=()=>reject({code:'permission-denied'}))});
    window.pendingPost=handleFinalAdSubmit({preventDefault(){}});
   });
   assert.equal(await page.locator('#adSubmitBtn').textContent(),(await import('../../features/i18n/catalogs/en.mjs')).default['market.legacyPublishing']);
@@ -40,7 +40,7 @@ test('Product publication errors use real locale binding at 320/375px without le
   await page.evaluate(async()=>{
    window.crossSessionWrites=0;
    window.db.collection=()=>({add:async()=>{crossSessionWrites++;}});
-   window.fetch=async()=>{window.currentUser={uid:'replacement'};return {json:async()=>({ip:'sample'})};};
+   const title=document.getElementById('adTitle');const original=title.value;Object.defineProperty(title,'value',{get(){window.currentUser={uid:'replacement'};return original;},configurable:true});
    await handleFinalAdSubmit({preventDefault(){}});
   });
   assert.equal(await page.evaluate(()=>crossSessionWrites),0);

@@ -130,6 +130,15 @@ test('REAL native Provider contact, private inbox and two-way conversation host'
  const enforcement=createEmulatorMarketplaceEnforcement({enabled:true,projectId,adminAuth:auth});
  await exerciseNativeProviderContact({binding:createEmulatorMarketplaceBinding(options()),seed:(c,id,value)=>db.collection(c).doc(id).set(value),verifyFirebaseToken:enforcement.verifyFirebaseToken,ownerToken,buyerToken:otherToken,foreignToken,adminAuth:auth});
 });
+test('REAL trusted Product and Store commands reject forged flags/private fields without domain mutation',async()=>{
+ const before=await db.collection(c.privateRecords).get();const audits=await db.collection(c.audits).get();
+ const shop={name:'Store',description:'Original',category:'cars',locationLabel:'Locality',photos:[]};
+ for(const kind of ['product','store'])for(const field of ['isFeatured','isShopVerified','userIp','phone','coords','ownerUid']){
+  const r=await call('save',{...body,kind,requestId:'forged-'+kind+'-'+field,profile:{...(kind==='product'?profile:shop),[field]:field.startsWith('is')?true:'private'}});assert.equal(r.status,400,kind+':'+field);
+ }
+ assert.equal((await db.collection(c.privateRecords).get()).size,before.size);assert.equal((await db.collection(c.audits).get()).size,audits.size);
+});
+
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);

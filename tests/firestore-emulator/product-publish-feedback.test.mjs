@@ -47,9 +47,9 @@ test('UTF-8 write budget rejects oversized photos/metadata before Firestore and 
 });
 
 test('logout/account replacement during awaited work never posts the old draft under a new session',async()=>{
- for(const phase of ['network','photo'])for(const next of [null,{uid:'other'},{uid:'sample-owner'}]){
+ for(const phase of ['preparation','photo'])for(const next of [null,{uid:'other'},{uid:'sample-owner'}]){
   const f=fixture({error:null});
-  if(phase==='network')f.context.fetch=async()=>{f.context.window.currentUser=next;return {json:async()=>({ip:'sample'})};};
+  if(phase==='preparation'){const original=f.context.document.getElementById;f.context.document.getElementById=id=>{if(id==='adTitle')f.context.window.currentUser=next;return original(id);};}
   else f.context.compressImage=async()=>{f.context.window.currentUser=next;return 'data:image/jpeg;base64,c2FtcGxl';};
   await f.submit();assert.equal(f.writes.length,0);assert.equal(f.alerts.length,0);assert.notEqual(f.nodes.get('successAdModal').style.display,'flex');assert.equal(f.nodes.get('adSubmitBtn').disabled,false);assert.equal(f.nodes.get('adImages').files.length,1);
  }
@@ -62,7 +62,7 @@ test('late acknowledged/failed writes cannot show prior-session success or error
 });
 test('duplicate submit while pending does not issue a second legacy add',async()=>{
  const f=fixture({error:null});let release;
- f.context.fetch=()=>new Promise(resolve=>release=()=>resolve({json:async()=>({ip:'sample'})}));
+ f.context.compressImage=()=>new Promise(resolve=>release=()=>resolve('data:image/jpeg;base64,c2FtcGxl'));
  const first=f.submit();await f.submit();release();await first;assert.equal(f.writes.length,1);assert.equal(f.nodes.get('adSubmitBtn').disabled,false);
 });
 
@@ -88,4 +88,9 @@ test('late edit completion cannot update the replacement session cache or displa
 test('normal edit retains the existing update path and guest edit cannot write',async()=>{
  const f=editFixture();await f.edit();assert.equal(f.writes.length,1);assert.equal(f.alerts[0][0],'Success!');assert.equal(f.nodes.get('editSubmitBtn').disabled,false);
  const guest=editFixture();guest.context.window.currentUser=null;await guest.edit();assert.equal(guest.writes.length,0);assert.equal(guest.alerts[0][0],'Login Required');
+});
+
+test('forged seller promotion controls cannot grant flags and publication collects no IP',async()=>{
+ const f=fixture({error:null});f.nodes.get('adIsFeatured').checked=true;f.nodes.get('adIsShopVerified').checked=true;let requests=0;f.context.fetch=()=>{requests++;throw Error('Unexpected IP lookup');};
+ await f.submit();assert.equal(f.writes.length,1);const data=f.writes[0].data;assert.equal(data.isFeatured,false);assert.equal(data.isShopVerified,false);assert.equal(Object.hasOwn(data,'userIp'),false);assert.equal(requests,0);assert.equal(data.phone,'synthetic');assert.equal(data.title,'મૂળ Cafe\u0301 हिन्दी');
 });
