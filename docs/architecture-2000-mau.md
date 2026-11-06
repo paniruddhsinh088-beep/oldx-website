@@ -532,3 +532,46 @@ Official sources checked 2026-11-06:
 - https://cloudinary.com/pricing
 - https://cloudinary.com/documentation/developer_onboarding_faq_credits
 - https://developers.cloudflare.com/r2/pricing/
+
+### 6 November — Product legacy privacy writers (isolated, default-off)
+Start: 532756bfaa6c08ffbbdac940ab02ee584b53dee5, clean/equal fetched remote.
+Existing Product repository now exposes changeVisibility and changeBlock behind
+legacyMutationsEnabled=false. Hide-for-self derives UID from verified identity;
+delete-for-everyone requires the canonical sender; block/unblock derives the other
+participant and uses expectedBlocked CAS. Unknown command/message fields fail closed.
+Actor/product/participant authorization is retained. Privacy edits and unblock may
+run during invalidated inventory; normal send/read/ack still require a ready,
+canonical index. No route, UI integration or feature activation was added.
+Each mutation atomically writes source + exact idempotency receipt + action/sequence
+audit + both participant inventory heads (5 writes). Global actor invalidation
+covers all affected conversations without scanning histories. Hide point-reads one
+message; block reads no messages. Exact replay writes zero. No before/after live
+cost saving claimed; this supplies the previously missing atomic writer boundary.
+
+Focused acceptance covers unauthorized deletion, foreign/revoked actors, client
+visibility-target injection, unknown private fields, atomic rollback, lost commit
+ack/replay, request-ID conflict, self-only hide, tombstone immutability, both block
+edge ownership, unblock CAS and concurrent-device CAS. Existing reconciliation is
+fed actual source records: exact unread/previews recover, both blocked views vanish,
+unblock restores visibility, stale Inbox cursors are rejected and old signed read
+receipts cannot advance stale canonical counters. Maintenance inventory facts in
+these tests are fixture-scoped; no real deployment inventory is established.
+
+48 distinct checks pass, 0 final failures/skips: 27 focused Node/integration,
+17 Chrome Product/Inbox, 4 actual loopback Firestore Emulator. Final mutation-only
+Emulator cases repeated after concurrency/audit additions; no unrelated full run.
+- node --test tests/integration/legacy-product-mutations.test.mjs tests/integration/product-read-state.test.mjs tests/integration/product-conversation.test.mjs tests/integration/canonical-product-notification.test.mjs tests/integration/inbox-worker.test.mjs tests/integration/inbox-backfill.test.mjs scripts/emulator-test-plan.test.mjs
+- node --test tests/browser/product-integration.test.mjs tests/browser/unified-inbox.test.mjs (installed Chrome via CHROMIUM_PATH)
+- Emulator child: node --test tests/firestore-emulator/legacy-product-mutations-runtime.test.mjs tests/firestore-emulator/product-read-state-runtime.test.mjs
+- Logs: .firebase/legacy-product-focused.log, legacy-product-browser.log,
+  legacy-product-emulator.log, legacy-product-emulator-final.log.
+An initial fixture clock mismatch and browser executable variable were corrected;
+no assertions or security checks were weakened.
+
+NOT full legacy Chat completion: reconciled rows remain unavailable to canonical
+send/read/ack until legacy tombstone/history/read-prefix cursor compatibility is
+implemented and accepted. Provider writers, real complete source-inventory/epoch
+binding and gated UI/HTTP/rate-limit integration remain. Unsupported attachments/
+unknown message schemas are deliberately unavailable to these writers. No live
+Firebase/Rules/deployment/billing/main changes. Next safe task: reconciled-history
+cursor/tombstone adapter, then equivalent Provider source writers. HOLD/NO-GO.

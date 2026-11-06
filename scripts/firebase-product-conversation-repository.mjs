@@ -15,8 +15,9 @@ export const productConversationBlockKey=(from,to)=>hash([from,to]);
 const fail=code=>({ok:false,code}),revision=v=>Number.isSafeInteger(v)&&v>0&&v<10000;
 // Server-only, default off, demo-project/loopback locked. No SDK initialization,
 // endpoint, credential handling, persistence in the browser or production mode.
-export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,notificationOutbox=null,inboxIndex=null,timeoutMs=5000,now=Date.now}={}){
- if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox','inboxPage','inboxSummaries','thread','summary','acknowledge'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
+export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,notificationOutbox=null,inboxIndex=null,legacyMutationsEnabled=false,timeoutMs=5000,now=Date.now}={}){
+ if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox','inboxPage','inboxSummaries','thread','summary','acknowledge','changeVisibility','changeBlock'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
+ if(typeof legacyMutationsEnabled!=='boolean')throw Error('Explicit legacy mutation gate required');
  if(typeof readStateEnabled!=='boolean')throw Error('Explicit read-state gate required');
  if(readStateEnabled&&![readCursor,issueCursor].every(f=>typeof f==='function'))throw Error('Verified read receipt ports required');
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles}),{collections:m}=isolatedFirestoreContext({firestore,sdk,schema:marketplaceSchema,roles:marketRoles});
@@ -24,9 +25,9 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid identity');return sdk.doc(db,paths[role],id);};
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
  const get=async(raw,reference)=>{const s=await cached(raw).get(reference);return s.exists()?s.data():null;};
- async function authority(raw,thread,uid,{checkBlocks=true}={}){
+ async function authority(raw,thread,uid,{checkBlocks=true,checkIndex=true}={}){
   if(!thread||!safeId(thread.id)||!safeId(thread.productId)||!safeId(thread.buyerUid)||!safeId(thread.sellerUid)||thread.buyerUid===thread.sellerUid||![thread.buyerUid,thread.sellerUid].includes(uid)||!revision(thread.revision)||thread.messageCount!==thread.revision||!revision(thread.productRevision))return false;
-  if(Object.hasOwn(thread,'inboxIndexed')&&thread.inboxIndexed!==true)return false;if(thread.inboxIndexed===true&&(!inboxIndex||!await inboxIndex.assertAccessible(raw,{actorUid:uid,kind:'product',threadId:thread.id,revision:thread.revision})))return false;
+  if(Object.hasOwn(thread,'inboxIndexed')&&thread.inboxIndexed!==true)return false;if(checkIndex&&thread.inboxIndexed===true&&(!inboxIndex||!await inboxIndex.assertAccessible(raw,{actorUid:uid,kind:'product',threadId:thread.id,revision:thread.revision})))return false;
   const buyer=await get(raw,ref(c,'actors',thread.buyerUid)),seller=await get(raw,ref(c,'actors',thread.sellerUid));
   if([buyer,seller].some((a,i)=>a?.uid!==[thread.buyerUid,thread.sellerUid][i]||a.canInteract!==true||a.suspended!==false))return false;
   const product=await get(raw,ref(m,'privateRecords','product_'+thread.productId)),view=await get(raw,ref(m,'publicViews','product_'+thread.productId)),owner=await get(raw,ref(m,'actors',thread.sellerUid));
@@ -74,6 +75,36 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
    return {ok:true,status:'sent',thread:dto(next,context.actorUid)};
   },{maxAttempts:3});});
  }
+ // Source mutations invalidate both complete actor inventories in the SAME SDK
+ // transaction. Clients cannot supply counts, roles, target UIDs or source epochs.
+ async function legacyMutation(operation,request,options){
+  if(!legacyMutationsEnabled||!inboxIndex||!readStateEnabled)return fail('UNAVAILABLE');
+  const input=copyRecord(request,operation==='visibility'?['requestId','threadId','expectedRevision','sequence','action']:['requestId','threadId','expectedRevision','expectedBlocked','blocked']);
+  if(!input||!safeId(input.requestId)||!safeId(input.threadId)||!revision(input.expectedRevision)||(operation==='visibility'?(!revision(input.sequence)||!['hide_for_self','delete_for_everyone'].includes(input.action)):(typeof input.blocked!=='boolean'||typeof input.expectedBlocked!=='boolean')))return fail('INVALID_REQUEST');
+  return bounded(options,context=>sdk.runTransaction(db,async raw=>{
+   check(context);const thread=await get(raw,ref(c,'threads',input.threadId));
+   // Privacy edits/unblock remain possible while reconciliation is pending.
+   // Actor/product/participant authorization remains mandatory.
+   if(thread?.id!==input.threadId||!await authority(raw,thread,context.actorUid,{checkBlocks:false,checkIndex:false})||thread.inboxIndexed!==true||!validReadState(thread))return fail('DENIED');
+   const key=hash(['legacy-chat-v1',context.actorUid,operation,input.requestId]),fingerprint=hash(input),receiptRef=ref(c,'receipts',key),auditRef=ref(c,'audits',key),receipt=await get(raw,receiptRef),audit=await get(raw,auditRef);
+   const record={actorUid:context.actorUid,operation:'legacy.'+operation,requestId:input.requestId,threadId:thread.id,sourceRevision:input.expectedRevision,action:operation==='visibility'?input.action:(input.blocked?'block':'unblock'),sequence:operation==='visibility'?input.sequence:null,fingerprint,inventoryEpoch:key};
+   if(receipt||audit){if(![receipt,audit].every(v=>copyRecord(v,Object.keys(record))&&Object.entries(record).every(([k,value])=>v[k]===value)))return fail('IDEMPOTENCY_CONFLICT');return {ok:true,status:'replayed'};}
+   if(thread.revision!==input.expectedRevision)return fail('REVISION_CONFLICT');
+   let target,next;
+   if(operation==='visibility'){
+    if(input.sequence>thread.revision)return fail('INVALID_REQUEST');target=ref(c,'messages',hash([thread.id,input.sequence]));const message=await get(raw,target),facts=productMessageFacts(message,thread);
+    if(!facts||message.sequence!==input.sequence)return fail('READ_STATE_UNAVAILABLE');
+    if(!authorizeChatMutation({action:input.action,actorUid:context.actorUid,senderUid:message.senderUid,participants:[thread.buyerUid,thread.sellerUid],targetUid:context.actorUid,tombstoned:facts.deletedForEveryone}).ok)return fail('DENIED');
+    next=input.action==='hide_for_self'?{...message,hiddenFor:[...new Set([...facts.hiddenFor,context.actorUid])]}:{...message,deletedForEveryone:true,text:''};
+   }else{
+    const other=context.actorUid===thread.buyerUid?thread.sellerUid:thread.buyerUid;target=ref(c,'blocks',hash([context.actorUid,other]));const edge=copyRecord(await get(raw,target),['blockerUid','blockedUid','blocked']);
+    if(!edge||edge.blockerUid!==context.actorUid||edge.blockedUid!==other||typeof edge.blocked!=='boolean')return fail('DENIED');
+    if(edge.blocked!==input.expectedBlocked)return fail('REVISION_CONFLICT');next={...edge,blocked:input.blocked};
+   }
+   const invalidate=await inboxIndex.stageInvalidation(raw,[thread.buyerUid,thread.sellerUid].map(actorUid=>({actorUid,nextEpoch:key})));check(context);context.markMutationAttempted();
+   raw.set(target,next);raw.set(receiptRef,record);raw.set(auditRef,record);invalidate();check(context);return {ok:true,status:'changed'};
+  },{maxAttempts:3}));
+ }
  async function readInbox(request,options,paged,withReadState=false){
   if(withReadState&&!readStateEnabled)return fail('UNAVAILABLE');
   const input=copyRecord(request,paged?['role','limit','cursor']:['role','limit']);if(!input||!['buyer','seller'].includes(input.role)||!Number.isInteger(input.limit)||input.limit<1||input.limit>20||paged&&input.cursor!==null&&(typeof input.cursor!=='string'||input.cursor.length<1||input.cursor.length>1024))return fail('INVALID_REQUEST');
@@ -97,7 +128,7 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
   async readMessage(raw,event){if(event?.kind!=='product'||!safeId(event.threadId)||!Number.isSafeInteger(event.sequence)||event.sequence<1||event.sequence>9999)return null;const tx=raw,t=await get(tx,ref(c,'threads',event.threadId)),m=await get(tx,ref(c,'messages',hash([event.threadId,event.sequence])));if(!t||!validReadState(t))return null;const prefix=copyRecord(m?.readPrefix,['buyerReceived','sellerReceived']);if(!prefix||!['buyer','seller'].every(role=>Number.isSafeInteger(prefix[role+'Received'])&&prefix[role+'Received']>=0&&prefix[role+'Received']<=t.readState[role+'Received'])||prefix.buyerReceived+prefix.sellerReceived!==event.sequence)return null;return productMessageFacts(m,t);},
   async readBlock(raw,from,to){if(!safeId(from)||!safeId(to)||from===to)return null;return get(raw,ref(c,'blocks',hash([from,to])));}
  });
- return Object.freeze({notificationReaders,open:(r,o)=>mutate('open',r,o),send:(r,o)=>mutate('send',r,o),
+ return Object.freeze({notificationReaders,changeVisibility:(r,o)=>legacyMutation('visibility',r,o),changeBlock:(r,o)=>legacyMutation('block',r,o),open:(r,o)=>mutate('open',r,o),send:(r,o)=>mutate('send',r,o),
   async read(request,options){const input=copyRecord(request,['threadId','expectedRevision','afterSequence','limit']);if(!input||!safeId(input.threadId)||!revision(input.expectedRevision)||!Number.isInteger(input.afterSequence)||input.afterSequence<0||input.afterSequence>=input.expectedRevision||!Number.isInteger(input.limit)||input.limit<1||input.limit>20)return fail('INVALID_REQUEST');
    return bounded(options,async context=>{const result=await sdk.runTransaction(db,async raw=>{check(context);const thread=await get(raw,ref(c,'threads',input.threadId));if(!await authority(raw,thread,context.actorUid))return fail('DENIED');if(thread.revision!==input.expectedRevision)return fail('REVISION_CONFLICT');if(readStateEnabled&&!validReadState(thread))return fail('READ_STATE_UNAVAILABLE');const messages=[];let delivery=null,incomingBefore=0;if(readStateEnabled&&input.afterSequence>0){const anchor=await get(raw,ref(c,'messages',hash([thread.id,input.afterSequence]))),prefix=copyRecord(anchor?.readPrefix,['buyerReceived','sellerReceived']);if(anchor?.threadId!==thread.id||anchor.sequence!==input.afterSequence||!prefix||!['buyer','seller'].every(role=>Number.isSafeInteger(prefix[role+'Received'])&&prefix[role+'Received']>=0&&prefix[role+'Received']<=thread.readState[role+'Received'])||prefix.buyerReceived+prefix.sellerReceived!==input.afterSequence)return fail('READ_STATE_UNAVAILABLE');incomingBefore=prefix[roleOf(thread,context.actorUid)+'Received'];}
     for(let n=input.afterSequence+1;n<=Math.min(thread.messageCount,input.afterSequence+input.limit);n++){const msg=await get(raw,ref(c,'messages',hash([thread.id,n])));if(!productMessageVisible(msg,thread,context.actorUid))return fail('READ_STATE_UNAVAILABLE');if(msg?.threadId!==thread.id||msg.sequence!==n||![thread.buyerUid,thread.sellerUid].includes(msg.senderUid)||normalizeMessageDraft(msg.text)!==msg.text)return fail('UNAVAILABLE');if(readStateEnabled){const prefix=copyRecord(msg.readPrefix,['buyerReceived','sellerReceived']);if(!prefix||!['buyer','seller'].every(role=>Number.isSafeInteger(prefix[role+'Received'])&&prefix[role+'Received']>=0&&prefix[role+'Received']<=thread.readState[role+'Received'])||prefix.buyerReceived+prefix.sellerReceived!==n)return fail('READ_STATE_UNAVAILABLE');delivery={scope:deliveryScope(thread,context.actorUid),afterSequence:input.afterSequence,incomingBefore,throughSequence:n,incomingCount:prefix[roleOf(thread,context.actorUid)+'Received']};}messages.push({sequence:n,senderRole:msg.senderUid===thread.buyerUid?'buyer':'seller',text:msg.text});}check(context);return {ok:true,thread:dto(thread,context.actorUid),messages,hasMore:input.afterSequence+messages.length<thread.messageCount,...(readStateEnabled?{delivery}:{} )};},{maxAttempts:3});
