@@ -1,0 +1,1 @@
+import test from 'node:test';import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';import {workerBatchAcceptance} from './worker-batch-cases.mjs';test('worker never shares authenticated results, enforces one batch deadline and cancels cleanup safely',async()=>{const f=fakeFirestoreSdk();await workerBatchAcceptance({sdk:f.sdk,db:f.db,seed:f.seed});});

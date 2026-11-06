@@ -31,7 +31,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('conversationUnavailable').hidden=ready||busy;
   $('conversationFeedback').textContent=translate('market.product.'+state.status);
   $('conversationError').textContent='';
-  $('conversationHistoryNext').disabled=!state.selection?.hasMore||busy||state.canRetry;
+  $('conversationHistoryNext').disabled=!state.selection?.hasMore||busy||state.canRetry||state.readAcknowledgement?.queueFull;
   $('conversationRetryCommand').disabled=!state.canRetry||busy;
   const writable=textMessaging?ready&&selected.thread.canSend:ready&&audience==='provider'&&!['completed','cancelled','declined','disputed'].includes(selected.detail.status);
   $('draftForm').hidden=!writable;$('conversationClosed').hidden=writable;

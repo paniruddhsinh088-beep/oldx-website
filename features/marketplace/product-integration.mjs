@@ -50,7 +50,7 @@ export function createProductIntegration({enabled=false,readStateEnabled=false,p
    if(requestId===null?r.receipt!==null:!exact(r.receipt,['requestId','revision','status'])||r.receipt.requestId!==requestId||r.receipt.status!=='committed'||!rev(r.receipt.revision)||r.receipt.revision>r.revision)return null;return structuredClone(r);
   });},
   async restoreThread(threadId){if(!session){command={status:'denied',canRetry:false};onPrivate(null);emit();return;}if(!id(threadId))return;clearReads();const version=epoch;await load('thread',{threadId},r=>{const t=thread(r?.thread);return r?.ok===true&&t?.id===threadId?{thread:t}:null;});if(version===epoch&&privateThread?.id===threadId)await this.loadThread(privateThread);},
-  nextInbox(){return inboxCursor?this.loadInbox(lastInboxRole,inboxCursor):Promise.resolve();},nextHistory(){return historyHasMore&&privateThread?this.loadThread(privateThread,{afterSequence:historyAfter}):Promise.resolve();},
+  nextInbox(){return inboxCursor?this.loadInbox(lastInboxRole,inboxCursor):Promise.resolve();},nextHistory(){return !ack.snapshot().queueFull&&historyHasMore&&privateThread?this.loadThread(privateThread,{afterSequence:historyAfter}):Promise.resolve();},
   save(profile,publication='draft'){if(statuses.owner&&statuses.owner!=='ready')return Promise.resolve();if(!['draft','publish','withdraw'].includes(publication))return Promise.resolve();return write('save',{id:owner?.id??null,expectedRevision:owner?.revision??0,publication,profile});},
   archive(){return owner?write('archive',{id:owner.id,expectedRevision:owner.revision}):Promise.resolve();},
   nextPage(){return nextCursor?this.discover({category:lastCategory,cursor:nextCursor}):Promise.resolve();},

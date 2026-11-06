@@ -9,7 +9,7 @@ export function createServiceConversationIntegration({enabled=false,readStateEna
  let session=null,providerId=null,enquiryId=null,role='buyer',online=true,epoch=0,reader=null,command=null,pending=null,view=null,status=enabled?'idle':'disabled';
  const ack=createReadAcknowledgement({enabled:enabled===true&&readStateEnabled===true,timeoutMs,execute:(body,ctx)=>execute('acknowledge',body,{...ctx,session:session&&{...session}}),onAcknowledged,onChange:()=>emit()});
  const same=()=>pending&&pending.providerId===providerId&&pending.enquiryId===enquiryId;
- const snapshot=()=>({status,canRetry:!!(online&&(same()||ack.snapshot().canRetry)),mutationBlocked:!!pending,selection:view?{enquiryId,revision:view.thread.revision,hasMore:view.hasMore}:null});
+ const snapshot=()=>({status,readAcknowledgement:ack.snapshot(),canRetry:!!(online&&(same()||ack.snapshot().canRetry)),mutationBlocked:!!pending,selection:view?{enquiryId,revision:view.thread.revision,hasMore:view.hasMore}:null});
  const emit=()=>onChange(snapshot());
  const response=r=>r?.status?r.body?.ok?r.body:{ok:false,code:r.body?.error?.code}:r;
  function clearView(){view=null;onPrivate(null);}
@@ -41,7 +41,7 @@ export function createServiceConversationIntegration({enabled=false,readStateEna
   select(value,audience='buyer'){invalidate();providerId=id(value)?value:null;role=['buyer','provider'].includes(audience)?audience:'buyer';},
   setOnline(value){online=value===true;if(!online){invalidate();status=pending?'unknown':'offline';emit();}},
   detail(value){if(enquiryId!==value)invalidate();if(!id(value)){invalidate();status='unavailable';emit();return Promise.resolve();}enquiryId=value;return read();},
-  nextHistory(){return view?.hasMore?read(view.messages.at(-1).sequence,view.thread.revision):Promise.resolve();},
+  nextHistory(){return !ack.snapshot().queueFull&&view?.hasMore?read(view.messages.at(-1).sequence,view.thread.revision):Promise.resolve();},
   send(text){if(!view?.thread.canSend||pending||status==='loading')return Promise.resolve();if(normalizeMessageDraft(text)===null){status='invalid';emit();return Promise.resolve();}let requestId;try{requestId=makeRequestId();}catch{}if(!id(requestId)){status='unavailable';emit();return Promise.resolve();}pending={providerId,enquiryId,expectedRevision:view.thread.revision,expectedEnquiryRevision:view.thread.enquiryRevision,expectedGeneration:view.thread.generation,requestId,text};return dispatch();},retry:()=>pending?dispatch():ack.retry()
  });
 }

@@ -24,7 +24,7 @@ text('productPortStatus','market.product.'+(state.command.status==='idle'?(state
   const blocked=state.command.status==='loading'||state.command.canRetry||state.statuses.owner==='loading';for(const id of ['adSubmitBtn','productSaveDraft','productWithdraw','productRemove','chatSendButton'])if($(id))$(id).disabled=blocked||!state.authenticated;
   if($('productNext'))$('productNext').disabled=!state.nextCursor||state.statuses.list==='loading';if($('productStoreLink')){$('productStoreLink').hidden=!state.detail?.storeId||typeof options.openStore!=='function';}
   $('productEnquire').disabled=!state.detail||!state.authenticated;$('productOwnerInbox').disabled=!state.authenticated;
-  if($('productInboxNext'))$('productInboxNext').disabled=!state.inboxCursor;if($('productHistoryNext'))$('productHistoryNext').disabled=!state.historyHasMore;
+  if($('productInboxNext'))$('productInboxNext').disabled=!state.inboxCursor;if($('productHistoryNext'))$('productHistoryNext').disabled=!state.historyHasMore||state.readAcknowledgement.queueFull;
   $('productRetry').disabled=!(state.command.canRetry||state.readAcknowledgement.canRetry);for(const id of ['productWithdraw','productRemove'])$(id).disabled=blocked||!state.owner;
   if($('fullChatInput'))$('fullChatInput').readOnly=blocked;
   $('productIntegrationPanel').setAttribute('aria-busy',String(state.command.status==='loading'));

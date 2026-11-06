@@ -366,3 +366,36 @@ Provider reviews/Media/Admin hosted acceptance and staging inventory/Rules/rollb
 permissions plus realistic cost/peak/device workload. No live access was retried.
 No live Firebase, Rules, IAM, credentials, billing, production, deployment or main
 changes. Launch HOLD/NO-GO. Checkpoint is sufficient to resume without repeating audits.
+
+## 6 November — scoped worker batches and contiguous receipt recovery
+
+Start 03c9f72c28f2f95b51a9339180ec88aa4a706a59; branch/remote were clean and equal.
+Reviewed AGENTS, security/Store/Service roadmaps, launch register and prior evidence.
+Fixed worker result sharing across overlapping credentials: concurrent run/cleanup now
+returns generic BUSY, not another request's private results. Whole-batch deadline
+(default 10s, bounded configuration), parent cancellation and strict cleanup intent
+stop further work; existing leases/idempotency preserve recovery. Recording-only and
+default-off remain unchanged. No real notification service/host was activated.
+Chat now keeps up to 20 contiguous queued signed receipts, preserves the original
+unknown-outcome retry, applies history paging backpressure and clears everything on
+scope/logout/denial. A server-confirmed monotonic sequence suppresses re-signed old
+pages ONLY in the same conversation/session: test API calls 3 -> 1, without editing
+counts, weakening verification or caching authorization. Cross-room/session calls
+still execute. Browser evidence: delayed receipt pages 20/40/60 processed in order,
+server unread 61 -> 1. Fixed a browser wait race; exact count/order assertions remain.
+
+57 distinct focused checks pass: 28 Node/integration + 5 packaging + 20 Chrome +
+4 actual loopback Firestore Emulator, no final failures/skips. Commands:
+- node --test tests/integration/worker-batch.test.mjs tests/integration/unified-inbox.test.mjs tests/integration/inbox-worker.test.mjs tests/integration/service-conversation-client.test.mjs tests/integration/product-ui.test.mjs tests/integration/store-ui.test.mjs scripts/build-static-assets.test.mjs
+- node --test tests/browser/unified-inbox.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/product-integration.test.mjs (only unified-inbox was rerun after correcting its async wait).
+- Guarded baseline Emulator child: node --test tests/firestore-emulator/inbox-worker-runtime.test.mjs
+Logs: .firebase/batch-recovery-focused.log, batch-recovery-browser.log,
+batch-recovery-browser-final.log, batch-recovery-native.log. Synthetic server identity
+ports/recording transport are not real Firebase Auth/provider/staging acceptance.
+
+No new dependency, design, database schema/Rules or cloud changes. Remaining priorities:
+canonical inventory/privacy adapters + all visibility/block/delete writers and legacy
+Chat parity; approved worker/provider/device acceptance; Product/Store/Provider reviews,
+Media/Admin and realistic staging/cost/Capacitor acceptance. These live/approval gates
+were not retried or bypassed. Readiness remains pre-staging integration, HOLD/NO-GO;
+no defensible launch percentage/date or proven 2,000-MAU zero-cost capacity yet.
