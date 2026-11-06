@@ -280,3 +280,13 @@ legacy parity and actual notification worker/delivery are NOT complete or live.
 See architecture-2000-mau.md latest checkpoint for exact focused evidence, operation
 counts and resume tasks. Queue work adds writes; zero-cost capacity remains unproven.
 HOLD/NO-GO; staging prerequisites and all existing release gates remain open.
+
+## 6 November — trusted cross-kind index and notification safety
+
+Index/aggregate/HTTP ports, atomic Product/Provider stages, fenced legacy reconciliation
+and recording-only worker are now locally functional and default-off. 106 focused
+checks pass; see architecture-2000-mau.md for exact commands and operation costs.
+Real canonical inventory/policy bindings and all visibility/block/delete source writers,
+legacy Chat parity, durable provider delivery and hosted/device acceptance remain
+gates. Product/Store/Provider reviews/Media/Admin staging acceptance is still open.
+No live changes; zero-cost 2,000-MAU capacity is not proven. HOLD/NO-GO.

@@ -26,7 +26,8 @@ export function createProviderConversationRepository({enabled=false,authenticate
   if(!allowed.ok)return null;
   for(const uid of [row.buyerUid,row.providerUid]){const actor=await tx.getEnquiryActor(uid);if(actor?.uid!==uid||actor.canEnquire!==true||actor.suspended!==false)return null;}
   const stored=await tx.getConversation(row.id);
-  if(stored&&(!copyRecord(stored,['providerId','enquiryId','buyerUid','providerUid','service','revision',...(Object.hasOwn(stored,'readState')?['readState']:[])])||stored.providerId!==row.providerId||stored.enquiryId!==row.id||stored.buyerUid!==row.buyerUid||stored.providerUid!==row.providerUid||stored.service!==row.service||!int(stored.revision)||stored.revision<1))return null;
+  if(stored&&(!copyRecord(stored,['providerId','enquiryId','buyerUid','providerUid','service','revision',...(Object.hasOwn(stored,'readState')?['readState']:[]),...(Object.hasOwn(stored,'inboxIndexed')?['inboxIndexed']:[])])||Object.hasOwn(stored,'inboxIndexed')&&stored.inboxIndexed!==true||stored.providerId!==row.providerId||stored.enquiryId!==row.id||stored.buyerUid!==row.buyerUid||stored.providerUid!==row.providerUid||stored.service!==row.service||!int(stored.revision)||stored.revision<1))return null;
+  if(stored?.inboxIndexed===true&&(typeof tx.authorizeIndexedConversation!=='function'||!await tx.authorizeIndexedConversation(stored.enquiryId,c.actorUid,stored.revision)))return null;
   const thread=stored??{providerId:row.providerId,enquiryId:row.id,buyerUid:row.buyerUid,providerUid:row.providerUid,service:row.service,revision:0};
   const dto={providerId:row.providerId,enquiryId:row.id,service:row.service,revision:thread.revision,enquiryRevision:row.revision,generation:p.generation,role:c.actorUid===row.buyerUid?'buyer':'provider',canSend:writable(row.status)&&thread.revision<9999};
   return {row,p,blocks,thread,dto};

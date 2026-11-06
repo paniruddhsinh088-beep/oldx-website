@@ -298,3 +298,71 @@ Store, Provider reviews/media, Admin and staging/device/capacity acceptance. Sta
 Rules/inventory/rollback/runtime gates remain unverified; do not repeat unavailable
 access investigation. No live Firebase, Rules, IAM, credentials, billing, deployments
 or production operations. Launch HOLD/NO-GO.
+
+## 6 November — trusted index and recording-worker checkpoint
+
+Start: 3d3d16e864c9c07d98bf3a292d2c3d9e427dd0ad. New paths remain OFF.
+Trusted cross-kind index now stores actor-scoped rows plus an exact aggregate head.
+Product/Provider send and read acknowledgments optionally stage index writes in the
+SAME message/audit transaction; downgrade and unreconciled indexed-thread readers
+fail closed. Signed actor/generation cursors, maximum-20 pages (+1 lookahead),
+single-field actor-prefixed ordering and a head-generation fence avoid repeated
+row reads/history scans. Existing verified-token/revocation/quota HTTP wrapper
+exposes only the page port, with no live route or maintenance endpoint created.
+
+Nonempty inventory stays unavailable until every row has reconciled against a
+verified inventory epoch/count. Pure complete-history reconciliation handles read
+cursors/readBy, deleted-for-everyone, per-user hidden messages and either block
+direction. Source-epoch invalidation prevents off-page stale totals; every row must
+be revisited before finalization. Raw legacy Chat history/write continuation is
+intentionally BLOCKED until its sparse-message/read-prefix compatibility is accepted,
+not silently re-enabled from a repaired Inbox row. No migration ran against real data.
+
+Disabled worker now has fresh transactional worker-role/participant/recipient/block/
+visibility checks, fenced leases, stable idempotency keys, bounded 20-item discovery,
+retry recovery and held exhausted attempts. Only a branded recording transport is
+accepted: actual notification delivery is structurally unavailable. Terminal payload
+retirement replaces participant metadata with an idempotency tombstone and audit;
+no document is deleted. Cleanup defaults to dry-run and excludes pending/held/unknown
+events. Audit/tombstone growth remains a storage/retention cost, not a bounded total
+record-count claim. Durable real-provider deduplication and dispatch-time privacy
+acceptance remain required; in-memory recording deduplication is not production proof.
+
+Measured with synthetic facts on real Firestore Emulator: 41 mixed Inbox rows across
+3 pages consume 43 query documents + 52 point reads (95 total), 0 writes/history
+scans, including fresh fixture authorization. The fixture policy is not a substitute
+for a complete production authorization adapter. Indexed read acknowledgement has
+3 -> 5 domain writes; message send with queue has 5 -> 9 (two rows/two heads added).
+Standalone indexed summaries add 2 head/row checks: Product 8 -> 10, Provider 12 -> 14
+point reads, independent of history length. Duplicate acknowledgments still write 0.
+A lost recording-delivery acknowledgment + retry measured 40 point reads, 2 query
+documents, 6 attempted domain writes and exactly 1 recording delivery. These counts
+exclude HTTP quota writes, external token verification and additional transaction
+retries. Terminal retirement adds 2 writes/event; fresh privacy reads cannot safely
+be cached across claim/dispatch/settlement. No aggregate savings/hosted QoS claimed.
+
+Capacity assumption update only: retaining the prior 90 writes/DAU baseline, assuming
+5 queued notifications/DAU including successful claim/settlement/retirement adds 35
+writes; index send stages add 20, three read acknowledgments add 6 => 151 writes/DAU
+before potential batching savings, extra retries or real-adapter costs. At 200/400/600
+DAU this is 30.2k/60.4k/90.6k writes/day. This is NOT measured user traffic or a proven
+2,000-MAU zero-cost workload. Bulk Inbox APIs may reduce quota calls versus per-room
+requests, but that saving must be measured on the same real journeys before crediting it.
+
+Verification: 75 focused Node/security + 5 static packaging, 19 Chrome browser and
+7 distinct actual Firestore Emulator cases passed, no final failures/skips. A Product
+retry assertion initially counted only three records; now it counts all five while
+retaining the same three-attempt bound, audit and duplicate-write assertions.
+Node/static: node --test tests/integration/inbox-worker.test.mjs tests/integration/product-read-state.test.mjs tests/integration/provider-read-state.test.mjs tests/integration/chat-outbox-rate.test.mjs tests/integration/product-conversation.test.mjs tests/integration/service-conversation.test.mjs tests/integration/provider-journey.test.mjs tests/integration/provider-enquiry-transaction.test.mjs tests/integration/product-ui.test.mjs tests/integration/store-ui.test.mjs tests/integration/unified-inbox.test.mjs tests/integration/provider-enforcement.test.mjs tests/integration/staging-marketplace-runtime.test.mjs tests/integration/staging-marketplace-packaging.test.mjs scripts/emulator-test-plan.test.mjs scripts/build-static-assets.test.mjs.
+Browser: node --test tests/browser/unified-inbox.test.mjs tests/browser/service-messaging-integration.test.mjs tests/browser/product-integration.test.mjs.
+Guarded baseline Emulator child: node --test tests/firestore-emulator/product-read-state-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs tests/firestore-emulator/inbox-worker-runtime.test.mjs.
+Final local logs: .firebase/inbox-worker-focused.log, inbox-worker-last-node.log, inbox-worker-browser-final.log, inbox-worker-native-final.log. Tokens/worker identity ports remain injected test verifiers, not real deployed Auth acceptance.
+
+Next: (1) bind verified canonical inventory/history/authorization adapters and atomic
+hide/delete/block/source-epoch writers, complete legacy message/read/write parity;
+(2) approved hosted worker/provider idempotency, queue retention/held recovery and
+notification/device acceptance, keeping real delivery OFF; (3) remaining Product/Store/
+Provider reviews/Media/Admin hosted acceptance and staging inventory/Rules/rollback/
+permissions plus realistic cost/peak/device workload. No live access was retried.
+No live Firebase, Rules, IAM, credentials, billing, production, deployment or main
+changes. Launch HOLD/NO-GO. Checkpoint is sufficient to resume without repeating audits.
