@@ -480,3 +480,55 @@ provider/device acceptance. Store/Media/Admin/Maps and staging inventory/Rules/
 rollback acceptance still gate launch. Synthetic worker identities, recording
 transport and loopback Auth are not staging/live acceptance. No live access,
 deployment, Rules, IAM, credentials, billing, main or runtime activation; HOLD/NO-GO.
+
+### Updated owner planning budget — 6 November 2026
+Preferred <= INR 1,000/month; planning maximum INR 2,000/month for initial 2,000 MAU.
+This supersedes zero-cost as a mandatory target, NOT any spending/activation gate.
+New offline calculator: scripts/operating-budget.mjs; focused test command:
+node --test tests/integration/operating-budget.test.mjs tests/integration/notification-capacity.test.mjs
+Result: 4 pass, 0 fail/skip. No runtime security boundary changed; no Emulator/browser
+rerun needed for offline arithmetic. Initial floating-point display assertion was
+fixed by deterministic financial rounding, then both focused files passed.
+
+Assumptions: measured mixed Chat 67R/13W per message, 5 messages/DAU/day;
+additional browsing/detail/owner/admin/inbox allowance 100R/4W per DAU/day (UNMEASURED),
+20% retry/abuse overhead, 30 days. Index/ack/idle polling amplification may exceed
+that allowance. Rates use official Firestore billing EXAMPLE $0.06/100k reads,
+$0.18/100k writes after DAILY 50k/20k free quotas, not an OLDX regional quote.
+Backend planning candidate $7/month Render Starter, not purchased or load-tested.
+INR conversion ASSUMED 90/USD, 18% tax buffer, INR250 contingency (not a quote).
+
+| DAU | Reads/day | Writes/day | DB USD/month | Partial INR/month |
+| --- | ---: | ---: | ---: | ---: |
+| 200 | 104400 | 16560 | 0.98 | 1097.39 |
+| 400 | 208800 | 33120 | 3.57 | 1372.20 |
+| 600 | 313200 | 49680 | 6.34 | 1666.74 |
+
+Partial = backend + DB operations + assumed tax/FX + contingency. NOT all-in:
+media overage, persistent/index/audit storage growth, network egress, SMS/email,
+backup/restore, domain renewal, Maps paid SKUs and extra worker instances are not
+priced. FCM transport is listed no-cost, but worker/database operations still cost.
+No full capacity/reliability acceptance yet; single-instance failure remains a risk.
+
+Media sensitivity, not a quality reduction: 20 delivered images/DAU/day at average
+120KB => 14.4/28.8/43.2 GB/month; with 3GB managed storage + 2000 transformations,
+Cloudinary usage is 19.4/33.8/48.2 credits. Free25 is exceeded at 400/600 DAU; all
+exceed 70% headroom17.5. Do not assume Cloudinary Free fits production. Measure
+existing approved derivatives/cache hits first; never reduce approved quality or
+retain less user data silently. R2 is only an alternative to evaluate through the
+existing media port: egress-free storage is not image transformations/privacy/media
+acceptance and would require separate resource/credentials approval.
+
+Priority: finish legacy Chat visibility/block writers and exact unread parity;
+measure idle discovery and batch amortization with audit/auth intact; then measure
+real image bytes/storage and choose a media option before any paid approval.
+No measured runtime savings in this arithmetic-only batch. Preferred INR1000 is
+not established; INR2000 is conditional on media, region, retention, network and
+hosted peak tests. Launch remains HOLD/NO-GO independently of this budget update.
+Official sources checked 2026-11-06:
+- https://firebase.google.com/docs/firestore/billing-example
+- https://firebase.google.com/pricing (FCM)
+- https://render.com/pricing
+- https://cloudinary.com/pricing
+- https://cloudinary.com/documentation/developer_onboarding_faq_credits
+- https://developers.cloudflare.com/r2/pricing/
