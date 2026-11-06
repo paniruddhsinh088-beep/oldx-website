@@ -16,8 +16,9 @@ export const productConversationBlockKey=(from,to)=>hash([from,to]);
 const fail=code=>({ok:false,code}),revision=v=>Number.isSafeInteger(v)&&v>0&&v<10000;
 // Server-only, default off, demo-project/loopback locked. No SDK initialization,
 // endpoint, credential handling, persistence in the browser or production mode.
-export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,notificationOutbox=null,inboxIndex=null,legacyMutationsEnabled=false,reconciledHistoryEnabled=false,timeoutMs=5000,now=Date.now}={}){
+export function createIsolatedProductConversationRepository({enabled=false,firestore,sdk,schema,marketplaceSchema,authenticate,readCursor,issueCursor,readStateEnabled=false,notificationOutbox=null,inboxIndex=null,legacyMutationsEnabled=false,reconciledHistoryEnabled=false,reconciledNotificationsEnabled=false,timeoutMs=5000,now=Date.now}={}){
  if(enabled!==true)return Object.freeze(Object.fromEntries(['open','send','read','inbox','inboxPage','inboxSummaries','thread','summary','acknowledge','changeVisibility','changeBlock'].map(k=>[k,async()=>fail('UNAVAILABLE')])));
+ if(typeof reconciledNotificationsEnabled!=='boolean'||reconciledNotificationsEnabled&&!reconciledHistoryEnabled)throw Error('Explicit reconciled notification gate requires history/index');
  if(typeof reconciledHistoryEnabled!=='boolean')throw Error('Explicit reconciled-history gate required');
  if(reconciledHistoryEnabled&&(!readStateEnabled||!inboxIndex))throw Error('Reconciled history requires trusted state/index');
  if(typeof legacyMutationsEnabled!=='boolean')throw Error('Explicit legacy mutation gate required');
@@ -28,9 +29,9 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
  const ref=(paths,role,id)=>{if(!safeId(id))throw new Error('Invalid identity');return sdk.doc(db,paths[role],id);};
  const check=context=>isolatedTransactionCheck(context.signal,context.deadlineAt,now);
  const get=async(raw,reference)=>{const s=await cached(raw).get(reference);return s.exists()?s.data():null;};
- async function authority(raw,thread,uid,{checkBlocks=true,checkIndex=true,allowReconciled=false}={}){
+ async function authority(raw,thread,uid,{checkBlocks=true,checkIndex=true,allowReconciled=false,indexReader=raw}={}){
   if(!thread||!safeId(thread.id)||!safeId(thread.productId)||!safeId(thread.buyerUid)||!safeId(thread.sellerUid)||thread.buyerUid===thread.sellerUid||![thread.buyerUid,thread.sellerUid].includes(uid)||!revision(thread.revision)||thread.messageCount!==thread.revision||!revision(thread.productRevision))return false;
-  if(Object.hasOwn(thread,'inboxIndexed')&&thread.inboxIndexed!==true)return false;if(checkIndex&&thread.inboxIndexed===true&&(!inboxIndex||!await inboxIndex.assertAccessible(raw,{actorUid:uid,kind:'product',threadId:thread.id,revision:thread.revision})&&!(allowReconciled&&await reconciledRow(raw,thread,uid))))return false;
+  if(Object.hasOwn(thread,'inboxIndexed')&&thread.inboxIndexed!==true)return false;if(checkIndex&&thread.inboxIndexed===true&&(!inboxIndex||!await inboxIndex.assertAccessible(indexReader,{actorUid:uid,kind:'product',threadId:thread.id,revision:thread.revision})&&!(allowReconciled&&await reconciledRow(indexReader,thread,uid))))return false;
   const buyer=await get(raw,ref(c,'actors',thread.buyerUid)),seller=await get(raw,ref(c,'actors',thread.sellerUid));
   if([buyer,seller].some((a,i)=>a?.uid!==[thread.buyerUid,thread.sellerUid][i]||a.canInteract!==true||a.suspended!==false))return false;
   const product=await get(raw,ref(m,'privateRecords','product_'+thread.productId)),view=await get(raw,ref(m,'publicViews','product_'+thread.productId)),owner=await get(raw,ref(m,'actors',thread.sellerUid));
@@ -140,15 +141,16 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
  // Worker role and recipient preferences remain REQUIRED injected server readers.
  const transactionReads=new WeakMap();
  function cached(raw){if(!transactionReads.has(raw)){const reads=new Map();transactionReads.set(raw,{get(reference){if(!reads.has(reference.path))reads.set(reference.path,raw.get(reference));return reads.get(reference.path);}});}return transactionReads.get(raw);}
+ const canonicalBlock=async(raw,from,to)=>{if(!safeId(from)||!safeId(to)||from===to)return null;return get(raw,ref(c,'blocks',hash([from,to])));};
  const notificationReaders=Object.freeze({
-  async readThread(raw,event){if(event?.kind!=='product'||!safeId(event.threadId)||!safeId(event.recipientUid))return null;const tx=raw,t=await get(tx,ref(c,'threads',event.threadId));if(!await authority(tx,t,event.recipientUid,{checkBlocks:false}))return null;return {kind:'product',threadId:t.id,participantUids:[t.buyerUid,t.sellerUid],active:true,revision:t.revision};},
+  async readThread(raw,event){if(event?.kind!=='product'||!safeId(event.threadId)||!safeId(event.recipientUid))return null;const tx=raw,t=await get(tx,ref(c,'threads',event.threadId));if(!await authority(tx,t,event.recipientUid,{checkBlocks:false,allowReconciled:reconciledNotificationsEnabled,indexReader:reconciledNotificationsEnabled?cached(tx):tx}))return null;const state=reconciledNotificationsEnabled&&t.inboxIndexed===true?await inboxIndex.notificationState(cached(tx),{kind:'product',threadId:t.id,buyerUid:t.buyerUid,sellerUid:t.sellerUid,revision:t.revision,readState:t.readState}):null;if(reconciledNotificationsEnabled&&!state)return null;return {kind:'product',threadId:t.id,participantUids:[t.buyerUid,t.sellerUid],active:state?event.sequence>state[(event.recipientUid===t.buyerUid?'buyer':'seller')+'ReadSequence']:true,revision:t.revision};},
   async readMessage(raw,event){if(event?.kind!=='product'||!safeId(event.threadId)||!Number.isSafeInteger(event.sequence)||event.sequence<1||event.sequence>9999)return null;const tx=raw,t=await get(tx,ref(c,'threads',event.threadId)),m=await get(tx,ref(c,'messages',hash([event.threadId,event.sequence])));if(!t||!validReadState(t))return null;const prefix=copyRecord(m?.readPrefix,['buyerReceived','sellerReceived']);if(!prefix||!['buyer','seller'].every(role=>Number.isSafeInteger(prefix[role+'Received'])&&prefix[role+'Received']>=0&&prefix[role+'Received']<=t.readState[role+'Received'])||prefix.buyerReceived+prefix.sellerReceived!==event.sequence)return null;return productMessageFacts(m,t);},
-  async readBlock(raw,from,to){if(!safeId(from)||!safeId(to)||from===to)return null;return get(raw,ref(c,'blocks',hash([from,to])));}
+  async readBlock(raw,from,to){return reconciledNotificationsEnabled?null:canonicalBlock(raw,from,to);}
  });
  const migrationReaders=Object.freeze({
   assertCompatible(database,paths){if(database!==db||[...Object.values(c),...Object.values(m)].some(path=>paths.includes(path)))throw Error('Migration namespace/database conflict');},
   async readThread(raw,id){const t=await get(raw,ref(c,'threads',id));return t?.id===id&&t.id===hash([t.productId,t.buyerUid,t.sellerUid])&&t.inboxIndexed===true&&validReadState(t)&&await authority(raw,t,t.buyerUid,{checkBlocks:false,checkIndex:false})?{kind:'product',threadId:t.id,providerId:null,participants:[t.buyerUid,t.sellerUid],revision:t.revision,readState:t.readState}:null;},
-  messageRef:(id,n)=>ref(c,'messages',hash([id,n])),async readBlock(raw,from,to){const v=await notificationReaders.readBlock(raw,from,to);if(!v)return null;const {committedAt,...facts}=v;return facts;}
+  messageRef:(id,n)=>ref(c,'messages',hash([id,n])),async readBlock(raw,from,to){const v=await canonicalBlock(raw,from,to);if(!v)return null;const {committedAt,...facts}=v;return facts;}
  });
  return Object.freeze({notificationReaders,migrationReaders,changeVisibility:(r,o)=>legacyMutation('visibility',r,o),changeBlock:(r,o)=>legacyMutation('block',r,o),open:(r,o)=>mutate('open',r,o),send:(r,o)=>mutate('send',r,o),
   async read(request,options){const input=copyRecord(request,['threadId','expectedRevision','afterSequence','limit']);if(!input||!safeId(input.threadId)||!revision(input.expectedRevision)||!Number.isInteger(input.afterSequence)||input.afterSequence<0||input.afterSequence>=input.expectedRevision||!Number.isInteger(input.limit)||input.limit<1||input.limit>20)return fail('INVALID_REQUEST');

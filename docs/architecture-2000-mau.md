@@ -705,3 +705,51 @@ server reconciliation. Next safe task: reconciled notification readers on these
 accepted source boundaries, or isolated adapters for a verified additional legacy
 schema. No live Firebase/Rules/deployment/main/billing/IAM/secrets/dependency changes.
 All new paths OFF; HOLD/NO-GO.
+
+### 7 November — reconciled notification readers (OFF, recording only)
+Start 8e4fceba4b5a4fd6d7c4980c84e7cb66025c34ed; clean/fetched remote equal.
+Product and Provider readers now support explicit reconciledNotificationsEnabled=false
+without changing defaults or live composition. Both participant rows/heads must be
+ready, complete, source-revision/read-state compatible and consistently canonical or
+reconciled. Unknown/empty/incomplete/mixed/stale inventory fails closed. Index facts
+are transaction-cached, never shared across requests/retries. No history scan.
+New paths require explicit four-edge canonical Product/Provider block consensus;
+missing/conflicting/contaminated mappings remain unknown. A single-store fallback
+is deliberately unavailable when the new gate is on. Existing migration readers
+retain their independent canonical block ports. Worker role and recipient preference
+ports are still mandatory server facts. Signed read cursors suppress already-read
+queued messages. Hidden/deleted/blocked/foreign or revoked records cannot dispatch.
+Source/index unread and pagination state are unchanged by notification processing.
+Existing recording worker/outbox preserve leases, atomic audit, idempotency and
+lost-ack recovery. No actual provider transport, route or runtime was activated.
+
+Measured: Product/Provider privacy 17/21 point reads, one message, zero writes.
+Successful single-event recording worker 58/70 reads (includes one query document),
+4 queue/audit writes, zero Chat/index writes. Distinct inventory/edge facts are read
+once per transaction. Existing unindexed canonical baseline remains 11/15 policy
+reads and 40/52 worker reads: the new complete-index/cross-kind checks add 6 reads
+per privacy checkpoint, not an aggregate saving. Earlier index-OFF capacity models
+do not price this new gated path; real hosted delivery/capacity is still unverified.
+
+52 distinct checks passed, 0 final failures/skips: 37 Node/static (35 focused + 2
+existing prefix-recovery regressions), 8 Chrome, 7 actual loopback Firestore Emulator.
+Coverage includes no-mapping fail-closed, hidden/deleted/blocks, stale read cursors,
+foreign/revoked actors, invalid inventory/edge/message facts, opt-out, recording-only
+privacy, lease retry without duplicates and unchanged mobile Inbox totals/logout.
+- Focused Node list/results: .firebase/reconciled-notifications-focused.log (35).
+- node --test tests/integration/legacy-prefix-migration.test.mjs (2).
+- node --test tests/browser/reconciled-notifications.test.mjs tests/browser/unified-inbox.test.mjs (8).
+- Emulator child: node --test tests/firestore-emulator/reconciled-notifications-runtime.test.mjs tests/firestore-emulator/canonical-product-notification-runtime.test.mjs tests/firestore-emulator/canonical-provider-notification-runtime.test.mjs (7).
+- Logs: .firebase/reconciled-notifications-browser.log, reconciled-notifications-emulator.log,
+  reconciled-notifications-migration-regression.log; only new notification cases
+  repeated in *-final.log after mandatory mapping hardening.
+Offline schema/inventory checklist: legacy-offline-compatibility-checklist.md.
+No live data was inspected to fill it; unknowns stay HOLD.
+
+Remaining: real complete inventory/schema/block mapping, deployed writer fencing,
+server worker/preferences bindings, durable real-provider/device acceptance, staging
+and realistic hosted cost/load tests. Synthetic roles and recording-only transport
+are not live delivery acceptance. No Firebase/Rules/deployment/billing/IAM/secrets/
+main/dependency changes. All new paths OFF; HOLD/NO-GO. Next safe task: provider
+acceptance/reconciliation contracts and bounded delivery measurements without transport
+activation, or an isolated adapter for a separately verified unknown legacy schema.
