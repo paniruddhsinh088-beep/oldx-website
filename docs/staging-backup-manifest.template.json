@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "project": {
+    "id": "oldx-staging",
+    "number": "38472235077"
+  },
+  "databaseId": null,
+  "sourceRevision": null,
+  "rules": {
+    "release": null,
+    "sha256": null,
+    "rollbackRelease": null
+  },
+  "inventory": {
+    "complete": false,
+    "includesSubcollections": false,
+    "includesOrphanSubcollections": false,
+    "sha256": null,
+    "collectionCounts": []
+  },
+  "backup": {
+    "artifactLocation": null,
+    "manifestSha256": null,
+    "verifiedSha256": null,
+    "firestoreTypesPreserved": false
+  },
+  "restore": {
+    "verified": false,
+    "isolatedTarget": null,
+    "sourceManifestSha256": null,
+    "restoredManifestSha256": null
+  },
+  "permissions": {
+    "readVerified": false,
+    "restoreVerified": false,
+    "rulesRollbackVerified": false,
+    "evidence": null
+  },
+  "cost": {
+    "additionalCost": null,
+    "eligibilityVerified": false,
+    "evidence": null
+  },
+  "compatibility": {
+    "passed": false,
+    "evidence": null,
+    "domains": {
+      "users": false,
+      "products": false,
+      "stores": false,
+      "chats": false,
+      "serviceProviders": false
+    }
+  },
+  "independentReviewId": null
+}
