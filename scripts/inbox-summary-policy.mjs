@@ -20,8 +20,8 @@ export function validateInboxSummary(summary, authenticatedUid) {
     errors.push("caller_not_participant");
   }
 
-  if (!Number.isInteger(summary.unreadCount) || summary.unreadCount < 0) errors.push("invalid_unread_count");
-  if (typeof summary.lastMessageSenderUid !== "string" || !summary.lastMessageSenderUid) errors.push("invalid_sender_uid");
+  if (!Number.isSafeInteger(summary.unreadCount) || summary.unreadCount < 0) errors.push("invalid_unread_count");
+  if (typeof summary.lastMessageSenderUid !== "string" || !summary.lastMessageSenderUid || !Array.isArray(participants) || !participants.includes(summary.lastMessageSenderUid)) errors.push("invalid_sender_uid");
   if (typeof summary.lastMessagePreview !== "string" || summary.lastMessagePreview.length > MAX_PREVIEW_LENGTH) {
     errors.push("invalid_preview");
   }

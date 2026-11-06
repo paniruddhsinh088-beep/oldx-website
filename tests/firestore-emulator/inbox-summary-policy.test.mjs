@@ -44,3 +44,5 @@ test("page requests are bounded and cursor-based", () => {
   assert.equal(validateInboxPageRequest({ authenticatedUid: "synthetic-user-a", pageSize: 20, cursor: { chatId: "c1", lastMessageAtMillis: 10 } }).ok, true);
   assert.equal(validateInboxPageRequest({ authenticatedUid: "synthetic-user-a", pageSize: 20, cursor: { chatId: "c1", lastMessageAtMillis: -1 } }).ok, false);
 });
+
+test('summary rejects a non-participant sender and unsafe unread integers',()=>{const base={chatId:'chat',participantUids:['a','b'],unreadCount:1,lastMessageSenderUid:'a',lastMessagePreview:'Original',lastMessageAtMillis:1,schemaVersion:1};assert.equal(validateInboxSummary({...base,lastMessageSenderUid:'foreign'},'a').ok,false);assert.equal(validateInboxSummary({...base,unreadCount:Number.MAX_SAFE_INTEGER+1},'a').ok,false);});
