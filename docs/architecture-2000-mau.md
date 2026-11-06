@@ -753,3 +753,52 @@ are not live delivery acceptance. No Firebase/Rules/deployment/billing/IAM/secre
 main/dependency changes. All new paths OFF; HOLD/NO-GO. Next safe task: provider
 acceptance/reconciliation contracts and bounded delivery measurements without transport
 activation, or an isolated adapter for a separately verified unknown legacy schema.
+
+### 7 November — trusted notification registry/preferences bindings (OFF)
+Resume base 012b46793a1339ef6ff4d2fd83bfac60cc640d8a; fetched remote/branch clean/equal.
+Concrete isolated bindings now replace synthetic worker/preference fact callbacks.
+Worker identity reuses verified/revoked credential ports; a fresh strict server-owned
+registry controls role/activation. No role-provisioning or browser-owned worker flags.
+Recipient eligibility comes from existing canonical Product/Provider actor readers,
+not another user collection or fabricated suspended=false. Transaction caches reuse
+facts already read by canonical privacy authorization.
+Owned preference read/update ports derive UID from verified credentials, require
+atomic quota enforcement and preserve CAS, request fingerprint, receipt/audit and
+safe retry. Old opt-in replay cannot reverse newer opt-out; no-op writes preserve
+idempotency/audit without rewriting preferences. Unknown preference schemas fail
+closed; missing new v1 documents explicitly opt out. Approved generic/full preview
+choice is stored, but actual envelopes remain generic and recording-only.
+No contact/location/privacy preferences or existing design were changed. No route,
+worker, transport, secret, IAM, billing or live Firebase setting was enabled.
+
+Measured: changed preference command 3 data reads/3 writes; no-op 3R/2W; replay
+3R/0W. Every admitted owner read/update additionally consumes 2R/2W atomic actor/
+global quota (including retries). Thus no-op avoids one preference-data write,
+not audit or abuse controls. Worker remains Product 58 / Provider 70 reads incl
+one discovery query document +4 queue/audit writes, zero Chat/index writes/history
+scans. Account eligibility causes no extra Firestore read in the canonical policy
+transaction. No aggregate/hosted cost reduction or production readiness claimed.
+
+53 distinct checks passed, 0 final failures/skips: 38 Node/static, 8 Chrome,
+6 actual baseline Firestore Emulator +1 actual Auth/Firestore Emulator identity test.
+Coverage: registry/UID/version contamination, canonical account scope, missing and
+malformed choices, opt-out during a lease, concurrent preference CAS, stale opt-in,
+audit rollback, persisted no-op/replay, JWT issuer/revocation-check contract, actual
+Emulator disabled user/worker tokens, ordinary-user non-worker authorization, mobile
+Inbox/unread/logout and bounded worker retries. Initial fixture declaration/retry-
+options errors were corrected; no assertions were weakened.
+- Node focused file list/results: .firebase/notification-bindings-focused.log (38).
+- node --test tests/browser/notification-bindings.test.mjs tests/browser/unified-inbox.test.mjs (8).
+- Baseline child: node --test tests/firestore-emulator/notification-bindings-runtime.test.mjs tests/firestore-emulator/reconciled-notifications-runtime.test.mjs (6).
+- Auth child: node --test tests/firestore-emulator/notification-bindings-auth-runtime.test.mjs (1), exact demo project/8088/9098 guarded.
+- Logs: .firebase/notification-bindings-browser.log, notification-bindings-emulator.log,
+  notification-bindings-auth.log. No repeated unrelated full suite.
+Provider/device/staging checklist: notification-provider-device-acceptance.md.
+
+Remaining: real worker principal/registry administration, deployed canonical account/
+preference/inventory/block mappings, trusted HTTP/UI hosting acceptance and real
+provider/device/consent-race/load/cost tests. Local ports and synthetic registry rows
+are not deployed bindings; live provisioning still needs separate approval. New
+paths stay OFF. No live Firebase/Rules/deployment/main/paid services/dependencies.
+HOLD/NO-GO. Saved files/checkpoint permit resuming from the next verified Git HEAD;
+no automatic background continuation is assumed after credit/session exhaustion.
