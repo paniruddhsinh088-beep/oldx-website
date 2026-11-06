@@ -19,9 +19,15 @@ export function inspectStagingEvidence(value){
   require(text(v?.databaseId)&&typeof v.sourceRevision==='string'&&/^[a-f0-9]{40}$/.test(v.sourceRevision),'DATABASE_REVISION');
   require(text(v?.rules?.release)&&hash(v.rules.sha256)&&text(v.rules.rollbackRelease),'RULES_SNAPSHOT_ROLLBACK');
   require(v?.inventory?.complete===true&&v.inventory.includesSubcollections===true&&v.inventory.includesOrphanSubcollections===true&&hash(v.inventory.sha256)&&Array.isArray(v.inventory.collectionCounts)&&v.inventory.collectionCounts.every(row=>text(row.path)&&Number.isSafeInteger(row.count)&&row.count>=0)&&new Set(v.inventory.collectionCounts.map(row=>row.path)).size===v.inventory.collectionCounts.length,'COMPLETE_INVENTORY');
+  // A verified empty database has no document data to back up/restore. This
+  // documentary exception still requires a complete orphan-aware inventory,
+  // separate verification evidence, Rules rollback, permissions and review.
+  const empty=v?.inventory?.emptyVerified===true&&text(v.inventory.emptyVerificationEvidence)&&v.inventory.complete===true&&v.inventory.includesSubcollections===true&&v.inventory.includesOrphanSubcollections===true&&hash(v.inventory.sha256)&&Array.isArray(v.inventory.collectionCounts)&&v.inventory.collectionCounts.every(row=>text(row.path)&&row.count===0);
+  if(!empty){
   require(text(v?.backup?.artifactLocation)&&hash(v.backup.manifestSha256)&&v.backup.manifestSha256===v.backup.verifiedSha256&&v.backup.firestoreTypesPreserved===true,'RESTORABLE_BACKUP');
   require(v?.restore?.verified===true&&typeof v.restore.isolatedTarget==='string'&&/^demo-oldx-[a-z0-9-]+$/.test(v.restore.isolatedTarget)&&hash(v.restore.sourceManifestSha256)&&v.restore.sourceManifestSha256===v.backup?.manifestSha256&&v.restore.restoredManifestSha256===v.restore.sourceManifestSha256,'RESTORE_COMPARISON');
-  require(v?.permissions?.readVerified===true&&v.permissions.restoreVerified===true&&v.permissions.rulesRollbackVerified===true&&text(v.permissions.evidence),'OPERATOR_PERMISSIONS');
+  }
+  require(v?.permissions?.readVerified===true&&(empty||v.permissions.restoreVerified===true)&&v.permissions.rulesRollbackVerified===true&&text(v.permissions.evidence),'OPERATOR_PERMISSIONS');
   require(v?.cost?.additionalCost===0&&v.cost.eligibilityVerified===true&&text(v.cost.evidence),'ZERO_COST_ELIGIBILITY');
   require(v?.compatibility?.passed===true&&text(v.compatibility.evidence)&&['users','products','stores','chats','serviceProviders'].every(k=>v.compatibility.domains?.[k]===true),'COMPATIBILITY_ACCEPTANCE');
   require(text(v?.independentReviewId),'INDEPENDENT_REVIEW');

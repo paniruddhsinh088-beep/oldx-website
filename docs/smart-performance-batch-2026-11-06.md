@@ -200,3 +200,21 @@ Browser cases use loopback injected media responses across Gujarati/Hindi/Englis
 Server/Rules boundaries were unchanged, so unchanged native Emulator suites were not
 rerun. Existing staging access/activation, trusted processing, signed-token and media
 approval gates remain blockers; no cloud operations, Rules edits or deployment.
+
+## Staging-first preflight — 6 November 2026
+
+Read-only MCP get_environment/get_project verified oldx-staging / 38472235077,
+ACTIVE, billing disabled. Connection works; only environment/project/update tools
+are exposed. Deployed Rules, collection/schema inventory and actual data cannot be
+read through this session. MCP still points at the original ZIP directory with no
+firebase.json; no environment setting was changed. Do not infer empty data or deny-all
+Rules from old notes. Staging execution blocked; no production operation.
+Minimum next live step: obtain authorized Rules snapshot/rollback reference and a
+complete orphan-aware data inventory, then verify compatibility, permissions and
+zero-cost eligibility before the existing private draft save/owner integration.
+Repository-only improvement: existing documentary checker accepts independently
+verified empty inventory without a document backup/restore; it still requires Rules
+rollback, complete inventory, review, permissions and cost/feature evidence. Unknown
+or non-empty data retains backup/restore requirements. ExecutionAuthorized always false.
+`node --test scripts/staging-preflight-evidence.test.mjs`: 7 passed, 0 failed/skipped.
+No deployment, data write, migration, Rules change or backend activation; HOLD/NO-GO.
