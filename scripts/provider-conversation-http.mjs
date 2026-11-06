@@ -1,5 +1,13 @@
+import {copyRecord} from './isolated-firestore-context.mjs';
 import {createPrivateConversationHttp} from './product-conversation-http.mjs';
 import {projectServiceConversation} from '../features/service-providers/conversation-dto.mjs';
 // Reuses verified token/revocation, fail-closed rate enforcement, bounded JSON,
 // cancellation/deadline, no-store and unknown-outcome handling. No endpoint.
-export function createProviderConversationHttp(options={}){return createPrivateConversationHttp({...options,contract:{prefix:'provider.conversation.',projection:projectServiceConversation,keys:{read:['providerId','enquiryId','expectedRevision','afterSequence','limit'],send:['providerId','enquiryId','expectedRevision','expectedEnquiryRevision','expectedGeneration','requestId','text']}}});}
+const record=(v,keys)=>!!copyRecord(v,keys);
+function readStateProjection(op,value){
+ if(op==='read'){if(!record(value,['ok','thread','messages','hasMore','readReceipt'])||value.readReceipt!==null&&(typeof value.readReceipt!=='string'||!value.readReceipt.length||value.readReceipt.length>1024))return null;const {readReceipt,...base}=value,projected=projectServiceConversation('read',base);return projected?{...projected,readReceipt}:null;}
+ if(op==='summary'){if(!record(value,['ok','thread','unreadCount','readSequence'])||value.ok!==true||!Number.isSafeInteger(value.unreadCount)||value.unreadCount<0||!Number.isSafeInteger(value.readSequence)||value.readSequence<0||value.readSequence>value.thread?.revision||value.unreadCount>value.thread?.revision)return null;const p=projectServiceConversation('read',{ok:true,thread:value.thread,messages:[],hasMore:false});return p?{ok:true,thread:p.thread,unreadCount:value.unreadCount,readSequence:value.readSequence}:null;}
+ if(op==='acknowledge')return record(value,['ok','status','readSequence'])&&value.ok===true&&['advanced','unchanged'].includes(value.status)&&Number.isSafeInteger(value.readSequence)&&value.readSequence>0&&value.readSequence<10000?structuredClone(value):null;
+ return projectServiceConversation(op,value);
+}
+export function createProviderConversationHttp(options={}){if(options.readStateEnabled===true)return createPrivateConversationHttp({...options,contract:{prefix:'provider.conversation.',mutations:['send','acknowledge'],projection:readStateProjection,keys:{read:['providerId','enquiryId','expectedRevision','afterSequence','limit'],send:['providerId','enquiryId','expectedRevision','expectedEnquiryRevision','expectedGeneration','requestId','text'],summary:['providerId','enquiryId'],acknowledge:['providerId','enquiryId','readReceipt']}}});return createPrivateConversationHttp({...options,contract:{prefix:'provider.conversation.',projection:projectServiceConversation,keys:{read:['providerId','enquiryId','expectedRevision','afterSequence','limit'],send:['providerId','enquiryId','expectedRevision','expectedEnquiryRevision','expectedGeneration','requestId','text']}}});}

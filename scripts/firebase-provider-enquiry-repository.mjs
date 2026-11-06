@@ -28,7 +28,7 @@ function enquiryRepository({sdk,catalog,now=Date.now},{db,p,c,chat,native}){
  },async runTransaction(work,{signal,deadlineAt}={}){
   const check=()=>isolatedTransactionCheck(signal,deadlineAt,now);check();
   return sdk.runTransaction(db,async raw=>{
-   const cache=new Map();let mutation=null,update=false,conversationMutation=null;check();
+   const cache=new Map();let mutation=null,update=false,conversationMutation=null,conversationReadMutation=null;check();
    async function get(reference){check();if(!cache.has(reference.path)){const snap=await raw.get(reference);check();const value=snap.exists()?snap.data():null;if(value){const {committedAt,...facts}=value;cache.set(reference.path,facts);}else cache.set(reference.path,null);}return cache.get(reference.path);}
    const actor=async uid=>{const value=await get(ref(c,'actors',uid));return native&&value?{uid:value.uid,canEnquire:value.canEnquire,suspended:value.suspended}:value;};
    async function provider(providerId){
@@ -45,8 +45,14 @@ function enquiryRepository({sdk,catalog,now=Date.now},{db,p,c,chat,native}){
     stageEnquiry:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;},
     stageEnquiryUpdate:value=>{if(mutation)throw new Error('Duplicate enquiry staging');mutation=value;update=true;}
    };
-   if(chat)Object.assign(tx,{getConversation:id=>get(ref(chat,'threads',id)),getConversationMessage:(id,n)=>get(ref(chat,'messages',hash([id,n]))),getConversationReceipt:(uid,key)=>get(ref(chat,'receipts',hash([uid,key]))),getConversationAudit:(uid,key)=>get(ref(chat,'audits',hash([uid,key]))),stageConversation:value=>{if(conversationMutation)throw new Error('Duplicate conversation mutation');conversationMutation=value;}});
+   if(chat)Object.assign(tx,{getConversation:id=>get(ref(chat,'threads',id)),getConversationMessage:(id,n)=>get(ref(chat,'messages',hash([id,n]))),getConversationReceipt:(uid,key)=>get(ref(chat,'receipts',hash([uid,key]))),getConversationAudit:(uid,key)=>get(ref(chat,'audits',hash([uid,key]))),getConversationReadReceipt:(uid,key)=>get(ref(chat,'receipts',hash(['read-state',uid,key]))),getConversationReadAudit:(uid,key)=>get(ref(chat,'audits',hash(['read-state',uid,key]))),stageConversationRead:value=>{if(conversationMutation||conversationReadMutation)throw Error('Duplicate conversation mutation');conversationReadMutation=value;},stageConversation:value=>{if(conversationMutation||conversationReadMutation)throw new Error('Duplicate conversation mutation');conversationMutation=value;}});
    const result=await work(Object.freeze(tx));check();
+   if(conversationReadMutation){
+    if(mutation||conversationMutation||result?.ok!==true)throw Error('Invalid read-state mutation');
+    const m=conversationReadMutation,threadRef=ref(chat,'threads',m.thread.enquiryId),old=await get(threadRef),key=hash(['read-state',m.record.actorUid,m.record.requestId]),receiptRef=ref(chat,'receipts',key),auditRef=ref(chat,'audits',key);
+    if(!old||old.revision!==m.expectedRevision||JSON.stringify(old.readState)!==JSON.stringify(m.expectedReadState)||['providerId','enquiryId','buyerUid','providerUid','service','revision'].some(k=>old[k]!==m.thread[k])||await get(receiptRef)||await get(auditRef))return {ok:false,code:'REVISION_CONFLICT'};
+    check();for(const [r,v]of [[threadRef,m.thread],[receiptRef,m.record],[auditRef,{...m.record,operation:'read.acknowledge'}]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});check();return result;
+   }
    if(conversationMutation){if(mutation||result?.ok!==true)throw new Error('Invalid conversation mutation');const m=conversationMutation,id=m.thread.enquiryId,threadRef=ref(chat,'threads',id),old=await get(threadRef),messageRef=ref(chat,'messages',hash([id,m.thread.revision])),key=hash([m.receipt.actorUid,m.receipt.requestId]),receiptRef=ref(chat,'receipts',key),auditRef=ref(chat,'audits',key);if((old?.revision??0)!==m.expectedRevision||m.thread.revision!==m.expectedRevision+1||await get(messageRef)||await get(receiptRef)||await get(auditRef))return {ok:false,code:'REVISION_CONFLICT'};check();for(const [r,v] of [[threadRef,m.thread],[messageRef,m.message],[receiptRef,m.receipt],[auditRef,m.audit]])raw.set(r,{...v,committedAt:sdk.serverTimestamp()});check();return result;}
    if(!mutation)return result;if(result?.ok!==true)throw new Error('Denied enquiry cannot write');
    const m=mutation,rowRef=ref(c,'enquiries',m.record.id),old=await get(rowRef),receiptRef=receipt(m.receipt.actorUid,m.receipt.requestId,m.receipt.operation),auditRef=ref(c,'audits',m.audit.id);

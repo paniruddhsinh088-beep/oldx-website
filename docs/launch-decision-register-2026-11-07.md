@@ -258,3 +258,15 @@ passed 38 focused local cases and all three exact-source CI workflows. No real
 provider call or public delivery activation. See
 [bridge handoff](review-progress-2026-11-04-cloudinary-bridge-ledger.md) for evidence,
 independent byte-attestation requirements and remaining signed-delete/runtime gates.
+
+## 6 November — current Chat/Provider launch checkpoint
+
+Provider trusted summary/read acknowledgement now works in isolated repository + verified
+HTTP tests, sharing Product read-state policy. No deployed endpoint or UI feature enabled.
+40 focused checks pass (28 Node, 4 actual Firestore Emulator, 3 Chrome locales, 5 static
+packaging). See architecture-2000-mau.md follow-up for exact commands, measured reads,
+limitations and resume tasks. Blocking, authorization, audit rollback and two-device retry
+are covered; legacy hidden/deleted messages and unified inbox integration remain gates.
+Product/Store/Media/Admin hosted acceptance, notifications delivery, staging snapshot/
+inventory/rollback/permissions and realistic zero-cost capacity acceptance remain open.
+HOLD/NO-GO. No live Firebase, Rules, billing, IAM, production or deployment changes.

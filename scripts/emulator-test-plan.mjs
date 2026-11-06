@@ -4,7 +4,7 @@ export const EMULATOR_TEST_PLANS = Object.freeze({
   baseline: Object.freeze({
     service: 'firestore', project: 'demo-oldx-emulator', config: 'firebase.emulator.json',
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8080,
-    tests: ['tests/firestore-emulator/rules-runtime.test.mjs', 'tests/firestore-emulator/admin-atomic-audit.test.mjs', 'tests/firestore-emulator/staging-readiness-runtime.test.mjs', 'tests/firestore-emulator/migration-rehearsal-runtime.test.mjs', 'tests/firestore-emulator/legacy-performance-runtime.test.mjs', 'tests/firestore-emulator/product-read-state-runtime.test.mjs']
+    tests: ['tests/firestore-emulator/rules-runtime.test.mjs', 'tests/firestore-emulator/admin-atomic-audit.test.mjs', 'tests/firestore-emulator/staging-readiness-runtime.test.mjs', 'tests/firestore-emulator/migration-rehearsal-runtime.test.mjs', 'tests/firestore-emulator/legacy-performance-runtime.test.mjs', 'tests/firestore-emulator/product-read-state-runtime.test.mjs', 'tests/firestore-emulator/provider-read-state-runtime.test.mjs']
   }),
   'product-drafts': Object.freeze({
     service: 'firestore', project: 'demo-oldx-product-drafts', config: 'firebase.product-drafts-emulator.json',

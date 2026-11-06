@@ -2,6 +2,7 @@ import {createHash} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {isolatedFirestoreContext,safeId,copyRecord,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 import {normalizeMessageDraft} from '../features/chat/message-text.mjs';
+import {initialReadState,validReadState} from './trusted-chat-read-state.mjs';
 import {advanceReadCursor} from './chat-read-receipt-policy.mjs';
 import {validateInboxSummary} from './inbox-summary-policy.mjs';
 import {authorizeChatMutation} from './chat-message-authorization-policy.mjs';
@@ -33,8 +34,6 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
   return a?.blockerUid===thread.buyerUid&&a.blockedUid===thread.sellerUid&&a.blocked===false&&b?.blockerUid===thread.sellerUid&&b.blockedUid===thread.buyerUid&&b.blocked===false;
  }
  const roleOf=(thread,uid)=>uid===thread.buyerUid?'buyer':'seller';
- const initialReadState=()=>({schemaVersion:1,buyerReceived:0,sellerReceived:0,buyerReadCount:0,sellerReadCount:0,buyerReadSequence:0,sellerReadSequence:0,lastSenderUid:'',lastPreview:'',lastMessageAtMillis:0});
- function validReadState(thread){const r=copyRecord(thread.readState,Object.keys(initialReadState()));return !!r&&r.schemaVersion===1&&['buyer','seller'].every(role=>Number.isSafeInteger(r[role+'Received'])&&r[role+'Received']>=0&&r[role+'Received']<=thread.revision&&Number.isSafeInteger(r[role+'ReadCount'])&&r[role+'ReadCount']>=0&&r[role+'ReadCount']<=r[role+'Received']&&r[role+'ReadCount']<=r[role+'ReadSequence']&&Number.isSafeInteger(r[role+'ReadSequence'])&&r[role+'ReadSequence']>=0&&r[role+'ReadSequence']<=thread.revision)&&r.buyerReceived+r.sellerReceived===thread.revision&&validateInboxSummary({chatId:thread.id,participantUids:[thread.buyerUid,thread.sellerUid],unreadCount:r.buyerReceived-r.buyerReadCount,lastMessageSenderUid:r.lastSenderUid,lastMessagePreview:r.lastPreview,lastMessageAtMillis:r.lastMessageAtMillis,schemaVersion:1},thread.buyerUid).ok;}
  const deliveryScope=(thread,uid)=>hash(['product-read-v1',thread.id,uid,thread.productId,thread.productRevision]);
  const dto=(thread,uid)=>({id:thread.id,productId:thread.productId,productRevision:thread.productRevision,revision:thread.revision,role:uid===thread.buyerUid?'buyer':'seller'});
  const bounded=(options,run)=>runVerifiedOperation({authenticate,credential:options?.credential,signal:options?.signal,timeoutMs,now,run});

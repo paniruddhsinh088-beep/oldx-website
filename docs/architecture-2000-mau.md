@@ -192,3 +192,48 @@ Provider and deletion/visibility acceptance is deliberately still outstanding.
 3. Complete remaining Product/Store/Provider/Admin/media acceptance and authorized staging
    workload/peak/retention tests, including buyer-only reviews, galleries, moderation and
    Capacitor device behavior. Keep original approved design and all feature gates distinct.
+
+## 6 November follow-up — Provider trusted read-state acceptance
+
+Starting commit: `6285e7b560246946bdbfbb52a21c4041b672628c`.
+Provider conversations now share Product's server-only read-state validation. Explicitly
+opt-in repository/HTTP ports provide authorized summaries and signed contiguous delivery
+acknowledgments. Fresh participant/publication/block checks run on every operation;
+actor-bound cursors cannot clear unseen incoming gaps. Read advances atomically update
+thread, idempotency receipt and audit. Concurrent devices, rollback, lost responses,
+retries, forged cursors and legacy/downgrade writers are tested. No route/host/UI gate
+was activated, no live resource changed, and existing three-language messaging remains.
+
+Measured locally: Provider summary uses 12 point reads at both 1 and 61 messages, zero
+history queries/writes. A committed read advance uses 3 records; duplicate acknowledgment
+writes 0. Message send still uses its existing 4 records, including atomic audit.
+The prior 8-read Product result does not apply to Provider's additional authority checks.
+A hypothetical mixed four-room inbox (2 Product, 2 Provider, plus 4 listing reads) costs
+44 reads/refresh, 88 for two refreshes versus the old model's 824. Substituting only that
+term gives `(1200 - 824 + 88) * 1.2 = 556.8` reads/DAU: 111,360 / 222,720 /
+334,080 reads/day at 200 / 400 / 600 DAU. This is a counterfactual future integration,
+NOT achieved website usage or a proven free-tier capacity. The existing write, image,
+storage, abuse and quota budgets remain; 2,000 MAU at zero cost is still unproven.
+
+Exact focused verification: **40 passed, 0 failed, 0 skipped**.
+- 28 Node: `node --test tests/integration/provider-read-state.test.mjs tests/integration/product-read-state.test.mjs tests/integration/service-conversation.test.mjs tests/integration/service-conversation-client.test.mjs tests/firestore-emulator/provider-discovery-cursor.test.mjs scripts/emulator-test-plan.test.mjs`.
+- 4 actual loopback Firestore Emulator: guarded baseline runner narrowed to
+  `node --test tests/firestore-emulator/product-read-state-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs`.
+  SDK transactions use synthetic data; server token verifier is an injected test port,
+  so this is not hosted identity/credential acceptance. Deny-all client reads/forgeries fail.
+- 3 Chrome browser locale cases and 5 packaging cases:
+  `node --test tests/browser/service-messaging-integration.test.mjs scripts/build-static-assets.test.mjs`.
+Local ignored logs: `.firebase/provider-read-focused.log`, `provider-read-native.log`,
+`provider-read-browser.log`. No full-suite rerun, new dependency or UI design change.
+
+Resume / next work: connect bounded unified inbox/read-cursor UI with exact totals and
+unread-first ordering only after sparse/deleted/hidden history reconciliation and
+multi-device compatibility pass. Product/Store private saves/publication, Provider
+buyer-only reviews/galleries, real Media processing/moderation, Admin runtime roles and
+atomic operations still need hosted acceptance. Notifications still need the trusted
+retrying outbox/delivery integration. Existing scoped staging Rules snapshot, complete
+inventory, rollback, runtime permissions and zero-cost host eligibility remain unverified;
+do not repeat unavailable access investigation or activate routes by inference.
+Next priorities: (1) unified inbox/deletion parity acceptance, (2) bounded audited quota
+and notification outbox budget, (3) remaining feature and staging/device workload acceptance.
+Launch remains HOLD/NO-GO; retain all disabled gates pending those checks.
