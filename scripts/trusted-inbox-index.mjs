@@ -25,6 +25,7 @@ export function createIsolatedTrustedInboxIndex({enabled=false,firestore,sdk,sch
   }return ()=>{for(const[r,v]of updates)tx.set(r,v);};
  }
  return Object.freeze({collections:c,stage,
+  async inventoryHead(tx,actorUid){if(!safeId(actorUid))return null;const h=await get(tx,ref('heads',actorUid));return head(h)&&h.actorUid===actorUid?h:null;},
   async stageInvalidation(tx,changes){if(!Array.isArray(changes)||changes.length<1||changes.length>2||new Set(changes.map(v=>v.actorUid)).size!==changes.length)throw Error('Bounded participant invalidation required');const updates=[];for(const change of changes){const v=copyRecord(change,['actorUid','nextEpoch']);if(!v||!safeId(v.actorUid)||!safeId(v.nextEpoch))throw Error('Invalid source epoch');const r=ref('heads',v.actorUid),h=await get(tx,r);if(!head(h)||h.inventoryEpoch===v.nextEpoch||!Number.isSafeInteger(h.generation+1))throw Error('Fresh inventory epoch required');updates.push([r,{...h,ready:false,inventoryEpoch:v.nextEpoch,reconciledCount:0,generation:h.generation+1}]);}return ()=>{for(const[r,v]of updates)tx.set(r,v);};
   },
   async assertAccessible(tx,{actorUid,kind,threadId,revision}){if(!safeId(actorUid)||!['product','provider'].includes(kind)||!safeId(threadId))return false;const h=await get(tx,ref('heads',actorUid)),r=await get(tx,ref('rows',inboxRowId(actorUid,kind,threadId)));return head(h)&&h.ready===true&&r?.inventoryEpoch===h.inventoryEpoch&&r?.actorUid===actorUid&&r.mode==='canonical'&&r.visible===true&&r.sourceRevision===revision;},

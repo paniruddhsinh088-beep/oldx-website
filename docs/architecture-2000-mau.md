@@ -659,3 +659,49 @@ schemas are not guessed. Next smallest safe task: isolated missing-prefix migrat
 planner/rehearsal using complete canonical inventories; no live migration approval
 inferred. New backend/transport gates remain OFF. No live Firebase/Rules, deployment,
 production/main, billing, IAM, credentials or dependency changes. HOLD/NO-GO.
+
+### 7 November — bounded missing-prefix recovery and canonical mapping (OFF)
+Start e1f27eb59569128c25f8053be027e21d97562959; clean/fetched remote equal.
+Added an isolated metadata-only prefix planner/worker using the existing Product/
+Provider canonical server readers, actual participant/source identities and Inbox
+inventory heads. Begin requires both ready inventories with complete counts and
+matching rows/revision/read cursors. Both heads are atomically invalidated. Job
+checkpoints fence source state, actor membership counts and inventory epochs.
+Each step reads <=20 physical messages and adds only missing readPrefix fields;
+text, sender, timestamps, visibility and source read state remain byte-equivalent.
+Known existing prefixes must match; ambiguous schemas/counters/ownership fail closed.
+Four explicit, correctly directed Product/Provider block records must agree; missing
+or conflicting facts stop with no writes. No block record is inferred or rewritten.
+Audit failure rolls back source metadata/checkpoint/receipt together. Restart and
+lost-commit replay are idempotent. Changed source/membership/epoch stops the job;
+no destructive reset/rollback is attempted. Partial progress remains fenced.
+Finishing prefixes does NOT enable an index: existing verified reconciliation and
+finalization still run, preserving unread/newer messages and invalidating old signed
+receipts. Maintenance job inventory verification in tests is fixture-scoped, not a
+new deployed completeness oracle. No endpoint or live mode was added.
+
+Measured happy paths (instrumented point-read calls, not hosted billing proof):
+- Product begin 20 reads / 4 writes; Provider begin 24 reads / 4 writes; no messages.
+- First page: Product 35 / Provider 39 reads including 20 messages, 23 writes.
+- Final one-message page: 4 writes. Exact replay: 0 message reads / 0 writes.
+- 21 initially missing prefixes require 31 worker writes, excluding reconciliation,
+  retries and test setup. Valid pre-existing prefixes are preserved without rewriting.
+39 distinct checks pass, 0 final failures/skips: 27 Node/static, 5 Chrome,
+7 actual loopback Firestore Emulator. Coverage includes original fields/privacy,
+missing/contradictory blocks, unknown ownership, incomplete/changed inventories,
+source-epoch interruption, failed audit, persisted restart, stale cursors and unread.
+Node focused list/results: .firebase/legacy-prefix-focused.log.
+Browser: node --test tests/browser/legacy-prefix-recovery.test.mjs tests/browser/service-messaging-integration.test.mjs.
+Emulator child: node --test tests/firestore-emulator/legacy-prefix-migration-runtime.test.mjs tests/firestore-emulator/provider-read-state-runtime.test.mjs tests/firestore-emulator/reconciled-product-cursor-runtime.test.mjs.
+Logs: .firebase/legacy-prefix-browser.log, legacy-prefix-emulator.log; only new
+migration/browser cases repeated in *-final.log after inventory-count hardening.
+
+Scope remains known indexed v1 histories with verified physical read state. Complete
+REAL collection inventory, unknown/unindexed legacy schemas/attachments, live source
+writer fencing and authoritative cross-kind mapping acceptance remain unverified.
+This code does not discover arbitrary collections, prove deployed completeness or
+approve any live migration. Conflicting block stores need separately verified owner/
+server reconciliation. Next safe task: reconciled notification readers on these
+accepted source boundaries, or isolated adapters for a verified additional legacy
+schema. No live Firebase/Rules/deployment/main/billing/IAM/secrets/dependency changes.
+All new paths OFF; HOLD/NO-GO.
