@@ -200,10 +200,13 @@
         let allUsersCache = [];
         const AUTHORIZED_ADMIN_UID = 'ghuDBBk8jdOfM2no7lyQobQN7WI2';
 
-        if (window.OLDX_ADMIN_USERS_ENABLED === true && auth.app?.options?.projectId === 'oldx-staging') {
+        if ((window.OLDX_ADMIN_USERS_ENABLED === true || window.OLDX_ADMIN_PRODUCTS_ENABLED === true) && auth.app?.options?.projectId === 'oldx-staging') {
             fetchAllAdminData();
             import('./features/admin/users-panel.mjs')
-                .then(({ mountAdminUsers }) => mountAdminUsers({ enabled: true, auth }))
+                .then(({ mountAdminUsers, mountAdminProducts }) => {
+                    mountAdminUsers({ enabled: window.OLDX_ADMIN_USERS_ENABLED === true, auth });
+                    mountAdminProducts({ enabled: window.OLDX_ADMIN_PRODUCTS_ENABLED === true, auth });
+                })
                 .catch(() => { document.getElementById('adminBackendStatus').textContent = 'User directory unavailable.'; });
         } else auth.onAuthStateChanged(user => {
             if (!user) {
