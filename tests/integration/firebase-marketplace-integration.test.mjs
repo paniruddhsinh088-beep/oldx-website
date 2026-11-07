@@ -47,3 +47,35 @@ test('Product Chat aborts a pending private read and discards its reply on accou
  assert.deepEqual(await f.bridge.product.read({threadId:'private'},old),{ok:false,code:'AUTH_REQUIRED'});
  f.bridge.destroy();
 });
+
+test('Provider Chat is opt-in, scopes signed acknowledgements and suppresses stale private replies',async()=>{
+ const request={providerId:'p',enquiryId:'e',readReceipt:'signed-proof'};
+ let release,signal;const calls=[];
+ const f=fixture({providerReadStateEnabled:true,providerReconciledHistoryEnabled:true,sendProviderConversation:async(op,body,options)=>{
+  calls.push({op,body,credential:options.credential});
+  if(op==='acknowledge')return {status:200,body:{ok:true,status:'advanced',readSequence:1}};
+  signal=options.signal;
+  return new Promise(resolve=>release=resolve);
+ }});
+ const {providerMessaging:chat}=f.bridge,context={session:f.session()};
+ assert.equal(chat.enabled,true);
+ assert.equal(chat.readStateEnabled,true);
+ assert.equal(chat.reconciledHistoryEnabled,true);
+ assert.equal((await chat.execute('read',{},{})).status,401);
+ assert.equal((await chat.execute('enquiry.detail',{},context)).status,400);
+ assert.equal(calls.length,0);
+ assert.equal((await chat.execute('acknowledge',request,context)).body.status,'advanced');
+ assert.deepEqual(calls[0],{op:'acknowledge',body:request,credential:'fixture.token.only'});
+ const pending=chat.execute('read',{providerId:'p',enquiryId:'e'},context);
+ while(!release)await new Promise(resolve=>setImmediate(resolve));
+ const next={uid:'buyer',getIdToken:async()=> 'buyer.fixture.token'};f.auth.currentUser=next;f.notify(next);
+ assert.equal(signal.aborted,true);
+ release({status:200,body:{ok:true,messages:[{text:'private'}]}});
+ assert.equal((await pending).status,401);
+ assert.equal((await chat.execute('read',{},context)).status,401);
+ f.bridge.destroy();
+ const off=fixture();
+ assert.equal(off.bridge.providerMessaging.enabled,false);
+ assert.equal((await off.bridge.providerMessaging.execute('acknowledge',request,{session:off.session()})).status,400);
+ off.bridge.destroy();
+});

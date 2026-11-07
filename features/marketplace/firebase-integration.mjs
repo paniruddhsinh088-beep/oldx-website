@@ -4,7 +4,7 @@ import {createMarketplacePublicClient} from './public-read-client.mjs';
 
 // Composition of existing ports only. No endpoint, SDK, Auth initialization or
 // automatic mounting. Caller must explicitly bind an approved trusted transport.
-export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProductConversation,sendInboxPage,readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
+export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProviderConversation,providerReadStateEnabled=false,providerReconciledHistoryEnabled=false,sendProductConversation,sendInboxPage,readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
  const active=enabled===true&&auth?.app?.options?.projectId==='oldx-staging';
  let session=null,destroyed=false;const pending=new Set();
  const provider=createProviderFirebaseSessionPorts({enabled:active,auth,
@@ -29,7 +29,18 @@ export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCom
   }])):{};
  const inbox=Object.freeze({enabled:active&&typeof sendInboxPage==='function',
   loadPage:(body,context={})=>provider.executeScoped(sendInboxPage,'page',body,context,false)});
- return Object.freeze({inbox,product:Object.freeze({...ports('product'),...chatPorts}),store:ports('store'),provider,
+ const providerMessaging=Object.freeze({
+  enabled:active&&typeof sendProviderConversation==='function',
+  readStateEnabled:providerReadStateEnabled===true,
+  reconciledHistoryEnabled:providerReadStateEnabled===true&&providerReconciledHistoryEnabled===true,
+  execute(operation,body,context={}){
+   if(!['read','send'].includes(operation)&&!(operation==='acknowledge'&&providerReadStateEnabled===true)){
+    return Promise.resolve({status:400,body:{ok:false,error:{code:'INVALID_REQUEST'}}});
+   }
+   return provider.executeScoped(sendProviderConversation,operation,body,context,operation!=='read');
+  }
+ });
+ return Object.freeze({inbox,providerMessaging,product:Object.freeze({...ports('product'),...chatPorts}),store:ports('store'),provider,
   // For the existing Admin API client's getIdToken dependency. It grants no role;
   // revocation/active-role checks remain the server's responsibility.
   async getAdminIdToken(){const scope=session&&{...session};if(destroyed||!scope)throw Error('AUTH_REQUIRED');return (await getToken(scope)).token;},

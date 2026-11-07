@@ -9,8 +9,8 @@ export async function serviceConversationFixture({sdk,db,seed,namespace='Message
  await f.owner.saveDraft({requestId:'chat-profile',expectedRevision:0,profile:f.profile});const owner=await f.owner.bootstrap({operation:null,requestId:null});await f.owner.managePublication({requestId:'chat-publish',expectedRevision:1,expectedGeneration:0,action:'publish'});
  const session=value=>{uid=value;f.uid(value);};session('journey-buyer');const created=await f.execute('enquiry.create',{requestId:'chat-enquiry',providerId:owner.providerId,expectedPublicationGeneration:1,service:'Repair',description:'Private enquiry note',timing:'flexible'});assert.equal(created.status,200);
  const conversation=createProviderConversationRepository({enabled:true,authenticate:()=>uid?{uid}:null,repository:f.enquiries});
- const http=createProviderConversationHttp({enabled:true,verifyFirebaseToken:()=>uid?{uid}:null,consumeRateLimit:()=>({allowed:!limited}),createRepository:options=>createProviderConversationRepository({...options,enabled:true,repository:f.enquiries})});
- const execute=(op,body)=>http.handle(op,{method:'POST',headers:{authorization:'Bearer isolated.test.token','content-type':'application/json'},body:JSON.stringify(body)});
+ const http=createProviderConversationHttp({enabled:true,verifyFirebaseToken:token=>uid&&(token==='isolated.test.token'||token===uid+'.fixture.token')?{uid}:null,consumeRateLimit:()=>({allowed:!limited}),createRepository:options=>createProviderConversationRepository({...options,enabled:true,repository:f.enquiries})});
+ const execute=(op,body,credential)=>http.handle(op,{method:'POST',headers:{authorization:'Bearer '+(credential??'isolated.test.token'),'content-type':'application/json'},body:JSON.stringify(body)});
  const scope={providerId:owner.providerId,enquiryId:created.body.enquiryId};
  return {...f,scope,session,conversation,chatExecute:execute,overlapSends:()=>overlap=true,loseMessageAck:()=>lost=true,limit:value=>limited=value};
 }
