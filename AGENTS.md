@@ -77,3 +77,9 @@ When uncertain, preserve existing security restrictions, do not deploy, do not s
 - Target: Cloudflare Pages frontend, Google Cloud Run trusted backend, Firebase Auth + Firestore (Blaze only when separately activated), Cloudflare R2 candidate for photos with Firebase Storage adapter fallback, and Capacitor Android from shared code.
 - Owner accepts necessary plan costs in principle; ₹2,000/month at 5,000 MAU is a goal, **not** a hard cap or validated estimate. Before any billable activation/provisioning/plan upgrade, obtain explicit action-specific approval with current prices and risks. Keep features, security and performance intact.
 - First tasks: Firestore/chat read-write optimization and Cloud Run compatibility, isolated tests only. Preserve review-branch-only policy and HOLD/NO-GO; no live changes without separate approval.
+
+## Mandatory reuse-first implementation rule (owner reaffirmation 2026-11-07)
+- Maximize reuse of existing working OLDX code, features, adapters, tests and UI to save time. No broad rewrite or hosting-driven refactor for its own sake.
+- Audit before editing; prefer minimal, incremental, reversible, measured changes only where needed for cost reduction, security, performance, Cloud Run/R2/Pages compatibility or acceptance.
+- Optimize Firestore reads/writes and chat unread costs without weakening authorization or privacy. Measure before/after; document unavoidable rewrites and preserve regression coverage, localization and Capacitor compatibility.
+- See `docs/OLDX_FINAL_ARCHITECTURE_AND_COST_DECISION_2026-11-07.md` for binding owner direction.
