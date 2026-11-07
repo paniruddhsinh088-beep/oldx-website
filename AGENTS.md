@@ -83,3 +83,9 @@ When uncertain, preserve existing security restrictions, do not deploy, do not s
 - Audit before editing; prefer minimal, incremental, reversible, measured changes only where needed for cost reduction, security, performance, Cloud Run/R2/Pages compatibility or acceptance.
 - Optimize Firestore reads/writes and chat unread costs without weakening authorization or privacy. Measure before/after; document unavoidable rewrites and preserve regression coverage, localization and Capacitor compatibility.
 - See `docs/OLDX_FINAL_ARCHITECTURE_AND_COST_DECISION_2026-11-07.md` for binding owner direction.
+
+## Owner-approved OLDX UI/UX design direction (2026-11-08)
+- Before planning or editing customer-facing OLDX Website/Android UI, read `docs/OLDX_UI_UX_APPROVED_DESIGN_PLAN_2026-11-08.md`. This is the owner's approved mobile-first design direction and supplements (does not override) the architecture/security/release gates.
+- Preserve Blue–White–Orange identity, **compact homepage banner to display more products**, clear search/location, compact category icons, consistent photo/price/location/favorite product cards, and the five mobile navigation destinations: Home, Search, Orange Sell (+), Chat, Profile. Reuse existing flows for Product, Store, Service Providers, Chat and Settings.
+- **Mandatory reuse-first:** audit existing DOM/CSS/components/routes before changing; prefer small reversible visual refinements and shared CSS; do not rewrite working UI, add heavy UI frameworks, or remove existing features. Keep Gujarati/Hindi/English, mobile accessibility, keyboard/back behavior and Capacitor compatibility.
+- Design approval is NOT permission to deploy, spend money, change billing/IAM/Firebase Rules or launch. Keep `security-hardening-review` only and production HOLD/NO-GO; get specific approval before staging deployment.
