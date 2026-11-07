@@ -34,7 +34,15 @@ jobs:
           sed -nE 's|^\./||; /^app\/node_modules(\/|$)/d; /^app\/[^/]/ { /\/$/!p; }' "$RUNNER_TEMP/oldx-image-files" | sort > "$RUNNER_TEMP/oldx-app-files"
           sed -nE '/^![^!].*[^/]$/s|^!|app/|p' Dockerfile.product-read.dockerignore | sort > "$RUNNER_TEMP/oldx-expected-files"
           diff -u "$RUNNER_TEMP/oldx-expected-files" "$RUNNER_TEMP/oldx-app-files"
-          if grep -Eiq '(^|/)(\.env(\.[^/]*)?|\.npmrc|\.git-credentials|application_default_credentials\.json|service[-_]?account[^/]*\.json|firebase-env\.js|google-services\.json|id_(rsa|ed25519))$' "$RUNNER_TEMP/oldx-image-files"; then
+          # Allow only npm's unchanged built-in config from the base image.
+          npm_config_path=usr/local/lib/node_modules/npm/.npmrc
+          sed 's|^\./||' "$RUNNER_TEMP/oldx-image-files" > "$RUNNER_TEMP/oldx-normalized-files"
+          if grep -Fxq "$npm_config_path" "$RUNNER_TEMP/oldx-normalized-files"; then
+            docker run --rm --network none --entrypoint cat node:24-bookworm-slim "/$npm_config_path" > "$RUNNER_TEMP/oldx-base-npmrc"
+            docker cp "oldx-image-audit:/$npm_config_path" "$RUNNER_TEMP/oldx-image-npmrc"
+            cmp "$RUNNER_TEMP/oldx-base-npmrc" "$RUNNER_TEMP/oldx-image-npmrc"
+          fi
+          if grep -vFx "$npm_config_path" "$RUNNER_TEMP/oldx-normalized-files" | grep -Ei '(^|/)(\.env(\.[^/]*)?|\.npmrc|\.git-credentials|application_default_credentials\.json|service[-_]?account[^/]*\.json|firebase-env\.js|google-services\.json|id_(rsa|ed25519))$'; then
             echo 'Sensitive filename found in image' >&2
             exit 1
           fi
