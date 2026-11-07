@@ -2,7 +2,7 @@
 Date: 2026-11-07
 Branch: `security-hardening-review`
 Source checkpoint audited: `ea6fff90dd6202b1b66525120ec9ffda148b3fd1`
-Status: PREVIEW NOT APPROVED / HOLD / NO-GO
+Status: LOCAL WRANGLER CHECKED / HOSTED PREVIEW NOT APPROVED / HOLD / NO-GO
 
 ## Verified source facts
 - `vercel.json` currently builds with `node scripts/generate-firebase-env.js && node scripts/build-static-assets.mjs`, output `public`. Vercel deployment from the review branch is disabled. Keep it unchanged during a Pages assessment.
@@ -17,7 +17,7 @@ Status: PREVIEW NOT APPROVED / HOLD / NO-GO
 - Framework preset: None / static.
 - Root: repository root.
 - Node: use a version compatible with `package.json` (`>=24.12.0`) and verify Pages builder supports the selected runtime.
-- Build command: `node scripts/generate-firebase-env.js && node scripts/build-static-assets.mjs`.
+- Pages build command: `node scripts/generate-firebase-env.js && node scripts/build-cloudflare-pages.mjs`. The Vercel command is unchanged.
 - Output directory: `public`.
 - Preview environment: only approved `oldx-staging` browser Firebase config; never inject any service-account keys, R2 secret keys, or server credentials into Pages build variables.
 - Do NOT attach `oldxbazar.in` or alter Vercel / DNS.
@@ -31,4 +31,12 @@ Status: PREVIEW NOT APPROVED / HOLD / NO-GO
 6. Separately price/approve Cloud Run identity/IAM, R2 subscription and photo processor/moderation before provisioning, credentials, billing changes or any staging/live deployment.
 
 ## Next action and approval boundary
-Review and, when tests are available, implement minimal Pages-specific routing/config source and isolated tests ONLY on `security-hardening-review`, without triggering external deployments. A real Pages project creation, GitHub integration, preview publishing, Cloud Run provisioning, Firebase Rule changes, billing enablement, R2 activation, secrets/IAM and DNS changes each require explicit action-specific owner approval. No test or deployment was executed by this read-only audit. Keep HOLD/NO-GO.
+Review and, when tests are available, implement minimal Pages-specific routing/config source and isolated tests ONLY on `security-hardening-review`, without triggering external deployments. A real Pages project creation, GitHub integration, preview publishing, Cloud Run provisioning, Firebase Rule changes, billing enablement, R2 activation, secrets/IAM and DNS changes each require explicit action-specific owner approval. The original audit was read-only. The local checks below supersede its test status. Keep HOLD/NO-GO.
+
+## Local validation on the review branch
+
+- Source base: `eef2a36`. Ran `node --test tests/integration/cloudflare-pages-build.test.mjs scripts/generate-firebase-env.test.js scripts/build-static-assets.test.mjs`: 13 passed, 0 failed. The Pages test import was corrected and the Pages build now rejects production and mixed project configuration before rebuilding.
+- Generated synthetic `oldx-staging` browser config in a temporary source copy and ran the complete Pages build. Served it with Wrangler 4.158.0 using `wrangler pages dev ../public --ip 127.0.0.1 --port 18788` from a separate empty directory. Wrangler reported no Functions. Its optional request-metadata lookup timed out and fell back to placeholder metadata. No Pages project, bindings or deployment were used.
+- Original output returned the homepage with HTTP 200 for exactly `GET /api`. Added a Pages-only 308 redirect to a missing path inside the existing API 404 scope. The final output passed 24 loopback HTTP assertions. On `/api`, `/api/`, a nested owner path and an encoded slash path, GET/HEAD ended in 404 and POST/OPTIONS/PUT ended in 405. API GET bodies were generic 404 pages with `no-store`. Non-GET bodies were empty and no credentialed CORS header was returned. Wrangler emitted wildcard CORS locally. Three server-file probes returned no server bytes and the generated config probe identified staging.
+- Chrome with external requests blocked passed 10 direct-link checks, 10 reloads, 10 relative config asset checks and 2 Back/Forward pairs at 320px and 375px. Covered Product, Store, Provider discovery, Provider conversation and Product Chat URL shells. These were static navigation checks with synthetic config. Authenticated rendering, native-language UI, mobile-device and Capacitor acceptance remain separate.
+- Next batch: prepare a reviewed hosted Pages preview acceptance checklist covering actual routing and headers, staging Auth allowed domains, locale/device behavior and Vercel rollback. Hosted preview remains subject to explicit approval.
