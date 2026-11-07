@@ -41,15 +41,23 @@ test('Docker COPY sources start on PORT without SDK credentials or operational a
   const env={SystemRoot:process.env.SystemRoot??'',NODE_ENV:'production',PORT:String(port)};
   const invalid=spawnSync(process.execPath,[entry],{cwd:dir,env:{...env,PORT:'invalid'},timeout:5000,encoding:'utf8'});
   assert.equal(invalid.status,1);assert.match(invalid.stderr,/startup failed/);
-  child=spawn(process.execPath,[entry],{cwd:dir,env:{...env,OLDX_PRODUCT_READ_EMULATOR:'true',GCLOUD_PROJECT:'demo-oldx-admin-runtime'},stdio:'ignore'});
+  child=spawn(process.execPath,[entry],{cwd:dir,env:{...env,
+   OLDX_PRODUCT_READ_STAGING_ADC:'true',OLDX_FIREBASE_ENV:'staging',OLDX_FIREBASE_PROJECT_ID:'oldx-staging',
+   K_SERVICE:'oldx-owner-read',OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-staging.iam.gserviceaccount.com',
+   OLDX_RATE_WINDOW_MS:'60000',OLDX_RATE_ACTOR_LIMIT:'10',OLDX_RATE_GLOBAL_LIMIT:'100'},stdio:'ignore'});
   exited=once(child,'exit');
   let reply;
   for(let attempt=0;attempt<40&&!reply&&child.exitCode===null;attempt++){
-   try{reply=await fetch('http://127.0.0.1:'+port+'/api/staging/marketplace/owner',{method:'POST',signal:AbortSignal.timeout(250)});}
+   try{reply=await fetch('http://127.0.0.1:'+port+'/healthz',{signal:AbortSignal.timeout(250)});}
    catch{await delay(50);}
   }
-  assert.equal(reply?.status,503);
-  assert.equal((await reply.json()).error.code,'ENFORCEMENT_UNAVAILABLE');
+  assert.equal(reply?.status,200);
+  assert.deepEqual(await reply.json(),{ok:true});
+  const owner=await fetch('http://127.0.0.1:'+port+'/api/staging/marketplace/owner',{
+   method:'POST',signal:AbortSignal.timeout(1000)
+  });
+  assert.equal(owner.status,503);
+  assert.deepEqual(await owner.json(),{ok:false,error:{code:'ENFORCEMENT_UNAVAILABLE'}});
  }finally{
   if(child&&child.exitCode===null&&child.signalCode===null)child.kill();
   if(exited)await exited;
