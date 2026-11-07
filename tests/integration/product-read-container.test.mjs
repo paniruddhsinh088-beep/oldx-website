@@ -43,7 +43,7 @@ test('Docker COPY sources start on PORT without SDK credentials or operational a
   assert.equal(invalid.status,1);assert.match(invalid.stderr,/startup failed/);
   child=spawn(process.execPath,[entry],{cwd:dir,env:{...env,
    OLDX_PRODUCT_READ_STAGING_ADC:'true',OLDX_FIREBASE_ENV:'staging',OLDX_FIREBASE_PROJECT_ID:'oldx-staging',
-   K_SERVICE:'oldx-owner-read',OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-staging.iam.gserviceaccount.com',
+   K_SERVICE:'oldx-owner-read',OLDX_PRODUCT_READ_DATABASE_ID:'(default)',OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-staging.iam.gserviceaccount.com',
    OLDX_RATE_WINDOW_MS:'60000',OLDX_RATE_ACTOR_LIMIT:'10',OLDX_RATE_GLOBAL_LIMIT:'100'},stdio:'ignore'});
   exited=once(child,'exit');
   let reply;

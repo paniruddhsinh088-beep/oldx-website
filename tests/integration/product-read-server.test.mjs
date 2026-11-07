@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
-import {createStagingProductReadServer,createProductReadServer,listenProductReadServer,drainProductReadServer} from '../../functions/staging-marketplace/product-read-server.mjs';
+import {createStagingAdminInitializer,createStagingProductReadServer,createProductReadServer,listenProductReadServer,drainProductReadServer} from '../../functions/staging-marketplace/product-read-server.mjs';
 
 test('owner HTTP boundary is default-off and exposes one bounded read route',async()=>{
  let calls=0;
@@ -62,7 +62,7 @@ test('drain stops new connections and lets an in-flight owner request finish',as
 
 const stagingEnv={
  OLDX_PRODUCT_READ_STAGING_ADC:'true',OLDX_FIREBASE_ENV:'staging',OLDX_FIREBASE_PROJECT_ID:'oldx-staging',
- K_SERVICE:'oldx-owner-read',OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-staging.iam.gserviceaccount.com',
+ K_SERVICE:'oldx-owner-read',OLDX_PRODUCT_READ_DATABASE_ID:'(default)',OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-staging.iam.gserviceaccount.com',
  OLDX_RATE_WINDOW_MS:'60000',OLDX_RATE_ACTOR_LIMIT:'10',OLDX_RATE_GLOBAL_LIMIT:'100'
 };
 
@@ -97,7 +97,9 @@ test('staging ADC bootstrap is default-off and rejects unsafe config before init
   {GOOGLE_APPLICATION_CREDENTIALS:''},{CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE:'example.json'},
   {K_SERVICE:undefined},{OLDX_PRODUCT_READ_SERVICE_ACCOUNT:undefined},
   {OLDX_PRODUCT_READ_SERVICE_ACCOUNT:'owner-read@oldx-1c983.iam.gserviceaccount.com'},
-  {OLDX_RATE_ACTOR_LIMIT:'101'}
+  {OLDX_RATE_ACTOR_LIMIT:'101'},{OLDX_PRODUCT_READ_DATABASE_ID:undefined},
+  {OLDX_PRODUCT_READ_DATABASE_ID:'unexpected'},{GCE_METADATA_HOST:'example.test'},
+  {FIRESTORE_HOST:'example.test'}
  ]){
   let attempts=0;
   await withStagingServer({...stagingEnv,...patch},()=>{attempts++;unexpected();},expectDisabled);
@@ -115,7 +117,7 @@ test('staging ADC bootstrap keeps Firebase authorization separate and disposes s
    assert.equal(checkRevoked,true);
    throw Error('private verifier detail');
   }},
-  adminFirestore:{projectId:'oldx-staging',collection(){assert.fail('Unauthorized Firestore access');},
+  adminFirestore:{projectId:'oldx-staging',databaseId:'(default)',collection(){assert.fail('Unauthorized Firestore access');},
    runTransaction(){assert.fail('Unauthorized transaction');}},
   FieldValue:{serverTimestamp(){}},
   async dispose(){disposed++;}
@@ -125,7 +127,7 @@ test('staging ADC bootstrap keeps Firebase authorization separate and disposes s
  }
  await withStagingServer(stagingEnv,async()=>{throw Error('private startup detail');},expectDisabled);
  await withStagingServer(stagingEnv,async options=>{
-  assert.deepEqual(options,{projectId:'oldx-staging',expectedServiceAccount:admin.serviceAccount});
+  assert.deepEqual(options,{projectId:'oldx-staging',databaseId:'(default)',expectedServiceAccount:admin.serviceAccount});
   return admin;
  },async origin=>{
   const guest=await ownerRead(origin,{'X-Serverless-Authorization':'Bearer google.invoker.token'});
@@ -138,4 +140,37 @@ test('staging ADC bootstrap keeps Firebase authorization separate and disposes s
   assert.equal((await fetch(origin+'/api/staging/marketplace/save',{method:'POST'})).status,404);
  });
  assert.equal(disposed,4);
+});
+
+test('staging Admin initializer verifies metadata, ADC type, attached identity and database before use',async()=>{
+ const expectedServiceAccount=stagingEnv.OLDX_PRODUCT_READ_SERVICE_ACCOUNT;
+ const options={projectId:'oldx-staging',databaseId:'(default)',expectedServiceAccount};
+ let project='oldx-staging',compute=true,email=expectedServiceAccount,database='(default)',firestoreProject='oldx-staging';
+ let sdkLoads=0,initialized=0,closed=0,deleted=0,authCalls=0;
+ const credential={isComputeEngineCredential:async()=>compute,getServiceAccountEmail:async()=>email};
+ const app={};
+ const sdk={
+  applicationDefault:()=>credential,
+  initializeApp(value,name){assert.deepEqual(value,{projectId:'oldx-staging',credential});assert.equal(name,'product-read-staging');initialized++;return app;},
+  deleteApp(value){assert.equal(value,app);deleted++;},
+  getFirestore(value){assert.equal(value,app);return {projectId:firestoreProject,databaseId:database,async terminate(){closed++;}};},
+  getAuth(value){assert.equal(value,app);authCalls++;return {};},
+  FieldValue:{}
+ };
+ const initialize=createStagingAdminInitializer({readProject:async()=>project,loadSdk:async()=>{sdkLoads++;return sdk;}});
+ await assert.rejects(initialize({...options,projectId:'oldx-1c983'}));
+ await assert.rejects(initialize({...options,databaseId:'unexpected'}));
+ project='oldx-1c983';await assert.rejects(initialize(options));project='oldx-staging';
+ assert.equal(sdkLoads,0);
+ compute=false;await assert.rejects(initialize(options));compute=true;
+ email='different@oldx-staging.iam.gserviceaccount.com';await assert.rejects(initialize(options));email=expectedServiceAccount;
+ assert.equal(initialized,0);
+ database='unexpected';await assert.rejects(initialize(options));database='(default)';
+ firestoreProject='oldx-1c983';await assert.rejects(initialize(options));firestoreProject='oldx-staging';
+ assert.equal(authCalls,0);assert.equal(closed,2);assert.equal(deleted,2);
+ const result=await initialize(options);
+ assert.equal(result.serviceAccount,expectedServiceAccount);
+ assert.equal(authCalls,1);
+ await result.dispose();
+ assert.equal(closed,3);assert.equal(deleted,3);
 });
