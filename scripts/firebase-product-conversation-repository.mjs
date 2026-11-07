@@ -54,15 +54,19 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
   if(!input||!safeId(input.requestId)||!text||operation==='open'&&(!safeId(input.productId)||!revision(input.expectedProductRevision))||operation==='send'&&(!safeId(input.threadId)||!revision(input.expectedRevision)))return fail('INVALID_REQUEST');
   input.text=text;
   return bounded(options,async context=>{const key=hash([context.actorUid,operation,input.requestId]),fingerprint=hash(input);context.markMutationAttempted();return sdk.runTransaction(db,async raw=>{
-   check(context);let thread;
+   check(context);
+   // Share Inbox snapshots only within this transaction attempt, before staging writes.
+   const indexReader=cached(raw);
+   const indexTx={...indexReader,set:(reference,value)=>raw.set(reference,value)};
+   let thread;
    if(operation==='open'){
     const product=await get(raw,ref(m,'privateRecords','product_'+input.productId));if(!safeId(product?.ownerUid)||product.ownerUid===context.actorUid)return fail('DENIED');
     const id=hash([input.productId,context.actorUid,product.ownerUid]);thread={id,productId:input.productId,productRevision:input.expectedProductRevision,buyerUid:context.actorUid,sellerUid:product.ownerUid,revision:1,messageCount:1};
    }else thread=await get(raw,ref(c,'threads',input.threadId));
-   if(!await authority(raw,thread,context.actorUid,{allowReconciled:reconciledHistoryEnabled})||!authorizeChatMutation({action:'send',actorUid:context.actorUid,senderUid:context.actorUid,participants:[thread.buyerUid,thread.sellerUid],blocked:false}).ok)return fail('DENIED');
+   if(!await authority(raw,thread,context.actorUid,{allowReconciled:reconciledHistoryEnabled,indexReader})||!authorizeChatMutation({action:'send',actorUid:context.actorUid,senderUid:context.actorUid,participants:[thread.buyerUid,thread.sellerUid],blocked:false}).ok)return fail('DENIED');
    const previous=operation==='open'?await get(raw,ref(c,'threads',thread.id)):thread,receipt=await get(raw,ref(c,'receipts',key)),audit=await get(raw,ref(c,'audits',key));
    if(receipt){
-    if(!previous||previous.id!==thread.id||previous.productId!==thread.productId||previous.productRevision!==thread.productRevision||previous.buyerUid!==thread.buyerUid||previous.sellerUid!==thread.sellerUid||!await authority(raw,previous,context.actorUid,{allowReconciled:reconciledHistoryEnabled}))return fail('IDEMPOTENCY_CONFLICT');
+    if(!previous||previous.id!==thread.id||previous.productId!==thread.productId||previous.productRevision!==thread.productRevision||previous.buyerUid!==thread.buyerUid||previous.sellerUid!==thread.sellerUid||!await authority(raw,previous,context.actorUid,{allowReconciled:reconciledHistoryEnabled,indexReader}))return fail('IDEMPOTENCY_CONFLICT');
     const message=await get(raw,ref(c,'messages',hash([thread.id,receipt.revision])));
     if(receipt.actorUid!==context.actorUid||receipt.fingerprint!==fingerprint||receipt.threadId!==thread.id||!revision(receipt.revision)||previous?.revision<receipt.revision||!previous||audit?.requestKey!==key||audit.actorUid!==context.actorUid||audit.threadId!==thread.id||audit.revision!==receipt.revision||message?.threadId!==thread.id||message.sequence!==receipt.revision||message.senderUid!==context.actorUid||message.text!==text)return fail('IDEMPOTENCY_CONFLICT');
     return {ok:true,status:'replayed',thread: dto({...thread,revision:receipt.revision},context.actorUid)};
@@ -73,7 +77,7 @@ export function createIsolatedProductConversationRepository({enabled=false,fires
    if(audit||operation==='open'&&previous||operation==='send'&&thread.revision!==input.expectedRevision)return fail('REVISION_CONFLICT');
    const sequence=operation==='open'?1:thread.revision+1;if(!revision(sequence))return fail('LIMIT_REACHED');
    const messageRef=ref(c,'messages',hash([thread.id,sequence]));if(await get(raw,messageRef))return fail('REVISION_CONFLICT');const state=readStateEnabled?{...(previous?.readState??initialReadState())}:null;if(state){const recipient=context.actorUid===thread.buyerUid?'seller':'buyer';state[recipient+'Received']++;state.lastSenderUid=context.actorUid;state.lastPreview=text.slice(0,160);state.lastMessageAtMillis=now();}const next={...thread,revision:sequence,messageCount:sequence,...(inboxIndex?{inboxIndexed:true}:{}),...(state?{readState:state}:{})};if(state&&!validReadState(next))return fail('READ_STATE_UNAVAILABLE');check(context);
-   const title=inboxIndex?(await get(raw,ref(m,'publicViews','product_'+thread.productId))).title.slice(0,160):null,reconciled=previous&&await reconciledRow(raw,previous,context.actorUid);const indexCommit=inboxIndex?(reconciled?await inboxIndex.stageReconciledSend(raw,{before:previous,after:next,title}):await inboxIndex.stageConversation(raw,{kind:'product',before:previous,after:next,title})):null;check(context);
+   const title=inboxIndex?(await get(raw,ref(m,'publicViews','product_'+thread.productId))).title.slice(0,160):null,reconciled=previous&&await reconciledRow(indexReader,previous,context.actorUid);const indexCommit=inboxIndex?(reconciled?await inboxIndex.stageReconciledSend(indexTx,{before:previous,after:next,title}):await inboxIndex.stageConversation(indexTx,{kind:'product',before:previous,after:next,title})):null;check(context);
    const enqueue=notificationOutbox?await notificationOutbox.stage(raw,{kind:'product',threadId:thread.id,sequence,senderUid:context.actorUid,recipientUid:context.actorUid===thread.buyerUid?thread.sellerUid:thread.buyerUid}):null;check(context);
    raw.set(ref(c,'threads',thread.id),next);raw.set(messageRef,{threadId:thread.id,sequence,senderUid:context.actorUid,text,...(state?{readPrefix:{buyerReceived:state.buyerReceived,sellerReceived:state.sellerReceived}}:{}),committedAt:sdk.serverTimestamp()});raw.set(ref(c,'receipts',key),{actorUid:context.actorUid,fingerprint,threadId:thread.id,revision:sequence});raw.set(ref(c,'audits',key),{requestKey:key,actorUid:context.actorUid,threadId:thread.id,revision:sequence,operation});enqueue?.();indexCommit?.();check(context);
    return {ok:true,status:'sent',thread:dto(next,context.actorUid)};
