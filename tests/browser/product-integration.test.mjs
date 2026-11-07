@@ -64,3 +64,58 @@ test('existing owner draft controls use composed Auth command bridge and clear o
 test('opt-in unified host owns existing Inbox nodes across Product rerenders and shared logout',async()=>{const {context,page}=await fixture(320,'gu');try{await page.evaluate(async()=>{binding.destroy();const next=document.createElement('button');next.id='productInboxNext';document.getElementById('inboxModal').append(next);const badge=document.createElement('span');badge.id='inboxBadgeCount';document.body.append(badge);const {mountMarketplaceHost}=await import('/features/marketplace/host-integration.mjs');const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');let session;const user={uid:'seller',getIdToken:async()=> 'seller.fixture.token'},auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){fn(user);return ()=>{};}};window.inboxBridge=createFirebaseMarketplaceIntegration({enabled:true,auth,onSession:value=>session=value,sendInboxPage:async(op,body,{credential})=>{if(op!=='page'||credential!=='seller.fixture.token'||body.limit!==20)throw Error('Invalid scope');return {status:200,body:{ok:true,snapshotId:'one',nextCursor:null,totalUnread:7,items:[{kind:'provider',threadId:'e',providerId:'p',title:'મૂળ हिन्दी',preview:'Private preview',unreadCount:1,readSequence:0,lastSequence:1,lastMessageAtMillis:1}]}};}});window.host=mountMarketplaceHost({enabled:true,inbox:inboxBridge.inbox});await host.setSession(session);host.product.show('sellWizardPage');});await page.locator('#productOwnerInbox').click();assert.equal(await page.locator('#inboxConversationsList button').count(),1);await page.evaluate(()=>host.product.model.changeScope());assert.equal(await page.locator('#inboxConversationsList button').count(),1);assert.equal(await page.locator('#inboxBadgeCount').textContent(),'7');await page.evaluate(()=>host.setSession(null));assert.equal(await page.locator('#inboxConversationsList button').count(),0);await page.evaluate(()=>host.destroy());assert.equal(await page.evaluate(()=>document.documentElement.dataset.oldxUnifiedInbox??null),null);}finally{await context.close();}});
 
 for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('authenticated Product DOM acknowledges scanned cursor and clears on logout '+locale,async()=>{const {context,page}=await fixture(width,locale);try{await page.evaluate(async locale=>{binding.destroy();const {mountProductIntegration}=await import('/features/marketplace/product-integration-dom.mjs');window.reconciledReads=[];window.reconciledAcks=[];const thread={id:'reconciled',productId:'product',productRevision:1,revision:21,role:'buyer'};const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');const {loadTranslator}=await import('/features/i18n/i18n.mjs');const t=await loadTranslator(locale);const user={uid:'buyer',getIdToken:async()=> 'buyer.fixture.token'};let session;const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){fn(user);return ()=>{};}};const reads={read:r=>{reconciledReads.push(r.afterSequence);return {ok:true,thread,messages:r.afterSequence===0?[]:[{sequence:21,senderRole:'seller',text:'મૂળ हिन्दी visible'}],throughSequence:r.afterSequence===0?20:21,hasMore:r.afterSequence===0,readReceipt:r.afterSequence===0?'empty-receipt':'last-receipt'};},acknowledge:r=>{reconciledAcks.push(r.readReceipt);return {ok:true,status:'advanced',readSequence:r.readReceipt==='empty-receipt'?20:21};}};window.chatBridge=createFirebaseMarketplaceIntegration({enabled:true,auth,readStateEnabled:true,onSession:value=>session=value,sendProductConversation:async(op,body,{credential})=>{if(credential!=='buyer.fixture.token')throw Error('Invalid scope');return {status:200,body:reads[op](body)};}});window.binding=mountProductIntegration({enabled:true,root:document,translate:key=>t.t(key),readStateEnabled:true,reconciledHistoryEnabled:true,ports:chatBridge.product});await binding.setSession(session);binding.show('fullChatPage');await binding.model.loadThread(thread);},locale);await page.waitForFunction(()=>reconciledAcks.includes('empty-receipt'));assert.equal(await page.locator('#fullChatMessages').textContent(),'');await page.locator('#productHistoryNext').click();await page.waitForFunction(()=>reconciledAcks.includes('last-receipt'));assert.deepEqual(await page.evaluate(()=>reconciledReads),[0,20]);assert.equal(await page.locator('#fullChatMessages').textContent(),'મૂળ हिन्दी visible');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);await page.evaluate(()=>binding.setSession(null));assert.equal(await page.locator('#fullChatMessages').textContent(),'');}finally{await context.close();}});
+
+test('Product Inbox reopens overlapping history and refreshes the server badge',async()=>{
+ const {context,page,boot}=await fixture(320,'gu');
+ try{
+  const {reconciledProductCursorAcceptance}=await import('../integration/reconciled-product-cursor-cases.mjs');
+  const db=fakeFirestoreSdk(),f=await reconciledProductCursorAcceptance({sdk:db.sdk,db:db.db,seed:db.seed,get:db.get,namespace:'BrowserProductOverlap'});
+  f.session('seller');f.clock(6);
+  assert.equal((await f.chat.send({threadId:f.threadId,requestId:'browser-overlap-six',expectedRevision:5,text:'નવો हिन्दी message'})).status,'sent');
+  const http=createProductConversationHttp({enabled:true,readStateEnabled:true,reconciledHistoryEnabled:true,
+   verifyFirebaseToken:token=>['buyer.fixture.token','foreign.fixture.token'].includes(token)?{uid:token.split('.')[0]}:null,
+   consumeRateLimit:()=>({allowed:true}),createRepository:({authenticate})=>createIsolatedProductConversationRepository({...f.base,authenticate,reconciledHistoryEnabled:true})});
+  await page.exposeFunction('overlapChat',(operation,body,credential)=>http.handle(operation,{method:'POST',headers:{authorization:'Bearer '+credential,'content-type':'application/json'},body:JSON.stringify(body)}));
+  await page.exposeFunction('overlapInbox',async(body,credential)=>{
+   f.session(credential.split('.')[0]);const result=await f.index.page(body);
+   return {status:result.ok?200:403,body:result};
+  });
+  const install=()=>page.evaluate(async()=>{
+   binding.destroy();
+   const {mountProductIntegration}=await import('/features/marketplace/product-integration-dom.mjs');
+   const {mountUnifiedInbox}=await import('/features/chat/unified-inbox-dom.mjs');
+   const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
+   for(const [tag,id] of [['span','inboxBadgeCount'],['button','productInboxNext']]){
+    const node=document.createElement(tag);node.id=id;document.body.append(node);
+   }
+   document.getElementById('inboxModal').style.display='block';
+   let notify,session;
+   const auth={app:{options:{projectId:'oldx-staging'}},currentUser:null,onIdTokenChanged(fn){notify=fn;return ()=>{};}};
+   const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,readStateEnabled:true,onSession:value=>session=value,
+    sendProductConversation:(op,body,{credential})=>overlapChat(op,body,credential),
+    sendInboxPage:(_op,body,{credential})=>overlapInbox(body,credential)});
+   window.chat=mountProductIntegration({enabled:true,readStateEnabled:true,reconciledHistoryEnabled:true,ports:bridge.product});
+   window.unified=mountUnifiedInbox({...bridge.inbox,openConversation:row=>chat.navigate('thread',row.threadId)});
+   window.switchOverlapAccount=async uid=>{
+    auth.currentUser=uid?{uid,getIdToken:async()=>uid+'.fixture.token'}:null;notify(auth.currentUser);
+    await Promise.all([chat.setSession(session),unified.setSession(session)]);
+   };
+   await switchOverlapAccount('buyer');
+  });
+  await install();
+  assert.equal(await page.locator('#inboxBadgeCount').textContent(),'1');
+  await page.locator('#inboxConversationsList button[data-conversation-kind=product]').click();
+  await page.waitForFunction(()=>document.querySelector('#inboxBadgeCount').textContent==='0',null,{timeout:5000});
+  assert.match(await page.locator('#fullChatMessages').textContent(),/નવો हिन्दी message/);
+  await page.goBack();assert.equal(await page.locator('#fullChatMessages').textContent(),'');
+  await page.goForward();await page.waitForFunction(()=>document.querySelector('#fullChatMessages').textContent.includes('નવો हिन्दी message'));
+  await page.reload();await boot('gu');await install();
+  assert.match(await page.locator('#fullChatMessages').textContent(),/નવો हिन्दी message/);
+  await page.waitForFunction(()=>document.querySelector('#inboxBadgeCount').textContent==='0');
+  await page.evaluate(()=>switchOverlapAccount('foreign'));
+  assert.equal(await page.locator('#fullChatMessages').textContent(),'');
+  assert.equal(await page.locator('#inboxConversationsList button').count(),0);
+  await page.evaluate(()=>switchOverlapAccount(null));
+  assert.equal(await page.locator('#inboxBadgeCount').textContent(),'');
+ }finally{await context.close();}
+});
