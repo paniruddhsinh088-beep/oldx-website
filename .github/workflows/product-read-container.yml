@@ -26,9 +26,9 @@ jobs:
         shell: bash
         run: |
           docker build -f Dockerfile.product-read -t oldx-product-read:smoke .
-          trap 'docker rm -f oldx-disabled >/dev/null 2>&1 || true' EXIT
+          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled >/dev/null 2>&1 || true' EXIT
           docker run -d --name oldx-disabled -e PORT=18081 -p 127.0.0.1:18080:18081 oldx-product-read:smoke
-          status=$(curl -sS --retry 15 --retry-connrefused --retry-delay 1 --max-time 3 -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:18080/api/staging/marketplace/owner)
+          status=$(curl -sS --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:18080/api/staging/marketplace/owner)
           test "$status" = 503
           docker stop -t 10 oldx-disabled
           test "$(docker inspect -f '{{.State.ExitCode}}' oldx-disabled)" = 0
@@ -38,9 +38,9 @@ jobs:
           export JAVA_HOME="$JAVA_HOME_21_X64"
           export PATH="$JAVA_HOME/bin:$PATH"
           npm ci
-          trap 'docker rm -f oldx-emulator-read >/dev/null 2>&1 || true' EXIT
+          trap 'docker logs oldx-emulator-read 2>&1 || true; docker rm -f oldx-emulator-read >/dev/null 2>&1 || true' EXIT
           docker run -d --name oldx-emulator-read --network host -e PORT=18082             -e OLDX_PRODUCT_READ_EMULATOR=true -e GCLOUD_PROJECT=demo-oldx-admin-runtime             -e FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9098 -e FIRESTORE_EMULATOR_HOST=127.0.0.1:8088             oldx-product-read:smoke
-          status=$(curl -sS --retry 15 --retry-connrefused --retry-delay 1 --max-time 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/api/staging/marketplace/owner)
+          status=$(curl -sS --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -o /dev/null -w '%{http_code}' http://127.0.0.1:18082/api/staging/marketplace/owner)
           test "$status" = 405
           OLDX_TEST_PRODUCT_READ_CONTAINER=true node node_modules/firebase-tools/lib/bin/firebase.js             emulators:exec --only auth,firestore --project demo-oldx-admin-runtime             --config firebase.admin-runtime-emulator.json             'node --test --test-name-pattern="owner draft|Product owner HTTP socket" tests/firestore-emulator/admin-runtime-native.test.mjs'
           docker stop -t 10 oldx-emulator-read
