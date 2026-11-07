@@ -1,3 +1,6 @@
+import {createFirebaseMarketplaceIntegration} from '../../features/marketplace/firebase-integration.mjs';
+import {createProductConversationHttp} from '../../scripts/product-conversation-http.mjs';
+import {createTrustedInboxHttp} from '../../scripts/trusted-inbox-http.mjs';
 import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {legacyProductMutationsAcceptance} from './legacy-product-mutations-cases.mjs';import {providerChatParityAcceptance} from './provider-chat-parity-cases.mjs';import {createIsolatedProductConversationRepository,PRODUCT_CONVERSATION_TEST_SCHEMA} from '../../scripts/firebase-product-conversation-repository.mjs';import {MARKETPLACE_TEST_SCHEMA} from '../../scripts/firebase-marketplace-repository.mjs';import {createIsolatedProviderEnquiryRepository,ENQUIRY_TEST_SCHEMA,enquiryBlockKey} from '../../scripts/firebase-provider-enquiry-repository.mjs';import {PROVIDER_V1_TEST_SCHEMA} from '../../scripts/provider-schema-v1.mjs';import {createProviderConversationRepository,SERVICE_CONVERSATION_TEST_SCHEMA} from '../../scripts/provider-conversation-repository.mjs';import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';import {createCanonicalNotificationBlockReader} from '../../scripts/canonical-notification-block-reader.mjs';import {createNotificationPrivacyPolicy} from '../../scripts/notification-privacy.mjs';import {createIsolatedChatNotificationOutbox} from '../../scripts/chat-notification-outbox.mjs';import {createIsolatedNotificationWorker,createRecordingNotificationTransport} from '../../scripts/notification-worker.mjs';
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),map=(t,p)=>Object.fromEntries(Object.keys(t).map(k=>[k,p+k]));
 export async function reconciledNotificationAcceptance({sdk,db,seed,get,kind='provider',namespace='ReconNotify',onBeforeWorker,onAfterWorker,onComplete,bindingsFactory}){
@@ -11,7 +14,35 @@ export async function reconciledNotificationAcceptance({sdk,db,seed,get,kind='pr
  reset();const first=await send();assert.equal(reads.length,kind==="product"?16:20);assert.equal(writes.length,9);assert.equal(queries.length,0);for(const collection of [f.index.collections.heads,f.index.collections.rows]){const paths=reads.filter(p=>p.startsWith(collection+"/"));assert.equal(paths.length,2);assert.equal(new Set(paths).size,2);}console.log("MEASURE "+kind+" reconciled send: "+reads.length+" point reads/"+writes.length+" writes; "+queries.length+" queries.");const missingMapping=createNotificationPrivacyPolicy({...observer.notificationReaders,readWorker,readRecipient});assert.equal(await check(first,missingMapping),null,'Reconciled gate must never fall back to a single block store');assert.equal(await check(first,oldPolicy),null,'Reconciled notifications remain off by default');const before=await page();assert.equal(before.totalUnread,1);reset();assert.equal(await check(first),true);const policyReads=reads.length;assert.equal(policyReads,kind==='product'?17:21);assert.equal(queries.length,0);assert.deepEqual(reads.filter(p=>p.startsWith(chat.messages+'/')),[chat.messages+'/'+hash([threadId,first.sequence])]);for(const actor of actors)assert.equal(reads.filter(p=>p===f.index.collections.heads+'/'+actor).length,1,'Each inventory head read only once per transaction');assert.equal(new Set(reads.filter(p=>p.startsWith(sourceBlocks+'/'))).size,2);assert.equal(new Set(reads.filter(p=>p.startsWith(peerBlocks+'/'))).size,2);
  await onBeforeWorker?.({core,scope,session,page,f,kind,worker,transport});const head=await get(f.index.collections.heads,actors[0]);reset();assert.equal((await run(first)).status,'sent');const workerReads=reads.length+queryDocs,workerWrites=writes.length;assert.equal(workerReads,kind==='product'?58:70);assert.equal(workerWrites,4);assert.ok(writes.every(p=>p.startsWith(q.events+'/')||p.startsWith(q.audits+'/')));assert.deepEqual(await get(f.index.collections.heads,actors[0]),head);assert.equal(transport.snapshot().length,1);assert.equal(JSON.stringify(transport.snapshot()).includes('ખાનગી'),false);assert.ok(queries.length===1);await onAfterWorker?.({core,scope,session,page,f,kind,worker,transport});assert.equal((await page()).totalUnread,1);assert.equal((await worker.run({credential:'worker'})).results.length,0);
  // Authoritative read cursors suppress stale already-read queued messages.
- const current=await get(chat.threads,threadId),after=current.readState.buyerReadSequence,r=await core.read({...scope,expectedRevision:sendClock,afterSequence:after,limit:20});assert.equal(r.ok,true);assert.equal((await core.acknowledge({...scope,readReceipt:r.readReceipt})).status,'advanced');assert.equal(await check(first),false);assert.equal((await page()).totalUnread,0);
+ const current=await get(chat.threads,threadId),after=current.readState.buyerReadSequence,r=await core.read({...scope,expectedRevision:sendClock,afterSequence:after,limit:20});assert.equal(r.ok,true);if(kind==='product'){
+  const common={enabled:true,verifyFirebaseToken:token=>['buyer','seller','foreign'].includes(token.split('.')[0])?{uid:token.split('.')[0]}:null,consumeRateLimit:()=>({allowed:true})};
+  const chatHttp=createProductConversationHttp({...common,readStateEnabled:true,reconciledHistoryEnabled:true,createRepository:({authenticate})=>createIsolatedProductConversationRepository({...f.base,authenticate,readStateEnabled:true,reconciledHistoryEnabled:true})});
+  const inboxHttp=createTrustedInboxHttp({...common,createRepository:({authenticate})=>({page:async body=>{session(authenticate().uid);return f.index.page(body);}})});
+  const send=(http)=>(op,body,{credential,signal})=>http.handle(op,{method:'POST',headers:{authorization:'Bearer '+credential,'content-type':'application/json'},body:JSON.stringify(body)},{signal});
+  const device=(uid,id)=>{
+   const user={uid,getIdToken:async()=>uid+'.fixture.token'};
+   let identity;
+   const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){fn(user);return ()=>{};}};
+   const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,readStateEnabled:true,makeSessionId:()=>id,onSession:value=>identity=value,sendProductConversation:send(chatHttp),sendInboxPage:send(inboxHttp)});
+   return {bridge,context:{session:identity}};
+  };
+  const buyer=device('buyer','device-one'),secondBuyer=device('buyer','device-two'),seller=device('seller','device-three'),foreign=device('foreign','device-four');
+  const load=({bridge,context})=>bridge.inbox.loadPage({limit:20,cursor:null,snapshotId:null},context);
+  const body={...scope,expectedRevision:sendClock,afterSequence:after,limit:20};
+  try{
+   assert.equal((await load(buyer)).body.totalUnread,1);
+   assert.equal((await foreign.bridge.product.read(body,foreign.context)).code,'DENIED');
+   const delivered=await buyer.bridge.product.read(body,buyer.context);
+   assert.equal(delivered.throughSequence,sendClock);
+   const receipt={...scope,readReceipt:delivered.readReceipt};
+   assert.equal((await seller.bridge.product.acknowledge(receipt,seller.context)).code,'INVALID_READ_RECEIPT');
+   assert.equal((await buyer.bridge.product.acknowledge({...receipt,unreadCount:0},buyer.context)).code,'INVALID_REQUEST');
+   const results=await Promise.all([buyer,secondBuyer].map(({bridge,context})=>bridge.product.acknowledge(receipt,context)));
+   assert.deepEqual(results.map(v=>v.status).sort(),['advanced','unchanged']);
+   assert.equal((await load(secondBuyer)).body.totalUnread,0);
+  }finally{for(const d of [buyer,secondBuyer,seller,foreign])d.bridge.destroy();session('buyer');}
+ }else assert.equal((await core.acknowledge({...scope,readReceipt:r.readReceipt})).status,'advanced');
+ assert.equal(await check(first),false);assert.equal((await page()).totalUnread,0);
  const second=await send();transport.loseNextAcknowledgement();assert.equal((await run(second)).code,'OUTCOME_UNKNOWN');assert.equal(transport.snapshot().length,2);queueClock+=30001;assert.equal((await run(second)).status,'sent');assert.equal(transport.snapshot().length,2,'Lost transport acknowledgment cannot duplicate recording');
  const hidden=await send();assert.equal((await privacy(hidden,'hide_for_self')).status,'changed');assert.equal(await check(hidden),null);assert.equal((await run(hidden)).code,'UNAVAILABLE');await f.reconcile();assert.equal(await check(hidden),false);assert.equal((await run(hidden)).status,'suppressed');
  const deleted=await send();assert.equal((await privacy(deleted,'delete_for_everyone',actors[1])).status,'changed');await f.reconcile();session(actors[0]);assert.equal(await check(deleted),false);assert.equal((await run(deleted)).status,'suppressed');assert.equal(transport.snapshot().length,2);

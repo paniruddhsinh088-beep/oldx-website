@@ -6,11 +6,25 @@ const reply=(status,body)=>({status,headers:{...headers},body}),failure=(status,
 const keys={open:['requestId','productId','expectedProductRevision','text'],send:['requestId','threadId','expectedRevision','text'],read:['threadId','expectedRevision','afterSequence','limit'],inbox:['role','limit'],inboxPage:['role','limit','cursor'],thread:['threadId']};
 function inspectHeaders(value){try{if(!value||Object.getPrototypeOf(value)!==Object.prototype||Reflect.ownKeys(value).length>32)return null;const h=Object.create(null);for(const key of Reflect.ownKeys(value)){if(typeof key!=='string')return null;const d=Object.getOwnPropertyDescriptor(value,key),lower=key.toLowerCase();if(!Object.hasOwn(d,'value')||typeof d.value!=='string'||d.value.length>8192||/[\r\n]/.test(d.value)||Object.hasOwn(h,lower))return null;h[lower]=d.value;}return h;}catch{return null;}}
 function thread(value){const t=copyRecord(value,['id','productId','productRevision','revision','role']);return t&&safeId(t.id)&&safeId(t.productId)&&Number.isSafeInteger(t.productRevision)&&t.productRevision>0&&Number.isSafeInteger(t.revision)&&t.revision>0&&['buyer','seller'].includes(t.role)?t:null;}
-function projection(operation,result){
+function projection(operation,result,{readState=false,reconciled=false}={}){
  if(operation==='thread'){const r=copyRecord(result,['ok','thread']),t=thread(r?.thread);return r?.ok===true&&t?{ok:true,thread:t}:null;}
  if(operation==='inbox'||operation==='inboxPage'){const r=copyRecord(result,operation==='inboxPage'?['ok','items','bounded','nextCursor']:['ok','items','bounded']);if(!r||r.ok!==true||r.bounded!==true||!Array.isArray(r.items)||r.items.length>20)return null;const items=r.items.map(thread);if(operation==='inboxPage'&&r.nextCursor!==null&&(typeof r.nextCursor!=='string'||r.nextCursor.length<1||r.nextCursor.length>1024))return null;return items.every(Boolean)?{ok:true,items,bounded:true,...(operation==='inboxPage'?{nextCursor:r.nextCursor}:{})}:null;}
- if(operation==='read'){const r=copyRecord(result,['ok','thread','messages','hasMore']),t=thread(r?.thread);if(!r||r.ok!==true||!t||typeof r.hasMore!=='boolean'||!Array.isArray(r.messages)||r.messages.length>20)return null;const messages=r.messages.map(value=>copyRecord(value,['sequence','senderRole','text']));if(messages.some(v=>!v||!Number.isSafeInteger(v.sequence)||v.sequence<1||v.sequence>t.revision||!['buyer','seller'].includes(v.senderRole)||typeof v.text!=='string'||v.text.length>2000))return null;return {ok:true,thread:t,messages,hasMore:r.hasMore};}
- const r=copyRecord(result,['ok','status','thread']),t=thread(r?.thread);return r?.ok===true&&t&&['sent','replayed'].includes(r.status)?{ok:true,status:r.status,thread:t}:null;
+ if(operation==='acknowledge'){
+  const r=copyRecord(result,['ok','status','readSequence']);
+  return r?.ok===true&&['advanced','unchanged'].includes(r.status)&&Number.isSafeInteger(r.readSequence)&&r.readSequence>0?r:null;
+ }
+ if(operation==='read'){
+  const sparse=readState&&reconciled&&Object.hasOwn(result??{},'throughSequence');
+  const r=copyRecord(result,['ok','thread','messages','hasMore',...(readState?['readReceipt']:[]),...(sparse?['throughSequence']:[])]);
+  const t=thread(r?.thread);
+  if(r?.ok!==true||!t||typeof r.hasMore!=='boolean'||!Array.isArray(r.messages)||r.messages.length>20)return null;
+  if(readState&&(typeof r.readReceipt!=='string'||!r.readReceipt.length||r.readReceipt.length>1024))return null;
+  if(sparse&&(!Number.isSafeInteger(r.throughSequence)||r.throughSequence<1||r.throughSequence>t.revision||r.hasMore!==(r.throughSequence<t.revision)))return null;
+  const messages=r.messages.map(value=>copyRecord(value,['sequence','senderRole','text']));
+  if(messages.some(v=>!v||!Number.isSafeInteger(v.sequence)||v.sequence<1||v.sequence>(sparse?r.throughSequence:t.revision)||!['buyer','seller'].includes(v.senderRole)||typeof v.text!=='string'||v.text.length>2000))return null;
+  return {ok:true,thread:t,messages,hasMore:r.hasMore,...(readState?{readReceipt:r.readReceipt}:{}),...(sparse?{throughSequence:r.throughSequence}:{})};
+ }
+  const r=copyRecord(result,['ok','status','thread']),t=thread(r?.thread);return r?.ok===true&&t&&['sent','replayed'].includes(r.status)?{ok:true,status:r.status,thread:t}:null;
 }
 // No route or SDK initialization. createRepository receives ONLY the identity
 // derived from verified credentials; callers cannot select sender/owner/role.
@@ -33,4 +47,12 @@ export function createPrivateConversationHttp({enabled=false,verifyFirebaseToken
  }});
 }
 
-export function createProductConversationHttp(options={}){return createPrivateConversationHttp({...options,contract:{keys,projection,prefix:'product.conversation.'}});}
+export function createProductConversationHttp(options={}){
+ const readState=options.readStateEnabled===true;
+ return createPrivateConversationHttp({...options,contract:{
+  keys:readState?{...keys,acknowledge:['threadId','readReceipt']}:keys,
+  projection:(op,value)=>projection(op,value,{readState,reconciled:options.reconciledHistoryEnabled===true}),
+  mutations:readState?['open','send','acknowledge']:['open','send'],
+  prefix:'product.conversation.'
+ }});
+}
