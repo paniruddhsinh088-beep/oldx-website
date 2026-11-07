@@ -119,3 +119,55 @@ test('Product Inbox reopens overlapping history and refreshes the server badge',
   assert.equal(await page.locator('#inboxBadgeCount').textContent(),'');
  }finally{await context.close();}
 });
+
+for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('Product page binds scoped quarantine upload and approved photo display '+locale,async()=>{
+ const {context,page}=await fixture(width,locale);page.setDefaultTimeout(5000);
+ try{
+  const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6FQAAAABJRU5ErkJggg==';
+  await page.evaluate(async({png,locale})=>{
+   binding.destroy();
+   const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
+   const {mountProductIntegration}=await import('/features/marketplace/product-integration-dom.mjs');
+   const t=await (await import('/features/i18n/i18n.mjs')).loadTranslator(locale);
+   const imageId='product_photo_1234567890',bytes=Uint8Array.from(atob(png),c=>c.charCodeAt(0));
+   const profile={id:'media-product',kind:'product',revision:2,title:'Photo product',description:'ગુજરાતી हिन्दी',category:'cars',locationLabel:'Ahmedabad',basePrice:10,isSold:false,storeId:null};
+   let notify,revision=0;window.mediaUploads=0;window.mediaSaves=[];window.mediaApproved=false;
+   const user={uid:'seller',getIdToken:async()=> 'seller.fixture.token'};
+   const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){notify=fn;return ()=>{};}};
+   window.mediaBridge=createFirebaseMarketplaceIntegration({enabled:true,auth,onSession:s=>binding.setSession(s),
+    sendCommand:async(op,body)=>{if(op!=='save')throw Error('Unexpected command');mediaSaves.push(body.profile.photos);return {status:200,body:{ok:true,status:'saved',id:profile.id,revision:++revision,generation:1}};},
+    sendRead:async()=>({status:200,body:{ok:true,profile}}),
+    productMedia:{
+     sendUpload:async(intent,upload,ctx)=>{
+      if(ctx.credential!=='seller.fixture.token'||intent.parentId!==profile.id||intent.expectedParentRevision!==1||upload.length!==bytes.length)throw Error('Wrong upload scope');
+      mediaUploads++;return {status:202};
+     },
+     sendCommand:async op=>op==='status'?{status:200,body:{ok:true,state:'quarantined',parentRevision:1,imageId}}:{status:403},
+     readManifest:async()=>mediaApproved?{ok:true,parentId:profile.id,parentRevision:2,photoRevision:1,photos:[{imageId,derivativeId:'safe',version:1}]}:{ok:false},
+     readBytes:async()=>({ok:true,bytes,headers:{'Content-Type':'image/png'}})
+    }});
+   window.binding=mountProductIntegration({enabled:true,ports:mediaBridge.product,media:mediaBridge.productMedia,translate:t.t,getCategory:()=> 'cars'});
+   notify(user);binding.show('sellWizardPage');
+  },{png,locale});
+  await page.locator('#adTitle').fill('Photo product');await page.locator('#adDesc').fill('ગુજરાતી हिन्दी');await page.locator('#adPrice').fill('10');
+  await page.locator('#productSaveDraft').click();
+  await page.waitForFunction(()=>binding.model.snapshot().owner?.revision===1);
+  await page.locator('#adImages').setInputFiles({name:'not.png',mimeType:'image/png',buffer:Buffer.from('not an image')});
+  assert.equal(await page.locator('.oldx-photo-workflow [data-photo-action=upload]').count(),0);
+  await page.locator('#adImages').setInputFiles({name:'real.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')});
+  await page.locator('#productSaveDraft').click();assert.equal(await page.evaluate(()=>mediaSaves.length),1);
+  const upload=page.locator('.oldx-photo-workflow [data-photo-action=upload]');
+  await upload.click();await page.waitForFunction(()=>mediaUploads===1);await upload.click();
+  await page.waitForFunction(()=>document.querySelector('.oldx-photo-workflow [data-photo-action=upload]')?.disabled);
+  assert.equal(await page.evaluate(()=>mediaUploads),1);
+  await page.locator('#productSaveDraft').click();await page.waitForFunction(()=>binding.model.snapshot().owner?.revision===2);
+  assert.deepEqual(await page.evaluate(()=>mediaSaves),[[],[{kind:'managed',imageId:'product_photo_1234567890'}]]);
+  await page.evaluate(()=>binding.navigate('product','media-product'));
+  const images=page.locator('#productDetailView img[src^="blob:"]');
+  assert.equal(await images.count(),0);
+  await page.evaluate(async()=>{await binding.navigate('home');mediaApproved=true;await binding.navigate('product','media-product');});
+  await images.waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  await page.evaluate(()=>{mediaBridge.destroy();binding.destroy();});
+  await page.waitForFunction(()=>!document.querySelector('#productDetailView img[src^="blob:"]'));
+ }finally{await context.close();}
+});
