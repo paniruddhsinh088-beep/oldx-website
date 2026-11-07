@@ -5,18 +5,21 @@ import {createMarketplacePublicClient} from './public-read-client.mjs';
 
 // Composition of existing ports only. No endpoint, SDK, Auth initialization or
 // automatic mounting. Caller must explicitly bind an approved trusted transport.
-export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProviderConversation,providerReadStateEnabled=false,providerReconciledHistoryEnabled=false,sendProductConversation,sendInboxPage,productMedia={},readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
+export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProviderConversation,providerReadStateEnabled=false,providerReconciledHistoryEnabled=false,sendProductConversation,sendInboxPage,productMedia={},storeMedia={},readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
  const active=enabled===true&&auth?.app?.options?.projectId==='oldx-staging';
- let photoClient,session=null,destroyed=false;const pending=new Set();
+ let session=null,destroyed=false;const pending=new Set(),photoClients=[];
  const provider=createProviderFirebaseSessionPorts({enabled:active,auth,
   sendCommand:typeof sendProviderCommand==='function'?sendProviderCommand:async()=>({status:503,body:{ok:false,error:{code:'ENFORCEMENT_UNAVAILABLE'}}}),
-  makeSessionId,onSession:value=>{photoClient?.setScope(null);for(const controller of pending)controller.abort();pending.clear();session=value?{uid:value.uid,sessionId:value.sessionId}:null;onSession(session&&{...session});}});
+  makeSessionId,onSession:value=>{for(const client of photoClients)client.setScope(null);for(const controller of pending)controller.abort();pending.clear();session=value?{uid:value.uid,sessionId:value.sessionId}:null;onSession(session&&{...session});}});
  const getToken=(scope,options)=>provider.getMediaToken(scope,options);
- const {sendUpload,sendCommand:sendMediaCommand,readManifest,readBytes}=productMedia;
- const mediaEnabled=active&&[sendUpload,sendMediaCommand,readManifest,readBytes].every(port=>typeof port==='function');
- photoClient=createAuthenticatedPhotoClient({enabled:mediaEnabled,getToken,sendUpload,sendCommand:sendMediaCommand});
- const media=Object.freeze({enabled:mediaEnabled,mediaClient:photoClient,readManifest,readBytes});
- const publicClient=createMarketplacePublicClient({enabled:active,sendRead});
+ function mediaPorts({sendUpload,sendCommand,readManifest,readBytes}){
+  const enabled=active&&[sendUpload,sendCommand,readManifest,readBytes].every(port=>typeof port==='function');
+  const mediaClient=createAuthenticatedPhotoClient({enabled,getToken,sendUpload,sendCommand});
+  photoClients.push(mediaClient);
+  return Object.freeze({enabled,mediaClient,readManifest,readBytes});
+ }
+ const productPhotos=mediaPorts(productMedia),storePhotos=mediaPorts(storeMedia);
+  const publicClient=createMarketplacePublicClient({enabled:active,sendRead});
  const ports=kind=>Object.freeze({...Object.fromEntries(['save','owner','archive'].map(operation=>[operation,async(body,context={})=>{
   const scope=session&&{...session},user=auth?.currentUser,controller=new AbortController();
   const current=()=>!destroyed&&scope&&session?.uid===scope.uid&&session?.sessionId===scope.sessionId&&auth.currentUser===user;
@@ -45,7 +48,7 @@ export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCom
    return provider.executeScoped(sendProviderConversation,operation,body,context,operation!=='read');
   }
  });
- return Object.freeze({inbox,providerMessaging,productMedia:media,product:Object.freeze({...ports('product'),...chatPorts}),store:ports('store'),provider,
+ return Object.freeze({inbox,providerMessaging,productMedia:productPhotos,storeMedia:storePhotos,product:Object.freeze({...ports('product'),...chatPorts}),store:ports('store'),provider,
   // For the existing Admin API client's getIdToken dependency. It grants no role;
   // revocation/active-role checks remain the server's responsibility.
   async getAdminIdToken(){const scope=session&&{...session};if(destroyed||!scope)throw Error('AUTH_REQUIRED');return (await getToken(scope)).token;},
