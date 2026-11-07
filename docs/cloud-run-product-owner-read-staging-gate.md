@@ -24,4 +24,4 @@ Status: HOLD / NO-GO. Repository evidence only. See the [approved architecture](
 - [ ] Approve Pages preview routing separately once the private test passes and the keyless caller identity is proven. Verify static fallback, no private cache, and auth errors end to end.
 - [ ] Roll back by removing the staging Pages proxy first and restoring its static fallback, then disabling the owner route via the reviewed disabled revision or withdrawing staging invoker access. Verify 503 on the disabled revision or denial at ingress, and the restored Pages fallback. Retain logs and fixture records per policy. Disable/revoke only grants approved for this slice under the rollback authorization.
 
-Next local step: review and test a staging-only ADC bootstrap seam with synthetic dependencies, leaving it default-off and unwired to live resources.
+The synthetic staging ADC seam is implemented and deliberately unwired from the executable. Live acceptance still requires an approved initializer that independently establishes the attached service identity, plus the private invoker, IAM and database checks above. Environment flags alone do not enable ADC.

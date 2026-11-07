@@ -3,7 +3,7 @@ import {once} from 'node:events';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {parseBoundedJson} from '../../scripts/bounded-json.mjs';
-import {createEmulatorMarketplaceRuntime} from './runtime.mjs';
+import {createEmulatorMarketplaceRuntime,createStagingMarketplaceRuntime} from './runtime.mjs';
 
 const route='/api/staging/marketplace/owner';
 const maxBytes=32768;
@@ -73,6 +73,47 @@ export async function drainProductReadServer(server){
  timer.unref();
  try{await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
  finally{clearTimeout(timer);}
+}
+
+const stagingProject='oldx-staging';
+const incompatibleEnvironment=[
+ 'GOOGLE_APPLICATION_CREDENTIALS','CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE',
+ 'FIREBASE_CONFIG','FIREBASE_AUTH_EMULATOR_HOST','FIRESTORE_EMULATOR_HOST',
+ 'FIREBASE_DATABASE_EMULATOR_HOST','FIREBASE_STORAGE_EMULATOR_HOST',
+ 'STORAGE_EMULATOR_HOST','PUBSUB_EMULATOR_HOST','OLDX_PRODUCT_READ_EMULATOR'
+];
+
+// Injectable only. The executable below never supplies an ADC initializer.
+// The initializer must establish the attached service identity independently of env.
+export async function createStagingProductReadServer(env={},initializeAdmin){
+ const disabled=()=>({server:createProductReadServer(),dispose:async()=>{}});
+ if(env.OLDX_PRODUCT_READ_STAGING_ADC!=='true'||typeof initializeAdmin!=='function')return disabled();
+ const identity=env.OLDX_PRODUCT_READ_SERVICE_ACCOUNT;
+ if(env.OLDX_FIREBASE_ENV!=='staging'||env.OLDX_FIREBASE_PROJECT_ID!==stagingProject
+  ||[env.GCLOUD_PROJECT,env.GOOGLE_CLOUD_PROJECT].some(project=>project!==undefined&&project!==stagingProject)
+  ||incompatibleEnvironment.some(key=>Object.hasOwn(env,key))
+  ||typeof env.K_SERVICE!=='string'||!/^[a-z][a-z0-9-]{0,62}$/.test(env.K_SERVICE)
+  ||typeof identity!=='string'||!/^[a-z][a-z0-9-]{4,28}[a-z0-9]@oldx-staging\.iam\.gserviceaccount\.com$/.test(identity))return disabled();
+ const values=[env.OLDX_RATE_WINDOW_MS,env.OLDX_RATE_ACTOR_LIMIT,env.OLDX_RATE_GLOBAL_LIMIT];
+ if(values.some(value=>typeof value!=='string'||!/^\d{1,7}$/.test(value)||Number(value)<1))return disabled();
+ const [windowMs,actorLimit,globalLimit]=values.map(Number);
+ if(windowMs<1000||windowMs>600000||actorLimit>globalLimit)return disabled();
+
+ let admin;
+ try{
+  admin=await initializeAdmin({projectId:stagingProject,expectedServiceAccount:identity});
+  const {serviceAccount,adminAuth,adminFirestore,FieldValue}=admin??{};
+  if(serviceAccount!==identity||adminAuth?.app?.options?.projectId!==stagingProject
+   ||typeof adminAuth.verifyIdToken!=='function'||adminFirestore?.projectId!==stagingProject
+   ||typeof adminFirestore.collection!=='function'||typeof adminFirestore.runTransaction!=='function'
+   ||typeof FieldValue?.serverTimestamp!=='function'||typeof admin.dispose!=='function')throw Error('Staging Admin unavailable');
+  const runtime=createStagingMarketplaceRuntime({enabled:true,projectId:stagingProject,deploymentEnvironment:'preview',
+   adminAuth,adminFirestore,FieldValue,ratePolicy:{windowMs,actorLimit,globalLimit}});
+  return {server:createProductReadServer({enabled:true,runtime}),dispose:()=>admin.dispose()};
+ }catch{
+  try{await admin?.dispose?.();}catch{}
+  return disabled();
+ }
 }
 
 async function main(env){
