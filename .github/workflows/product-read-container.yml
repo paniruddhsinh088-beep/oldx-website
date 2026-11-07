@@ -25,13 +25,47 @@ jobs:
       - name: Build and check disabled startup
         shell: bash
         run: |
+          node --test tests/integration/product-read-container.test.mjs
           docker build -f Dockerfile.product-read -t oldx-product-read:smoke .
-          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled >/dev/null 2>&1 || true' EXIT
+          # Check the merged filesystem and image configuration, not deleted files in lower layers.
+          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled oldx-image-audit >/dev/null 2>&1 || true' EXIT
+          docker create --name oldx-image-audit oldx-product-read:smoke >/dev/null
+          docker export oldx-image-audit | tar -tf - > "$RUNNER_TEMP/oldx-image-files"
+          sed -nE 's|^\./||; /^app\/node_modules(\/|$)/d; /^app\/[^/]/ { /\/$/!p; }' "$RUNNER_TEMP/oldx-image-files" | sort > "$RUNNER_TEMP/oldx-app-files"
+          sed -nE '/^![^!].*[^/]$/s|^!|app/|p' Dockerfile.product-read.dockerignore | sort > "$RUNNER_TEMP/oldx-expected-files"
+          diff -u "$RUNNER_TEMP/oldx-expected-files" "$RUNNER_TEMP/oldx-app-files"
+          if grep -Eiq '(^|/)(\.env(\.[^/]*)?|\.npmrc|\.git-credentials|application_default_credentials\.json|service[-_]?account[^/]*\.json|firebase-env\.js|google-services\.json|id_(rsa|ed25519))$' "$RUNNER_TEMP/oldx-image-files"; then
+            echo 'Sensitive filename found in image' >&2
+            exit 1
+          fi
+          docker image inspect --format '{{range .Config.Env}}{{println .}}{{end}}' oldx-product-read:smoke | cut -d= -f1 > "$RUNNER_TEMP/oldx-image-env-names"
+          if grep -Eiq 'credential|secret|token|private_key|firebase|api_key' "$RUNNER_TEMP/oldx-image-env-names"; then
+            echo 'Sensitive environment variable name found in image configuration' >&2
+            exit 1
+          fi
+          while IFS= read -r path; do
+            if grep -Eq -- '-----BEGIN [A-Z ]*PRIVATE KEY-----|"private_key"[[:space:]]*:|"type"[[:space:]]*:[[:space:]]*"service_account"' "${path#app/}"; then
+              echo "Credential marker found in build input: ${path#app/}" >&2
+              exit 1
+            fi
+          done < "$RUNNER_TEMP/oldx-expected-files"
+          echo 'Image merged filesystem, app allowlist, image environment names and build-input markers passed'
+          if docker run --rm --network none -e PORT=invalid oldx-product-read:smoke > "$RUNNER_TEMP/oldx-invalid-port" 2>&1; then
+            echo 'Invalid PORT unexpectedly started' >&2
+            exit 1
+          else
+            test "$?" = 1
+            grep -Fxq 'Product read server startup failed.' "$RUNNER_TEMP/oldx-invalid-port"
+          fi
+          echo 'Invalid PORT exited with code 1'
           docker run -d --name oldx-disabled -e PORT=18081 -p 127.0.0.1:18080:18081 oldx-product-read:smoke
           status=$(curl -sS --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -o "$RUNNER_TEMP/oldx-product-read-probe.json" -w '%{http_code}' -X POST http://127.0.0.1:18080/api/staging/marketplace/owner)
           test "$status" = 503
-          docker stop -t 10 oldx-disabled
+          curl -fsS --max-time 3 http://127.0.0.1:18080/healthz | grep -Fxq '{"ok":true}'
+          echo 'Custom PORT: owner route 503 and /healthz 200'
+          docker stop -s SIGTERM -t 10 oldx-disabled
           test "$(docker inspect -f '{{.State.ExitCode}}' oldx-disabled)" = 0
+          echo 'SIGTERM shutdown exited with code 0'
       - name: Run owner read against loopback Auth and Firestore Emulators
         shell: bash
         run: |
