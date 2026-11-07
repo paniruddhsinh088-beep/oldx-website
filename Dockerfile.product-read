@@ -1,0 +1,17 @@
+FROM node:24-bookworm-slim
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts
+
+COPY functions/staging-marketplace/product-read-server.mjs functions/staging-marketplace/runtime.mjs ./functions/staging-marketplace/
+COPY features/service-providers/provider-discovery.mjs features/service-providers/provider-profile.mjs features/service-providers/provider-public-card.mjs features/service-providers/provider-public-profile.mjs features/service-providers/service-selections.mjs ./features/service-providers/
+COPY features/shared/bounded-read.mjs ./features/shared/
+COPY features/stores/store-catalogue.mjs ./features/stores/
+COPY scripts/atomic-rate.mjs scripts/bounded-json.mjs scripts/classify-product-image-references.mjs scripts/firebase-marketplace-repository.mjs scripts/isolated-firestore-context.mjs scripts/marketplace-command-http.mjs scripts/photo-reference-contract.mjs scripts/product-conversation-http.mjs scripts/provider-draft-preparation.mjs scripts/provider-draft-transaction.mjs scripts/provider-enforcement-adapters.mjs scripts/provider-owner-bootstrap.mjs scripts/provider-publication-transaction.mjs scripts/provider-schema-v1.mjs scripts/staging-marketplace-context.mjs scripts/staging-marketplace-rate.mjs scripts/staging-public-query-sdk.mjs scripts/verified-operation.mjs ./scripts/
+
+USER node
+EXPOSE 8080
+STOPSIGNAL SIGTERM
+CMD ["node", "functions/staging-marketplace/product-read-server.mjs"]

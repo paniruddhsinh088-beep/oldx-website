@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
-import {createProductReadServer,listenProductReadServer} from '../../functions/staging-marketplace/product-read-server.mjs';
+import {createProductReadServer,listenProductReadServer,drainProductReadServer} from '../../functions/staging-marketplace/product-read-server.mjs';
 
 test('owner HTTP boundary is default-off and exposes one bounded read route',async()=>{
  let calls=0;
@@ -26,4 +26,19 @@ test('owner HTTP boundary is default-off and exposes one bounded read route',asy
  }
  assert.equal(calls,1);
  await assert.rejects(listenProductReadServer(createProductReadServer(),{port:'bad'}),/Invalid PORT/);
+});
+
+test('drain stops new connections and lets an in-flight owner request finish',async()=>{
+ let entered,release;
+ const received=new Promise(resolve=>entered=resolve);
+ const runtime={handle(){entered();return new Promise(resolve=>release=resolve);}};
+ const server=createProductReadServer({enabled:true,runtime});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ const origin='http://127.0.0.1:'+server.address().port;
+ const read=fetch(origin+'/api/staging/marketplace/owner',{method:'POST',body:'{"kind":"product"}'});
+ await received;
+ const draining=drainProductReadServer(server);
+ try{await assert.rejects(fetch(origin));}
+ finally{release({status:200,body:{ok:true}});await draining;}
+ assert.deepEqual(await (await read).json(),{ok:true});
 });

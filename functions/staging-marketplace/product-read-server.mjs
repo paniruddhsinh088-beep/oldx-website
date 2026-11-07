@@ -64,6 +64,13 @@ export async function listenProductReadServer(server,{port=process.env.PORT??'80
  return server;
 }
 
+export async function drainProductReadServer(server){
+ const timer=setTimeout(()=>server.closeAllConnections(),7000);
+ timer.unref();
+ try{await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));}
+ finally{clearTimeout(timer);}
+}
+
 async function main(env){
  // Operational startup deliberately has no SDK initialization path.
  const projectId='demo-oldx-admin-runtime';
@@ -71,19 +78,33 @@ async function main(env){
   &&env.GCLOUD_PROJECT===projectId
   &&env.FIREBASE_AUTH_EMULATOR_HOST==='127.0.0.1:9098'
   &&env.FIRESTORE_EMULATOR_HOST==='127.0.0.1:8088';
- let runtime;
+ let runtime,dispose;
  if(emulator){
-  const {initializeApp}=await import('firebase-admin/app');
+  const {initializeApp,deleteApp}=await import('firebase-admin/app');
   const {getAuth}=await import('firebase-admin/auth');
   const {getFirestore,FieldValue}=await import('firebase-admin/firestore');
   const app=initializeApp({projectId},'product-read-loopback');
   const adminFirestore=getFirestore(app);
   adminFirestore.settings({host:'127.0.0.1:8088',ssl:false});
+  dispose=async()=>{await adminFirestore.terminate();await deleteApp(app);};
   runtime=createEmulatorMarketplaceRuntime({enabled:true,projectId,deploymentEnvironment:'preview',
    adminAuth:getAuth(app),adminFirestore,FieldValue,ratePolicy:{windowMs:60000,actorLimit:100,globalLimit:300}});
  }
- await listenProductReadServer(createProductReadServer({enabled:emulator,runtime}),
-  {port:env.PORT??'8080',host:emulator?'127.0.0.1':'0.0.0.0'});
+ const server=createProductReadServer({enabled:emulator,runtime});
+ try{await listenProductReadServer(server,{port:env.PORT??'8080',host:emulator?'127.0.0.1':'0.0.0.0'});}
+ catch(error){await dispose?.();throw error;}
+ let stopping=false;
+ async function stop(){
+  if(stopping)return;
+  stopping=true;
+  const deadline=setTimeout(()=>process.exit(1),9000);
+  deadline.unref();
+  try{await drainProductReadServer(server);await dispose?.();}
+  catch{console.error('Product read server shutdown failed.');process.exitCode=1;}
+  finally{clearTimeout(deadline);}
+ }
+ process.on('SIGTERM',stop);
+ process.on('SIGINT',stop);
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
