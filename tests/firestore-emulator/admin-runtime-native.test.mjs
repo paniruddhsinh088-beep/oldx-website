@@ -168,6 +168,15 @@ test('REAL Product owner HTTP socket verifies Auth and exposes only the owner DT
   assert.deepEqual(Object.keys(dto.profile).sort(),Object.keys(profile).sort());
   for(const token of [null,'invalid.token.value'])assert.equal((await read(token)).status,401);
   assert.equal((await read(otherToken)).status,403);
+  const spoofed=request(input,otherToken);
+  spoofed.headers['X-Forwarded-User']='owner';
+  spoofed.headers['X-Serverless-Authorization']='Bearer '+ownerToken;
+  assert.equal((await fetch(endpoint,spoofed)).status,403);
+  for(const action of ['save','archive']){
+   const blocked=await fetch(endpoint.replace(/owner$/u,action),request(input,ownerToken));
+   assert.equal(blocked.status,404);
+   assert.deepEqual(await blocked.json(),{ok:false,error:{code:'NOT_FOUND'}});
+  }
   const parts=ownerToken.split('.'),claims=JSON.parse(Buffer.from(parts[1],'base64url'));
   claims.exp=Math.floor(Date.now()/1000)-1;parts[1]=Buffer.from(JSON.stringify(claims)).toString('base64url');
   assert.equal((await read(parts.join('.'))).status,401);

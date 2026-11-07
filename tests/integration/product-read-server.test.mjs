@@ -33,6 +33,15 @@ test('owner HTTP boundary is default-off and exposes one bounded read route',asy
   }finally{await new Promise(resolve=>server.close(resolve));}
  }
  assert.equal(calls,1);
+ const missing=createProductReadServer({enabled:true});
+ missing.listen(0,'127.0.0.1');await once(missing,'listening');
+ try{
+  const origin='http://127.0.0.1:'+missing.address().port;
+  assert.equal((await fetch(origin+'/healthz')).status,200);
+  const reply=await fetch(origin+'/api/staging/marketplace/owner',{method:'POST',body:'{"kind":"product"}'});
+  assert.equal(reply.status,503);
+  assert.deepEqual(await reply.json(),{ok:false,error:{code:'ENFORCEMENT_UNAVAILABLE'}});
+ }finally{await drainProductReadServer(missing);}
  await assert.rejects(listenProductReadServer(createProductReadServer(),{port:'bad'}),/Invalid PORT/);
 });
 
