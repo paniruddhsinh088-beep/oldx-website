@@ -13,3 +13,18 @@ test('receipt queue is bounded, clears across sessions and discards subsequent r
 test('confirmed read sequence skips re-signed old pages only within the same session and conversation',async()=>{let calls=0;const a=createReadAcknowledgement({enabled:true,execute:()=>{calls++;return {ok:true,status:'advanced',readSequence:40};}});await a.accept({threadId:'a',readReceipt:'first'},40);await a.accept({threadId:'a',readReceipt:'new-signature'},20);await a.accept({threadId:'a',readReceipt:'another-signature'},40);assert.equal(calls,1);await a.accept({threadId:'b',readReceipt:'other-room'},20);assert.equal(calls,2);a.clear();await a.accept({threadId:'b',readReceipt:'new-session'},20);assert.equal(calls,3);});
 
 test('a delivered page offered during the acknowledgement callback is queued rather than stranded',async()=>{const calls=[];let a;a=createReadAcknowledgement({enabled:true,execute:b=>{calls.push(b.readReceipt);return {ok:true,status:'advanced',readSequence:Number(b.readReceipt)};},onAcknowledged:()=>{if(calls.length===1)a.accept({threadId:'t',readReceipt:'40'},40);}});await a.accept({threadId:'t',readReceipt:'20'},20);assert.deepEqual(calls,['20','40']);assert.equal(a.snapshot().status,'saved');});
+
+test('read confirmation supersedes an in-flight Inbox response and account switch clears the refreshed data',async()=>{
+ const requests=[];
+ const inbox=createUnifiedInbox({enabled:true,loadPage:(_body,context)=>new Promise(resolve=>requests.push({context,resolve}))});
+ inbox.setSession({uid:'buyer',sessionId:'one'});
+ const stale=inbox.refresh();await Promise.resolve();
+ const fresh=inbox.refreshAfterRead();await Promise.resolve();
+ assert.equal(requests[0].context.signal.aborted,true);
+ requests[1].resolve(page([],{totalUnread:0}));await fresh;
+ requests[0].resolve(page());await stale;
+ assert.equal(inbox.snapshot().totalUnread,0);
+ inbox.setSession({uid:'provider',sessionId:'two'});
+ assert.equal(inbox.snapshot().totalUnread,null);
+ assert.deepEqual(inbox.snapshot().items,[]);
+});

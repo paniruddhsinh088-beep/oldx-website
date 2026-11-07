@@ -13,3 +13,52 @@ for(const locale of ['gu','hi','en'])test('existing conversation UI two-way send
  }finally{await context.close();}});
 
 test('opt-in Provider reconciled HTTP/DOM preserves private sparse history, empty pages and logout',async()=>{const context=await browser.newContext({viewport:{width:320,height:850}});try{const {providerChatParityAcceptance}=await import('../integration/provider-chat-parity-cases.mjs'),db=fakeFirestoreSdk(),f=await providerChatParityAcceptance({sdk:db.sdk,db:db.db,seed:db.seed,get:db.get,namespace:'BrowserParity'});f.session('journey-buyer');const page=await context.newPage();await page.exposeFunction('parityExecute',(op,body)=>f.call(op,body));await page.goto(origin+'/service-conversation-preview.html#conversation/buyer/'+f.scope.providerId+'/'+f.scope.enquiryId);const boot=()=>page.evaluate(async()=>{const {mountProviderConversation}=await import('/features/service-providers/private-conversation-dom.mjs');window.binding=mountProviderConversation({enabled:true,audience:'buyer',messaging:{enabled:true,readStateEnabled:true,reconciledHistoryEnabled:true,execute:(op,body)=>parityExecute(op,body)}});await binding.setSession({uid:'journey-buyer',sessionId:'parity'});});await boot();await page.waitForFunction(()=>document.querySelectorAll('#messages li').length===3);assert.equal(await page.locator('#messages').textContent().then(v=>v.includes('મૂળ हिन्दी 2')),false);assert.equal(await page.locator('#messages').textContent().then(v=>v.includes('મૂળ हिन्दी 3')),false);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);for(const sequence of [1,4,5])assert.equal((await f.core.changeVisibility({...f.scope,requestId:'browser-hide-'+sequence,expectedRevision:5,sequence,action:'hide_for_self'})).status,'changed');await f.reconcile();await page.evaluate(()=>binding.destroy());await boot();await page.waitForFunction(()=>binding.model.snapshot().status==='ready');assert.equal(await page.locator('#messages').textContent(),'');assert.equal(await page.locator('#conversationHistoryNext').isDisabled(),true);await page.evaluate(()=>binding.setSession(null));assert.equal(await page.locator('#messages').textContent(),'');assert.equal(await page.locator('#messageDraft').inputValue(),'');}finally{await context.close();}});
+
+for(const [locale,width] of [['gu',320],['hi',375],['en',375]])test('Provider Inbox opens scoped Chat and refreshes trusted unread '+locale,async()=>{
+ const context=await browser.newContext({viewport:{width,height:850}});
+ try{
+  const {providerChatParityAcceptance}=await import('../integration/provider-chat-parity-cases.mjs');
+  const db=fakeFirestoreSdk(),f=await providerChatParityAcceptance({sdk:db.sdk,db:db.db,seed:db.seed,get:db.get,namespace:'BrowserInbox'});
+  const page=await context.newPage(),buyer='journey-buyer',provider='journey-provider';
+  await page.exposeFunction('trustedProviderChat',async(op,body,token)=>{
+   assert.match(token,/^journey-(buyer|provider)\.fixture\.token$/);
+   f.session(token.split('.')[0]);
+   return f.call(op,body);
+  });
+  await page.exposeFunction('trustedProviderInbox',async(body,token)=>{
+   assert.match(token,/^journey-(buyer|provider)\.fixture\.token$/);
+   f.session(token.split('.')[0]);
+   return {status:200,body:await f.index.page(body)};
+  });
+  for(const [role,uid,sender,revision] of [['buyer',buyer,provider,5],['provider',provider,buyer,6]]){
+   f.session(sender);f.clock(revision+1);
+   assert.equal((await f.core.send({...f.scope,expectedRevision:revision,expectedEnquiryRevision:0,expectedGeneration:1,requestId:'inbox-'+revision,text:'મૂળ हिन्दी reply '+revision})).status,'sent');
+   await page.goto(origin+'/service-conversation-preview.html');
+   await page.evaluate(async({role,uid,locale})=>{
+    const {mountProviderConversation}=await import('/features/service-providers/private-conversation-dom.mjs');
+    const {mountUnifiedInbox}=await import('/features/chat/unified-inbox-dom.mjs');
+    const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
+    const {loadTranslator}=await import('/features/i18n/i18n.mjs');
+    const t=await loadTranslator(locale),user={uid,getIdToken:async()=>uid+'.fixture.token'};
+    let session;
+    const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){fn(user);return ()=>{};}};
+    window.bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,providerReadStateEnabled:true,providerReconciledHistoryEnabled:true,onSession:value=>session=value,
+     sendProviderConversation:(op,body,{credential})=>trustedProviderChat(op,body,credential),sendInboxPage:(_op,body,{credential})=>trustedProviderInbox(body,credential)});
+    const nodes=document.createElement('section');
+    nodes.innerHTML='<span id="inboxBadgeCount"></span><div id="inboxConversationsList"></div><button id="productInboxNext"></button>';
+    document.body.append(nodes);
+    window.chat=mountProviderConversation({enabled:true,audience:role,translate:key=>t.t(key),messaging:bridge.providerMessaging});
+    window.inbox=mountUnifiedInbox({...bridge.inbox,translate:key=>t.t(key),openConversation:row=>chat.open({providerId:row.providerId,enquiryId:row.threadId})});
+    await chat.setSession(session);await inbox.setSession(session);
+   },{role,uid,locale});
+   assert.equal(await page.locator('#inboxBadgeCount').textContent(),'1');
+   await page.locator('#inboxConversationsList button[data-conversation-kind=provider]').click();
+   await page.waitForFunction(()=>document.querySelector('#inboxBadgeCount').textContent==='0',null,{timeout:5000});
+   assert.match(await page.locator('#messages').textContent(),new RegExp('reply '+revision));
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+   await page.evaluate(async()=>{bridge.destroy();await chat.setSession(null);await inbox.setSession(null);});
+   assert.equal(await page.locator('#messages').textContent(),'');
+   assert.equal(await page.locator('#inboxBadgeCount').textContent(),'');
+  }
+ }finally{await context.close();}
+});
