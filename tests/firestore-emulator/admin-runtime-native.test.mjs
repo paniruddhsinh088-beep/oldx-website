@@ -151,6 +151,29 @@ test('REAL scoped bridge rejects unsigned Emulator tokens while native runtime p
  finally{bridge.destroy();}
 });
 
+test('REAL Product owner HTTP socket verifies Auth and exposes only the owner DTO',async()=>{
+ const {createProductReadServer}=await import('../../functions/staging-marketplace/product-read-server.mjs');
+ const {once}=await import('node:events');
+ const server=createProductReadServer({enabled:true,runtime});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ try{
+  const endpoint='http://127.0.0.1:'+server.address().port+'/api/staging/marketplace/owner';
+  const input={kind:'product',id:productId,requestId:null};
+  const read=token=>fetch(endpoint,request(input,token));
+  const reply=await read(ownerToken);
+  assert.equal(reply.status,200);assert.equal(reply.headers.get('cache-control'),'private, no-store');
+  const dto=await reply.json();
+  assert.deepEqual(Object.keys(dto).sort(),['id','ok','profile','publicationRevision','published','receipt','revision']);
+  assert.deepEqual(Object.keys(dto.profile).sort(),Object.keys(profile).sort());
+  for(const token of [null,'invalid.token.value'])assert.equal((await read(token)).status,401);
+  assert.equal((await read(otherToken)).status,403);
+  const parts=ownerToken.split('.'),claims=JSON.parse(Buffer.from(parts[1],'base64url'));
+  claims.exp=Math.floor(Date.now()/1000)-1;parts[1]=Buffer.from(JSON.stringify(claims)).toString('base64url');
+  assert.equal((await read(parts.join('.'))).status,401);
+  assert.equal((await read(ownerToken)).status,200);
+ }finally{await new Promise(resolve=>server.close(resolve));}
+});
+
 test('REAL Admin revocation check rejects an earlier valid Auth Emulator session',async()=>{
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);
