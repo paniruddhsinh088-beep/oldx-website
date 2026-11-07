@@ -16,7 +16,19 @@ export async function reconciledProductCursorAcceptance(options){
  f.session('seller');f.clock(5);assert.equal((await chat.send({...send,requestId:'newer',expectedRevision:4,text:'Unseen fifth'})).status,'sent');f.session('buyer');assert.equal((await f.page()).totalUnread,2);
  const duplicate=await Promise.all([chat.acknowledge({threadId,readReceipt:delivered.readReceipt}),chat.acknowledge({threadId,readReceipt:delivered.readReceipt})]);assert.deepEqual(duplicate.map(r=>r.status).sort(),['advanced','unchanged']);assert.equal((await f.page()).totalUnread,1);
  // Later reconciliation consumes physical cursor state and preserves the visible total.
- await f.reconcile();assert.equal((await f.page()).totalUnread,1);const finalPage=await chat.read({threadId,expectedRevision:5,afterSequence:4,limit:20});assert.deepEqual(finalPage.messages.map(m=>m.sequence),[5]);const reopened=await chat.read({threadId,expectedRevision:5,afterSequence:0,limit:20});assert.deepEqual(reopened.messages.map(m=>m.sequence),[1,4,5]);assert.equal((await chat.acknowledge({threadId,readReceipt:reopened.readReceipt})).status,'advanced');assert.equal((await chat.acknowledge({threadId,readReceipt:finalPage.readReceipt})).status,'unchanged');assert.equal((await f.page()).totalUnread,0);
+ await f.reconcile();assert.equal((await f.page()).totalUnread,1);const finalPage=await chat.read({threadId,expectedRevision:5,afterSequence:4,limit:20});assert.deepEqual(finalPage.messages.map(m=>m.sequence),[5]);const reopened=await chat.read({threadId,expectedRevision:5,afterSequence:0,limit:20});assert.deepEqual(reopened.messages.map(m=>m.sequence),[1,4,5]);
+ const ops={reads:0,writes:0,queries:0},sdk=f.base.sdk;
+ const measured=createIsolatedProductConversationRepository({...f.base,reconciledHistoryEnabled:true,sdk:{
+  ...sdk,
+  runTransaction:(db,work,options)=>sdk.runTransaction(db,raw=>work({
+   get(reference){ops[reference.path?'reads':'queries']++;return raw.get(reference);},
+   set(...args){ops.writes++;return raw.set(...args);}
+  }),options)
+ }});
+ assert.equal((await measured.acknowledge({threadId,readReceipt:reopened.readReceipt})).status,'advanced');
+ assert.deepEqual(ops,{reads:12,writes:5,queries:0});
+ console.log('MEASURE Product reconciled acknowledgement',ops);
+ assert.equal((await chat.acknowledge({threadId,readReceipt:finalPage.readReceipt})).status,'unchanged');assert.equal((await f.page()).totalUnread,0);
  // Every privacy mutation changes the epoch: old receipts never become valid again.
  assert.equal((await chat.changeVisibility({requestId:'hide-fifth',threadId,expectedRevision:5,sequence:5,action:'hide_for_self'})).status,'changed');assert.equal((await chat.read({threadId,expectedRevision:5,afterSequence:0,limit:20})).code,'DENIED');await f.reconcile();assert.equal((await chat.acknowledge({threadId,readReceipt:finalPage.readReceipt})).code,'INVALID_READ_RECEIPT');
  f.session('foreign');assert.equal((await chat.read({threadId,expectedRevision:5,afterSequence:0,limit:20})).code,'DENIED');assert.equal((await chat.acknowledge({threadId,readReceipt:delivered.readReceipt})).code,'DENIED');

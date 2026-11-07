@@ -38,6 +38,10 @@ export function createProductReadServer({enabled=false,runtime}={}){
    res.end(JSON.stringify(body));
   };
   try{
+   if(req.url==='/healthz'){
+    if(req.method!=='GET'&&req.method!=='HEAD')return send(failure(405,'METHOD_NOT_ALLOWED'));
+    return send({status:200,body:{ok:true}});
+   }
    if(req.url!==route)return send(failure(404,'NOT_FOUND'));
    if(enabled!==true||typeof runtime?.handle!=='function')return send(failure(503,'ENFORCEMENT_UNAVAILABLE'));
    if(req.method!=='POST')return send(failure(405,'METHOD_NOT_ALLOWED'));

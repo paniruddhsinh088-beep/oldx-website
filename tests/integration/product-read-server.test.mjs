@@ -11,6 +11,14 @@ test('owner HTTP boundary is default-off and exposes one bounded read route',asy
   server.listen(0,'127.0.0.1');await once(server,'listening');
   try{
    const origin='http://127.0.0.1:'+server.address().port;
+   const health=await fetch(origin+'/healthz');
+   assert.equal(health.status,200);
+   assert.equal(health.headers.get('cache-control'),'private, no-store');
+   assert.deepEqual(await health.json(),{ok:true});
+   const head=await fetch(origin+'/healthz',{method:'HEAD'});
+   assert.equal(head.status,200);
+   assert.equal(await head.text(),'');
+   assert.equal((await fetch(origin+'/healthz',{method:'POST'})).status,405);
    const owner=(value)=>fetch(origin+'/api/staging/marketplace/owner',{method:'POST',body:JSON.stringify(value)});
    assert.equal((await fetch(origin+'/api/staging/marketplace/save',{method:'POST'})).status,404);
    if(enabled){
