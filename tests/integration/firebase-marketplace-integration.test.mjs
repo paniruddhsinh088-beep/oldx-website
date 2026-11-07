@@ -11,3 +11,39 @@ test('Admin API uses same scoped token; no browser role or Firestore fallback af
 test('default-off and production binding never acquire tokens or dispatch public/private transport',async()=>{let calls=0;for(const options of [{},{enabled:true,auth:{app:{options:{projectId:'oldx-1c983'}}}}]){const b=createFirebaseMarketplaceIntegration({...options,sendCommand:()=>calls++,sendRead:()=>calls++});assert.equal((await b.product.list({})).code,'UNAVAILABLE');assert.equal((await b.product.save({})).ok,false);await assert.rejects(b.getAdminIdToken());b.destroy();}assert.equal(calls,0);});
 test('public projection rejects private fields and never requests an Auth token',async()=>{let tokens=0;const f=fixture({sendRead:async()=>({status:200,body:{ok:true,profile:{id:'p',kind:'product',revision:1,title:'Original',description:'Public',category:'cars',locationLabel:'Local',basePrice:1,isSold:false,storeId:null,phone:'private'}}})});f.user.getIdToken=async()=>{tokens++;throw Error('Public read must not acquire credentials');};assert.equal((await f.bridge.product.detail({kind:'product',id:'p'})).code,'UNAVAILABLE');assert.equal(tokens,0);f.bridge.destroy();});
 test('normal token refresh preserves scope; same UID replacement before observer delivery cannot dispatch',async()=>{const f=fixture(),initial=f.session();f.notify(f.user);assert.deepEqual(f.session(),initial);let release;f.user.getIdToken=()=>new Promise(r=>release=r);const task=f.bridge.product.save({id:null,expectedRevision:0,publication:'draft',profile,requestId:'r'},{session:initial});f.auth.currentUser={uid:'owner',getIdToken:async()=> 'replacement.token.only'};release('old.token.only');assert.equal((await task).ok,false);assert.equal(f.calls.length,0);f.bridge.destroy();});
+
+test('Product Chat requires the current scoped session and preserves the request on explicit retry',async()=>{
+ const requests=[];
+ const f=fixture({sendProductConversation:async(operation,body,{credential})=>{
+  requests.push({operation,body,credential});
+  if(operation==='thread')return {status:403,body:{ok:false,error:{code:'DENIED'}}};
+  if(requests.length===2)throw Error('Response lost');
+  return {status:200,body:{ok:true,status:'replayed'}};
+ }});
+ const chat=f.bridge.product,context={session:f.session()},body={threadId:'private',requestId:'send-1',expectedRevision:1,text:'ગુજરાતી हिन्दी English'};
+ assert.deepEqual(await chat.thread({threadId:'private'}),{ok:false,code:'AUTH_REQUIRED'});
+ assert.equal(requests.length,0);
+ assert.deepEqual(await chat.thread({threadId:'private'},context),{ok:false,code:'DENIED'});
+ assert.deepEqual(await chat.send(body,context),{ok:false,code:'OUTCOME_UNKNOWN'});
+ assert.deepEqual(await chat.send(body,context),{ok:true,status:'replayed'});
+ assert.deepEqual(requests.slice(1),[1,2].map(()=>({operation:'send',body,credential:'fixture.token.only'})));
+ f.bridge.destroy();
+});
+
+test('Product Chat aborts a pending private read and discards its reply on account switch',async()=>{
+ let release,signal;
+ const f=fixture({sendProductConversation:async(_operation,_body,context)=>{
+  signal=context.signal;
+  return new Promise(resolve=>release=resolve);
+ }});
+ const old={session:f.session()};
+ const task=f.bridge.product.read({threadId:'private'},old);
+ while(!release)await new Promise(resolve=>setImmediate(resolve));
+ const other={uid:'other',getIdToken:async()=> 'new.token.only'};
+ f.auth.currentUser=other;f.notify(other);
+ assert.equal(signal.aborted,true);
+ release({status:200,body:{ok:true,messages:[{text:'private'}]}});
+ assert.deepEqual(await task,{ok:false,code:'AUTH_REQUIRED'});
+ assert.deepEqual(await f.bridge.product.read({threadId:'private'},old),{ok:false,code:'AUTH_REQUIRED'});
+ f.bridge.destroy();
+});
