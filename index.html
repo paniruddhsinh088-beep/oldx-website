@@ -137,14 +137,14 @@
             <div class="oldx-header-actions">
                 <a id="servicesHeaderLink" href="./service-preview.html?mode=website#services" data-i18n="website.services" class="bg-primary text-white px-3 py-2 rounded-xl font-bold text-xs md:text-sm">Services</a>
                <button id="headerAdminBtn" onclick="openAdminPanel()" style="display: none;" class="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-amber-500 to-red-600 rounded-full shadow-md hover:from-amber-600 hover:to-red-700 transition-all transform hover:scale-105">
-                    <i class="fa-solid fa-shield-halved text-yellow-200"></i> Admin Panel
+                    <i class="fa-solid fa-shield-halved text-yellow-200"></i> <span data-i18n="market.home.admin">Admin Panel</span>
                 </button>
                 <button id="storeHeaderBtn" onclick="handleStoreHeaderClick()" class="bg-brand hover:bg-orange-400 text-primary px-3 py-2 rounded-xl font-black text-xs md:text-sm shadow transition cursor-pointer whitespace-nowrap">
-                    <i class="fa-solid fa-store mr-1"></i> Create Store
+                    <i class="fa-solid fa-store mr-1"></i> <span data-i18n="market.home.createStore">Create Store</span>
                 </button>
                 <div id="authContainer">
                     <button onclick="openAuthModal()" class="bg-primary hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
-                        <i class="fa-solid fa-user-check mr-1"></i> Login
+                        <i class="fa-solid fa-user-check mr-1"></i> <span data-i18n="market.home.login">Login</span>
                     </button>
                 </div>
             </div>
@@ -156,9 +156,9 @@
         <!-- 1. HERO SEARCH BANNER -->
         <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10">INDIA C2C MARKETPLACE</span>
-                <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2">Buy, Sell & Find Everything Nearby</h2>
-                <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6">Directly connect with local buyers & sellers with zero commission.</p>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10" data-i18n="market.home.badge">INDIA C2C MARKETPLACE</span>
+                <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2" data-i18n="market.home.hero">Buy, Sell & Find Everything Nearby</h2>
+                <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6" data-i18n="market.home.tagline">Directly connect with local buyers & sellers with zero commission.</p>
 
                 <!-- Search Bar Container -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800 relative z-30">
@@ -180,11 +180,11 @@
 
                         <div onclick="openCustomDistancePicker()" class="flex items-center gap-1.5 bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-3 py-2 rounded-xl border border-teal-200 dark:border-gray-600 cursor-pointer hover:bg-teal-100 transition shrink-0">
                             <i class="fa-solid fa-route text-teal-600"></i>
-                            <span id="selectedDistanceText">Any Distance</span>
+                            <span id="selectedDistanceText" data-i18n="market.home.distanceAll">Any Distance</span>
                             <i class="fa-solid fa-chevron-down text-[9px]"></i>
                         </div>
 
-                        <button onclick="startVoiceSearch()" title="Voice Search" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9 cursor-pointer">
+                        <button onclick="startVoiceSearch()" title="Voice Search" aria-label="Voice Search" data-i18n-title="market.home.voice" data-i18n-aria-label="market.home.voice" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9 cursor-pointer">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
                     </div>
@@ -200,9 +200,9 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-layer-group text-teal-600"></i> Browse Categories
+                            <i class="fa-solid fa-layer-group text-teal-600"></i> <span data-i18n="market.home.categories">Browse Categories</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Explore top items by category</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.categoriesHint">Explore top items by category</p>
                     </div>
                 </div>
                 
@@ -214,11 +214,11 @@
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <h3 id="homeStoresHeading" class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-store text-teal-600"></i> Discover Local Stores
+                            <i class="fa-solid fa-store text-teal-600"></i> <span data-i18n="market.home.stores">Discover Local Stores</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Explore shops and products from local sellers</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.storesHint">Explore shops and products from local sellers</p>
                     </div>
-                    <span class="text-xs font-bold text-teal-700 dark:text-teal-300">On OldX</span>
+                    <span class="text-xs font-bold text-teal-700 dark:text-teal-300" data-i18n="market.home.onOldx">On OldX</span>
                 </div>
                 <button type="button" id="trustedStoreBrowse" hidden data-i18n="market.store.browse">Browse Stores</button>
                 <select id="trustedStoreFilter" hidden aria-label="Store category" data-i18n-aria-label="store.category"></select>
@@ -232,19 +232,19 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div class="min-w-0">
                         <h3 id="homeServicesPreviewHeading" class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-screwdriver-wrench text-blue-600 dark:text-blue-400" aria-hidden="true"></i> Find Local Services
+                            <i class="fa-solid fa-screwdriver-wrench text-blue-600 dark:text-blue-400" aria-hidden="true"></i> <span data-i18n="market.home.services">Find Local Services</span>
                         </h3>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1">સુથાર, પ્લમ્બર, ઇલેક્ટ્રિશિયન અને બીજા સ્થાનિક સેવા નિષ્ણાતો માટેનું પ્રિવ્યૂ જુઓ.</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium mt-1" data-i18n="market.home.servicesHint">સુથાર, પ્લમ્બર, ઇલેક્ટ્રિશિયન અને બીજા સ્થાનિક સેવા નિષ્ણાતો માટેનું પ્રિવ્યૂ જુઓ.</p>
                     </div>
                     <div class="flex flex-col items-start sm:items-end gap-2 shrink-0">
-                        <span class="text-[10px] font-black uppercase tracking-wide rounded-full border border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 px-2.5 py-1">Preview only · Demo data</span>
+                        <span class="text-[10px] font-black uppercase tracking-wide rounded-full border border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-700 px-2.5 py-1" data-i18n="market.home.demo">Preview only · Demo data</span>
                         <a href="./service-preview.html?mode=website#services" class="inline-flex items-center justify-center rounded-xl bg-primary text-white px-4 py-2.5 text-xs font-bold" data-i18n="website.services">Services</a>
                         <a href="./service-preview.html" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white px-4 py-2.5 text-xs font-bold shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> સેવાઓનો પ્રિવ્યૂ જુઓ
+                            <i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> <span data-i18n="market.home.preview">સેવાઓનો પ્રિવ્યૂ જુઓ</span>
                         </a>
                     </div>
                 </div>
-                <p class="text-[11px] text-gray-500 dark:text-gray-400">હાલ આ માત્ર ડેમો છે. વાસ્તવિક પ્રોફાઇલ, સંપર્ક, મેસેજ અથવા બુકિંગ હજી સક્રિય નથી.</p>
+                <p class="text-[11px] text-gray-500 dark:text-gray-400" data-i18n="market.home.demoNotice">હાલ આ માત્ર ડેમો છે. વાસ્તવિક પ્રોફાઇલ, સંપર્ક, મેસેજ અથવા બુકિંગ હજી સક્રિય નથી.</p>
             </section>
 
             <!-- 3. FEATURED / BOOSTED ADS SECTION -->
@@ -252,11 +252,11 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-bolt text-amber-500 animate-bounce"></i> Featured & Boosted Ads
+                            <i class="fa-solid fa-bolt text-amber-500 animate-bounce"></i> <span data-i18n="market.home.featured">Featured & Boosted Ads</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Top promoted listings in your area</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.featuredHint">Top promoted listings in your area</p>
                     </div>
-                    <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300">Sponsored</span>
+                    <span class="bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-1 rounded-full uppercase border border-amber-300" data-i18n="market.home.sponsored">Sponsored</span>
                 </div>
                 <div id="featuredProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
             </section>
@@ -266,9 +266,9 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Recommended For You
+                            <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> <span data-i18n="market.home.recommended">Recommended For You</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">AI Picks based on your recent activity & preferences</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.recommendedHint">AI Picks based on your recent activity & preferences</p>
                     </div>
                 </div>
                 <div id="recommendedProductGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
@@ -279,9 +279,9 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-clock-rotate-left text-teal-600"></i> Recently Viewed Products
+                            <i class="fa-solid fa-clock-rotate-left text-teal-600"></i> <span data-i18n="market.home.recent">Recently Viewed Products</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Items you checked out recently</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.recentHint">Items you checked out recently</p>
                     </div>
                 </div>
                 <div id="recentlyViewedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
@@ -292,9 +292,9 @@
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-fire text-amber-500"></i> Fresh Local Recommendations
+                            <i class="fa-solid fa-fire text-amber-500"></i> <span data-i18n="market.home.fresh">Fresh Local Recommendations</span>
                         </h3>
-                        <p class="text-xs text-gray-400 font-medium">Handpicked local listings near you</p>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.freshHint">Handpicked local listings near you</p>
                     </div>
                 </div>
                 
@@ -311,11 +311,11 @@
         <!-- FOOTER -->
         <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-8 px-4 mt-12 text-center text-xs text-gray-500 space-y-3 mb-16">
             <div class="flex justify-center items-center gap-6 font-bold">
-                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Privacy Policy</a>
-                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition">Terms & Conditions</a>
-                <a href="#" onclick="openContactModal(event)" class="hover:text-teal-600 transition">Contact Us</a>
+                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition" data-i18n="market.home.privacy">Privacy Policy</a>
+                <a href="#" onclick="openPrivacyModal(event)" class="hover:text-teal-600 transition" data-i18n="market.home.terms">Terms & Conditions</a>
+                <a href="#" onclick="openContactModal(event)" class="hover:text-teal-600 transition" data-i18n="market.home.contact">Contact Us</a>
             </div>
-            <p>&copy; 2026 OldX Marketplace. All rights reserved. Built for Local Buyers & Sellers.</p>
+            <p data-i18n="market.home.copyright">&copy; 2026 OldX Marketplace. All rights reserved. Built for Local Buyers & Sellers.</p>
         </footer>
     </div>
 
@@ -327,7 +327,7 @@
                     <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center font-bold">
                         <i class="fa-solid fa-location-dot"></i>
                     </div>
-                    <h3 class="text-base font-black text-gray-900 dark:text-white">Select State / Region</h3>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white" data-i18n="market.home.statePicker">Select State / Region</h3>
                 </div>
                 <button onclick="closeCustomStateModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-sm"></i>
@@ -346,7 +346,7 @@
                     <div class="w-8 h-8 rounded-xl bg-teal-50 dark:bg-teal-900/40 text-teal-600 flex items-center justify-center font-bold">
                         <i class="fa-solid fa-route"></i>
                     </div>
-                    <h3 class="text-base font-black text-gray-900 dark:text-white">Select Search Distance</h3>
+                    <h3 class="text-base font-black text-gray-900 dark:text-white" data-i18n="market.home.distancePicker">Select Search Distance</h3>
                 </div>
                 <button onclick="closeCustomDistanceModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-black dark:hover:text-white transition cursor-pointer">
                     <i class="fa-solid fa-xmark text-sm"></i>
@@ -1712,6 +1712,18 @@
             { id: 'Puducherry', name: 'Puducherry' }
         ];
 
+        function translateHomepageLabels(root) {
+            for (const label of root.querySelectorAll('[data-i18n]')) {
+                label.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
+            }
+        }
+
+        function homepageCategoryKey(id) {
+            if (id === 'commercial') return 'market.home.vehicles';
+            if (id === 'books') return 'market.home.hobbies';
+            return 'store.category.' + id;
+        }
+
         const distanceOptionsList = [
             { id: 'all', name: 'Any Distance' },
             { id: '5', name: 'Within 5 km' },
@@ -1774,6 +1786,7 @@
             container.innerHTML = '';
 
             distanceOptionsList.forEach(dist => {
+                const distanceKey = 'market.home.distance' + (dist.id === 'all' ? 'All' : dist.id);
                 const isSelected = currentSelectedDistance === dist.id;
                 const div = document.createElement('div');
                 div.className = `flex items-center justify-between p-3.5 rounded-2xl cursor-pointer transition font-bold text-xs md:text-sm ${
@@ -1781,18 +1794,22 @@
                 }`;
                 div.onclick = () => {
                     currentSelectedDistance = dist.id;
-                    document.getElementById('selectedDistanceText').innerText = dist.name;
+                    const label = document.getElementById('selectedDistanceText');
+                    label.textContent = dist.name;
+                    label.dataset.i18n = distanceKey;
+                    label.dispatchEvent(new Event('oldx:translate-ui', { bubbles: true }));
                     closeCustomDistanceModal();
                     renderDistanceList();
                     renderProducts();
                 };
                 div.innerHTML = `
-                    <span class="flex items-center gap-2"><i class="fa-solid fa-route text-teal-600"></i> ${dist.name}</span>
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-route text-teal-600"></i> <span data-i18n="${distanceKey}">${dist.name}</span></span>
                     <div class="w-5 h-5 rounded-full border-2 ${isSelected ? 'border-teal-600 bg-teal-600 flex items-center justify-center text-white text-[10px]' : 'border-gray-300 dark:border-gray-600'}">
                         ${isSelected ? '<i class="fa-solid fa-check"></i>' : ''}
                     </div>
                 `;
                 container.appendChild(div);
+                translateHomepageLabels(div);
             });
         }
         
@@ -2181,6 +2198,20 @@
             "Delhi": ["New Delhi", "North Delhi", "South Delhi", "West Delhi"]
         };
 
+        function renderHomepageAuth(user) {
+            const container = document.getElementById('authContainer');
+            container.innerHTML = user ? `
+                    <button onclick="handleLogout()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs shadow transition cursor-pointer flex items-center gap-1">
+                        <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="market.home.logout">Logout</span>
+                    </button>
+                ` : `
+                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
+                        <i class="fa-solid fa-user-check mr-1"></i> <span data-i18n="market.home.login">Login</span>
+                    </button>
+                `;
+            translateHomepageLabels(container);
+        }
+
         auth.onAuthStateChanged(user => {
             const previousUser = window.currentUser;
             stopTypingStatus();
@@ -2190,7 +2221,7 @@
             window.currentUser = user;
             if (previousUser !== user) listenToProductsFromFirebase();
             refreshStoreHeader(user);
-            const container = document.getElementById('authContainer');
+            renderHomepageAuth(user);
             const adminBtn = document.getElementById('headerAdminBtn');
 
             if(user) {
@@ -2274,11 +2305,6 @@
                         user.uid === 'ghuDBBk8jdOfM2no7lyQobQN7WI2' ? 'flex' : 'none';
                 }
 
-                container.innerHTML = `
-                    <button onclick="handleLogout()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200 px-3 py-2 rounded-xl font-bold text-xs shadow transition cursor-pointer flex items-center gap-1">
-                        <i class="fa-solid fa-right-from-bracket"></i> Logout
-                    </button>
-                `;
                 checkUserPinStatus(user);
             } else {
                 if(adminBtn) adminBtn.style.display = 'none';
@@ -2286,11 +2312,6 @@
                 if(userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
                 updateInboxBadge(0);
 
-                container.innerHTML = `
-                    <button onclick="openAuthModal()" class="bg-teal-700 hover:bg-teal-800 text-white px-3.5 py-2 rounded-xl font-bold text-xs md:text-sm shadow transition cursor-pointer">
-                        <i class="fa-solid fa-user-check mr-1"></i> Login
-                    </button>
-                `;
                 renderProducts();
             }
         });
@@ -3953,7 +3974,7 @@
                     <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
                         <i class="fa-solid fa-border-all"></i>
                     </div>
-                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100">All Items</p>
+                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100" data-i18n="market.home.all">All Items</p>
                 </div>
             `;
 
@@ -3966,10 +3987,11 @@
                     <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
                         <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
                     </div>
-                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full">${cat.name}</p>
+                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full" data-i18n="${homepageCategoryKey(cat.id)}">${cat.name}</p>
                 `;
                 grid.appendChild(el);
             });
+            translateHomepageLabels(grid);
         }
 
         // Load a small, bounded set of public Stores for homepage discovery.
@@ -4006,12 +4028,25 @@
                     name.textContent = store.shopName;
                     const category = document.createElement('p');
                     category.className = 'text-[10px] text-gray-500 dark:text-gray-400 mt-1 truncate';
-                    category.textContent = store.categories.slice(0, 2).map(id => (olxCategories.find(c => c.id === id) || { name: id }).name).join(' · ') || 'Local shop';
+                    const categories = store.categories.slice(0, 2);
+                    if (!categories.length) {
+                        category.dataset.i18n = 'market.home.localShop';
+                        category.textContent = 'Local shop';
+                    }
+                    categories.forEach((id, index) => {
+                        if (index) category.append(' · ');
+                        const known = olxCategories.find(cat => cat.id === id);
+                        const label = document.createElement('span');
+                        label.textContent = known?.name ?? id;
+                        if (known) label.dataset.i18n = homepageCategoryKey(known.id);
+                        category.append(label);
+                    });
                     details.append(name, category);
                     card.append(photo, details);
                     card.addEventListener('click', () => { window.location.hash = 'store-' + store.uid; });
                     grid.appendChild(card);
                 });
+                translateHomepageLabels(grid);
                 section.style.display = 'block';
             } catch (error) {
                 section.style.display = 'none';
@@ -4291,18 +4326,27 @@
         function refreshStoreHeader(user) {
             const btn = document.getElementById('storeHeaderBtn');
             if (!btn) return;
+            const label = btn.querySelector('[data-i18n]');
+            const icon = btn.querySelector('i');
+            function update(key, fallback, loading = false) {
+                icon.className = loading ? 'fa-solid fa-spinner fa-spin mr-1' : 'fa-solid fa-store mr-1';
+                label.textContent = fallback;
+                label.dataset.i18n = 'market.home.' + key;
+                translateHomepageLabels(btn);
+            }
             if (!user) {
-                btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store';
-                btn.style.display = 'inline-flex';
+                update('createStore', 'Create Store');
                 return;
             }
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Store';
+            update('store', 'Store', true);
             db.collection('stores').doc(user.uid).get().then(doc => {
                 if (window.currentUser === user) {
-                    const hasStore = doc.exists;
-                    btn.innerHTML = hasStore ? '<i class="fa-solid fa-store mr-1"></i> My Store' : '<i class="fa-solid fa-store mr-1"></i> Create Store';
+                    if (doc.exists) update('myStore', 'My Store');
+                    else update('createStore', 'Create Store');
                 }
-            }).catch(() => { if (window.currentUser === user) btn.innerHTML = '<i class="fa-solid fa-store mr-1"></i> Create Store'; });
+            }).catch(() => {
+                if (window.currentUser === user) update('createStore', 'Create Store');
+            });
         }
 
         function handleStoreHeaderClick() {

@@ -7,11 +7,9 @@ export function applyCatalog(root, translator) {
   for (const [attribute, dataKey] of [
     ["placeholder", "i18nPlaceholder"],
     ["aria-label", "i18nAriaLabel"],
+    ["title", "i18nTitle"],
   ]) {
-    const selector =
-      attribute === "placeholder"
-        ? "[data-i18n-placeholder]"
-        : "[data-i18n-aria-label]";
+    const selector = "[data-i18n-" + attribute + "]";
     for (const node of root.querySelectorAll(selector)) {
       node.setAttribute(attribute, translator.t(node.dataset[dataKey]));
     }

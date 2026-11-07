@@ -66,3 +66,57 @@ test('approved navy/orange header uses native home navigation and wraps touch co
   await page.locator('#oldxHomeLink').focus();assert.equal(await page.locator('#oldxHomeLink').evaluate(n=>document.activeElement===n&&n.tagName==='A'),true);await page.keyboard.press('Enter');assert.equal(await page.locator('#sellerDraft').textContent(),'મૂળ Cafe\u0301 हिन्दी');assert.deepEqual(remote,[]);
  }finally{await context.close();}
 });
+
+test('homepage labels and rerendered controls follow gu/hi/en across refresh',async()=>{
+ const {context,page}=await fixture();
+ try{
+  const section=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start)));
+  const panel=source.slice(source.indexOf('<div class="flex flex-wrap items-center gap-2 px-4 py-2 text-sm"'),source.indexOf('</div>',source.indexOf('id="marketplaceLocaleStatus"'))+6);
+  const header=section('<header id="marketplaceHeader"','<!-- MAIN HOME VIEW -->');
+  const home=section('<div id="homeView">','<!-- MODERN STATE PICKER');
+  const code=[
+   section('function translateHomepageLabels(','function initCustomPickers('),
+   section('function renderDistanceList(','let userCategoryViews'),
+   section('const olxCategories =','const districtData ='),
+   section('function renderHomepageAuth(','auth.onAuthStateChanged('),
+   section('function renderHomeCategories(','// Load a small, bounded'),
+   section('function refreshStoreHeader(','function handleStoreHeaderClick(')
+  ].join('\n');
+  const html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>img{max-width:100%;width:48px}*{overflow-wrap:anywhere}'+section('<style>','</style>').slice(7)+'</style></head><body>'+
+   panel+header+home+'<div id="distanceListContainer"></div><p id="authored">Seller Gujarati ગુજરાતી · हिन्दी</p>'+
+   '<script>let currentFilterCat="all",currentSelectedDistance="all";function closeCustomDistanceModal(){}function renderProducts(){};const db={collection:()=>({doc:()=>({get:()=>new Promise(resolve=>window.finishStore=resolve)})})};'+code+
+   'renderHomeCategories();renderDistanceList();</script><script type="module" src="/features/i18n/marketplace.mjs"></script></body></html>';
+  await page.route(origin+'/homepage-locale',route=>route.fulfill({contentType:'text/html; charset=utf-8',body:html}));
+  await page.goto(origin+'/homepage-locale');
+  for(const locale of ['gu','hi','en']){
+   await page.setViewportSize({width:locale==='gu'?320:375,height:850});
+   await page.locator('#marketplaceLocale').selectOption(locale);
+   await page.waitForFunction(code=>document.documentElement.lang===code&&!document.getElementById('marketplaceLocale').hasAttribute('aria-busy'),locale);
+   const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+   const check=async(selector,key)=>assert.equal((await page.locator(selector).textContent()).trim(),catalog[key]);
+   for(const key of ['hero','tagline','categories','fresh','services','stores'])await check('[data-i18n="market.home.'+key+'"]','market.home.'+key);
+   await check('#authContainer [data-i18n]','market.home.login');
+   await check('#storeHeaderBtn [data-i18n]','market.home.createStore');
+   assert.equal(await page.locator('[data-i18n-title="market.home.voice"]').getAttribute('title'),catalog['market.home.voice']);
+   assert.equal(await page.locator('[data-i18n-title="market.home.voice"]').getAttribute('aria-label'),catalog['market.home.voice']);
+   await page.evaluate(()=>{currentFilterCat='cars';renderHomeCategories();document.querySelector('#distanceListContainer [data-i18n="market.home.distance15"]').click();});
+   await check('#homeCatGrid [data-i18n="store.category.cars"]','store.category.cars');
+   await check('#selectedDistanceText','market.home.distance15');
+   await page.evaluate(()=>{window.currentUser={uid:'synthetic-owner'};renderHomepageAuth(currentUser);refreshStoreHeader(currentUser);});
+   await check('#authContainer [data-i18n]','market.home.logout');
+   await check('#storeHeaderBtn [data-i18n]','market.home.store');
+   await page.evaluate(()=>finishStore({exists:true}));
+   await page.waitForFunction(()=>document.querySelector('#storeHeaderBtn [data-i18n]').dataset.i18n==='market.home.myStore');
+   await check('#storeHeaderBtn [data-i18n]','market.home.myStore');
+   await page.evaluate(()=>{refreshStoreHeader(currentUser);window.currentUser=null;renderHomepageAuth(null);refreshStoreHeader(null);finishStore({exists:true});});
+   await check('#authContainer [data-i18n]','market.home.login');
+   await check('#storeHeaderBtn [data-i18n]','market.home.createStore');
+   assert.equal(await page.locator('#authored').textContent(),'Seller Gujarati ગુજરાતી · हिन्दी');
+   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+   await page.reload();
+   await page.waitForFunction(code=>document.documentElement.lang===code&&!document.getElementById('marketplaceLocale').hasAttribute('aria-busy'),locale);
+   await check('[data-i18n="market.home.hero"]','market.home.hero');
+   await check('#selectedDistanceText','market.home.distanceAll');
+  }
+ }finally{await context.close();}
+});
