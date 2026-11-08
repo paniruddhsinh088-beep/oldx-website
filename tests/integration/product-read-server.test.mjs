@@ -142,6 +142,30 @@ test('staging ADC bootstrap keeps Firebase authorization separate and disposes s
  assert.equal(disposed,4);
 });
 
+test('owner read fails closed when the runtime identity cannot use Firestore',async()=>{
+ const projectId='oldx-staging';
+ let transactions=0;
+ const admin={
+  serviceAccount:stagingEnv.OLDX_PRODUCT_READ_SERVICE_ACCOUNT,
+  adminAuth:{app:{options:{projectId}},async verifyIdToken(_token,checkRevoked){
+   assert.equal(checkRevoked,true);
+   const now=Math.floor(Date.now()/1000);
+   return {uid:'owner',sub:'owner',aud:projectId,iss:'https://securetoken.google.com/'+projectId,iat:now,exp:now+60};
+  }},
+  adminFirestore:{projectId,databaseId:'(default)',collection(name){return {doc:id=>({name,id})};},
+   async runTransaction(){transactions++;throw Object.assign(Error('Private IAM diagnostic'),{code:7});}},
+  FieldValue:{serverTimestamp(){}},async dispose(){}
+ };
+ await withStagingServer(stagingEnv,async()=>admin,async origin=>{
+  const response=await ownerRead(origin,{Authorization:'Bearer valid.fixture.token'});
+  assert.equal(transactions,1);
+  assert.equal(response.status,503);
+  assert.equal(response.headers.get('cache-control'),'private, no-store');
+  assert.deepEqual(await response.json(),{ok:false,error:{code:'UNAVAILABLE'}});
+  assert.equal((await fetch(origin+'/healthz')).status,200);
+ });
+});
+
 test('staging Admin initializer verifies metadata, ADC type, attached identity and database before use',async()=>{
  const expectedServiceAccount=stagingEnv.OLDX_PRODUCT_READ_SERVICE_ACCOUNT;
  const options={projectId:'oldx-staging',databaseId:'(default)',expectedServiceAccount};
