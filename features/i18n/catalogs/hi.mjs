@@ -24,6 +24,12 @@ export default Object.freeze({
   "website.photoError": "फोटो तैयार नहीं हुआ। 3 MiB तक मान्य JPG, PNG या WebP चुनें। पिछला चयन सुरक्षित है।",
   "website.photoRequired": "स्थानीय जाँच पूरी करने से पहले प्रोफाइल फोटो चुनें। कुछ save या publish नहीं होता।",
 
+  "market.nav.label": "मुख्य नेविगेशन",
+  "market.nav.home": "होम",
+  "market.nav.search": "खोजें",
+  "market.nav.sell": "बेचें",
+  "market.nav.chat": "चैट",
+  "market.nav.profile": "प्रोफ़ाइल",
   "market.home.badge": "भारत का खरीद-बिक्री बाज़ार",
   "market.home.hero": "आस-पास खरीदें, बेचें और खोजें",
   "market.home.tagline": "बिना कमीशन के स्थानीय खरीदारों और विक्रेताओं से सीधे जुड़ें।",

@@ -86,6 +86,34 @@
         #fullChatMessages { min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         #fullChatPage input#fullChatInput { min-width: 0; min-height: 42px; font-size: 16px !important; line-height: 1.35; }
         #fullChatPage > .bg-white.border-t { flex: 0 0 auto; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+
+        #oldxHomeHero { padding-block: 1.25rem; }
+        #oldxHomeHero h2 { margin-bottom: .375rem; }
+        #oldxHomeHero p { margin-bottom: 1rem; }
+        #homeCatGrid { gap: .5rem; align-items: stretch; }
+        #homeCatGrid button { min-width: 5rem; min-height: 44px; padding: .375rem; gap: .25rem; }
+        #homeCatGrid .oldx-category-icon { width: 2rem; height: 2rem; }
+        #homeCatGrid button span { overflow-wrap: anywhere; }
+        #searchInput { min-width: 0; scroll-margin-block-start: 8rem; }
+        #homeCatGrid :focus-visible, #oldxMobileNav :focus-visible, #searchInput:focus-visible,
+        [data-card-title]:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+        .dark #homeCatGrid :focus-visible, .dark #oldxMobileNav :focus-visible, .dark #searchInput:focus-visible,
+        .dark [data-card-title]:focus-visible { outline-color: #fdba74; }
+        [data-card-image-area] { aspect-ratio: 4 / 3; }
+        [data-card-price], [data-card-location] { overflow-wrap: anywhere; }
+        [data-card-location] { display: block; }
+        #oldxMobileNav { display: none; }
+        #oldxMobileNav [aria-current="page"] { color: #0f766e; }
+        .dark #oldxMobileNav [aria-current="page"] { color: #5eead4; }
+        @media (min-width: 768px) {
+            #oldxHomeHero { padding-block: 1.75rem; }
+            #homeCatGrid button { min-width: 0; }
+        }
+        @media (max-width: 767.98px) {
+            body.pb-24 { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); }
+            #oldxMobileNav { position: fixed; inset: auto 0 0; z-index: 40; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: .25rem .375rem calc(.25rem + env(safe-area-inset-bottom, 0px)); }
+            #oldxMobileNav button, #oldxMobileNav a { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; min-width: 0; gap: .125rem; padding: .25rem .125rem; text-align: center; text-decoration: none; overflow-wrap: anywhere; }
+        }
 </style>
 
     <!-- Firebase SDKs -->
@@ -154,11 +182,11 @@
     <!-- MAIN HOME VIEW -->
     <div id="homeView">
         <!-- 1. HERO SEARCH BANNER -->
-        <section class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white py-10 px-4 text-center">
+        <section id="oldxHomeHero" class="relative bg-gradient-to-br from-primary via-[#004047] to-teal-900 text-white px-4 text-center">
             <div class="max-w-4xl mx-auto relative z-10">
-                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3 border border-white/10" data-i18n="market.home.badge">INDIA C2C MARKETPLACE</span>
-                <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight mb-2" data-i18n="market.home.hero">Buy, Sell & Find Everything Nearby</h2>
-                <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto mb-6" data-i18n="market.home.tagline">Directly connect with local buyers & sellers with zero commission.</p>
+                <span class="bg-white/15 backdrop-blur-md text-teal-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-2 border border-white/10" data-i18n="market.home.badge">INDIA C2C MARKETPLACE</span>
+                <h2 class="text-2xl md:text-4xl font-extrabold tracking-tight" data-i18n="market.home.hero">Buy, Sell & Find Everything Nearby</h2>
+                <p class="text-xs md:text-sm text-teal-100 opacity-90 max-w-xl mx-auto" data-i18n="market.home.tagline">Directly connect with local buyers & sellers with zero commission.</p>
 
                 <!-- Search Bar Container -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800 relative z-30">
@@ -193,7 +221,7 @@
         </section>
 
         <!-- MAIN LAYOUT SECTIONS -->
-        <main class="max-w-7xl mx-auto px-4 py-8 space-y-12">
+        <main class="max-w-7xl mx-auto px-4 py-5 md:py-8 space-y-8 md:space-y-12">
             
             <!-- 2. BROWSE CATEGORIES -->
             <section class="space-y-4">
@@ -554,34 +582,28 @@
       <div id="storePublicWrap" class="max-w-5xl mx-auto p-4 md:p-6" style="display:none"></div>
     </section>
 
-    <!-- NATIVE BOTTOM APP BAR (Mobile Only) -->
-    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 px-3 py-2 shadow-2xl flex justify-around items-center md:hidden">
-        <button onclick="window.location.hash=''" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
-            <i class="fa-solid fa-house text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">Home</span>
+    <!-- Mobile navigation reuses the existing account, post and Inbox flows. -->
+    <nav id="oldxMobileNav" aria-label="Main navigation" data-i18n-aria-label="market.nav.label" class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 shadow-lg text-gray-700 dark:text-gray-200">
+        <a href="#" aria-current="page" class="hover:text-teal-700 dark:hover:text-teal-300">
+            <i class="fa-solid fa-house" aria-hidden="true"></i>
+            <span class="text-xs font-bold" data-i18n="market.nav.home">Home</span>
+        </a>
+        <button type="button" onclick="openHomepageSearch()" class="hover:text-teal-700 dark:hover:text-teal-300">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <span class="text-xs font-bold" data-i18n="market.nav.search">Search</span>
         </button>
-
-        <button onclick="openInboxModal()" class="relative flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
-            <i class="fa-regular fa-comment text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">Chats</span>
-            <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-3 bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full shadow">0</span>
+        <button type="button" onclick="startSellWizard()" class="text-primary dark:text-orange-300">
+            <i class="fa-solid fa-plus rounded-full bg-orange-300 p-1 text-slate-900" aria-hidden="true"></i>
+            <span class="text-xs font-black" data-i18n="market.nav.sell">Sell</span>
         </button>
-
-        <div class="relative -top-5">
-            <button onclick="startSellWizard()" class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-amber-300 hover:from-amber-500 hover:to-amber-400 text-primary rounded-full shadow-xl flex flex-col items-center justify-center border-4 border-white dark:border-gray-900 transform active:scale-95 transition cursor-pointer">
-                <i class="fa-solid fa-plus text-xl font-black"></i>
-            </button>
-            <span class="block text-center text-[10px] font-black text-gray-700 dark:text-gray-200 mt-0.5">Sell</span>
-        </div>
-
-        <button onclick="openMyAdsModal()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
-            <i class="fa-solid fa-rectangle-list text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">My Ads</span>
+        <button type="button" onclick="openInboxModal()" class="relative hover:text-teal-700 dark:hover:text-teal-300">
+            <i class="fa-regular fa-comment" aria-hidden="true"></i>
+            <span class="text-xs font-bold" data-i18n="market.nav.chat">Chats</span>
+            <span id="inboxBadgeCount" style="display: none;" class="absolute top-0 right-1 bg-red-600 text-white text-[10px] font-black px-1 rounded-full">0</span>
         </button>
-
-        <button onclick="openProfilePage()" class="flex flex-col items-center justify-center text-gray-600 dark:text-gray-300 hover:text-teal-600 dark:hover:text-teal-400 cursor-pointer w-16">
-            <i class="fa-regular fa-user text-lg"></i>
-            <span class="text-[10px] font-bold mt-0.5">Account</span>
+        <button type="button" onclick="openProfilePage()" class="hover:text-teal-700 dark:hover:text-teal-300">
+            <i class="fa-regular fa-user" aria-hidden="true"></i>
+            <span class="text-xs font-bold" data-i18n="market.nav.profile">Profile</span>
         </button>
     </nav>
 
@@ -3970,24 +3992,26 @@
             const isAllSelected = currentFilterCat === 'all';
 
             grid.innerHTML = `
-                <div onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
-                    <div class="w-12 h-12 rounded-2xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
-                        <i class="fa-solid fa-border-all"></i>
-                    </div>
-                    <p class="font-extrabold text-xs text-gray-800 dark:text-gray-100" data-i18n="market.home.all">All Items</p>
-                </div>
+                <button type="button" aria-pressed="${isAllSelected}" onclick="filterCat('all')" class="cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-3 rounded-2xl shadow-sm border ${isAllSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition">
+                    <span class="oldx-category-icon rounded-xl ${isAllSelected ? 'bg-teal-600 text-white' : 'bg-teal-50 dark:bg-gray-700 text-teal-600'} flex items-center justify-center text-lg font-black shadow-sm">
+                        <i class="fa-solid fa-border-all" aria-hidden="true"></i>
+                    </span>
+                    <span class="font-extrabold text-xs text-gray-800 dark:text-gray-100" data-i18n="market.home.all">All Items</span>
+                </button>
             `;
 
             olxCategories.forEach(cat => {
                 const isSelected = currentFilterCat === cat.id;
-                const el = document.createElement('div');
+                const el = document.createElement('button');
+                el.type = 'button';
+                el.setAttribute('aria-pressed', String(isSelected));
                 el.className = `cat-card-hover shrink-0 min-w-[85px] md:min-w-0 bg-white dark:bg-gray-800 p-2.5 rounded-2xl shadow-sm border ${isSelected ? 'border-teal-500 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-gray-700/80' : 'border-gray-200/80 dark:border-gray-700'} text-center cursor-pointer flex flex-col items-center justify-center gap-2 transition group`;
                 el.onclick = () => filterCat(cat.id);
                 el.innerHTML = `
-                    <div class="relative overflow-hidden rounded-2xl w-12 h-12 shadow-sm">
-                        <img src="${cat.img}" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
-                    </div>
-                    <p class="font-bold text-xs text-gray-800 dark:text-gray-200 truncate w-full" data-i18n="${homepageCategoryKey(cat.id)}">${cat.name}</p>
+                    <span class="relative overflow-hidden rounded-xl oldx-category-icon shadow-sm">
+                        <img src="${cat.img}" alt="" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-110 transition duration-300">
+                    </span>
+                    <span class="font-bold text-xs text-gray-800 dark:text-gray-200 w-full" data-i18n="${homepageCategoryKey(cat.id)}">${cat.name}</span>
                 `;
                 grid.appendChild(el);
             });
@@ -4055,8 +4079,11 @@
         }
 
         function filterCat(catId) { 
-            currentFilterCat = catId; 
+            const grid = document.getElementById('homeCatGrid');
+            const restoreFocus = grid?.contains(document.activeElement);
+            currentFilterCat = catId;
             renderHomeCategories();
+            if (restoreFocus) grid.querySelector('[aria-pressed="true"]')?.focus({preventScroll: true});
             renderProducts(); 
         }
 
@@ -4215,11 +4242,25 @@
             window.location.hash = `product-${docId}`; 
         }
 
+        function openHomepageSearch() {
+            if (window.location.hash === '#search') {
+                document.getElementById('searchInput').focus();
+            } else {
+                window.location.hash = 'search';
+            }
+        }
+
         function handleHashChange() {
             storePageReadGeneration++;
             storeCatalogueGeneration++;
             storeCatalogueState = null;
             const hash = window.location.hash;
+            const destination = {'':'home','#search':'search','#sell':'sell','#profile':'profile'}[hash];
+            document.querySelectorAll('#oldxMobileNav [data-i18n]').forEach(label => {
+                const control = label.parentElement;
+                if (label.dataset.i18n === 'market.nav.' + destination) control.setAttribute('aria-current', 'page');
+                else control.removeAttribute('aria-current');
+            });
 
             if (hash === '#store' || hash.startsWith('#store-')) {
                 document.getElementById('homeView').style.display = 'none';
@@ -4318,6 +4359,7 @@
             document.getElementById('homeView').style.display = 'block';
             renderHomeCategories();
             renderRecentlyViewed();
+            if (hash === '#search') document.getElementById('searchInput').focus();
         }
 
         window.addEventListener('hashchange', handleHashChange);
@@ -5533,18 +5575,18 @@
 
             card.innerHTML = `
                 <div data-card-body>
-                    <div data-card-image-area class="h-36 sm:h-44 bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
+                    <div data-card-image-area class="bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
                         <div data-image-placeholder class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>
                         <div data-card-badges class="absolute top-2 left-2 flex items-center gap-1 z-10"></div>
                         <button data-save-button type="button" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110" aria-label="Save ad"><i data-heart-icon class="fa-solid fa-heart"></i></button>
                     </div>
                     <div class="p-3 space-y-1.5">
-                        <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                            <span data-card-location class="truncate max-w-[110px]"></span>
+                        <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                            <span data-card-location class="text-xs text-gray-700 dark:text-gray-200"></span>
                             <span data-card-category class="bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 px-2 py-0.2 rounded-full capitalize text-[9px]"></span>
                         </div>
-                        <h4 data-card-title class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white line-clamp-1 group-hover:text-teal-600 transition"></h4>
-                        <div class="flex items-baseline gap-1 pt-0.5"><span data-card-price class="text-base sm:text-lg font-black text-primary dark:text-teal-400 tracking-tight"></span><span data-card-mrp class="text-[11px] text-gray-400 line-through font-semibold ml-1"></span></div>
+                        <h4 class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white"><button data-card-title type="button" class="text-left line-clamp-1 group-hover:text-teal-700"></button></h4>
+                        <div class="flex flex-wrap items-baseline gap-x-1.5 pt-0.5"><span data-card-price class="text-lg sm:text-xl font-black text-primary dark:text-teal-400 tracking-tight"></span><span data-card-mrp class="text-xs text-gray-600 dark:text-gray-300 line-through font-semibold ml-1"></span></div>
                     </div>
                 </div>
                 <button data-card-buy type="button" class="w-full py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold text-[11px] transition flex items-center justify-center gap-1 shadow-sm cursor-pointer"><i class="fa-solid fa-paper-plane text-[10px]"></i> Chat / Buy</button>
@@ -5583,10 +5625,11 @@
             const location = card.querySelector('[data-card-location]');
             const locationIcon = document.createElement('i');
             locationIcon.className = "fa-solid fa-location-dot text-red-500 mr-1";
+            locationIcon.setAttribute('aria-hidden', 'true');
             location.append(locationIcon, document.createTextNode(String(p.location || '')));
             card.querySelector('[data-card-category]').textContent = String(p.category || '');
             card.querySelector('[data-card-title]').textContent = String(p.title || '');
-            card.querySelector('[data-card-price]').textContent = String(p.finalPriceStr || '');
+            card.querySelector('[data-card-price]').textContent = String(p.finalPriceStr || '').replace(/^(?:&#8377;|&#x20b9;)/i, '₹');
             if (p.mrpPrice && p.mrpPrice > p.basePrice) {
                 card.querySelector('[data-card-mrp]').textContent = '₹' + Number(p.mrpPrice).toLocaleString('en-IN');
             } else {

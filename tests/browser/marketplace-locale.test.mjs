@@ -120,3 +120,86 @@ test('homepage labels and rerendered controls follow gu/hi/en across refresh',as
   }
  }finally{await context.close();}
 });
+
+test('homepage mobile navigation, category keyboard focus and Product card layout use real markup',async()=>{
+ const {context,page,remote}=await fixture();
+ try{
+  const section=(start,end)=>source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start)));
+  const style=section('<style>','</style>').slice(7);
+  const nav=section('<nav id="oldxMobileNav"','</nav>')+'</nav>';
+  const search=source.match(/<input[^>]+id="searchInput"[^>]+>/)[0];
+  const code=[
+   section('function translateHomepageLabels(','function initCustomPickers('),
+   section('const olxCategories =','const districtData ='),
+   section('function renderHomeCategories(','// Load a small, bounded'),
+   section('function filterCat(','function legacyReadCopy('),
+   section('function openHomepageSearch(','// STORE FEATURE FUNCTIONS'),
+   section('function createProductCard(','return card;')+'return card; }'
+  ].join('\n');
+  await page.evaluate(({style,nav,search})=>{
+   document.head.insertAdjacentHTML('beforeend','<style>'+style+'</style>');
+   document.body.insertAdjacentHTML('beforeend',nav+'<div id="homeView">'+search+'<div id="homeCatGrid"></div><div id="sampleCard" style="width:150px"></div></div>');
+   for(const id of ['storePage','sellWizardPage','profilePage','productSkeletonSlide','productDetailView','fullEditPage']){
+    const element=document.createElement('div');element.id=id;document.body.append(element);
+   }
+  },{style,nav,search});
+  await page.addScriptTag({content:`
+   let currentFilterCat='all',storePageReadGeneration=0,storeCatalogueGeneration=0,storeCatalogueState=null;
+   function renderRecentlyViewed(){} function renderProducts(){} function getSavedAdsStorageKey(){return 'fixture-saved';}
+   function startSellWizard(){window.navAction='sell';} function openInboxModal(){window.navAction='chat';}
+   function openProfilePage(){window.navAction='profile';} function openProductDetailPage(id){window.navAction=id;}
+   `+code+`
+   for(const category of olxCategories) category.img='data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E';
+   renderHomeCategories();
+   const card=createProductCard({docId:'fixture-product',title:'Seller Gujarati ગુજરાતી · हिन्दी',
+    location:'A long location name in Gujarat for a narrow card',finalPriceStr:'&#8377;12,345'});
+   document.getElementById('sampleCard').append(card);
+  `});
+  const bar=page.locator('#oldxMobileNav');
+  for(const locale of ['gu','hi','en']){
+   await page.locator('#marketplaceLocale').selectOption(locale);
+   await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+   const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+   assert.equal(await bar.getAttribute('aria-label'),catalog['market.nav.label']);
+   for(const name of ['home','search','sell','chat','profile']){
+    assert.equal(await bar.locator('[data-i18n="market.nav.'+name+'"]').textContent(),catalog['market.nav.'+name]);
+   }
+   for(const width of [320,375]){
+    await page.setViewportSize({width,height:850});
+    for(const font of ['100%','200%']){
+     await page.evaluate(size=>document.documentElement.style.fontSize=size,font);
+     assert.equal(await bar.evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
+     for(const control of await bar.locator('a,button').all()){
+      const box=await control.boundingBox();
+      assert.ok(box.width>=44&&box.height>=44);
+     }
+    }
+   }
+  }
+  await page.evaluate(()=>document.documentElement.style.fontSize='100%');
+  await bar.locator('button').first().press('Enter');
+  await page.waitForFunction(()=>location.hash==='#search'&&document.activeElement.id==='searchInput');
+  assert.equal(await bar.locator('button').first().getAttribute('aria-current'),'page');
+  const cars=page.locator('#homeCatGrid button').filter({has:page.locator('[data-i18n="store.category.cars"]')});
+  await cars.press('Enter');
+  assert.equal(await cars.getAttribute('aria-pressed'),'true');
+  assert.equal(await cars.evaluate(n=>n===document.activeElement),true);
+  assert.equal(await page.locator('[data-card-price]').textContent(),'₹12,345');
+  assert.equal(await page.locator('[data-card-title]').textContent(),'Seller Gujarati ગુજરાતી · हिन्दी');
+  assert.match(await page.locator('[data-card-location]').textContent(),/long location name/);
+  assert.equal(await page.locator('[data-card-image-area]').evaluate(n=>getComputedStyle(n).aspectRatio),'4 / 3');
+  await page.locator('[data-card-title]').press('Enter');
+  assert.equal(await page.evaluate(()=>window.navAction),'fixture-product');
+  for(const name of ['sell','chat','profile']){
+   await bar.locator('button').filter({has:page.locator('[data-i18n="market.nav.'+name+'"]')}).press('Enter');
+   assert.equal(await page.evaluate(()=>window.navAction),name);
+  }
+  await bar.locator('a').press('Enter');
+  await page.waitForFunction(()=>location.hash==='');
+  await page.goBack();
+  await page.waitForFunction(()=>location.hash==='#search'&&document.activeElement.id==='searchInput');
+  await page.setViewportSize({width:800,height:850});
+  assert.equal(await bar.isVisible(),false);
+  assert.deepEqual(remote,[]);
+ }finally{await context.close();}
+});

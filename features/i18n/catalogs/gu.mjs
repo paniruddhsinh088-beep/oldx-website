@@ -24,6 +24,12 @@ export default Object.freeze({
   "website.photoError": "ફોટો તૈયાર થયો નથી. 3 MiB સુધીનો માન્ય JPG, PNG કે WebP પસંદ કરો. અગાઉની પસંદગી યથાવત છે.",
   "website.photoRequired": "સ્થાનિક તપાસ પૂરી કરવા પ્રોફાઇલ ફોટો પસંદ કરો. કંઈ save કે publish થતું નથી.",
 
+  "market.nav.label": "મુખ્ય નેવિગેશન",
+  "market.nav.home": "મુખ્ય પાનું",
+  "market.nav.search": "શોધો",
+  "market.nav.sell": "વેચો",
+  "market.nav.chat": "ચેટ",
+  "market.nav.profile": "પ્રોફાઇલ",
   "market.home.badge": "ભારતનું ખરીદ-વેચાણ બજાર",
   "market.home.hero": "નજીકમાં ખરીદો, વેચો અને શોધો",
   "market.home.tagline": "કોઈ કમિશન વિના સ્થાનિક ખરીદદારો અને વેચાણકર્તાઓ સાથે સીધા જોડાઓ.",

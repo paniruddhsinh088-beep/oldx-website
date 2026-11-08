@@ -24,6 +24,12 @@ export default Object.freeze({
   "website.photoError": "Photo could not be prepared. Choose a valid JPG, PNG or WebP up to 3 MiB. Existing selections are unchanged.",
   "website.photoRequired": "Select a profile photo before completing the local check. Nothing is saved or published.",
 
+  "market.nav.label": "Main navigation",
+  "market.nav.home": "Home",
+  "market.nav.search": "Search",
+  "market.nav.sell": "Sell",
+  "market.nav.chat": "Chats",
+  "market.nav.profile": "Profile",
   "market.home.badge": "INDIA C2C MARKETPLACE",
   "market.home.hero": "Buy, Sell & Find Everything Nearby",
   "market.home.tagline": "Directly connect with local buyers & sellers with zero commission.",
