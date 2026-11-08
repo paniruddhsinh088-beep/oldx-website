@@ -35,10 +35,16 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
   if(conversation)return navigation.go('conversation',{providerId:conversation.providerId,enquiryId:conversation.enquiryId});
   products.show('homeView');return false;
  }
- for(const type of ['hashchange','popstate'])listen(view,type,event=>{event.stopImmediatePropagation();restoreRoute();});
+ for(const type of ['hashchange','popstate'])listen(view,type,event=>{
+  event.stopImmediatePropagation();
+  const hash=view.location.hash;
+  // These destinations depend only on the fragment; hashchange handles traversal too.
+  if(event.type==='popstate'&&(hash==='#sell'||hash==='#search'))return;
+  restoreRoute();
+ });
  listen(root.getElementById('trustedStoreBrowse'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('stores');});
  if(providers?.navigation)for(const node of root.querySelectorAll('a[href="./service-preview.html?mode=website#services"]'))listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('providers');});
  if(unifiedInbox)for(const node of [root.getElementById('productOwnerInbox'),...root.querySelectorAll('[onclick="openInboxModal()"]')])listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();root.getElementById('inboxModal').style.display='flex';unifiedInbox.open();});
  const sessions=createMarketplaceSessionIntegration({enabled,bindings:[products,stores,...(unifiedInbox?[unifiedInbox]:[]),...(providers?.journey?[providerSessionBinding(providers.journey)]:[])]});
- return Object.freeze({product:products,store:stores,inbox:unifiedInbox,restoreRoute,async setSession(value){const result=await sessions.setSession(value);if(result&&active)await restoreRoute();return result;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();unifiedInbox?.destroy();products.destroy();stores.destroy();}});
+ return Object.freeze({product:products,store:stores,inbox:unifiedInbox,restoreRoute,async setSession(value){const result=sessions.setSession(value);if(!value&&active&&view.location.hash==='#sell')products.show('homeView');if(await result&&active){await restoreRoute();return true;}return false;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();unifiedInbox?.destroy();products.destroy();stores.destroy();}});
 }

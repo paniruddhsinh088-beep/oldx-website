@@ -34,3 +34,26 @@ test('write acknowledgements cannot switch the requested Product or private conv
 test('an enquiry acknowledgement for another Product cannot become the active private thread',async()=>{
  const row={id:'wanted',kind:'product',revision:1,...profile};delete row.photos;const ui=createProductIntegration({enabled:true,ports:{detail:async()=>({ok:true,profile:row}),open:async()=>({ok:true,status:'sent',thread:{id:'t',productId:'foreign',productRevision:1,revision:1,role:'buyer'}})}});ui.setSession(identity('buyer'));await ui.openProduct('wanted');await ui.enquire('Private request');assert.equal(ui.snapshot().thread,null);assert.equal(ui.snapshot().command.status,'unknown');
 });
+
+test('fresh Product draft scope preserves uncertain retry and never updates a previous owner draft',async()=>{
+ const calls=[];let sequence=0,uncertain=true;
+ const ui=createProductIntegration({enabled:true,makeRequestId:()=> 'draft-'+(++sequence),ports:{
+  save:async body=>{calls.push(body);if(uncertain)return {ok:false,code:'OUTCOME_UNKNOWN'};
+   return {ok:true,id:body.requestId,revision:1};}
+ }});
+ assert.equal(ui.startDraft(),false);
+ ui.setSession(identity('seller'));
+ assert.equal(ui.startDraft(),true);
+ await ui.save(profile);
+ assert.equal(ui.startDraft(),false);
+ await ui.save({...profile,title:'Different draft'});
+ assert.equal(calls.length,1);
+ uncertain=false;await ui.retry();
+ assert.deepEqual(calls[1],calls[0]);
+ assert.equal(ui.snapshot().owner.id,'draft-1');
+ assert.equal(ui.startDraft(),true);
+ await ui.save({...profile,title:'Different draft'});
+ assert.equal(calls[2].id,null);
+ assert.equal(calls[2].expectedRevision,0);
+ assert.equal(ui.snapshot().owner.id,'draft-2');
+});

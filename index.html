@@ -5145,7 +5145,12 @@
                 return;
             }
 
+            if (document.body.dataset.oldxProduct !== 'true') prepareSellWizard();
             window.location.hash = 'sell';
+        }
+
+        function prepareSellWizard() {
+            selectedMainCat = null;
             const list = document.getElementById('wizardMainCatList');
             list.innerHTML = '';
             olxCategories.forEach(cat => {

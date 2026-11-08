@@ -171,3 +171,56 @@ for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('Product pag
   await page.waitForFunction(()=>!document.querySelector('#productDetailView img[src^="blob:"]'));
  }finally{await context.close();}
 });
+
+test('opt-in Product host opens Sell through the existing wizard and saves through scoped Auth',async()=>{
+ const {context,page,remote}=await fixture(320,'gu');
+ try{
+  await page.evaluate(async()=>{
+   binding.destroy();
+   history.replaceState(null,'','/fixture#sell');
+   const {mountMarketplaceHost}=await import('/features/marketplace/host-integration.mjs');
+   const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
+   let notify,session;window.prepared=0;window.commands=[];
+   const user={uid:'seller',getIdToken:async()=> 'seller.fixture.token'};
+   const auth={app:{options:{projectId:'oldx-staging'}},currentUser:null,onIdTokenChanged(fn){notify=fn;return ()=>{};}};
+   const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,onSession:value=>session=value,
+    makeSessionId:()=> 'sell-fixture',sendRead:(op,body)=>fixturePort('public.'+op,body),
+    sendCommand:async(op,{kind,...body},ctx)=>{
+     if(kind!=='product'||ctx.credential!=='seller.fixture.token')throw Error('Missing trusted scope');
+     commands.push({op,body});
+     const result=await fixturePort(op,body);
+     return result.ok?{status:200,body:result}:{status:403,body:{ok:false,error:{code:result.code}}};
+    }});
+   window.prepareSellWizard=()=>{prepared++;};
+   window.host=mountMarketplaceHost({enabled:true,product:{ports:bridge.product,getCategory:()=> 'cars',
+    readPhotoReferences:async()=>[],makeRequestId:()=> 'sell-draft'}});
+   window.signInFixture=()=>{auth.currentUser=user;notify(user);return host.setSession(session);};
+   window.signOutFixture=()=>{auth.currentUser=null;notify(null);return host.setSession(session);};
+   await host.restoreRoute();
+  });
+  assert.equal(await page.locator('#sellWizardPage').isVisible(),false);
+  assert.equal(await page.evaluate(()=>prepared),0);
+  await page.evaluate(()=>signInFixture());
+  assert.equal(await page.locator('#sellWizardPage').isVisible(),true);
+  assert.equal(await page.evaluate(()=>prepared),1);
+  await page.locator('#adTitle').fill('ખાનગી draft');
+  await page.locator('#adDesc').fill('મૂળ हिन्दी');
+  await page.locator('#adPrice').fill('10');
+  await page.locator('#productSaveDraft').click();
+  await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===1);
+  assert.equal(await page.evaluate(()=>commands[0].body.expectedRevision),0);
+  assert.equal(await page.evaluate(()=>commands[0].body.id),null);
+  await page.evaluate(()=>location.hash='sell');
+  await page.waitForFunction(()=>prepared===2);
+  await page.evaluate(()=>location.hash='search');
+  await page.waitForFunction(()=>document.activeElement.id==='searchInput');
+  await page.goBack();
+  await page.waitForFunction(()=>prepared===3);
+  assert.equal(await page.locator('#adTitle').inputValue(),'');
+  assert.equal(await page.evaluate(()=>host.product.model.snapshot().owner),null);
+  await page.evaluate(()=>signOutFixture());
+  assert.equal(await page.locator('#sellWizardPage').isVisible(),false);
+  assert.equal(await page.evaluate(()=>commands.length),1);
+  assert.deepEqual(remote,[]);
+ }finally{await context.close();}
+});
