@@ -6,6 +6,7 @@ const id=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(v),rev=v=>Number.
 const exact=(v,keys)=>v&&Object.getPrototypeOf(v)===Object.prototype&&Reflect.ownKeys(v).sort().join(',')===[...keys].sort().join(',');
 const publicKeys=['id','kind','revision','title','description','category','locationLabel','basePrice','isSold','storeId'];
 export function projectProduct(value){if(!exact(value,publicKeys)||!id(value.id)||value.kind!=='product'||!rev(value.revision)||!['title','description','category','locationLabel'].every(k=>typeof value[k]==='string'&&value[k].length>0&&value[k].length<=5000)||!Number.isFinite(value.basePrice)||value.basePrice<0||value.basePrice>1e9||typeof value.isSold!=='boolean'||value.storeId!==null&&!id(value.storeId))return null;return Object.freeze({...value});}
+const ownerState=({id,revision},profile)=>({id,revision,storeId:profile?.storeId??null,isSold:profile?.isSold===true});
 const thread=v=>exact(v,['id','productId','productRevision','revision','role'])&&id(v.id)&&id(v.productId)&&rev(v.productRevision)&&rev(v.revision)&&['buyer','seller'].includes(v.role)?{...v}:null;
 // Session is a cancellation scope only. All ownership/authentication is enforced
 // by injected trusted ports. No Firebase, fetch, storage, credentials or globals.
@@ -23,7 +24,7 @@ export function createProductIntegration({enabled=false,readStateEnabled=false,r
    if(channel==='list'){items=state.status==='ready'?state.snapshot.items:[];nextCursor=state.status==='ready'?state.snapshot.nextCursor:null;}
    if(channel==='detail'){detail=state.status==='ready'?state.snapshot.profile:null;privateThread=null;onPrivate(null);}
    if(channel==='inbox'||channel==='inboxPage'){inbox=state.status==='ready'?state.snapshot.items:[];inboxCursor=state.status==='ready'?state.snapshot.nextCursor??null:null;}
-   if(channel==='owner'){owner=state.status==='ready'?{id:state.snapshot.id,revision:state.snapshot.revision}:state.status==='idle'?owner:null;onOwnerDraft(state.status==='ready'?state.snapshot:null);}
+   if(channel==='owner'){owner=state.status==='ready'?ownerState(state.snapshot,state.snapshot.profile):state.status==='idle'?owner:null;onOwnerDraft(state.status==='ready'?state.snapshot:null);}
    if(channel==='thread'){privateThread=state.status==='ready'?state.snapshot.thread:null;onPrivate(null);}
    if(channel==='read'){delivery=state.status==='ready'?state.snapshot:null;historyAfter=state.status==='ready'?(state.snapshot.throughSequence??state.snapshot.messages.at(-1)?.sequence??0):0;historyHasMore=state.status==='ready'&&state.snapshot.hasMore;privateThread=state.status==='ready'?state.snapshot.thread:null;onPrivate(state.status==='ready'?state.snapshot:null);}
    emit();}});readers.set(channel,reader);return reader.load(request);
@@ -33,7 +34,7 @@ export function createProductIntegration({enabled=false,readStateEnabled=false,r
   commandRead=createBoundedRead({timeoutMs,read:(_,context)=>{envelope.dispatched=true;return ports[envelope.operation](structuredClone(envelope.body),{...context,session:identity});},project:r=>r&&typeof r.ok==='boolean'?r:null,onChange:state=>{
    if(version!==epoch||pending!==envelope)return;if(state.status==='loading'){command={status:'loading',canRetry:false};emit();return;}if(state.status==='idle')return;
    const result=state.snapshot;if(state.status!=='ready'||result?.code==='OUTCOME_UNKNOWN'){command={status:'unknown',canRetry:true};emit();return;}
-   if(result.ok){let valid=false;if(envelope.operation==='save'||envelope.operation==='archive'){valid=id(result.id)&&result.revision===envelope.body.expectedRevision+1&&(envelope.body.id===null||result.id===envelope.body.id);if(valid){owner={id:result.id,revision:result.revision};if(envelope.operation==='archive'||envelope.body.publication!=='draft')clearReads();}}
+   if(result.ok){let valid=false;if(envelope.operation==='save'||envelope.operation==='archive'){valid=id(result.id)&&result.revision===envelope.body.expectedRevision+1&&(envelope.body.id===null||result.id===envelope.body.id);if(valid){owner=ownerState(result,envelope.body.profile??owner);if(envelope.operation==='archive'||envelope.body.publication!=='draft')clearReads();}}
     else {const t=thread(result.thread);valid=!!t&&(envelope.operation==='open'?t.productId===envelope.body.productId&&t.productRevision===envelope.body.expectedProductRevision&&t.revision===1&&t.role==='buyer':t.id===envelope.body.threadId&&t.revision===envelope.body.expectedRevision+1&&t.productId===envelope.scope?.productId&&t.productRevision===envelope.scope?.productRevision&&t.role===envelope.scope?.role);if(valid){privateThread=t;}}
     if(!valid){command={status:'unknown',canRetry:true};emit();return;}pending=null;command={status:'saved',canRetry:false};
    }else{pending=null;command={status:result.code==='DENIED'||result.code==='AUTH_REQUIRED'?'denied':result.code==='REVISION_CONFLICT'?'conflict':result.code==='PHOTOS_REQUIRED'?'photosUnavailable':'unavailable',canRetry:false};onPrivate(null);privateThread=null;}

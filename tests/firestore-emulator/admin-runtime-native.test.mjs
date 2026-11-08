@@ -188,3 +188,54 @@ test('REAL Admin revocation check rejects an earlier valid Auth Emulator session
  await new Promise(resolve=>setTimeout(resolve,1100));await auth.revokeRefreshTokens('owner');
  assert.equal((await call('owner',{kind:'product',id:productId,requestId:null})).status,401);
 });
+
+test('REAL one canonical Product publication serves marketplace and Store catalogue revisions',async()=>{
+ const {createEmulatorMarketplaceBinding}=await import('../../scripts/staging-marketplace-context.mjs');
+ const {createStagingMarketplacePublicRepository}=await import('../../scripts/firebase-marketplace-repository.mjs');
+ // Real Auth and Firestore. This fixture substitutes the independent media policy.
+ const scoped=createEmulatorMarketplaceRuntime({...options(),publicationEnabled:true,createMediaBindings:b=>({
+  photoPolicy:{check:async()=>true},
+  atomicPhotos:{marketplaceCollections:b.collections,prepare:async()=>({ok:true,commit(){}}),verifyReplay:async()=>true}
+ })});
+ const save=(kind,requestId,id,expectedRevision,publication,profile,token=ownerToken)=>
+  scoped.handle('/api/staging/marketplace/save',request({kind,requestId,id,expectedRevision,publication,profile},token));
+ const shop={name:'Catalogue shop',description:'Public only',category:'cars',locationLabel:'Ahmedabad',photos:[]};
+ const storeDraft=await save('store','catalogue-shop-draft',null,0,'draft',shop);
+ assert.equal(storeDraft.status,200);
+ const storeId=storeDraft.body.id;
+ assert.equal((await save('store','catalogue-shop-publish',storeId,1,'publish',shop)).status,200);
+ const linked={...profile,title:'એક Product हिन्दी',storeId,isSold:true};
+ assert.equal((await save('product','catalogue-foreign-link',null,0,'draft',linked,otherToken)).status,403);
+ const draft=await save('product','catalogue-draft',null,0,'draft',linked);
+ assert.equal(draft.status,200);
+ const id=draft.body.id;
+ const publicRepo=createStagingMarketplacePublicRepository({enabled:true,binding:createEmulatorMarketplaceBinding(options()),Filter,
+  readCursor:async()=>null,issueCursor:async()=>null});
+ const list=storeId=>publicRepo.list({kind:'product',limit:12,category:'',storeId,cursor:null});
+ async function assertBoth(expectedTitle,revision){
+  const [market,store]=await Promise.all([list(null),list(storeId)]);
+  assert.equal(market.ok,true);assert.equal(store.ok,true);
+  const rows=market.items.filter(row=>row.id===id);
+  assert.deepEqual(store.items,rows);
+  assert.equal(rows.length,expectedTitle===null?0:1);
+  if(expectedTitle!==null){
+   assert.equal(rows[0].title,expectedTitle);assert.equal(rows[0].revision,revision);
+   assert.equal(rows[0].storeId,storeId);assert.equal(rows[0].isSold,true);
+   assert.equal(Object.hasOwn(rows[0],'ownerUid'),false);
+  }
+ }
+ await assertBoth(null);
+ assert.equal((await save('product','catalogue-publish',id,1,'publish',linked)).status,200);
+ await assertBoth(linked.title,2);
+ const edited={...linked,title:'મૂળ edited हिन्दी',basePrice:120};
+ assert.equal((await save('product','catalogue-foreign-edit',id,2,'draft',edited,otherToken)).status,403);
+ assert.equal((await save('product','catalogue-edit',id,2,'draft',edited)).status,200);
+ await assertBoth(linked.title,2);
+ assert.equal((await save('product','catalogue-republish',id,3,'publish',edited)).status,200);
+ await assertBoth(edited.title,4);
+ const canonical=await db.collection(c.privateRecords).where('profile.storeId','==',storeId).get();
+ assert.deepEqual(canonical.docs.map(doc=>doc.id),['product_'+id]);
+ assert.equal((await save('product','catalogue-withdraw',id,4,'withdraw',edited)).status,200);
+ await assertBoth(null);
+ assert.equal((await publicRepo.detail({kind:'product',id})).ok,false);
+});
