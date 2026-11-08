@@ -52,3 +52,5 @@ served by the static shell. Reliable social previews need an approved crawlable
 Store route that renders only current public metadata, denies withdrawn Stores
 and applies the approved public image/cache policy. No live crawler behavior
 was verified.
+
+Minimum routing contract for approval: a same-origin non-fragment Store path on Pages, served by the existing trusted backend through an approved boundary. The initial HTML must use the accepted public Store projection for canonical URL and Open Graph tags. Return a safe unavailable response after withdrawal and ensure cache expiry or invalidation. Keep the current deep link for app navigation.

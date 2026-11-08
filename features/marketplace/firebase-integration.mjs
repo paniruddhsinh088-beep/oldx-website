@@ -5,7 +5,7 @@ import {createMarketplacePublicClient} from './public-read-client.mjs';
 
 // Composition of existing ports only. No endpoint, SDK, Auth initialization or
 // automatic mounting. Caller must explicitly bind an approved trusted transport.
-export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProviderConversation,providerReadStateEnabled=false,providerReconciledHistoryEnabled=false,sendProductConversation,sendInboxPage,productMedia={},storeMedia={},readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
+export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCommand,sendRead,sendProviderCommand,sendProviderConversation,providerReadStateEnabled=false,providerReconciledHistoryEnabled=false,providerVisibilityEnabled=false,sendProductConversation,sendInboxPage,productMedia={},storeMedia={},readStateEnabled=false,onSession=()=>{},makeSessionId}={}) {
  const active=enabled===true&&auth?.app?.options?.projectId==='oldx-staging';
  let session=null,destroyed=false;const pending=new Set(),photoClients=[];
  const provider=createProviderFirebaseSessionPorts({enabled:active,auth,
@@ -37,12 +37,13 @@ export function createFirebaseMarketplaceIntegration({enabled=false,auth,sendCom
   }])):{};
  const inbox=Object.freeze({enabled:active&&typeof sendInboxPage==='function',
   loadPage:(body,context={})=>provider.executeScoped(sendInboxPage,'page',body,context,false)});
+ const visibilityEnabled=active&&providerReadStateEnabled===true&&providerReconciledHistoryEnabled===true&&providerVisibilityEnabled===true;
  const providerMessaging=Object.freeze({
   enabled:active&&typeof sendProviderConversation==='function',
-  readStateEnabled:providerReadStateEnabled===true,
+  readStateEnabled:providerReadStateEnabled===true,visibilityEnabled,
   reconciledHistoryEnabled:providerReadStateEnabled===true&&providerReconciledHistoryEnabled===true,
   execute(operation,body,context={}){
-   if(!['read','send'].includes(operation)&&!(operation==='acknowledge'&&providerReadStateEnabled===true)){
+   if(!['read','send'].includes(operation)&&!(operation==='acknowledge'&&providerReadStateEnabled===true)&&!(operation==='changeVisibility'&&visibilityEnabled&&body?.action==='hide_for_self')){
     return Promise.resolve({status:400,body:{ok:false,error:{code:'INVALID_REQUEST'}}});
    }
    return provider.executeScoped(sendProviderConversation,operation,body,context,operation!=='read');

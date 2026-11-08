@@ -23,7 +23,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  $('trustedConversationControls').hidden=false;$('recoverConversation').hidden=true;
  $('messageDraft').maxLength=textMessaging?2000:400;
  function clear(){selected=null;$('messages').replaceChildren();$('conversationService').textContent='';$('messageDraft').value='';$('draftPreview').textContent='';$('draftPreview').hidden=true;}
- function history(value){$('messages').replaceChildren();for(const event of (textMessaging?value.messages.map(m=>({actor:m.role,text:m.text})):value.events)){const li=root.createElement('li'),actor=root.createElement('strong'),text=root.createElement('p');actor.textContent=translate('conversation.'+event.actor);text.textContent=event.text??translate('inbox.state.'+event.status.replaceAll('-','_'));li.append(actor,text);$('messages').append(li);}}
+ function history(value){$('messages').replaceChildren();for(const event of (textMessaging?value.messages.map(m=>({actor:m.role,text:m.text,sequence:m.sequence})):value.events)){const li=root.createElement('li'),actor=root.createElement('strong'),text=root.createElement('p');actor.textContent=translate('conversation.'+event.actor);text.textContent=event.text??translate('inbox.state.'+event.status.replaceAll('-','_'));li.append(actor,text);if(textMessaging&&messaging.visibilityEnabled===true){const hide=root.createElement('button');hide.type='button';hide.className='secondary';hide.textContent=translate('market.provider.hideMessage');hide.disabled=model.snapshot().mutationBlocked;hide.addEventListener('click',()=>afterMutation(()=>model.hideMessage(event.sequence)));li.append(hide);}$('messages').append(li);}}
  function render(state){
   const busy=state.status==='loading',ready=!!selected;
   $('conversation').hidden=!ready;$('conversationLoading').hidden=!busy;
@@ -40,7 +40,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('conversationHeading').textContent=translate(textMessaging?'market.provider.messages':'market.provider.privateHistory');if(textMessaging){root.querySelector('label[for=messageDraft]').textContent=translate('market.provider.messageDraft');root.querySelector('#main > p.notice').textContent=translate('market.provider.messageNotice');}
   $('inboxLink').textContent=translate('conversation.back');if(selected)history(selected);
  }
- model=(textMessaging?createServiceConversationIntegration:createProviderPrivateIntegration)({...options,...(textMessaging?messaging:{}),enabled,onAcknowledged:()=>{(textMessaging?messaging.onAcknowledged:options.onAcknowledged)?.();root.dispatchEvent(new view.CustomEvent('oldx:chat-read-state-changed'));},onChange:render,onPrivate:value=>{
+ model=(textMessaging?createServiceConversationIntegration:createProviderPrivateIntegration)({...options,...(textMessaging?messaging:{}),enabled,onAcknowledged:()=>{(textMessaging?messaging.onAcknowledged:options.onAcknowledged)?.();root.dispatchEvent(new view.CustomEvent('oldx:chat-read-state-changed'));},onVisibilityChanged:()=>root.dispatchEvent(new view.CustomEvent('oldx:chat-read-state-changed')),onChange:render,onPrivate:value=>{
   clear();if(!value)return;selected=value;const thread=textMessaging?value.thread:value;
   $('conversationService').textContent=(textMessaging?thread.service:value.detail.service)+' · '+thread.enquiryId;
   history(value);if(textMessaging)queueMicrotask(()=>{if(root.visibilityState!=='hidden'&&$('messages').getClientRects().length)model.acknowledgeVisible();});
@@ -53,7 +53,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('inboxLink').href='./service-inbox-preview.html#inbox/'+current.providerId+'/enquiry/'+current.enquiryId;
   await model.detail(current.enquiryId);if(active&&session&&(textMessaging?selected?.thread:selected)?.enquiryId===current.enquiryId&&(textMessaging?selected?.thread:selected)?.providerId===current.providerId&&route()?.enquiryId===current.enquiryId)$('conversationHeading').focus();
  }
- async function afterMutation(work){const current=route();await work();if(model.snapshot().status==='saved'&&current&&route()?.enquiryId===current.enquiryId&&route()?.providerId===current.providerId)await model.detail(current.enquiryId);}
+ async function afterMutation(work){const current=route(),scope=session;await work();if(session===scope&&model.snapshot().status==='saved'&&current&&route()?.enquiryId===current.enquiryId&&route()?.providerId===current.providerId)await model.detail(current.enquiryId);}
  listen($('draftForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();if(!session||!selected||!route()||(textMessaging?selected.thread:selected).enquiryId!==route().enquiryId)return;afterMutation(()=>textMessaging?model.send($('messageDraft').value):model.change('reply',$('messageDraft').value));});
  listen($('cancelDraft'),'click',event=>{event.stopImmediatePropagation();if(!model.snapshot().canRetry){$('messageDraft').value='';$('messageDraft').focus();}});
  listen($('conversationRetryCommand'),'click',()=>afterMutation(()=>model.retry()));

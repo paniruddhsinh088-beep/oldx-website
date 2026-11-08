@@ -29,3 +29,52 @@ for(const locale of ['gu','hi','en'])test('trusted enquiry to inbox conversation
  await page.evaluate(()=>binding.setSession(null));assert.equal(await page.locator('#messages').textContent(),'');assert.equal(await page.locator('#messageDraft').inputValue(),'');f.uid('foreign');await conversation('provider');assert.equal(await page.locator('#messages').textContent(),'');assert.equal(await page.locator('#conversationUnavailable').isVisible(),true);assert.deepEqual(remote,[]);
  }finally{await context.close();}
 });
+
+for(const locale of ['gu','hi','en'])test('Provider Hide for Me uses scoped Auth and retries without displaying stale text '+locale,async()=>{
+ const context=await browser.newContext({viewport:{width:locale==='gu'?320:375,height:850}});
+ try{
+  await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
+  const page=await context.newPage();
+  await page.goto(origin+'/service-conversation-preview.html#conversation/buyer/provider/enquiry');
+  await page.evaluate(async locale=>{
+   const {mountProviderConversation}=await import('/features/service-providers/private-conversation-dom.mjs');
+   const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
+   const catalog=await (await import('/features/i18n/i18n.mjs')).loadTranslator(locale);
+   const user={uid:'buyer',getIdToken:async()=> 'buyer.fixture.token'};
+   let observe,session,hidden=false;
+   const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){observe=fn;return ()=>{};}};
+   window.hideCalls=[];window.invalidationEvents=0;
+   document.addEventListener('oldx:chat-read-state-changed',()=>invalidationEvents++);
+   const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,makeSessionId:()=> 'scope',
+    onSession:value=>session=value,providerVisibilityEnabled:true,providerReadStateEnabled:true,
+    providerReconciledHistoryEnabled:true,sendProviderConversation:async(op,body,{credential})=>{
+     if(credential!=='buyer.fixture.token')throw Error('Missing scoped credential');
+     if(op==='read')return {status:200,body:{ok:true,
+      thread:{providerId:'provider',enquiryId:'enquiry',service:'Repair',revision:1,enquiryRevision:0,generation:1,role:'buyer',canSend:true},
+      messages:hidden?[]:[{sequence:1,role:'provider',text:'ખાનગી संदेश'}],
+      throughSequence:1,hasMore:false,readReceipt:'signed'}};
+     if(op==='acknowledge')return {status:200,body:{ok:true,status:'unchanged',readSequence:1}};
+     hideCalls.push(body);
+     if(hideCalls.length===1){hidden=true;throw Error('Lost acknowledgement');}
+     return {status:200,body:{ok:true,status:'replayed'}};
+    }});
+   window.binding=mountProviderConversation({enabled:true,translate:key=>catalog.t(key),messaging:bridge.providerMessaging});
+   observe(user);await binding.setSession(session);
+   window.logoutFixture=()=>{auth.currentUser=null;observe(null);return binding.setSession(session);};
+  },locale);
+  const label=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default['market.provider.hideMessage'];
+  await page.getByRole('button',{name:label}).click();
+  await page.waitForFunction(()=>binding.model.snapshot().canRetry);
+  assert.equal(await page.locator('#messages').textContent(),'');
+  await page.locator('#conversationRetryCommand').click();
+  await page.waitForFunction(()=>hideCalls.length===2&&binding.model.snapshot().status==='ready');
+  const calls=await page.evaluate(()=>hideCalls);
+  assert.deepEqual(calls[0],calls[1]);assert.equal(calls[0].action,'hide_for_self');
+  assert.equal(Object.hasOwn(calls[0],'uid'),false);
+  assert.equal(await page.locator('#messages li').count(),0);
+  assert.ok(await page.evaluate(()=>invalidationEvents>0));
+  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  await page.evaluate(()=>logoutFixture());
+  assert.equal(await page.locator('#messages').textContent(),'');
+ }finally{await context.close();}
+});
