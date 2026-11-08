@@ -50,7 +50,6 @@ export function createServiceConversationIntegration({enabled=false,readStateEna
      onChange:s=>{if(version===epoch&&s.status==='ready'){block=s.snapshot;emit();}}});
     await current.load({});
     if(version!==epoch||blockReader!==current)return;
-    if(block?.blocked){status='unavailable';emit();return;}
    }
    return read();},
   nextHistory(){return !ack.snapshot().queueFull&&view?.hasMore?read(view.throughSequence??view.messages.at(-1).sequence,view.thread.revision):Promise.resolve();},

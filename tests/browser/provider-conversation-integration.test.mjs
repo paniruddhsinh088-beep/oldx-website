@@ -49,17 +49,16 @@ for(const locale of ['gu','hi','en'])test('Provider privacy controls use scoped 
     onSession:value=>session=value,providerVisibilityEnabled:true,providerBlockEnabled:true,providerReadStateEnabled:true,
     providerReconciledHistoryEnabled:true,sendProviderConversation:async(op,body,{credential})=>{
      if(credential!=='buyer.fixture.token')throw Error('Missing scoped credential');
-     if(op==='blockState')return {status:200,body:{ok:true,blocked,revision:1}};
+     if(op==='blockState')return {status:200,body:{ok:true,blocked,revision:2}};
      if(op==='changeBlock'){
       blockCalls.push(body);blocked=body.blocked;
       if(blockCalls.length===1)throw Error('Lost block acknowledgement');
       return {status:200,body:{ok:true,status:blockCalls.length===2?'replayed':'changed'}};
      }
-     if(op==='read'&&blocked)return {status:403,body:{ok:false,error:{code:'DENIED'}}};
      if(op==='read')return {status:200,body:{ok:true,
-      thread:{providerId:'provider',enquiryId:'enquiry',service:'Repair',revision:1,enquiryRevision:0,generation:1,role:'buyer',canSend:true},
-      messages:hidden?[]:[{sequence:1,role:'provider',text:'ખાનગી संदेश'}],
-      throughSequence:1,hasMore:false,readReceipt:'signed'}};
+      thread:{providerId:'provider',enquiryId:'enquiry',service:'Repair',revision:2,enquiryRevision:0,generation:1,role:'buyer',canSend:!blocked},
+      messages:[...(hidden?[]:[{sequence:1,role:'provider',text:'ખાનગી संदेश'}]),{sequence:2,role:'provider',text:'Old visible message'}],
+      throughSequence:2,hasMore:false,readReceipt:blocked?null:'signed'}};
      if(op==='acknowledge')return {status:200,body:{ok:true,status:'unchanged',readSequence:1}};
      hideCalls.push(body);
      if(hideCalls.length===1){hidden=true;throw Error('Lost acknowledgement');}
@@ -70,7 +69,7 @@ for(const locale of ['gu','hi','en'])test('Provider privacy controls use scoped 
    window.logoutFixture=()=>{auth.currentUser=null;observe(null);return binding.setSession(session);};
   },locale);
   const label=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default['market.provider.hideMessage'];
-  await page.getByRole('button',{name:label}).click();
+  await page.getByRole('button',{name:label}).first().click();
   await page.waitForFunction(()=>binding.model.snapshot().canRetry);
   assert.equal(await page.locator('#messages').textContent(),'');
   await page.locator('#conversationRetryCommand').click();
@@ -78,7 +77,8 @@ for(const locale of ['gu','hi','en'])test('Provider privacy controls use scoped 
   const calls=await page.evaluate(()=>hideCalls);
   assert.deepEqual(calls[0],calls[1]);assert.equal(calls[0].action,'hide_for_self');
   assert.equal(Object.hasOwn(calls[0],'uid'),false);
-  assert.equal(await page.locator('#messages li').count(),0);
+  assert.match(await page.locator('#messages').textContent(),/Old visible message/);
+  assert.doesNotMatch(await page.locator('#messages').textContent(),/ખાનગી/);
   assert.ok(await page.evaluate(()=>invalidationEvents>0));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
@@ -90,13 +90,16 @@ for(const locale of ['gu','hi','en'])test('Provider privacy controls use scoped 
   assert.equal(await page.locator('#draftForm').isVisible(),false);
   await page.locator('#conversationRetryCommand').click();
   await unblock.waitFor();
+  await page.locator('#messages').getByText('Old visible message',{exact:true}).waitFor();
+  assert.equal(await page.locator('#draftForm').isVisible(),false);
   await unblock.click();
   await block.waitFor();
   await page.waitForFunction(()=>binding.model.snapshot().status==='ready');
   const mutations=await page.evaluate(()=>blockCalls);
   assert.deepEqual(mutations[0],mutations[1]);
   assert.deepEqual(mutations.map(({expectedBlocked,blocked})=>[expectedBlocked,blocked]),[[false,true],[false,true],[true,false]]);
-  assert.equal(await page.locator('#messages li').count(),0);
+  assert.match(await page.locator('#messages').textContent(),/Old visible message/);
+  assert.equal(await page.locator('#draftForm').isVisible(),true);
   await page.evaluate(()=>logoutFixture());
   assert.equal(await block.count(),0);
   assert.equal(await page.locator('#messages').textContent(),'');
