@@ -1,4 +1,4 @@
-import { buildStorePreviewCard, exportStorePreviewCard } from './preview-card.mjs';
+import { buildStorePreviewCard, exportStorePreviewCard, storeCardDownloadBrowser } from './preview-card.mjs';
 import { buildStorePreviewLink } from './preview-share.mjs';
 import { shareProviderLink } from '../service-providers/provider-mobile-share.mjs';
 import { buildStoreCataloguePage, STORE_CATEGORY_IDS } from './store-catalogue.mjs';
@@ -264,11 +264,7 @@ $('exportStoreCard').addEventListener('click',async()=>{
   if(exportPending || loadState.status!=='ready')return;
   const revision=++exportRevision;
   const input=cardInput();exportPending=true;exportFeedback=null;renderStoreCard();
-  const result=await exportStorePreviewCard(input,{
-    ready:async()=>{await document.fonts?.ready;},
-    createBlob:(svg,type)=>new Blob([svg],{type}),createObjectURL:blob=>URL.createObjectURL(blob),revokeObjectURL:url=>URL.revokeObjectURL(url),
-    download:async(url,filename)=>{const link=document.createElement('a');link.href=url;link.download=filename;document.body.append(link);try{link.click();}finally{link.remove();}}
-  },()=>revision===exportRevision && loadState.status==='ready');
+  const result=await exportStorePreviewCard(input,storeCardDownloadBrowser(document),()=>revision===exportRevision && loadState.status==='ready');
   if(revision!==exportRevision)return;
   exportPending=false;exportFeedback=result.ok?'store.cardRequested':result.code==='EXPORT_CANCELLED'?'store.cardCancelled':'store.cardDenied';renderStoreCard();
 });

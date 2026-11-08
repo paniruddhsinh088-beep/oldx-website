@@ -1,3 +1,4 @@
+import {buildPublicStoreCard,exportStoreCard,storeCardDownloadBrowser} from '../stores/preview-card.mjs';
 import {mountMandatoryPhotos} from '../media/mandatory-photos-dom.mjs';
 import {mountApprovedPhotoView} from '../media/approved-photo-view.mjs';
 import {STORE_CATEGORY_IDS} from '../stores/store-catalogue.mjs';
@@ -14,11 +15,15 @@ export function mountStoreIntegration({root=document,enabled=false,ports,getCate
  const photoWorkflow=injectedWorkflow??ownedWorkflow,publicPhotoView=options.publicPhotoView??ownedPhotoView;
  const listen=(node,type,fn,capture=false)=>{node?.addEventListener(type,fn,capture);listeners.push(()=>node?.removeEventListener(type,fn,capture));};
  const oldStyle=root.body.dataset.oldxStore;root.body.dataset.oldxStore='true';restore.push(()=>{if(oldStyle===undefined)delete root.body.dataset.oldxStore;else root.body.dataset.oldxStore=oldStyle;});
- const addProduct=$('trustedStoreAddProduct');
+ const addProduct=$('trustedStoreAddProduct'),marketing=$('trustedStoreMarketing'),cardButton=$('trustedStoreCardDownload');
  const canAddProduct=state=>view.location.hash==='#store'&&state.authenticated&&state.owner&&['ready','saved'].includes(state.status)&&typeof options.onAddProduct==='function';
  const model=createStoreIntegration({...options,enabled,ports,onOwnerSaved:profile=>{photos=[...profile.photos];},onOwnerDraft:value=>{photos=value?[...value.profile.photos]:[];loadedCategories=value?(value.profile.categories??[value.profile.category]):null;for(const input of root.querySelectorAll('input[name="storeCategory"]'))input.checked=!!loadedCategories?.includes(input.value);$('storeShopName').value=value?.profile.name??'';$('trustedStoreDescription').value=value?.profile.description??'';$('trustedStoreLocality').value=value?.profile.locationLabel??'';},onChange:state=>{
   if(!exiting)photoWorkflow?.setScope(photoSession&&state.owner?{...photoSession,parentId:state.owner.id,revision:state.owner.revision}:null);
   if(addProduct)addProduct.hidden=!canAddProduct(state);
+  if(marketing){
+   marketing.hidden=!state.store;
+   if(!state.store){cardButton.disabled=false;$('trustedStoreCardStatus').textContent='';}
+  }
   const status=$('trustedStoreStatus');status.hidden=false;status.style.display='block';status.textContent=translate('market.product.'+state.status);$('saveStoreBtn').disabled=!state.authenticated||state.status==='loading'||state.canRetry;for(const id of ['trustedStorePublish','trustedStoreWithdraw','trustedStoreLoad'])$(id).disabled=!state.authenticated||state.status==='loading'||state.canRetry;
   $('trustedStoreRetry').disabled=!state.canRetry;$('trustedStoreNext').hidden=!state.store;$('trustedStoreNext').disabled=!state.nextCursor;
   const grid=$('homeStoresGrid');if(grid){grid.replaceChildren();for(const item of state.directory){const button=root.createElement('button');button.type='button';button.className='oldx-public-card';button.textContent=item.name;button.addEventListener('click',()=>api.open(item.id));grid.append(button);}if($('trustedDirectoryStatus')){$('trustedDirectoryStatus').hidden=state.directoryStatus==='idle';$('trustedDirectoryStatus').textContent=translate(state.directoryStatus==='ready'&&!state.directory.length?'market.store.noStores':'market.product.'+state.directoryStatus);}
@@ -29,6 +34,21 @@ export function mountStoreIntegration({root=document,enabled=false,ports,getCate
  const filter=$('trustedStoreFilter');if(filter){filter.replaceChildren();for(const id of ['',...STORE_CATEGORY_IDS]){const option=root.createElement('option');option.value=id;option.textContent=translate(id?'store.category.'+id:'market.store.allCategories');filter.append(option);}filter.hidden=false;listen(filter,'change',()=>{model.changeScope();model.discover({category:filter.value});});}if($('trustedStoreBrowse')){$('trustedStoreBrowse').hidden=false;listen($('trustedStoreBrowse'),'click',()=>model.discover({category:filter?.value??''}));}
  for(const id of ['trustedStoreControls','trustedDirectoryNext'].filter(id=>$(id)))$(id).hidden=false;
  async function save(publication){const version=revision;try{const controls=Array.from(root.querySelectorAll('input[name="storeCategory"]')),checked=controls.filter(n=>n.checked).map(n=>n.value),categories=getCategories?getCategories():controls.length?(loadedCategories?.length&&checked.includes(loadedCategories[0])?[loadedCategories[0],...checked.filter(v=>v!==loadedCategories[0])]:checked):loadedCategories??[getCategory()];const selection=photoWorkflow?.model.snapshot();if(ownedWorkflow&&selection?.changed&&selection.items.some(item=>item.status!=='uploaded'))throw Error('Pending photo');const photoChanged=selection?.changed,selected=ownedWorkflow||photoChanged?photoWorkflow.references():await readPhotoReferences?.(),profile={name:$('storeShopName').value,description:$('trustedStoreDescription').value,locationLabel:$('trustedStoreLocality').value,category:categories[0],categories,photos:photoChanged?selected:selected?.length?selected:[...photos]};if(version!==revision)return;if(publication==='publish'&&!profile.photos.length)throw new Error();await model.save(profile,publication);}catch{$('storeSaveNotice').textContent=translate('market.product.photosUnavailable');}}
+
+ listen(cardButton,'click',async()=>{
+  if(cardButton.disabled)return;
+  const state=model.snapshot(),scope=revision,href=view.location.href,store=state.store;
+  const category=store?.category?translate('store.category.'+store.category):'';
+  const card=buildPublicStoreCard({store,category,caption:translate('market.store.cardCaption'),pageUrl:href,origin:view.location.origin});
+  const current=()=>{const latest=model.snapshot().store;return scope===revision&&href===view.location.href&&
+   !!latest&&latest.id===store?.id&&latest.revision===store?.revision;};
+  cardButton.disabled=true;
+  const result=await exportStoreCard(card,storeCardDownloadBrowser(root),current);
+  if(current()){
+   cardButton.disabled=false;
+   $('trustedStoreCardStatus').textContent=translate(result.ok?'market.store.cardRequested':'market.store.cardUnavailable');
+  }
+ });
  listen(addProduct,'click',()=>{const state=model.snapshot();if(canAddProduct(state))options.onAddProduct(state.owner.id);});
  listen($('trustedDirectoryNext'),'click',()=>model.nextDirectory());listen($('createStoreForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();save('draft');},true);for(const [id,publication]of [['trustedStorePublish','publish'],['trustedStoreWithdraw','withdraw']])listen($(id),'click',()=>save(publication));listen($('trustedStoreRetry'),'click',()=>model.retry());listen($('trustedStoreLoad'),'click',()=>model.loadOwner());listen($('trustedStoreNext'),'click',()=>model.nextPage());
  listen($('storeShareTopBtn'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();const state=model.snapshot();if(state.store&&typeof share==='function')share({storeId:state.store.id,title:state.store.name,relativeUrl:'#store-'+state.store.id});},true);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildStorePreviewCard,exportStorePreviewCard,wrapCardText} from './preview-card.mjs';
+import {buildPublicStoreCard,buildStorePreviewCard,exportStorePreviewCard,wrapCardText} from './preview-card.mjs';
 const valid={store:{id:'demo-shop',name:'કિરણનું ઘર · घर',city:'અમદાવાદ'},category:'Furniture · પુસ્તકો',pageUrl:'https://preview.example/store-preview.html?secret=PRIVATE',origin:'https://preview.example',labels:{badge:'SAMPLE ONLY · NOT LIVE',caption:'Browse sample products'}};
 test('sample card preserves multilingual public text and excludes private extras and query state',()=>{
  const result=buildStorePreviewCard({...valid,store:{...valid.store,phone:'PRIVATE',photo:'https://tracker.example/private'}});
@@ -35,4 +35,21 @@ test('cancellation while fonts/ready is pending never starts a download',async()
  let release,current=true,downloads=0;
  const task=exportStorePreviewCard(valid,{ready:()=>new Promise(resolve=>{release=resolve;}),createBlob:()=>{},createObjectURL:()=>'',revokeObjectURL:()=>{},download:()=>downloads++},()=>current);
  current=false;release();assert.deepEqual(await task,{ok:false,code:'EXPORT_CANCELLED'});assert.equal(downloads,0);
+});
+
+test('public Store card exports only allowlisted marketing text and the same-origin Store route',()=>{
+ const store={id:'public-shop',kind:'store',revision:3,name:'કિરણનું ઘર · घर',locationLabel:'PRIVATE address',
+  description:'PRIVATE text',ownerUid:'PRIVATE uid',photoURL:'https://example.test/PRIVATE'};
+ const input={store,category:'Furniture',caption:'Browse on OLDX',
+  pageUrl:'https://preview.example/index.html?token=PRIVATE#store-public-shop',origin:'https://preview.example'};
+ const card=buildPublicStoreCard(input);
+ assert.equal(card.ok,true);
+ assert.equal(card.value.filename,'oldx-store-public-shop.svg');
+ assert.equal(card.value.url,'https://preview.example/index.html#store-public-shop');
+ assert.match(card.value.svg,/#102a43/);assert.match(card.value.svg,/#f97316/);
+ assert.doesNotMatch(card.value.svg,/PRIVATE|<image\b|<script\b/);
+ for(const patch of [{store:{...store,revision:0}},{origin:'https://elsewhere.example'},
+  {pageUrl:'https://preview.example/#store-other'},{pageUrl:'https://user:pass@preview.example/#store-public-shop'}]){
+  assert.equal(buildPublicStoreCard({...input,...patch}).ok,false);
+ }
 });

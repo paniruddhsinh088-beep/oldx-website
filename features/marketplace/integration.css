@@ -1,6 +1,6 @@
 /* Approved navy/orange/white direction, scoped to explicitly mounted controls. */
 #productIntegrationPanel, #trustedStoreControls { border:1px solid #b9cceb; background:#f5f8ff; color:#142d54; border-radius:16px; padding:12px; min-width:0; }
-#productIntegrationPanel button, #trustedStoreControls button, #productEnquire, #productStoreLink, #productNext, #productInboxNext, #productHistoryNext, #trustedStoreNext { min-height:44px; padding:10px 14px; border:1px solid #254c85; border-radius:10px; background:#163866; color:#fff; font:inherit; max-width:100%; overflow-wrap:anywhere; }
+#productIntegrationPanel button, #trustedStoreControls button, #trustedStoreCardDownload, #productEnquire, #productStoreLink, #productNext, #productInboxNext, #productHistoryNext, #trustedStoreNext { min-height:44px; padding:10px 14px; border:1px solid #254c85; border-radius:10px; background:#163866; color:#fff; font:inherit; max-width:100%; overflow-wrap:anywhere; }
 #productIntegrationPanel button:disabled, #trustedStoreControls button:disabled { opacity:.6; cursor:default; }
 .oldx-public-card { display:block; padding:12px; min-width:0; max-width:100%; min-height:44px; border:1px solid #bccce2; border-top:3px solid #e76f00; border-radius:14px; background:white; color:#142d54; text-align:start; overflow-wrap:anywhere; }
 .oldx-public-card:focus-visible, #productIntegrationPanel button:focus-visible, #trustedStoreControls button:focus-visible { outline:3px solid #bd5100; outline-offset:3px; }

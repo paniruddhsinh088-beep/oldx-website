@@ -15,27 +15,65 @@ export function buildStorePreviewCard(input) {
   const link = buildStorePreviewLink({pageUrl:input.pageUrl,origin:input.origin,storeUid:input.store.id});
   if (!link.ok) return invalid();
   try {
-    let y=66;
-    const lines=(value,size,font,fill,bold=false)=>wrapCardText(value,size).map(line=>{
-      const row=`<text x="48" y="${y}" font-size="${font}" fill="${fill}"${bold?' font-weight="700"':''}>${xml(line)}</text>`;
-      y+=font+14;return row;
-    }).join('');
-    const badge=lines(input.labels.badge,30,18,'#a7f3d0',true); y+=36;
-    const name=lines(input.store.name,16,36,'#ffffff',true); y+=22;
-    const category=lines(input.category,26,23,'#a7f3d0'); y+=12;
-    const city=lines(input.store.city,24,24,'#ffffff'); y+=36;
-    const caption=lines(input.labels.caption,36,17,'#dbeafe'); y+=10;
-    const url=lines(link.url,42,14,'#ffffff'); const height=y+34;
-    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="${height}" viewBox="0 0 720 ${height}" role="img" aria-labelledby="cardTitle cardDescription" font-family="system-ui, Noto Sans Gujarati, Noto Sans Devanagari, sans-serif"><title id="cardTitle">${xml(input.labels.badge+' · '+input.store.name)}</title><desc id="cardDescription">${xml(input.labels.caption+' · '+input.category+' · '+input.store.city+' · '+link.url)}</desc><defs><linearGradient id="background" x2="1" y2="1"><stop stop-color="#102c46"/><stop offset="1" stop-color="#126c68"/></linearGradient></defs><rect width="720" height="${height}" rx="28" fill="url(#background)"/>${badge}${name}${category}${city}${caption}${url}</svg>`;
-    if (svg.length>32768) return invalid();
-    return {ok:true,value:{svg,filename:`oldx-sample-store-${input.store.id}.svg`,
-      name:input.store.name,city:input.store.city,category:input.category,url:link.url,
-      badge:input.labels.badge,caption:input.labels.caption}};
+    return renderStoreCard({...input,city:input.store.city,url:link.url,filename:`oldx-sample-store-${input.store.id}.svg`});
   } catch { return invalid(); }
 }
 
-export async function exportStorePreviewCard(input, browser, isCurrent=()=>true) {
-  const card=buildStorePreviewCard(input);
+
+function renderStoreCard({store,category,labels,url,filename,city=''}) {
+  let y=112;
+  const lines=(value,size,font,fill,bold=false)=>wrapCardText(value,size).map(line=>{
+    const row=`<text x="48" y="${y}" font-size="${font}" fill="${fill}"${bold?' font-weight="700"':''}>${xml(line)}</text>`;
+    y+=font+14;return row;
+  }).join('');
+  const badge=lines(labels.badge,30,18,'#93400e',true);y+=20;
+  const name=lines(store.name,16,36,'#102a43',true);y+=16;
+  const categories=lines(category,26,23,'#254c85');
+  const location=city?lines(city,24,22,'#254c85'):'';
+  y+=24;
+  const caption=lines(labels.caption,36,17,'#102a43',true);
+  const address=lines(url,42,14,'#254c85'),height=y+34;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="720" height="${height}" viewBox="0 0 720 ${height}" role="img" aria-labelledby="cardTitle cardDescription" font-family="system-ui, Noto Sans Gujarati, Noto Sans Devanagari, sans-serif"><title id="cardTitle">${xml(labels.badge+' · '+store.name)}</title><desc id="cardDescription">${xml([labels.caption,category,city,url].filter(Boolean).join(' · '))}</desc><rect width="720" height="${height}" rx="28" fill="#ffffff"/><path d="M28 0H692Q720 0 720 28V72H0V28Q0 0 28 0Z" fill="#102a43"/><text x="48" y="48" fill="#ffffff" font-size="30" font-weight="800">OLD<tspan fill="#fb923c">X</tspan></text><rect x="0" y="72" width="720" height="5" fill="#f97316"/>${badge}${name}${categories}${location}${caption}${address}</svg>`;
+  return svg.length>32768?{ok:false,code:'INVALID_STORE_CARD'}:{ok:true,value:{
+    svg,filename,name:store.name,city,category,url,badge:labels.badge,caption:labels.caption
+  }};
+}
+
+// The caller supplies only a Store accepted by the opt-in public read.
+export function buildPublicStoreCard({store,category,caption,pageUrl,origin}={}) {
+  const invalid={ok:false,code:'INVALID_STORE_CARD'};
+  if(store?.kind!=='store'||typeof store.id!=='string'||!/^[A-Za-z0-9_-]{1,100}$/.test(store.id)||
+    !Number.isSafeInteger(store.revision)||store.revision<1||!safeText(store.name,120)||
+    !safeText(category,160)||!safeText(caption,160))return invalid;
+  try {
+    const page=new URL(pageUrl),local=['127.0.0.1','localhost','[::1]'].includes(page.hostname);
+    if(page.origin!==origin||page.username||page.password||
+       (page.protocol!=='https:'&&!(page.protocol==='http:'&&local))||page.hash!=='#store-'+store.id)return invalid;
+    page.search='';
+    if(page.href.length>2048)return invalid;
+    return renderStoreCard({store,category,labels:{badge:'OLDX',caption},url:page.href,filename:`oldx-store-${store.id}.svg`});
+  } catch {return invalid;}
+}
+
+export function storeCardDownloadBrowser(root) {
+  const view=root.defaultView;
+  return {
+    ready:async()=>{await root.fonts?.ready;},
+    createBlob:(svg,type)=>new view.Blob([svg],{type}),
+    createObjectURL:blob=>view.URL.createObjectURL(blob),
+    revokeObjectURL:url=>view.URL.revokeObjectURL(url),
+    download(url,filename){
+      const link=root.createElement('a');link.href=url;link.download=filename;
+      root.body.append(link);try{link.click();}finally{link.remove();}
+    }
+  };
+}
+
+export async function exportStorePreviewCard(input,browser,isCurrent){
+  return exportStoreCard(buildStorePreviewCard(input),browser,isCurrent);
+}
+
+export async function exportStoreCard(card,browser,isCurrent=()=>true) {
   if(!card.ok)return card;
   if(!browser || !['createBlob','createObjectURL','revokeObjectURL','download'].every(key=>typeof browser[key]==='function')) return {ok:false,code:'EXPORT_UNAVAILABLE'};
   let url;

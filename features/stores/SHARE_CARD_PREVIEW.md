@@ -30,3 +30,25 @@ keyboard download, all locales and 320px/200%-text layouts.
 
 Real photo handling, publication, trusted canonical/crawler routes, media policy,
 backend/index/Rules integration and any deployment remain owner-gated.
+
+## Opt-in public Store export
+
+The trusted Store DOM can now download the same Blue–White–Orange SVG template
+from an accepted public Store view. Export includes the Store name, translated
+category, OLDX branding and same-origin Store deep link with query state removed.
+It reuses the existing object-URL cleanup and checks route, revision and Store
+scope immediately before handoff. Guest public reads may export. A private
+owner form, unavailable Store or withdrawn publication after refresh cannot.
+
+The sample retains its synthetic city. The public export uses a branded text
+fallback because the current public DTO has a free-form locality and no
+export-safe photo field. Approved photos remain visible via the existing public
+media viewer. Future exports need a vetted city field and a publication-scoped
+photo snapshot. The existing QR encoder is Provider-specific and uses a Node
+npm import. There is no Store-compatible browser QR path in the static build.
+
+Store links are still fragment-based. No Store-specific Open Graph metadata is
+served by the static shell. Reliable social previews need an approved crawlable
+Store route that renders only current public metadata, denies withdrawn Stores
+and applies the approved public image/cache policy. No live crawler behavior
+was verified.
