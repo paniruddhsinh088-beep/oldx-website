@@ -30,7 +30,7 @@ for(const locale of ['gu','hi','en'])test('trusted enquiry to inbox conversation
  }finally{await context.close();}
 });
 
-for(const locale of ['gu','hi','en'])test('Provider Hide for Me uses scoped Auth and retries without displaying stale text '+locale,async()=>{
+for(const locale of ['gu','hi','en'])test('Provider privacy controls use scoped Auth, retry and restore history '+locale,async()=>{
  const context=await browser.newContext({viewport:{width:locale==='gu'?320:375,height:850}});
  try{
   await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
@@ -41,14 +41,21 @@ for(const locale of ['gu','hi','en'])test('Provider Hide for Me uses scoped Auth
    const {createFirebaseMarketplaceIntegration}=await import('/features/marketplace/firebase-integration.mjs');
    const catalog=await (await import('/features/i18n/i18n.mjs')).loadTranslator(locale);
    const user={uid:'buyer',getIdToken:async()=> 'buyer.fixture.token'};
-   let observe,session,hidden=false;
+   let observe,session,hidden=false,blocked=false;
    const auth={app:{options:{projectId:'oldx-staging'}},currentUser:user,onIdTokenChanged(fn){observe=fn;return ()=>{};}};
-   window.hideCalls=[];window.invalidationEvents=0;
+   window.hideCalls=[];window.blockCalls=[];window.invalidationEvents=0;
    document.addEventListener('oldx:chat-read-state-changed',()=>invalidationEvents++);
    const bridge=createFirebaseMarketplaceIntegration({enabled:true,auth,makeSessionId:()=> 'scope',
-    onSession:value=>session=value,providerVisibilityEnabled:true,providerReadStateEnabled:true,
+    onSession:value=>session=value,providerVisibilityEnabled:true,providerBlockEnabled:true,providerReadStateEnabled:true,
     providerReconciledHistoryEnabled:true,sendProviderConversation:async(op,body,{credential})=>{
      if(credential!=='buyer.fixture.token')throw Error('Missing scoped credential');
+     if(op==='blockState')return {status:200,body:{ok:true,blocked,revision:1}};
+     if(op==='changeBlock'){
+      blockCalls.push(body);blocked=body.blocked;
+      if(blockCalls.length===1)throw Error('Lost block acknowledgement');
+      return {status:200,body:{ok:true,status:blockCalls.length===2?'replayed':'changed'}};
+     }
+     if(op==='read'&&blocked)return {status:403,body:{ok:false,error:{code:'DENIED'}}};
      if(op==='read')return {status:200,body:{ok:true,
       thread:{providerId:'provider',enquiryId:'enquiry',service:'Repair',revision:1,enquiryRevision:0,generation:1,role:'buyer',canSend:true},
       messages:hidden?[]:[{sequence:1,role:'provider',text:'ખાનગી संदेश'}],
@@ -74,7 +81,24 @@ for(const locale of ['gu','hi','en'])test('Provider Hide for Me uses scoped Auth
   assert.equal(await page.locator('#messages li').count(),0);
   assert.ok(await page.evaluate(()=>invalidationEvents>0));
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+  const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+  const block=page.getByRole('button',{name:catalog['market.provider.block'],exact:true});
+  const unblock=page.getByRole('button',{name:catalog['market.provider.unblock'],exact:true});
+  await block.click();
+  await page.waitForFunction(()=>binding.model.snapshot().canRetry);
+  assert.equal(await unblock.count(),0);
+  assert.equal(await page.locator('#draftForm').isVisible(),false);
+  await page.locator('#conversationRetryCommand').click();
+  await unblock.waitFor();
+  await unblock.click();
+  await block.waitFor();
+  await page.waitForFunction(()=>binding.model.snapshot().status==='ready');
+  const mutations=await page.evaluate(()=>blockCalls);
+  assert.deepEqual(mutations[0],mutations[1]);
+  assert.deepEqual(mutations.map(({expectedBlocked,blocked})=>[expectedBlocked,blocked]),[[false,true],[false,true],[true,false]]);
+  assert.equal(await page.locator('#messages li').count(),0);
   await page.evaluate(()=>logoutFixture());
+  assert.equal(await block.count(),0);
   assert.equal(await page.locator('#messages').textContent(),'');
  }finally{await context.close();}
 });

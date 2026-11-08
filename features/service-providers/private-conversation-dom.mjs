@@ -20,6 +20,8 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  root.documentElement.dataset.providerConversation='true';
  root.dispatchEvent(new view.CustomEvent('oldx:provider-conversation-mode',{detail:{enabled:true}}));
  const rehearsal=$('sampleRole').closest('section'),wasHidden=rehearsal.hidden;rehearsal.hidden=true;
+ const blockButton=root.createElement('button');blockButton.type='button';blockButton.hidden=true;
+ if(textMessaging&&messaging.blockEnabled===true)$('trustedConversationControls').append(blockButton);
  $('trustedConversationControls').hidden=false;$('recoverConversation').hidden=true;
  $('messageDraft').maxLength=textMessaging?2000:400;
  function clear(){selected=null;$('messages').replaceChildren();$('conversationService').textContent='';$('messageDraft').value='';$('draftPreview').textContent='';$('draftPreview').hidden=true;}
@@ -33,6 +35,9 @@ export function mountProviderConversation({root=document,enabled=false,audience=
   $('conversationError').textContent='';
   $('conversationHistoryNext').disabled=!state.selection?.hasMore||busy||state.canRetry||state.readAcknowledgement?.queueFull;
   $('conversationRetryCommand').disabled=!state.canRetry||busy;
+  blockButton.hidden=!state.block;
+  blockButton.disabled=busy||state.mutationBlocked;
+  if(state.block)blockButton.textContent=translate(state.block.blocked?'market.provider.unblock':'market.provider.block');
   const writable=textMessaging?ready&&selected.thread.canSend:ready&&audience==='provider'&&!['completed','cancelled','declined','disputed'].includes(selected.detail.status);
   $('draftForm').hidden=!writable;$('conversationClosed').hidden=writable;
   $('messageDraft').readOnly=busy||state.mutationBlocked;$('previewDraft').disabled=!writable||busy||state.mutationBlocked;
@@ -56,6 +61,7 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  async function afterMutation(work){const current=route(),scope=session;await work();if(session===scope&&model.snapshot().status==='saved'&&current&&route()?.enquiryId===current.enquiryId&&route()?.providerId===current.providerId)await model.detail(current.enquiryId);}
  listen($('draftForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();if(!session||!selected||!route()||(textMessaging?selected.thread:selected).enquiryId!==route().enquiryId)return;afterMutation(()=>textMessaging?model.send($('messageDraft').value):model.change('reply',$('messageDraft').value));});
  listen($('cancelDraft'),'click',event=>{event.stopImmediatePropagation();if(!model.snapshot().canRetry){$('messageDraft').value='';$('messageDraft').focus();}});
+ listen(blockButton,'click',()=>afterMutation(()=>model.changeBlock()));
  listen($('conversationRetryCommand'),'click',()=>afterMutation(()=>model.retry()));
  for(const id of ['retryConversation','conversationReload'])listen($(id),'click',()=>restore());
  listen($('conversationHistoryNext'),'click',()=>model.nextHistory());
@@ -68,6 +74,6 @@ export function mountProviderConversation({root=document,enabled=false,audience=
  const api=Object.freeze({model,restoreRoute:restore,changeScope(){model.changeScope();clear();},
   async setSession(value){active=true;session=value?{uid:value.uid,sessionId:value.sessionId}:null;model.setSession(value);clear();if(session)await restore();},
   open({providerId,enquiryId}={}){if(![providerId,enquiryId].every(id=>typeof id==='string'&&/^[A-Za-z0-9_-]{1,100}$/.test(id)))return false;view.history.pushState(null,'','#conversation/'+audience+'/'+providerId+'/'+enquiryId);return restore();},
-  destroy(){active=false;localeRevision++;listeners.forEach(fn=>fn());model.clear();clear();rehearsal.hidden=wasHidden;$('trustedConversationControls').hidden=true;$('recoverConversation').hidden=false;$('messageDraft').maxLength=2000;if(oldMode===undefined)delete root.documentElement.dataset.providerConversation;else root.documentElement.dataset.providerConversation=oldMode;root.dispatchEvent(new view.CustomEvent('oldx:provider-conversation-mode',{detail:{enabled:false}}));mounts.delete(root);}
+  destroy(){active=false;localeRevision++;listeners.forEach(fn=>fn());blockButton.remove();model.clear();clear();rehearsal.hidden=wasHidden;$('trustedConversationControls').hidden=true;$('recoverConversation').hidden=false;$('messageDraft').maxLength=2000;if(oldMode===undefined)delete root.documentElement.dataset.providerConversation;else root.documentElement.dataset.providerConversation=oldMode;root.dispatchEvent(new view.CustomEvent('oldx:provider-conversation-mode',{detail:{enabled:false}}));mounts.delete(root);}
  });mounts.set(root,api);return api;
 }

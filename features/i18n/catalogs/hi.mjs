@@ -529,6 +529,8 @@ export default Object.freeze({
   "market.provider.reply": "पूछताछ का उत्तर दें",
   "market.provider.privateHistory": "निजी पूछताछ का इतिहास",
   "market.provider.reloadHistory": "पूछताछ फिर लोड करें",
+  "market.provider.block": "प्रतिभागी को ब्लॉक करें",
+  "market.provider.unblock": "प्रतिभागी को अनब्लॉक करें",
   "market.provider.hideMessage": "मेरे लिए संदेश छिपाएँ",
   "market.provider.sendMessage": "संदेश भेजें",
   "market.provider.messages": "निजी संदेश",

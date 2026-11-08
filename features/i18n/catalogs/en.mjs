@@ -527,6 +527,8 @@ export default Object.freeze({
   "market.provider.reply": "Reply to enquiry",
   "market.provider.privateHistory": "Private enquiry history",
   "market.provider.reloadHistory": "Reload enquiry",
+  "market.provider.block": "Block participant",
+  "market.provider.unblock": "Unblock participant",
   "market.provider.hideMessage": "Hide message for me",
   "market.provider.sendMessage": "Send message",
   "market.provider.messages": "Private messages",

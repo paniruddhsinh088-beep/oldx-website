@@ -37,6 +37,17 @@ export function createProviderConversationRepository({enabled=false,authenticate
  }
 
  return Object.freeze({changeVisibility:(r,o)=>privacyMutation('visibility',r,o),changeBlock:(r,o)=>privacyMutation('block',r,o),
+  async blockState(request,options){
+   if(!legacyMutationsEnabled)return fail('UNAVAILABLE');
+   const input=copyRecord(request,['providerId','enquiryId']);
+   if(!input||!safeId(input.providerId)||!safeId(input.enquiryId))return fail('INVALID_REQUEST');
+   return run(options,async(tx,c)=>{
+    const a=await readProviderConversationAuthority(tx,c,input,{privacy:true});
+    if(!a?.blocks||a.thread.inboxIndexed!==true||!validReadState(canonical(a.thread)))return fail('DENIED');
+    c.checkpoint();
+    return {ok:true,blocked:role(a,c.actorUid)==='buyer'?a.blocks.buyerBlocked:a.blocks.providerBlocked,revision:a.thread.revision};
+   });
+  },
   async read(request,options){const input=copyRecord(request,['providerId','enquiryId','expectedRevision','afterSequence','limit']);if(!input||!safeId(input.providerId)||!safeId(input.enquiryId)||input.expectedRevision!==null&&!int(input.expectedRevision)||!int(input.afterSequence)||!Number.isInteger(input.limit)||input.limit<1||input.limit>20)return fail('INVALID_REQUEST');
    let delivery=null;const result=await run(options,async(tx,c)=>{const a=await authority(tx,c,input);if(!a)return fail('DENIED');if(input.expectedRevision!==null&&input.expectedRevision!==a.thread.revision)return fail('REVISION_CONFLICT');if(input.afterSequence>a.thread.revision)return fail('INVALID_REQUEST');if(readStateEnabled&&a.thread.revision&&!validReadState(canonical(a.thread)))return fail('READ_STATE_UNAVAILABLE');const messages=[];let incomingBefore=0;delivery=null;
     if(a.reconciled){let visibleIncoming=0,physicalIncoming=0;const throughSequence=Math.min(a.thread.revision,input.afterSequence+input.limit);const confirmed=a.reconciled.item.readSequence;const receiptAfter=confirmed<throughSequence?Math.max(confirmed,input.afterSequence):input.afterSequence;for(let n=input.afterSequence+1;n<=throughSequence;n++){const m=await tx.getConversationMessage(input.enquiryId,n),facts=providerMessageFacts(m,a.thread),p=reconciledPhysicalPrefix(m,a.thread.readState,n);if(!facts||m.sequence!==n||!p)return fail('READ_STATE_UNAVAILABLE');physicalIncoming=p[role(a,c.actorUid)+'Received'];if(providerMessageVisible(m,a.thread,c.actorUid)){if(normalizeMessageDraft(m.text)===null)return fail('READ_STATE_UNAVAILABLE');messages.push({sequence:n,role:m.senderUid===a.row.buyerUid?'buyer':'provider',text:m.text});if(n>receiptAfter&&m.senderUid!==c.actorUid)visibleIncoming++;}}if(throughSequence>input.afterSequence)delivery={scope:reconciledScope(a,c),afterSequence:receiptAfter,throughSequence,visibleIncoming,physicalIncoming};c.checkpoint();return {ok:true,thread:a.dto,messages,throughSequence,hasMore:throughSequence<a.thread.revision};}

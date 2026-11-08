@@ -23,3 +23,15 @@ test('Provider hide clears private content, fences reload and retries the same s
  assert.deepEqual(calls[0],calls[1]);assert.equal(changes,1);
  model.setSession(null);await model.hideMessage(1);assert.equal(calls.length,2);
 });
+
+test('Provider block-state reply cannot revive controls or history after logout',async()=>{
+ let release,reads=0;
+ const model=createServiceConversationIntegration({enabled:true,readStateEnabled:true,reconciledHistoryEnabled:true,blockEnabled:true,
+  execute:op=>{if(op==='blockState')return new Promise(resolve=>release=resolve);reads++;throw Error('Unexpected read');}});
+ model.setSession({uid:'buyer',sessionId:'scope'});model.select('provider','buyer');
+ const loading=model.detail('enquiry');
+ await Promise.resolve();
+ model.setSession(null);release({ok:true,blocked:true,revision:21});await loading;
+ assert.equal(model.snapshot().block,null);
+ await model.changeBlock();assert.equal(reads,0);
+});
