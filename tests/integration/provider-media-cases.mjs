@@ -22,20 +22,51 @@ export async function exerciseProviderMedia({binding:b,seed,read,inputBytes,onPu
  const {createStagingProviderMediaRelease}=await import('../../scripts/provider-media-release.mjs'),{createStagingFirebaseProviderRepository}=await import('../../scripts/firebase-provider-repository.mjs'),{createProviderV1Integration}=await import('../../scripts/provider-schema-v1.mjs'),{createApprovedProviderMediaByteDelivery}=await import('../../scripts/approved-media-byte-delivery.mjs');
  const release=createStagingProviderMediaRelease({enabled:true,binding:b});await seed(c.permissions,'media-owner',{uid:'media-owner',canPublish:true,canWithdraw:true,suspended:false});await seed(c.generations,'current',{value:0});
  const owner=createProviderV1Integration({enabled:true,repository:createStagingFirebaseProviderRepository({enabled:true,binding:b,mediaRelease:release}),catalog:{version:1,stateCode:'GJ',services:['Repair','Plumber'],localities:[{city:'Ahmedabad',serviceArea:'Sample area'}]},authenticate:options.authenticate,mandatoryPhotos:true});
+ const {createStagingProviderPublicMedia}=await import('../../scripts/provider-public-media.mjs');
+ const {createStagingProviderMediaHttp}=await import('../../scripts/provider-media-http.mjs');
+ const scope={kind:'provider',parentId,expectedParentRevision:1};
+ let beforeDerivativeReturn,derivativeReads=0;
+ const publicMedia=createStagingProviderPublicMedia({enabled:true,binding:b,release,consumeRateLimit:()=>({allowed:true}),readApprovedDerivative:async ({derivativeId,version})=>{
+  derivativeReads++;
+  await beforeDerivativeReturn?.();
+  return {derivativeId,version,contentType:'image/webp',bytes};
+ }});
+ const publicHttp=createStagingProviderMediaHttp({enabled:true,binding:b,publicMedia});
+ const publicPhoto=(imageId,expectedPhotoRevision)=>publicHttp.command('photo',{
+  method:'POST',headers:{'content-type':'application/json'},
+  body:JSON.stringify({...scope,imageId,expectedPhotoRevision})
+ });
+ const draftPhoto=await publicPhoto(first.input.imageId,1);
+ assert.equal(draftPhoto.status,503);assert.equal(draftPhoto.bytes,undefined);assert.equal(derivativeReads,0);
  const publish={requestId:'publish-media-provider',expectedRevision:1,expectedGeneration:0,action:'publish'};assert.equal((await owner.managePublication(publish)).ok,false);
  await seed(b.mediaCollections.permissions,'media-owner',{uid:'media-owner',canRelease:true,canModerate:true,suspended:false});await seed(b.mediaCollections.permissions,'reviewer',{uid:'reviewer',canModerate:true,suspended:false});
  const {createStagingProviderMediaModeration}=await import('../../scripts/provider-media-moderation.mjs');let moderator='media-owner';const moderation=createStagingProviderMediaModeration({enabled:true,binding:b,authenticate:()=>({uid:moderator})});
  for(const imageId of [first.input.imageId,...works]){const a=await read(j.assets,imageId),decision={requestId:'review-'+imageId,imageId,expectedAssetRevision:a.revision,expectedReviewRevision:0,decision:'approved'};moderator='media-owner';assert.equal((await moderation.decide(decision)).ok,false);moderator='reviewer';assert.equal((await moderation.decide(decision)).status,'reviewed');assert.equal((await moderation.decide(decision)).status,'replayed');}
 
  assert.equal((await owner.managePublication(publish)).ok,true);assert.equal((await owner.managePublication(publish)).status,'replayed');
- const scope={kind:'provider',parentId,expectedParentRevision:1},manifest=await release.photos(scope);assert.equal(manifest.ok,true,JSON.stringify(manifest));assert.equal(manifest.photos.length,7);assert.equal(manifest.photos[0].imageId,first.input.imageId);
+ const manifest=await release.photos(scope);assert.equal(manifest.ok,true,JSON.stringify(manifest));assert.equal(manifest.photos.length,7);assert.equal(manifest.photos[0].imageId,first.input.imageId);
  const derivative=await release.resolveDerivative({derivativeId:manifest.photos[0].derivativeId,version:manifest.photos[0].version});assert.ok(derivative);assert.equal(derivative.releaseVersion,1);
  const gateway=createApprovedProviderMediaByteDelivery({enabled:true,contract:{publicPhotos:release.photos},consumeRateLimit:()=>({allowed:true}),readApprovedDerivative:async r=>({derivativeId:r.derivativeId,version:r.version,contentType:'image/webp',bytes})});
  assert.equal((await gateway.read({...scope,expectedPhotoRevision:manifest.photoRevision,imageId:first.input.imageId})).ok,true);
- const {createStagingProviderPublicMedia}=await import('../../scripts/provider-public-media.mjs');const publicMedia=createStagingProviderPublicMedia({enabled:true,binding:b,release,consumeRateLimit:()=>({allowed:true}),readApprovedDerivative:async r=>({derivativeId:r.derivativeId,version:r.version,contentType:'image/webp',bytes})});
+ const approvedPhoto=await publicPhoto(first.input.imageId,manifest.photoRevision);
+ assert.equal(approvedPhoto.status,200);assert.equal(approvedPhoto.headers['Cache-Control'],'no-store');
+ assert.equal(approvedPhoto.headers['Content-Type'],'image/webp');assert.deepEqual(approvedPhoto.bytes,bytes);
+ const rejectedPhoto=await publicPhoto(rejected.imageId,manifest.photoRevision);
+ assert.equal(rejectedPhoto.status,503);assert.equal(rejectedPhoto.bytes,undefined);assert.equal(derivativeReads,1);
  assert.equal((await publicMedia.manifest(scope)).ok,true);await onPublished?.({release,publicMedia,manifest,scope,parentId,bytes});
  await seed(b.mediaCollections.permissions,'reviewer',{uid:'reviewer',canModerate:true,suspended:true});assert.equal((await release.photos(scope)).ok,false);await seed(b.mediaCollections.permissions,'reviewer',{uid:'reviewer',canModerate:true,suspended:false});
- assert.equal((await owner.managePublication({requestId:'withdraw-media-provider',expectedRevision:1,expectedGeneration:1,action:'withdraw'})).ok,true);assert.equal((await release.photos(scope)).ok,false);assert.equal((await gateway.read({...scope,expectedPhotoRevision:manifest.photoRevision,imageId:first.input.imageId})).ok,false);
+ // Hold the provider response after authorization, then withdraw before bytes can leave the gateway.
+ const reading=Promise.withResolvers(),finishRead=Promise.withResolvers();
+ beforeDerivativeReturn=()=>{reading.resolve();return finishRead.promise;};
+ const inFlight=publicPhoto(first.input.imageId,manifest.photoRevision);
+ try{
+  assert.equal(await Promise.race([reading.promise.then(()=>true),inFlight.then(()=>false)]),true);
+  assert.equal((await owner.managePublication({requestId:'withdraw-media-provider',expectedRevision:1,expectedGeneration:1,action:'withdraw'})).ok,true);
+ }finally{finishRead.resolve();}
+ const revokedPhoto=await inFlight;
+ assert.equal(revokedPhoto.status,503);assert.equal(revokedPhoto.bytes,undefined);
+ assert.equal((await publicPhoto(first.input.imageId,manifest.photoRevision)).status,503);
+ assert.equal((await release.photos(scope)).ok,false);assert.equal((await gateway.read({...scope,expectedPhotoRevision:manifest.photoRevision,imageId:first.input.imageId})).ok,false);
  assert.equal((await owner.managePublication(publish)).status,'replayed');assert.equal((await release.photos(scope)).ok,false);
  const currentProfileAsset=await read(j.assets,first.input.imageId);moderator='reviewer';assert.equal((await moderation.decide({requestId:'reject-profile-review',imageId:first.input.imageId,expectedAssetRevision:currentProfileAsset.revision,expectedReviewRevision:1,decision:'rejected'})).status,'reviewed');assert.equal((await moderation.decide({requestId:'review-'+first.input.imageId,imageId:first.input.imageId,expectedAssetRevision:3,expectedReviewRevision:0,decision:'approved'})).status,'replayed');assert.equal((await read(b.mediaCollections.reviews,first.input.imageId)).decision,'rejected');
  const {id:ignored,...editable}=profile;assert.equal((await owner.saveDraft({requestId:'edit-media-text',expectedRevision:1,profile:{...editable,description:'Edited original'}})).ok,true);parentRevision=2;
