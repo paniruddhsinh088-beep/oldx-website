@@ -499,6 +499,8 @@ export default Object.freeze({
   "market.product.moreHistory": "Next messages",
   "market.store.description": "Store description",
   "market.store.locality": "Public city / locality",
+  "market.store.addProduct": "Add Product",
+  "market.product.storeLinked": "This Product is linked to your Store.",
   "market.store.publish": "Publish Store",
   "market.store.open": "Open Store",
   "market.store.browse": "Browse Stores",

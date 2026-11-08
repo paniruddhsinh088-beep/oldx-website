@@ -17,7 +17,7 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
  if(inbox.enabled===true)unifiedInbox=mountUnifiedInbox({...inbox,root,enabled:true,openConversation:row=>{root.getElementById('inboxModal').style.display='none';if(row.kind==='product')return products.navigate('thread',row.threadId);return navigation.go('conversation',{providerId:row.providerId,enquiryId:row.threadId});}});
  const cancelProviders=()=>providers?.navigation?.changeScope?.();
  products=mountProductIntegration({...product,root,enabled,managedRoutes:true,beforeNavigate:()=>{stores?.model.changeScope();cancelProviders();},openStore:id=>navigation.go('store',id)});
- stores=mountStoreIntegration({...store,root,enabled,managedRoutes:true,beforeNavigate:()=>{products.model.changeScope();cancelProviders();},onProduct:id=>navigation.go('product',id)});
+ stores=mountStoreIntegration({...store,root,enabled,managedRoutes:true,beforeNavigate:()=>{products.model.changeScope();cancelProviders();},onProduct:id=>navigation.go('product',id),onAddProduct:id=>products.navigate('sell',id)});
  function directory(){view.history.pushState(view.history.state,'',view.location.pathname+view.location.search+'#stores');products.show('homeView');return stores.discover({category:root.getElementById('trustedStoreFilter')?.value??''});}
  navigation=createMarketplaceNavigation({enabled,product:{changeScope:()=>products.model.changeScope(),discover:()=>products.navigate('home'),openProduct:id=>products.navigate('product',id)},store:{changeScope:()=>stores.model.changeScope(),open:id=>stores.open(id),discover:directory},providers:providers?.navigation,onView});
  async function restoreRoute(){

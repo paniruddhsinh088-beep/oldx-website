@@ -501,6 +501,8 @@ export default Object.freeze({
   "market.product.moreHistory": "अगले संदेश",
   "market.store.description": "स्टोर का विवरण",
   "market.store.locality": "सार्वजनिक शहर / क्षेत्र",
+  "market.store.addProduct": "प्रोडक्ट जोड़ें",
+  "market.product.storeLinked": "यह प्रोडक्ट आपके स्टोर से जुड़ा है।",
   "market.store.publish": "स्टोर प्रकाशित करें",
   "market.store.open": "स्टोर खोलें",
   "market.store.browse": "स्टोर देखें",

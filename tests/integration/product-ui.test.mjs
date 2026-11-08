@@ -57,3 +57,27 @@ test('fresh Product draft scope preserves uncertain retry and never updates a pr
  assert.equal(calls[2].expectedRevision,0);
  assert.equal(ui.snapshot().owner.id,'draft-2');
 });
+
+test('Store draft association is scoped to the current Product draft and never changes a pending retry',async()=>{
+ const calls=[];let uncertain=true,sequence=0;
+ const ui=createProductIntegration({enabled:true,makeRequestId:()=> 'linked-'+(++sequence),ports:{
+  save:async body=>{calls.push(body);return uncertain?{ok:false,code:'OUTCOME_UNKNOWN'}:{ok:true,id:body.requestId,revision:1};}
+ }});
+ assert.equal(ui.startDraft('store-a'),false);
+ ui.setSession(identity('seller'));
+ assert.equal(ui.startDraft('../unsafe'),false);
+ assert.equal(ui.startDraft('store-a'),true);
+ assert.equal(ui.snapshot().storeLinked,true);
+ await ui.save({...profile,storeId:'browser-override'});
+ assert.equal(calls[0].profile.storeId,'store-a');
+ assert.equal(ui.startDraft('store-b'),false);
+ uncertain=false;
+ await ui.retry();
+ assert.deepEqual(calls[1],calls[0]);
+ ui.setSession(null);
+ assert.equal(ui.snapshot().storeLinked,false);
+ ui.setSession(identity('other'));
+ assert.equal(ui.startDraft(),true);
+ await ui.save(profile);
+ assert.equal(calls[2].profile.storeId,null);
+});

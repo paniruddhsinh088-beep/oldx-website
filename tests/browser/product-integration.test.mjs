@@ -41,20 +41,39 @@ test('refresh restores exact owner Unicode and lost acknowledgement receipt with
  await page.reload();await boot('en');assert.equal(await page.locator('#adTitle').inputValue(),title);assert.equal(await page.locator('#adDesc').inputValue(),description+' edited');assert.equal(await page.evaluate(()=>binding.model.snapshot().owner.revision),2);
  }finally{await context.close();}});
 
-for(const width of [320,375])test('shared main host Product Store Provider navigation and direct restoration '+width,async()=>{
- const {context,page,boot}=await fixture(width,'gu');
+for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('shared main host Product Store Provider navigation and direct restoration '+width,async()=>{
+ const {context,page,boot}=await fixture(width,locale);
  try{
- const storeId=await page.evaluate(async()=>{binding.destroy();history.replaceState(null,'','/fixture');const saved=await fixturePort('store.save',{requestId:'host-store',id:null,expectedRevision:0,publication:'publish',profile:{name:'Shared Store',description:'Public Store',category:'cars',locationLabel:'Ahmedabad',photos:['data:image/jpeg;base64,YQ==']}});await fixturePort('save',{requestId:'host-product',id:null,expectedRevision:0,publication:'publish',profile:{title:'મૂળ Cafe\u0301',description:'Original seller text',category:'cars',locationLabel:'Ahmedabad',basePrice:10,isSold:true,storeId:saved.id,photos:[]}});return saved.id;});
+ const storeId=await page.evaluate(async()=>{binding.destroy();history.replaceState(null,'','/fixture');const saved=await fixturePort('store.save',{requestId:'host-store',id:null,expectedRevision:0,publication:'publish',profile:{name:'Shared Store',description:'Public Store',category:'cars',locationLabel:'Ahmedabad',photos:['data:image/jpeg;base64,YQ==']}});return saved.id;});
  async function bootHost(){await page.evaluate(async()=>{binding.destroy();const {mountMarketplaceHost}=await import('/features/marketplace/host-integration.mjs'),{createProviderHost}=await import('/features/service-providers/host-integration.mjs');window.providerRoutes=[];window.providerSessions=[];const providers=createProviderHost({enabled:true,inbox:{changeScope(){},setSession:v=>providerSessions.push(v)},openPage:v=>providerRoutes.push(v)});window.host=mountMarketplaceHost({enabled:true,root:document,providers,product:{ports:Object.fromEntries(['save','archive','list','detail','owner','open','send','read','inbox','inboxPage','thread'].map(op=>[op,(body,ctx)=>window.publicPorts[op]?window.publicPorts[op](body,ctx):fixturePort(op,body)])),getCategory:()=> 'cars',readPhotoReferences:async()=>[]},store:{ports:{save:body=>fixturePort('store.save',body),...Object.fromEntries(['owner','detail','list'].map(op=>[op,(body,ctx)=>window.publicPorts[op]?window.publicPorts[op](body,ctx):fixturePort(op,body)]))},getCategory:()=> 'cars',readPhotoReferences:async()=>[]}});await host.setSession({uid:'seller',sessionId:'shared'});});}
- await bootHost();await page.locator('#productGrid button').click();await page.waitForFunction(()=>document.querySelector('#productStoreLink').hidden===false);await page.locator('#productStoreLink').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');await page.locator('#storePublicWrap button').click();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');assert.equal(await page.locator('#storePage').isVisible(),false);
- await page.goBack();await page.waitForFunction(()=>document.querySelector('#storePage').style.display==='block');await page.goForward();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');await page.reload();await boot('gu');await bootHost();assert.equal(await page.locator('#detailTitle').textContent(),'મૂળ Cafe\u0301');
+ await bootHost();
+
+ await page.evaluate(async()=>{history.pushState(null,'','#store');await host.restoreRoute();});
+ const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+ assert.equal(await page.locator('#trustedStoreAddProduct').textContent(),catalog['market.store.addProduct']);
+ await page.locator('#trustedStoreAddProduct').click();
+ assert.equal(await page.evaluate(()=>location.hash),'#sell');
+ assert.equal(await page.locator('#productStoreDraftNotice').isVisible(),true);
+ assert.equal(await page.locator('#productStoreDraftNotice').textContent(),catalog['market.product.storeLinked']);
+ await page.locator('#adTitle').fill('મૂળ Cafe\u0301');
+ await page.locator('#adDesc').fill('Original seller text');
+ await page.locator('#adPrice').fill('10');
+ await page.locator('#productSaveDraft').click();
+ await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===1);
+ const linked=await page.evaluate(()=>fixturePort('owner',{kind:'product',id:'browser-product',requestId:null}));
+ assert.equal(linked.profile.storeId,storeId);
+ await page.evaluate(profile=>fixturePort('save',{requestId:'host-product',id:'browser-product',
+  expectedRevision:1,publication:'publish',profile:{...profile,isSold:true}}),linked.profile);
+ await page.evaluate(()=>host.go('home'));
+ await page.locator('#productGrid button').click();await page.waitForFunction(()=>document.querySelector('#productStoreLink').hidden===false);await page.locator('#productStoreLink').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');await page.locator('#storePublicWrap button').click();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');assert.equal(await page.locator('#storePage').isVisible(),false);
+ await page.goBack();await page.waitForFunction(()=>document.querySelector('#storePage').style.display==='block');await page.goForward();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');await page.reload();await boot(locale);await bootHost();assert.equal(await page.locator('#detailTitle').textContent(),'મૂળ Cafe\u0301');
  await page.evaluate(()=>host.go('home'));await page.locator('#trustedStoreBrowse').click();assert.equal(await page.evaluate(()=>location.hash),'#stores');await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.reload();await boot('hi');await bootHost();await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.locator('#homeStoresGrid button').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2'));
  await page.evaluate(()=>host.go('home'));await page.locator('#homeServicesPreviewSection a[href*="mode=website"]').click();assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#services'});await page.evaluate(()=>{history.pushState(null,'','#provider/sp_public');return host.restoreRoute();});assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#provider/sp_public'});assert.equal(await page.evaluate(()=>host.go('conversation',{providerId:'sp_public',enquiryId:'enquiry'})),true);assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-conversation-preview.html',hash:'#conversation/buyer/sp_public/enquiry'});
 
  await page.evaluate(async()=>{history.pushState(null,'','#edit-browser-product');await host.restoreRoute();});
  await page.locator('#adTitle').fill('Edited Gujarati ગુજરાતી हिन्दी');
  await page.locator('#productSaveDraft').click();
- await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===2);
+ await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===3);
  const edited=await page.evaluate(()=>fixturePort('owner',{kind:'product',id:'browser-product',requestId:null}));
  assert.equal(edited.profile.storeId,storeId);
  assert.equal(edited.profile.isSold,true);
@@ -66,7 +85,7 @@ for(const width of [320,375])test('shared main host Product Store Provider navig
  assert.equal(await page.locator('#storePublicWrap button').count(),1);
  assert.match(await page.locator('#storePublicWrap button').textContent(),/મૂળ Cafe/);
  const published=await page.evaluate(profile=>fixturePort('save',{requestId:'host-publish-edit',id:'browser-product',
-  expectedRevision:2,publication:'publish',profile}),edited.profile);
+  expectedRevision:3,publication:'publish',profile}),edited.profile);
  assert.equal(published.id,'browser-product');
  await page.evaluate(()=>host.go('home'));
  assert.equal(await page.locator('#productGrid button').count(),1);
@@ -76,12 +95,13 @@ for(const width of [320,375])test('shared main host Product Store Provider navig
  assert.match(await page.locator('#storePublicWrap button').textContent(),/Edited Gujarati/);
  await page.evaluate(async()=>{history.pushState(null,'','#edit-browser-product');await host.restoreRoute();});
  await page.locator('#productWithdraw').click();
- await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===4);
+ await page.waitForFunction(()=>host.product.model.snapshot().owner?.revision===5);
  await page.evaluate(()=>host.go('home'));
  assert.equal(await page.locator('#productGrid button').count(),0);
  await page.evaluate(id=>host.go('store',id),storeId);
  assert.equal(await page.locator('#storePublicWrap button').count(),0);
- await page.evaluate(()=>host.setSession(null));assert.equal(await page.locator('#fullChatMessages').textContent(),'');assert.equal(await page.evaluate(()=>providerSessions.at(-1)),null);await page.evaluate(()=>host.destroy());
+ await page.evaluate(async()=>{history.pushState(null,'','#store');await host.restoreRoute();});
+ await page.evaluate(()=>host.setSession(null));assert.equal(await page.locator('#trustedStoreAddProduct').isVisible(),false);assert.equal(await page.locator('#productStoreDraftNotice').isVisible(),false);assert.equal(await page.locator('#fullChatMessages').textContent(),'');assert.equal(await page.evaluate(()=>providerSessions.at(-1)),null);await page.evaluate(()=>host.destroy());
  }finally{await context.close();}
 });
 

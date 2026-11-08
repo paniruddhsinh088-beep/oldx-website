@@ -556,6 +556,7 @@
           <div id="trustedStoreControls" hidden class="border rounded-xl p-3 space-y-3">
             <label for="trustedStoreDescription" data-i18n="market.store.description">Store description</label><textarea id="trustedStoreDescription" maxlength="5000" class="w-full border rounded-xl p-3"></textarea>
             <label for="trustedStoreLocality" data-i18n="market.store.locality">Public city / locality</label><input id="trustedStoreLocality" maxlength="160" class="w-full border rounded-xl p-3">
+            <button type="button" id="trustedStoreAddProduct" hidden data-i18n="market.store.addProduct">Add Product</button>
             <button type="button" id="trustedStoreLoad" data-i18n="market.product.reload">Reload private draft</button>
             <button type="button" id="trustedStorePublish" data-i18n="market.store.publish">Publish Store</button>
             <button type="button" id="trustedStoreWithdraw" data-i18n="market.product.withdraw">Withdraw</button>
@@ -1056,6 +1057,7 @@
         </div>
 
         <div class="max-w-2xl mx-auto p-4 md:p-6">
+            <p id="productStoreDraftNotice" hidden class="mb-3 text-sm font-semibold text-teal-700 dark:text-teal-300" data-i18n="market.product.storeLinked">This Product is linked to your Store.</p>
             <div id="wizardStage1">
                 <h3 class="text-2xl font-black mb-1 text-gray-900 dark:text-white">Choose a Category</h3>
                 <p class="text-xs text-gray-500 mb-6">Select what you want to sell</p>
