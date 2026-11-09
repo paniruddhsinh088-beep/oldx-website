@@ -36,9 +36,10 @@ test('legacy public badges and curated promotion shelf never infer approval from
 });
 
 test('header Store lookup cannot replace the Store currently being viewed or its sharing identity',async()=>{
- const user={uid:'owner'},header={style:{}},viewed={uid:'public-current',shopName:'Public'};let resolve;
- const context={window:{currentUser:user},document:{getElementById:()=>header},db:{collection:()=>({doc:()=>({get:()=>new Promise(r=>resolve=r)})})}};
- runInNewContext('let currentStoreData=null;'+section('function refreshStoreHeader(user)', 'function handleStoreHeaderClick()')+';this.refresh=refreshStoreHeader;this.set=v=>currentStoreData=v;this.current=()=>currentStoreData;',context);context.set(viewed);context.refresh(user);resolve({exists:true,data:()=>({uid:'forged'})});await Promise.resolve();assert.equal(context.current(),viewed);assert.match(header.innerHTML,/My Store/);
+ const label={dataset:{}},icon={};
+ const user={uid:'owner'},header={querySelector:selector=>({'[data-i18n]':label,i:icon})[selector]},viewed={uid:'public-current',shopName:'Public'};let resolve;
+ const context={window:{currentUser:user},document:{getElementById:id=>id==='storeHeaderBtn'?header:null},translateHomepageLabels:()=>{},db:{collection:()=>({doc:()=>({get:()=>new Promise(r=>resolve=r)})})}};
+ runInNewContext('let currentStoreData=null;'+section('function refreshStoreHeader(user)', 'function handleStoreHeaderClick()')+';this.refresh=refreshStoreHeader;this.set=v=>currentStoreData=v;this.current=()=>currentStoreData;',context);context.set(viewed);context.refresh(user);resolve({exists:true,data:()=>({uid:'forged'})});await Promise.resolve();assert.equal(context.current(),viewed);assert.equal(label.textContent,'My Store');assert.equal(label.dataset.i18n,'market.home.myStore');
 });
 
 test('opening saved/recent views does not persist deletion of records outside the loaded window',()=>{
