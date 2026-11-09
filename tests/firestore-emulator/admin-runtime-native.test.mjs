@@ -199,19 +199,19 @@ test('REAL one canonical Product publication serves marketplace and Store catalo
  })});
  const save=(kind,requestId,id,expectedRevision,publication,profile,token=catalogueOwnerToken)=>
   scoped.handle('/api/staging/marketplace/save',request({kind,requestId,id,expectedRevision,publication,profile},token));
- const shop={name:'Catalogue shop',description:'Public only',category:'cars',locationLabel:'Ahmedabad',photos:[]};
+ const shop={name:'Catalogue shop',description:'Public only',category:'books',locationLabel:'Ahmedabad',photos:[]};
  const storeDraft=await save('store','catalogue-shop-draft',null,0,'draft',shop);
  assert.equal(storeDraft.status,200);
  const storeId=storeDraft.body.id;
  assert.equal((await save('store','catalogue-shop-publish',storeId,1,'publish',shop)).status,200);
- const linked={...profile,title:'એક Product हिन्दी',storeId,isSold:true};
+ const linked={...profile,category:shop.category,title:'એક Product हिन्दी',storeId,isSold:true};
  assert.equal((await save('product','catalogue-foreign-link',null,0,'draft',linked,otherToken)).status,403);
  const draft=await save('product','catalogue-draft',null,0,'draft',linked);
  assert.equal(draft.status,200);
  const id=draft.body.id;
  const publicRepo=createStagingMarketplacePublicRepository({enabled:true,binding:createEmulatorMarketplaceBinding(options()),Filter,
   readCursor:async()=>null,issueCursor:async()=>null});
- const list=storeId=>publicRepo.list({kind:'product',limit:12,category:'',storeId,cursor:null});
+ const list=storeId=>publicRepo.list({kind:'product',limit:12,category:shop.category,storeId,cursor:null});
  async function assertBoth(expectedTitle,revision){
   const [market,store]=await Promise.all([list(null),list(storeId)]);
   assert.equal(market.ok,true);assert.equal(store.ok,true);
