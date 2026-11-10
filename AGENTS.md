@@ -3,8 +3,19 @@
 ## Mission
 Help complete OLDX safely and efficiently. Work autonomously on clearly scoped, reversible repository tasks, run the relevant tests, fix failures where safe, and continue to the next independent task without waiting for the user to say "continue".
 
+## Ownership handover and approval authority (2026-11-11)
+- **Current intended genuine business/technical operator and decision-maker:** Yasmin Parmar, GitHub `yasminparmar087-ops`. All new OLDX operational approvals must come from Yasmin in her owner capacity. This is a prospective handover; do **not** rewrite, deny, or erase prior involvement by the former operator or historical commit authorship.
+- The GitHub repository was transferred to `yasminparmar087-ops/oldx-website`. Treat old `paniruddhsinh088-beep/oldx-website` strings in dated reports as historical references, not current push or CI targets. Update active instructions/configuration deliberately and minimally where proven necessary.
+- Vercel `oldx-website` project is now in Yasmin's `yasminparmar087-ops` Hobby workspace; the existing `oldxbazar.in` domain and deployment history were observed there. Git integration points to Yasmin's repository. **Ignored Build Step = Don't build anything / `exit 0`** was checked after transfer. Do not re-enable builds, deploy, cut over, or alter DNS automatically.
+- Firebase projects `oldx-staging`, `oldx-testing`, and `oldx-1c983` (production) visibly list Yasmin as Owner; all three were checked as Spark/free with no linked billing account. Former Google account access still existed at the last review; its removal was intentionally deferred to a separate dependency/permission review on or after 2026-11-12. **Do not remove any owner, credentials, or IAM bindings on your own.**
+- GoDaddy account shows `oldxbazar.in` under Yasmin's login, with updated Yasmin registration contact details and active domain. Pending WHOIS warning later disappeared, but do not assert that all registrar verification/transfer-lock requirements are conclusively closed. The website was observed loading; DNS recommendation was left unchanged.
+- Cloudflare Pages `oldx-website` was connected to Yasmin's GitHub repository with production and preview automatic deployments disabled. Cloudflare account ownership, integration permissions, remaining credentials and operational readiness should be reviewed only where not already evidenced.
+- **Do not repeat verified handover checks** unless there is a concrete new discrepancy or change. Resume from remaining dependencies and separately approved next tasks. Avoid duplicate work and credits.
+- No authorization is implied to activate Blaze, link billing, provision Cloud Run/R2, change production or staging Rules, enable deployments, rotate/delete provider credentials, change DNS, launch, or spend. Preserve all existing data, history, code, approved product/security requirements and HOLD/NO-GO. Existing billing-support holds should not be bypassed.
+- Treat this section as the **current owner/handover instruction**; dated planning and architecture documents remain historical evidence and still govern design unless explicitly superseded. Only Yasmin may authorize new owner-gated actions after the handover.
+
 ## Repository and branch safety
-- Repository: paniruddhsinh088-beep/oldx-website.
+- Current repository: `yasminparmar087-ops/oldx-website` (transferred from `paniruddhsinh088-beep/oldx-website`; retain historical commit authors, links, and audit trails).
 - The authorized development line is `security-hardening-review` only.
 - Never modify `main`, production branches, release tags, or deployment targets.
 - If the coding-agent platform requires a task branch/worktree, create it from `security-hardening-review` and propose changes back to `security-hardening-review` only. Never target `main`.
