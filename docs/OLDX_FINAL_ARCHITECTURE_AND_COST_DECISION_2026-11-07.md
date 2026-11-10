@@ -1,7 +1,7 @@
 # OLDX Final Architecture, Cost and Delivery Decision
 Date: 2026-11-07
 Owner decision: APPROVED DIRECTION AND COST PRINCIPLE
-Repository: paniruddhsinh088-beep/oldx-website
+Current repository: yasminparmar087-ops/oldx-website (transferred; old repository references in dated material remain historical)
 Authorized work branch: `security-hardening-review`
 Deployment state: HOLD / NO-GO until separate readiness and production approval
 
@@ -40,6 +40,9 @@ Preserve agreed Products, seller Stores and shareable storefronts, multi-service
 6. Execute staging integration and 500/1000/1500 DAU capacity/cost tests with approved resources and synthetic/test identities.
 7. Publish acceptance evidence, final priced bill-of-materials, rollback plan and owner go/no-go request.
 8. Only after explicit production approval: controlled deployment and monitoring; then Android packaging/QA and Play Store submission when ready.
+
+## Ownership handover clarification (2026-11-11)
+This November 7 decision records the original approval at that date. Yasmin Parmar is now the intended genuine OLDX business and technical operator and the authority for **future** action-specific approvals; previous approvals and historical operator contributions must not be retrospectively attributed to her. GitHub/Vercel handover and Firebase/registrar checks are recorded in `AGENTS.md`. Old-account access removal remains pending a separate dependency review. This update does not authorize any production release, billing, IAM, DNS, or live change.
 
 ## Safety and ownership
 All code work remains on `security-hardening-review`; do not touch `main` or production without a separate explicit approval. No implicit authorization for Firebase Blaze activation, billing, live Rules, credentials, IAM, provider account/bucket creation, production migrations, or deployment. Maintain current HOLD/NO-GO and staging deny-all protections until their separate policy and acceptance gates are met. Existing November 7 website and November 14-19 Android targets are aspirations, not overrides of acceptance requirements.
