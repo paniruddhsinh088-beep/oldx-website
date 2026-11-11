@@ -10,7 +10,7 @@ export const EMULATOR_TEST_PLANS = Object.freeze({
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8088, authPort: 9098,
     tests: ['tests/browser/saved-products-runtime.test.mjs']
   }),
-  'admin-runtime': Object.freeze({service:'firestore',project:'demo-oldx-admin-runtime',config:'firebase.admin-runtime-emulator.json',rules:'tests/firestore-emulator/deny-all.rules',port:8088,authPort:9098,tests:['tests/firestore-emulator/admin-runtime-native.test.mjs','tests/firestore-emulator/notification-bindings-auth-runtime.test.mjs']}),
+  'admin-runtime': Object.freeze({service:'firestore',project:'demo-oldx-admin-runtime',config:'firebase.admin-runtime-emulator.json',rules:'tests/firestore-emulator/deny-all.rules',port:8088,authPort:9098,tests:['tests/firestore-emulator/admin-runtime-native.test.mjs','tests/firestore-emulator/notification-bindings-auth-runtime.test.mjs','tests/firestore-emulator/mixed-inbox-auth-runtime.test.mjs']}),
   baseline: Object.freeze({
     service: 'firestore', project: 'demo-oldx-emulator', config: 'firebase.emulator.json',
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8080,
