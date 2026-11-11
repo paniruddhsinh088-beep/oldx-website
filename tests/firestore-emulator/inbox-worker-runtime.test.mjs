@@ -4,3 +4,9 @@ for(const[label,work,namespace]of[['mixed Inbox and recording worker',inboxWorke
 test('REAL guests/participants/admin-claim cannot read or forge Inbox totals, source epochs or worker events',async()=>{for(const uid of [null,'buyer','seller','foreign']){const db=uid?env.authenticatedContext(uid,{admin:true}).firestore():env.unauthenticatedContext().firestore();for(const collection of ['testOldxNativeNextInboxHeads','testOldxNativeNextInboxRows','testOldxNativeNextWorkerEvents','testOldxNativeNextWorkerAudits']){await assertFails(sdk.getDocs(sdk.query(sdk.collection(db,collection),sdk.limit(20))));await assertFails(sdk.setDoc(sdk.doc(db,collection,'forged'),{totalUnread:0,ready:true,active:true}));}}});
 
 import {workerBatchAcceptance} from '../integration/worker-batch-cases.mjs';test('REAL worker batches isolate credentials and cancel timed-out work without duplicate delivery',async()=>env.withSecurityRulesDisabled(async context=>{const db=context.firestore()._delegate;await workerBatchAcceptance({sdk,db,namespace:'NativeBatch',deadlineMs:1000,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v)});}));
+
+import {mixedInboxHandlersAcceptance} from '../integration/mixed-inbox-handlers-cases.mjs';
+test('REAL Product and Provider handlers share one Inbox and recover only after complete reconciliation',async()=>env.withSecurityRulesDisabled(async context=>{
+ const db=context.firestore()._delegate;
+ await mixedInboxHandlersAcceptance({sdk,db,seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value)});
+}));

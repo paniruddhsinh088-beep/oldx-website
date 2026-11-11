@@ -176,8 +176,11 @@ test('Product Inbox reopens overlapping history and refreshes the server badge',
   await page.waitForFunction(()=>document.querySelector('#inboxBadgeCount').textContent==='0');
   await page.evaluate(()=>switchOverlapAccount('foreign'));
   assert.equal(await page.locator('#fullChatMessages').textContent(),'');
-  assert.equal(await page.locator('#inboxConversationsList button').count(),0);
+  assert.equal(await page.locator('#inboxConversationsList [data-conversation-kind]').count(),0);
+  assert.equal(await page.locator('#inboxConversationsList [data-inbox-retry]').count(),1);
+  assert.equal(await page.locator('#inboxBadgeCount').textContent(),'?');
   await page.evaluate(()=>switchOverlapAccount(null));
+  assert.equal(await page.locator('#inboxConversationsList button').count(),0);
   assert.equal(await page.locator('#inboxBadgeCount').textContent(),'');
  }finally{await context.close();}
 });
