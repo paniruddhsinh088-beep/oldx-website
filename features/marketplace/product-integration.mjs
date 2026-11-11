@@ -14,7 +14,10 @@ export function createProductIntegration({enabled=false,readStateEnabled=false,r
  let session=null,online=true,epoch=0,pending=null,commandRead=null,command={status:enabled?'idle':'disabled',canRetry:false},owner=null,draftStoreId=null,detail=null,items=[],nextCursor=null,lastCategory='',inbox=[],inboxCursor=null,lastInboxRole='seller',privateThread=null,historyAfter=0,historyHasMore=false;
  const ack=createReadAcknowledgement({enabled:enabled===true&&readStateEnabled===true,timeoutMs,execute:(body,ctx)=>ports.acknowledge(body,{...ctx,session:session&&{...session}}),onAcknowledged,onChange:()=>emit()});let delivery=null;
  const readers=new Map(),statuses={};
- const snapshot=()=>structuredClone({readAcknowledgement:ack.snapshot(),command,owner,storeLinked:!!(owner?.storeId??draftStoreId),detail,items,nextCursor,authenticated:!!session,inbox,inboxCursor,historyHasMore,thread:privateThread,statuses});
+ const chatCommandCanRetry=()=>command.canRetry&&(
+  pending?.operation==='send'&&pending.body.threadId===privateThread?.id||
+  pending?.operation==='open'&&pending.body.productId===detail?.id);
+ const snapshot=()=>structuredClone({readAcknowledgement:ack.snapshot(),command,chatCommandCanRetry:!!chatCommandCanRetry(),owner,storeLinked:!!(owner?.storeId??draftStoreId),detail,items,nextCursor,authenticated:!!session,inbox,inboxCursor,historyHasMore,thread:privateThread,statuses});
  const emit=()=>onChange(snapshot());
  function clearReads(){ack.clear();delivery=null;for(const r of readers.values())r.clear();readers.clear();items=[];nextCursor=null;detail=null;inbox=[];inboxCursor=null;privateThread=null;historyAfter=0;historyHasMore=false;onOwnerDraft(null);onPrivate(null);for(const k of Object.keys(statuses))delete statuses[k];}
  function invalidate({logout=false}={}){epoch++;commandRead?.clear();commandRead=null;clearReads();if(logout){pending=null;owner=null;draftStoreId=null;}command={status:pending?'unknown':enabled?'idle':'disabled',canRetry:!!pending};emit();}
