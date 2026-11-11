@@ -96,15 +96,15 @@
         #homeCatGrid button span { overflow-wrap: anywhere; }
         #searchInput { min-width: 0; scroll-margin-block-start: 8rem; }
         #homeCatGrid :focus-visible, #oldxMobileNav :focus-visible, #searchInput:focus-visible,
-        [data-card-title]:focus-visible { outline: 2px solid #0f766e; outline-offset: -2px; }
+        [data-card-title]:focus-visible { outline: 2px solid var(--oldx-navy); outline-offset: -2px; }
         .dark #homeCatGrid :focus-visible, .dark #oldxMobileNav :focus-visible, .dark #searchInput:focus-visible,
         .dark [data-card-title]:focus-visible { outline-color: #fdba74; }
         [data-card-image-area] { aspect-ratio: 4 / 3; }
         [data-card-price], [data-card-location] { overflow-wrap: anywhere; }
         [data-card-location] { display: block; }
         #oldxMobileNav { display: none; }
-        #oldxMobileNav [aria-current="page"] { color: #0f766e; }
-        .dark #oldxMobileNav [aria-current="page"] { color: #5eead4; }
+        #oldxMobileNav [aria-current="page"] { color: var(--oldx-navy); }
+        .dark #oldxMobileNav [aria-current="page"] { color: #fdba74; }
         @media (min-width: 768px) {
             #oldxHomeHero { padding-block: 1.75rem; }
             #homeCatGrid button { min-width: 0; }
