@@ -6,6 +6,7 @@ import {createIsolatedPhotoReferenceRepository} from '../../scripts/firebase-pho
 import {createIsolatedPublicMediaRead} from '../../scripts/firebase-media-delivery-read.mjs';
 import {createMediaDeliveryContract} from '../../scripts/media-delivery-contract.mjs';
 import {createIsolatedMarketplaceMediaModerationHttp} from '../../scripts/marketplace-media-moderation-http.mjs';
+import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';
 export async function atomicPhotoFixture({sdk,db,seed,get}){
  let uid='atomic-owner',fail=false,lost=false;const c=Object.fromEntries(Object.keys(MEDIA_RELEASE_TEST_SCHEMA).map(k=>[k,'testOldxAtomicPhoto'+k])),m=Object.fromEntries(Object.keys(MARKETPLACE_TEST_SCHEMA).map(k=>[k,'testOldxAtomicMarket'+k]));
  const wrapper={...sdk,runTransaction:async(db,work,options)=>{const result=await sdk.runTransaction(db,async raw=>{let writes=0;return work({get:r=>raw.get(r),delete:r=>raw.delete(r),set:(r,v)=>{raw.set(r,v);if(fail&&++writes===3)throw new Error('Isolated staged-write failure');}});},options);if(lost&&result?.status==='saved'){lost=false;throw new Error('Isolated lost acknowledgement');}return result;}};
@@ -15,8 +16,9 @@ export async function atomicPhotoFixture({sdk,db,seed,get}){
  const refs=createIsolatedPhotoReferenceRepository({enabled:true,firestore:db,sdk:wrapper,schema:photoSchema,parentCollections,actorCollections,authenticate:()=>({uid})}),releases=createIsolatedMediaRelease({enabled:true,firestore:db,sdk:wrapper,schema:c,parentCollections,actorCollections,publicCollections,authenticate:()=>({uid})});
  const moderation=createIsolatedMarketplaceMediaModerationHttp({
   enabled:true,firestore:db,sdk:wrapper,schema:c,parentCollections,actorCollections,publicCollections,
+  ...createProviderDiscoveryCursorCodec({key:new Uint8Array(32).fill(37)}),
   verifyFirebaseToken:(token,{checkRevoked})=>{
-   const actor=['atomic-owner','atomic-reviewer','foreign'].find(id=>token===id+'.fixture.token');
+   const actor=['atomic-owner','atomic-reviewer','second-reviewer','foreign'].find(id=>token===id+'.fixture.token');
    return checkRevoked&&actor?{uid:actor}:null;
   },consumeRateLimit:()=>({allowed:true})
  });
@@ -41,13 +43,23 @@ async function moderateBeforePublication({f,seed,get,hash,kind,id,imageId,reques
   assert.equal(await get(f.m.publicViews,kind+'_'+id),null);
   assert.equal((await f.delivery.publicPhotos({kind,parentId:id,expectedParentRevision:2,expectedPhotoRevision:photoRevision})).ok,false);
  };
+ const queue=async()=>{
+  const response=await f.moderation.handle('queue',{method:'POST',headers:{
+   authorization:'Bearer atomic-reviewer.fixture.token','content-type':'application/json'
+  },body:JSON.stringify({kind,limit:10,cursor:null})});
+  assert.equal(response.status,200);
+  return response.body.items;
+ };
+ assert.deepEqual(await queue(),[{kind,parentId:id,imageId,expectedAssetRevision:asset.revision,expectedReviewRevision:0}]);
  assert.equal((await call(approve,null)).status,401);
  for(const actor of ['atomic-owner','foreign'])assert.equal((await call(approve,actor)).status,403);
  assert.equal((await call({...approve,moderatorUid:reviewer})).status,400);
  assert.equal((await call({...approve,expectedAssetRevision:asset.revision-1})).body.error.code,'REVISION_CONFLICT');
  assert.equal((await call(pending)).body.status,'moderated');
+ assert.equal((await queue())[0].expectedReviewRevision,1);
  await unavailable();
  assert.equal((await call(reject)).body.status,'moderated');
+ assert.deepEqual(await queue(),[]);
  await unavailable();
  assert.equal((await call(pending)).body.error.code,'IDEMPOTENCY_CONFLICT');
  assert.equal((await call({...reject,decision:'approved'})).body.error.code,'IDEMPOTENCY_CONFLICT');
@@ -61,6 +73,7 @@ async function moderateBeforePublication({f,seed,get,hash,kind,id,imageId,reques
  assert.equal(await get(f.c.receipts,auditId),null);
  assert.equal((await call(currentApproval)).body.status,'moderated');
  assert.equal((await call(currentApproval)).body.status,'replayed');
+ assert.deepEqual(await queue(),[]);
  const audit=await get(f.c.audits,auditId);
  assert.equal(audit.assetRevision,asset.revision);
  assert.equal(audit.processedDigest,asset.processedDigest);
@@ -69,6 +82,7 @@ async function moderateBeforePublication({f,seed,get,hash,kind,id,imageId,reques
  // The same image ID with a different asset revision requires a fresh decision.
  await seed(f.c.assets,imageId,{...asset,revision:asset.revision+1});
  assert.equal((await call(currentApproval)).body.error.code,'IDEMPOTENCY_CONFLICT');
+ assert.deepEqual(await queue(),[{kind,parentId:id,imageId,expectedAssetRevision:asset.revision+1,expectedReviewRevision:3}]);
  await unavailable();
  await seed(f.c.assets,imageId,{...asset,revision:asset.revision+1,processedDigest:'b'.repeat(64)});
  assert.equal((await call({...currentApproval,requestId:'approve-current-'+kind,

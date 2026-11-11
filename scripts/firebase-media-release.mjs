@@ -5,12 +5,15 @@ import {validateProcessedImage} from './image-upload-contract-policy.mjs';
 const roles=['assets','associations','reviews','publications','permissions','generations','receipts','audits'];
 export const MEDIA_RELEASE_TEST_SCHEMA=Object.freeze({assets:'testOldxPhotoAssets',associations:'testOldxPhotoAssociations',reviews:'testOldxMediaReviews',publications:'testOldxMediaPublications',permissions:'testOldxMediaReleasePermissions',generations:'testOldxMediaReleaseGenerations',receipts:'testOldxMediaReleaseReceipts',audits:'testOldxMediaReleaseAudits'});
 export const MEDIA_MODERATION_FIELDS=Object.freeze(['requestId','imageId','expectedAssetRevision','expectedReviewRevision','decision']);
+export const MEDIA_MODERATION_QUEUE_FIELDS=Object.freeze(['kind','limit','cursor']);
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),int=v=>Number.isSafeInteger(v)&&v>=0,fail=code=>({ok:false,code});
+const managedId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v);
+const cursorToken=v=>typeof v==='string'&&v.length>0&&v.length<=1024;
 const processed=a=>a&&typeof a.processedDigest==='string'&&/^[a-f0-9]{64}$/.test(a.processedDigest)&&a.processed?.metadataStripped===true&&a.processed?.contentScanned===true&&validateProcessedImage({...a.processed,surface:a.kind==='provider'?'profile':a.kind,fileCount:1}).ok;
 // Isolated metadata transactions, not real moderation or publication activation.
 // No image provider, credentials, endpoint, existing gallery or v1 schema mutation.
-export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,parentCollections,publicCollections,actorCollections,authenticate,now=Date.now,timeoutMs=5000}={}){
- if(enabled!==true)return Object.freeze({moderate:async()=>fail('UNAVAILABLE'),moderateMarketplace:async()=>fail('UNAVAILABLE'),release:async()=>fail('UNAVAILABLE')});
+export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,parentCollections,publicCollections,actorCollections,authenticate,readCursor,issueCursor,now=Date.now,timeoutMs=5000}={}){
+ if(enabled!==true)return Object.freeze({moderate:async()=>fail('UNAVAILABLE'),moderateMarketplace:async()=>fail('UNAVAILABLE'),queueMarketplace:async()=>fail('UNAVAILABLE'),release:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
  for(const mapping of [parentCollections,actorCollections])if(!copyRecord(mapping,['product','store','provider'])||Object.values(mapping).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated media scope');
  if(!copyRecord(publicCollections,['product','store'])||Object.values(publicCollections).some(v=>typeof v!=='string'||!/^testOldx[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated public scope');
@@ -55,9 +58,65 @@ export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,p
   if(!r||!safeId(r.requestId)||!safeId(r.imageId)||!int(r.expectedAssetRevision)||!int(r.expectedReviewRevision)||!['approved','rejected','pending'].includes(r.decision))return Promise.resolve(fail('INVALID_REQUEST'));
   return perform('moderate',r,options,marketplaceOnly);
  }
+ async function queueMarketplace(request,{credential,signal}={}){
+  const r=copyRecord(request,MEDIA_MODERATION_QUEUE_FIELDS);
+  if(!r||!['product','store'].includes(r.kind)||!Number.isInteger(r.limit)||r.limit<1||r.limit>10||r.cursor!==null&&!cursorToken(r.cursor))return fail('INVALID_REQUEST');
+  if(typeof readCursor!=='function'||typeof issueCursor!=='function')return fail('UNAVAILABLE');
+  return runVerifiedOperation({authenticate,credential,signal,now,timeoutMs,run:async context=>{
+   const uid=context.actorUid,scope=hash(['marketplace-media-review-v1',uid,r.kind,r.limit]);
+   if((await permission({get:ref=>sdk.getDocFromServer(ref)},uid))?.canModerate!==true)return fail('DENIED');
+   let after=null;
+   if(r.cursor!==null){
+    let decoded;try{decoded=copyRecord(await readCursor(r.cursor),['scope','after']);}catch{return fail('CURSOR_INVALID');}
+    if(decoded?.scope!==scope||!managedId(decoded.after))return fail('CURSOR_INVALID');
+    after=decoded.after;
+   }
+   context.checkpoint();
+   const query=sdk.query(sdk.collection(db,c.assets),sdk.where('kind','==',r.kind),sdk.orderBy('imageId','asc'),
+    ...(after?[sdk.startAfter(after)]:[]),sdk.limit(r.limit+1));
+   const found=await sdk.getDocsFromServer(query);
+   context.checkpoint();
+   if(found.metadata?.fromCache!==false||found.metadata?.hasPendingWrites!==false||found.docs.length>r.limit+1)return fail('UNAVAILABLE');
+   let previous=after;
+   for(const doc of found.docs){
+    if(!managedId(doc.id)||doc.data()?.imageId!==doc.id||previous!==null&&doc.id<=previous)return fail('UNAVAILABLE');
+    previous=doc.id;
+   }
+   const candidates=found.docs.slice(0,r.limit);
+   const result=await sdk.runTransaction(db,async raw=>{
+    context.checkpoint();
+    if((await permission(raw,uid))?.canModerate!==true)return fail('DENIED');
+    const items=[],parentsById=new Map();
+    for(const {id} of candidates){
+     context.checkpoint();
+     const asset=await read(raw,ref('assets',id));
+     if(!asset||asset.imageId!==id||asset.kind!==r.kind||asset.service!==null||!safeId(asset.parentId)||!safeId(asset.ownerUid)||asset.ownerUid===uid||!int(asset.revision)||!['quarantined','attached'].includes(asset.state)||!processed(asset))continue;
+     if(!parentsById.has(asset.parentId))parentsById.set(asset.parentId,await owner(raw,asset.kind,asset.parentId));
+     const parent=parentsById.get(asset.parentId);
+     if(parent?.ownerUid!==asset.ownerUid||parent.revision!==asset.parentRevision)continue;
+     const review=await read(raw,ref('reviews',id));
+     if(review){
+      if(review.imageId!==id||review.ownerUid!==asset.ownerUid||!safeId(review.moderatorUid)||review.moderatorUid===asset.ownerUid||!int(review.revision)||review.revision<1||review.revision===Number.MAX_SAFE_INTEGER||!int(review.assetRevision)||typeof review.processedDigest!=='string'||!/^[a-f0-9]{64}$/.test(review.processedDigest)||!['pending','approved','rejected'].includes(review.decision))continue;
+      if(review.processedDigest===asset.processedDigest&&(
+       review.decision==='rejected'||review.decision==='approved'&&(review.assetRevision===asset.revision||asset.publicRelease?.approved===true)
+      ))continue;
+     }
+     items.push({kind:asset.kind,parentId:asset.parentId,imageId:id,expectedAssetRevision:asset.revision,expectedReviewRevision:review?.revision??0});
+    }
+    context.checkpoint();
+    return {ok:true,items};
+   },{maxAttempts:3});
+   if(!result.ok)return result;
+   const hasMore=found.docs.length>r.limit;
+   const nextCursor=hasMore?await issueCursor({scope,after:candidates.at(-1).id}):null;
+   context.checkpoint();
+   return hasMore&&!cursorToken(nextCursor)?fail('UNAVAILABLE'):{...result,nextCursor};
+  }});
+ }
  return Object.freeze({
   moderate:(request,options)=>moderate(request,options,false),
   moderateMarketplace:(request,options)=>moderate(request,options,true),
+  queueMarketplace,
   release(request,options){const r=copyRecord(request,['requestId','kind','parentId','expectedParentRevision','expectedPhotoRevision','expectedReleaseRevision','action']);if(!r||!safeId(r.requestId)||!['product','store'].includes(r.kind)||!safeId(r.parentId)||!int(r.expectedParentRevision)||!int(r.expectedPhotoRevision)||!int(r.expectedReleaseRevision)||!['publish','withdraw'].includes(r.action))return Promise.resolve(fail('INVALID_REQUEST'));return perform('release',r,options);}
  });
 }
