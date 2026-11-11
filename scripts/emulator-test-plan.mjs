@@ -1,5 +1,10 @@
 // Fixed local test plans. Never accept arbitrary CLI options or project names.
 export const EMULATOR_TEST_PLANS = Object.freeze({
+  'mobile-chat': Object.freeze({
+    service: 'firestore', project: 'demo-oldx-admin-runtime', config: 'firebase.admin-runtime-emulator.json',
+    rules: 'tests/firestore-emulator/deny-all.rules', port: 8088, authPort: 9098,
+    tests: ['tests/browser/mobile-chat-runtime.test.mjs']
+  }),
   'saved-products': Object.freeze({
     service: 'firestore', project: 'demo-oldx-saved-products', config: 'firebase.admin-runtime-emulator.json',
     rules: 'tests/firestore-emulator/deny-all.rules', port: 8088, authPort: 9098,

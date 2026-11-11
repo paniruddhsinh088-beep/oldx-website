@@ -5,7 +5,7 @@ import {createIsolatedTrustedInboxIndex,inboxRowId} from '../../scripts/trusted-
 import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';
 import {reconcileInboxHistory} from '../../scripts/inbox-history-reconciliation.mjs';
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex');
-export async function legacyProductMutationsAcceptance({sdk,db,seed,get,namespace='LegacyWrite',prefixJobs=null}){
+export async function legacyProductMutationsAcceptance({sdk,db,seed,get,namespace='LegacyWrite',prefixJobs=null,setupOnly=false}){
  const c=Object.fromEntries(Object.keys(PRODUCT_CONVERSATION_TEST_SCHEMA).map(k=>[k,'testOldx'+namespace+k])),m=Object.fromEntries(Object.keys(MARKETPLACE_TEST_SCHEMA).map(k=>[k,'testOldx'+namespace+'M'+k])),schema={heads:'testOldx'+namespace+'Heads',rows:'testOldx'+namespace+'Rows'};
  let clock=3,uid='seller',threadId=null,rollback=false,lose=false,writes=0,messageReads=0;
  const metered={...sdk,runTransaction:(db,work,options)=>sdk.runTransaction(db,async raw=>{const result=await work({get:r=>{if(r.path.startsWith(c.messages+'/'))messageReads++;return raw.get(r);},set:(...a)=>{writes++;return raw.set(...a);}});if(rollback)throw Error('Synthetic commit rollback');return result;},options)};
@@ -16,6 +16,7 @@ export async function legacyProductMutationsAcceptance({sdk,db,seed,get,namespac
  for(const actor of ['buyer','seller'])assert.equal((await index.initialize({actorUid:actor})).ok,true);
  const market=createIsolatedMarketplaceRepository({enabled:true,firestore:db,sdk,schema:m,authenticate:()=>({uid:'seller'}),allocateId:()=> 'product'});assert.equal((await market.save('product',{requestId:'publish',id:null,expectedRevision:0,publication:'publish',profile:{title:'મૂળ हिन्दी',description:'Original',category:'cars',locationLabel:'Local',basePrice:1,isSold:false,storeId:null,photos:[]}})).ok,true);
  const base={enabled:true,firestore:db,sdk:metered,schema:c,marketplaceSchema:m,authenticate:()=>uid?{uid}:null,...codec,readStateEnabled:true,inboxIndex:index,now:()=>clock};
+ if(setupOnly)return {base,index,c,m,session:value=>{uid=value;},recordThread:id=>{threadId=id;},clock:value=>{clock=value;}};
  const chat=createIsolatedProductConversationRepository({...base,legacyMutationsEnabled:true,sdk:{...metered,runTransaction:async(...args)=>{const r=await metered.runTransaction(...args);if(lose&&r?.status==='changed'){lose=false;throw Error('Lost commit acknowledgment');}return r;}}});
  uid='buyer';const opened=await chat.open({requestId:'open',productId:'product',expectedProductRevision:1,text:'one'});assert.equal(opened.ok,true);threadId=opened.thread.id;uid='seller';assert.equal((await chat.send({requestId:'reply',threadId,expectedRevision:1,text:'two'})).ok,true);uid='buyer';assert.equal((await chat.send({requestId:'third',threadId,expectedRevision:2,text:'three'})).ok,true);
  const page=()=>index.page({limit:20,cursor:null,snapshotId:null}),reconcile=async()=>{assert.equal((await index.reconcile({kind:'product',threadId})).ok,true);for(const actor of ['buyer','seller'])assert.equal((await index.finalize({actorUid:actor})).ok,true);};

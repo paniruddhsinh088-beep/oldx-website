@@ -4,11 +4,12 @@ import { BROWSER_ASSETS } from '../../scripts/build-static-assets.mjs';
 
 // Shared loopback-only fixture. Never serves legacy application, Firebase
 // configuration, credentials, server modules or arbitrary filesystem paths.
-export async function startPreviewServer(pages) {
+export async function startPreviewServer(pages, handleFixtureRequest) {
   const allowed = new Set([...pages.map(page => '/' + page), ...BROWSER_ASSETS
     .filter(path => path.startsWith('features/')).map(path => '/' + path)]);
   const server = createServer(async (req, res) => {
     const path = new URL(req.url, 'http://127.0.0.1').pathname;
+    if (handleFixtureRequest && await handleFixtureRequest(path, req, res)) return;
     if (!allowed.has(path)) { res.writeHead(404); res.end(); return; }
     try {
       const body = await readFile(new URL('../..' + path, import.meta.url));

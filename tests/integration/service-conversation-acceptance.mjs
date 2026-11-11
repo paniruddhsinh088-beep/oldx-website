@@ -3,10 +3,11 @@ import {overlapFirstWrites} from './transaction-barrier.mjs';
 import {providerJourneyFixture} from './provider-journey-acceptance.mjs';
 import {createProviderConversationRepository,SERVICE_CONVERSATION_TEST_SCHEMA} from '../../scripts/provider-conversation-repository.mjs';
 import {createProviderConversationHttp} from '../../scripts/provider-conversation-http.mjs';
-export async function serviceConversationFixture({sdk,db,seed,namespace='Messages',conversationSchema=SERVICE_CONVERSATION_TEST_SCHEMA,notificationOutbox=null,inboxIndex=null}){
+export async function serviceConversationFixture({sdk,db,seed,namespace='Messages',conversationSchema=SERVICE_CONVERSATION_TEST_SCHEMA,notificationOutbox=null,inboxIndex=null,setupOnly=false,verifyFirebaseToken}){
  let uid='journey-provider',lost=false,limited=false,overlap=false;const concurrentSdk=overlapFirstWrites(sdk,{matches:r=>overlap&&r?.status==='sent'});
- const f=await providerJourneyFixture({sdk:{...sdk,runTransaction:async(...args)=>{const result=await concurrentSdk.runTransaction(...args);if(lost&&result?.status==='sent'){lost=false;throw new Error('Private lost acknowledgement');}return result;}},db,seed,namespace,conversationSchema,notificationOutbox,inboxIndex});
+ const f=await providerJourneyFixture({sdk:{...sdk,runTransaction:async(...args)=>{const result=await concurrentSdk.runTransaction(...args);if(lost&&result?.status==='sent'){lost=false;throw new Error('Private lost acknowledgement');}return result;}},db,seed,namespace,conversationSchema,notificationOutbox,inboxIndex,verifyFirebaseToken});
  await f.owner.saveDraft({requestId:'chat-profile',expectedRevision:0,profile:f.profile});const owner=await f.owner.bootstrap({operation:null,requestId:null});await f.owner.managePublication({requestId:'chat-publish',expectedRevision:1,expectedGeneration:0,action:'publish'});
+ if(setupOnly)return {...f,providerId:owner.providerId,scope:null};
  const session=value=>{uid=value;f.uid(value);};session('journey-buyer');const created=await f.execute('enquiry.create',{requestId:'chat-enquiry',providerId:owner.providerId,expectedPublicationGeneration:1,service:'Repair',description:'Private enquiry note',timing:'flexible'});assert.equal(created.status,200);
  const conversation=createProviderConversationRepository({enabled:true,authenticate:()=>uid?{uid}:null,repository:f.enquiries});
  const http=createProviderConversationHttp({enabled:true,verifyFirebaseToken:token=>uid&&(token==='isolated.test.token'||token===uid+'.fixture.token')?{uid}:null,consumeRateLimit:()=>({allowed:!limited}),createRepository:options=>createProviderConversationRepository({...options,enabled:true,repository:f.enquiries})});
