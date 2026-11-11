@@ -2,4 +2,14 @@ import test from 'node:test';import assert from 'node:assert/strict';import {fak
 test('atomic Product/Store approved publication rollback replacement withdrawal and replay',async()=>{const f=fakeFirestoreSdk();await atomicPhotoAcceptance({sdk:f.sdk,db:f.db,seed:f.seed,get:f.get});});
 test('atomic media defaults disabled and refuses live schemas',async()=>{assert.equal((await createIsolatedAtomicPhotoPublication().prepare({})).code,'UNAVAILABLE');assert.throws(()=>createIsolatedAtomicPhotoPublication({enabled:true,firestore:{app:{options:{projectId:'oldx-1c983'}}},sdk:{}}),/Isolated SDK/);});
 
+test('marketplace moderation command defaults off before token verification or SDK access',async()=>{
+ const {createIsolatedMarketplaceMediaModerationHttp}=await import('../../scripts/marketplace-media-moderation-http.mjs');
+ let verified=false;
+ const command=createIsolatedMarketplaceMediaModerationHttp({verifyFirebaseToken:()=>{verified=true;}});
+ const response=await command.handle('moderate',{method:'POST',headers:{authorization:'Bearer local.test.token','content-type':'application/json'},body:'{}'});
+ assert.equal(response.status,503);
+ assert.equal(response.body.error.code,'UNAVAILABLE');
+ assert.equal(verified,false);
+});
+
 test('legacy publication compatibility stays unchanged without atomic media opt-in',async()=>{const {createIsolatedMarketplaceRepository,MARKETPLACE_TEST_SCHEMA:m}=await import('../../scripts/firebase-marketplace-repository.mjs');const f=fakeFirestoreSdk();f.seed(m.actors,'owner',{uid:'owner',canWrite:true,canPublish:true,suspended:false});f.seed(m.generations,'current',{value:0});const market=createIsolatedMarketplaceRepository({enabled:true,firestore:f.db,sdk:f.sdk,schema:m,authenticate:()=>({uid:'owner'}),allocateId:()=> 'legacy'}),profile={title:'મૂળ legacy',description:'Original text',category:'cars',locationLabel:'Ahmedabad',basePrice:10,isSold:false,storeId:null,photos:['data:image/jpeg;base64,YQ==']};assert.equal((await market.save('product',{requestId:'legacy',id:null,expectedRevision:0,publication:'publish',profile})).ok,true);assert.deepEqual(f.get(m.privateRecords,'product_legacy').profile.photos,profile.photos);});
