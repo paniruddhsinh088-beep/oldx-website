@@ -1,6 +1,11 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';import {atomicPhotoAcceptance,atomicPhotoFixture} from './atomic-photo-publication-acceptance.mjs';import {createIsolatedAtomicPhotoPublication} from '../../scripts/firebase-atomic-photo-publication.mjs';
 import {createMarketplaceMediaQueueCursor} from '../../scripts/marketplace-media-queue-cursor.mjs';
 import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';
+import {photoModerationRaceAcceptance} from './atomic-photo-publication-acceptance.mjs';
+
+test('photo moderation preserves winner state after stale decisions, withdrawal and failed writes',async()=>{
+ await photoModerationRaceAcceptance(fakeFirestoreSdk());
+});
 
 test('atomic Product/Store approved publication rollback replacement withdrawal and replay',async()=>{const f=fakeFirestoreSdk();await atomicPhotoAcceptance({sdk:f.sdk,db:f.db,seed:f.seed,get:f.get});});
 test('atomic media defaults disabled and refuses live schemas',async()=>{assert.equal((await createIsolatedAtomicPhotoPublication().prepare({})).code,'UNAVAILABLE');assert.throws(()=>createIsolatedAtomicPhotoPublication({enabled:true,firestore:{app:{options:{projectId:'oldx-1c983'}}},sdk:{}}),/Isolated SDK/);});

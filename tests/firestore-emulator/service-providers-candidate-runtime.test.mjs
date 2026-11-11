@@ -332,3 +332,17 @@ test('repeat forced-overlap Service message duplicate sends in independent names
 test('actual SDK mandatory Product Store Provider photos independent approval and withdrawal',async()=>{const sdk=await import('firebase/firestore'),{mandatoryPhotosAcceptance}=await import('../integration/mandatory-photos-acceptance.mjs');await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await mandatoryPhotosAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v),get:async(c,id)=>{const s=await sdk.getDoc(sdk.doc(db,c,id));return s.exists()?s.data():null;}});});const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxMandatoryassets','private-photo')));});
 
 test('actual SDK atomic Product Store photo publication rollback replacement withdrawal and replay',async()=>{const sdk=await import('firebase/firestore'),{atomicPhotoAcceptance}=await import('../integration/atomic-photo-publication-acceptance.mjs');await env.withSecurityRulesDisabled(async context=>{const db=context.firestore();await atomicPhotoAcceptance({sdk,db,seed:(c,id,v)=>sdk.setDoc(sdk.doc(db,c,id),v),get:async(c,id)=>{const s=await sdk.getDoc(sdk.doc(db,c,id));return s.exists()?s.data():null;}});});const guest=env.unauthenticatedContext().firestore();await assertFails(sdk.getDoc(sdk.doc(guest,'testOldxAtomicPhotoassets','private-image')));});
+
+test('actual SDK photo moderation races across Product Store and Provider',async()=>{
+ const sdk=await import('firebase/firestore'),{photoModerationRaceAcceptance}=await import('../integration/atomic-photo-publication-acceptance.mjs');
+ await env.withSecurityRulesDisabled(async context=>{
+  const db=context.firestore();
+  await photoModerationRaceAcceptance({sdk,db,actualTransactions:true,
+   seed:(collection,id,value)=>sdk.setDoc(sdk.doc(db,collection,id),value),
+   get:async(collection,id)=>{
+    const snapshot=await sdk.getDocFromServer(sdk.doc(db,collection,id));
+    return snapshot.exists()?snapshot.data():null;
+   }
+  });
+ });
+});

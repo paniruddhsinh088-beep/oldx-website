@@ -6,8 +6,8 @@ import {createIsolatedPhotoReferenceRepository} from '../../scripts/firebase-pho
 import {createIsolatedPublicMediaRead} from '../../scripts/firebase-media-delivery-read.mjs';
 import {createMediaDeliveryContract} from '../../scripts/media-delivery-contract.mjs';
 import {createIsolatedMarketplaceMediaModerationHttp} from '../../scripts/marketplace-media-moderation-http.mjs';
-export async function atomicPhotoFixture({sdk,db,seed,get,now=Date.now,queueCursorKey=new Uint8Array(32).fill(37)}){
- let uid='atomic-owner',fail=false,lost=false;const c=Object.fromEntries(Object.keys(MEDIA_RELEASE_TEST_SCHEMA).map(k=>[k,'testOldxAtomicPhoto'+k])),m=Object.fromEntries(Object.keys(MARKETPLACE_TEST_SCHEMA).map(k=>[k,'testOldxAtomicMarket'+k]));
+export async function atomicPhotoFixture({sdk,db,seed,get,now=Date.now,queueCursorKey=new Uint8Array(32).fill(37),namespace='Atomic'}){
+ let uid='atomic-owner',fail=false,lost=false;const c=Object.fromEntries(Object.keys(MEDIA_RELEASE_TEST_SCHEMA).map(k=>[k,'testOldx'+namespace+'Photo'+k])),m=Object.fromEntries(Object.keys(MARKETPLACE_TEST_SCHEMA).map(k=>[k,'testOldx'+namespace+'Market'+k]));
  const wrapper={...sdk,runTransaction:async(db,work,options)=>{const result=await sdk.runTransaction(db,async raw=>{let writes=0;return work({get:r=>raw.get(r),delete:r=>raw.delete(r),set:(r,v)=>{raw.set(r,v);if(fail&&++writes===3)throw new Error('Isolated staged-write failure');}});},options);if(lost&&result?.status==='saved'){lost=false;throw new Error('Isolated lost acknowledgement');}return result;}};
  const atomicPhotos=createIsolatedAtomicPhotoPublication({enabled:true,firestore:db,sdk:wrapper,schema:c,marketplaceSchema:m}),market=createIsolatedMarketplaceRepository({enabled:true,firestore:db,sdk:wrapper,schema:m,atomicPhotos,authenticate:()=>({uid}),allocateId:()=> 'atomic-parent'});
  await seed(m.actors,uid,{uid,canWrite:true,canPublish:true,suspended:false});await seed(m.actors,'foreign',{uid:'foreign',canWrite:true,canPublish:true,suspended:false});await seed(m.generations,'current',{value:0});await seed(c.generations,'current',{value:0});await seed(c.permissions,uid,{uid,canModerate:false,canRelease:true,suspended:false});await seed(c.permissions,'atomic-reviewer',{uid:'atomic-reviewer',canModerate:true,canRelease:false,suspended:false});
@@ -118,4 +118,141 @@ export async function atomicPhotoAcceptance(options){
   assert.equal((await f.market.save(kind,{requestId:'edit-'+kind,id,expectedRevision:2,publication:'draft',profile})).ok,true);const replacement='atomic_'+kind+'_replacement_1234567890',nextPhoto=await f.attach(kind,id,3,replacement,photoRevision);assert.equal((await f.delivery.publicPhotos({kind,parentId:id,expectedParentRevision:2,expectedPhotoRevision:photoRevision})).ok,true);await f.approve(replacement,'replacement-review-'+kind);assert.equal((await f.market.save(kind,{requestId:'mismatched-photos-'+kind,id,expectedRevision:3,publication:'publish',profile})).code,'PHOTOS_REQUIRED');profile.photos=[{kind:'managed',imageId:replacement}];assert.equal((await f.market.save(kind,{requestId:'replace-'+kind,id,expectedRevision:3,publication:'publish',profile})).ok,true);const replaced=await f.delivery.publicPhotos({kind,parentId:id,expectedParentRevision:4,expectedPhotoRevision:nextPhoto});assert.equal(replaced.ok,true);assert.equal(replaced.photos[0].imageId,replacement);assert.equal((await get(f.c.assets,imageId)).publicRelease,null);assert.equal((await get(f.c.assets,imageId)).references.length,0);
   assert.equal((await f.market.save(kind,{requestId:'withdraw-'+kind,id,expectedRevision:4,publication:'withdraw',profile})).ok,true);assert.equal((await get(f.c.publications,scope)).published,false);assert.equal((await get(f.c.publications,scope)).photos.length,0);assert.equal((await f.delivery.publicPhotos({kind,parentId:id,expectedParentRevision:4,expectedPhotoRevision:nextPhoto})).ok,false);assert.equal((await f.market.save(kind,publishedRequest)).status,'replayed');assert.equal((await get(f.c.publications,scope)).published,false);assert.equal((await f.market.archive(kind,{requestId:'archive-'+kind,id,expectedRevision:5})).ok,true);assert.equal((await f.market.archive(kind,{requestId:'archive-'+kind,id,expectedRevision:5})).status,'replayed');assert.equal((await get(f.m.privateRecords,kind+'_'+id)).archived,true);assert.equal((await get(f.c.publications,scope)).parentRevision,6);assert.equal((await get(f.c.publications,scope)).published,false);
  }
+}
+
+export async function photoModerationRaceAcceptance({sdk,db,seed,get,actualTransactions=false}){
+ let hold;
+ const wrapped={...sdk,runTransaction:(db,work,options)=>sdk.runTransaction(db,async raw=>{
+  const result=await work(raw);
+  if(hold&&result.status===hold.status){
+   const pending=hold;
+   hold=null;
+   pending.staged();
+   await pending.resume;
+  }
+  return result;
+ },options)};
+ const f=await atomicPhotoFixture({sdk:wrapped,db,seed,get,namespace:'Race'});
+ const hash=value=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+ const moderate=(body,actor='atomic-reviewer')=>f.moderation.handle('moderate',{
+  method:'POST',headers:{authorization:'Bearer '+actor+'.fixture.token','content-type':'application/json'},
+  body:JSON.stringify(body)
+ }).then(response=>response.body.status??response.body.error.code);
+ async function race(status,loser,winner){
+  if(!actualTransactions){const first=await winner();return [await loser(),first];}
+  let staged,resume;
+  const ready=new Promise(resolve=>{staged=resolve;});
+  hold={status,staged,resume:new Promise(resolve=>{resume=resolve;})};
+  const attempt=loser();
+  try{
+   await Promise.race([ready,attempt.then(()=>{throw new Error('Expected staged Firestore writes');})]);
+   const result=await winner();
+   resume();
+   return [await attempt,result];
+  }finally{hold=null;resume();await attempt;}
+ }
+ async function noDecision(actor,requestId){
+  const key=hash([actor,'moderate',requestId]);
+  assert.equal(await get(f.c.receipts,key),null);
+  assert.equal(await get(f.c.audits,key),null);
+ }
+ await seed(f.c.permissions,'second-reviewer',{uid:'second-reviewer',canModerate:true,canRelease:false,suspended:false});
+ for(const kind of ['product','store']){
+  const profile=kind==='product'?{title:'Race Product',description:'Fixture',category:'cars',locationLabel:'Ahmedabad',basePrice:10,isSold:false,storeId:null,photos:[]}
+   :{name:'Race Store',description:'Fixture',category:'cars',locationLabel:'Ahmedabad',photos:[]};
+  const draft=await f.market.save(kind,{requestId:'race-draft-'+kind,id:null,expectedRevision:0,publication:'draft',profile});
+  assert.equal(draft.ok,true);
+  const id=draft.id,scope=hash([kind,id,null]),oldImage='race_old_'+kind+'_123456789012';
+  const photoRevision=await f.attach(kind,id,1,oldImage);
+  const stale={requestId:'race-edit-'+kind,imageId:oldImage,expectedAssetRevision:2,expectedReviewRevision:0,decision:kind==='product'?'approved':'rejected'};
+  const [staleResult,edit]=await race('moderated',()=>moderate(stale),()=>f.market.save(kind,{
+   requestId:'race-parent-'+kind,id,expectedRevision:1,publication:'draft',profile
+  }));
+  assert.equal(edit.status,'saved');
+  assert.equal(staleResult,'REVISION_CONFLICT');
+  await noDecision('atomic-reviewer',stale.requestId);
+  assert.equal(await get(f.c.reviews,oldImage),null);
+  assert.equal(await get(f.c.publications,scope),null);
+
+  const imageId='race_current_'+kind+'_123456789012';
+  const currentPhotos=await f.attach(kind,id,2,imageId,photoRevision);
+  const approval={...stale,requestId:'race-approve-'+kind,imageId,decision:'approved'};
+  const rejection={...approval,requestId:'race-reject-'+kind,decision:'rejected'};
+  assert.equal(await moderate(approval,'foreign'),'DENIED');
+  const [conflict,approved]=await race('moderated',()=>moderate(rejection,'second-reviewer'),()=>moderate(approval));
+  assert.equal(approved,'moderated');
+  assert.equal(conflict,'REVISION_CONFLICT');
+  await noDecision('second-reviewer',rejection.requestId);
+  assert.equal(await moderate(approval),'replayed');
+  assert.equal((await get(f.c.reviews,imageId)).revision,1);
+
+  profile.photos=[{kind:'managed',imageId}];
+  const publish={requestId:'race-publish-'+kind,id,expectedRevision:2,publication:'publish',profile};
+  assert.equal((await f.market.save(kind,publish)).status,'saved');
+  const publication=await get(f.c.publications,scope),generation=(await get(f.c.generations,'current')).value;
+  const query={kind,parentId:id,expectedParentRevision:3,expectedPhotoRevision:currentPhotos};
+  const withdraw={...publish,requestId:'race-withdraw-'+kind,expectedRevision:3,publication:'withdraw'};
+  const asset=await get(f.c.assets,imageId);
+  const revoke={...rejection,requestId:'race-revoke-'+kind,expectedAssetRevision:asset.revision,expectedReviewRevision:1,
+   decision:kind==='product'?'rejected':'pending'};
+  f.fail(true);
+  try{assert.equal(await moderate(revoke),'OUTCOME_UNKNOWN');}finally{f.fail(false);}
+  await noDecision('atomic-reviewer',revoke.requestId);
+  assert.deepEqual(await get(f.c.assets,imageId),asset);
+  assert.deepEqual(await get(f.c.publications,scope),publication);
+  assert.equal((await get(f.c.generations,'current')).value,generation);
+  const [revoked,withdrawn]=await race('moderated',()=>moderate(revoke),async()=>{
+   assert.equal((await f.delivery.publicPhotos(query)).ok,true);
+   return f.market.save(kind,withdraw);
+  });
+  assert.equal(withdrawn.status,'saved');
+  assert.equal(revoked,'REVISION_CONFLICT');
+  await noDecision('atomic-reviewer',revoke.requestId);
+  assert.equal((await get(f.c.reviews,imageId)).decision,'approved');
+  assert.equal((await f.market.save(kind,{...publish,requestId:'stale-republish-'+kind,expectedRevision:3})).code,'REVISION_CONFLICT');
+  assert.equal((await f.market.save(kind,publish)).status,'replayed');
+  assert.equal((await f.market.save(kind,withdraw)).status,'replayed');
+  assert.equal((await get(f.c.generations,'current')).value,generation+1);
+  const final=await get(f.c.publications,scope);
+  assert.deepEqual([final.published,final.photos,final.generation],[false,[],generation+1]);
+  assert.equal((await get(f.c.assets,imageId)).references.includes(publication.referenceId),false);
+  assert.equal(await get(f.m.publicViews,kind+'_'+id),null);
+  assert.equal((await f.delivery.publicPhotos(query)).ok,false);
+
+  const replacement='race_republish_'+kind+'_123456789012';
+  const replacementPhotos=await f.attach(kind,id,4,replacement,currentPhotos);
+  await f.approve(replacement,'race-review-replacement-'+kind);
+  const republish={...publish,requestId:'race-republish-'+kind,expectedRevision:4,
+   profile:{...profile,photos:[{kind:'managed',imageId:replacement}]}};
+  const futureQuery={kind,parentId:id,expectedParentRevision:5,expectedPhotoRevision:replacementPhotos};
+  const [lostPublish,secondWithdrawal]=await race('saved',()=>f.market.save(kind,republish),async()=>{
+   assert.equal((await f.delivery.publicPhotos(futureQuery)).ok,false);
+   return f.market.save(kind,{...republish,requestId:'race-second-withdraw-'+kind,publication:'withdraw'});
+  });
+  assert.equal(secondWithdrawal.status,'saved');
+  assert.equal(lostPublish.code,'REVISION_CONFLICT');
+  assert.equal((await get(f.c.generations,'current')).value,generation+2);
+  assert.equal((await get(f.c.publications,scope)).published,false);
+  assert.equal((await get(f.c.assets,replacement)).publicRelease,null);
+  assert.equal((await f.delivery.publicPhotos(futureQuery)).ok,false);
+  const requestKey=hash(['atomic-owner',kind,republish.requestId]);
+  const mediaKey=hash(['atomic-parent-media','atomic-owner',kind,id,requestKey]);
+  assert.equal(await get(f.c.receipts,mediaKey),null);
+  assert.equal(await get(f.c.audits,mediaKey),null);
+ }
+ const providerId='race-provider',providerImage='race_provider_123456789012';
+ const parent={providerId,ownerUid:'atomic-owner',revision:1,profile:{services:['Plumber']}};
+ await seed('testProviderAtomicActors','atomic-owner',{uid:'atomic-owner',canWrite:true,suspended:false});
+ await seed('testProviderAtomicDrafts',providerId,parent);
+ await seed(f.c.assets,providerImage,{imageId:providerImage,kind:'provider',parentId:providerId,ownerUid:'atomic-owner',
+  service:'Plumber',parentRevision:1,revision:1,state:'quarantined',references:[],processedDigest:'a'.repeat(64),
+  processed:{metadataStripped:true,contentScanned:true,contentType:'image/webp',byteSize:100,width:10,height:10}});
+ const providerApproval={requestId:'provider-race',imageId:providerImage,expectedAssetRevision:1,expectedReviewRevision:0,decision:'approved'};
+ assert.equal(await moderate(providerApproval),'DENIED');
+ f.uid('atomic-reviewer');
+ const [providerStale]=await race('moderated',()=>f.releases.moderate(providerApproval),
+  ()=>seed('testProviderAtomicDrafts',providerId,{...parent,revision:2}));
+ assert.equal(providerStale.code,'REVISION_CONFLICT');
+ assert.equal(await get(f.c.reviews,providerImage),null);
+ await noDecision('atomic-reviewer',providerApproval.requestId);
 }
