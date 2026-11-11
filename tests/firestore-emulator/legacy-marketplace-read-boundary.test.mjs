@@ -46,3 +46,106 @@ test('opening saved/recent views does not persist deletion of records outside th
  const nodes=new Map(),context={auth:{currentUser:{uid:'owner'}},window:{currentUser:null},document:{getElementById:id=>{if(!nodes.has(id))nodes.set(id,{style:{}});return nodes.get(id);}},localStorage:{getItem:()=>JSON.stringify(['far-item']),setItem(){throw Error('Partial query cannot prune user cache');}},getSavedAdsStorageKey:()=> 'saved',unloadedSavedAdsMessage:()=> 'outside loaded window'};
  runInNewContext('let products=[];'+section('function openCartModal()', 'function removeFromCart(')+section('function renderRecentlyViewed()', 'function handleHashChange()')+';this.saved=openCartModal;this.recent=renderRecentlyViewed;',context);context.saved();context.recent();assert.match(nodes.get('cartItemsContainer').innerHTML,/outside loaded window/);
 });
+
+function savedAdsFixture() {
+ const cache = new Map();
+ const alerts = [];
+ const renders = [];
+ const listeners = [];
+ const fixture = { cache, alerts, renders, listeners, ads: [], writes: 0, transactions: 0 };
+ const snapshot = () => ({ exists: true, data: () => ({ savedAds: fixture.ads }) });
+ const user = { uid: 'owner' };
+ const context = {
+  window: { currentUser: user }, auth: { currentUser: user },
+  localStorage: { getItem: key => cache.get(key) ?? null, setItem: (key, value) => cache.set(key, value), removeItem: key => cache.delete(key) },
+  document: { documentElement: { lang: 'en' }, getElementById: () => ({ style: { display: 'flex' } }) },
+  console: { log() {} }, showCustomAlert: (...args) => alerts.push(args), triggerPushNotification() {},
+  updateProfileDetails: () => renders.push('profile'), renderProducts: () => renders.push('products'),
+  renderRecentlyViewed: () => renders.push('recent'), openCartModal: () => renders.push('saved'),
+  db: {
+   collection: () => ({ doc: uid => ({ uid, onSnapshot: callback => { listeners.push(callback); return () => {}; } }) }),
+   async runTransaction(callback) {
+    fixture.transactions++;
+    const attempt = async () => {
+     let update;
+     const result = await callback({ get: async () => snapshot(), set: (ref, patch) => { update = patch.savedAds; } });
+     return { result, update };
+    };
+    if (fixture.fail) throw Error('write unavailable');
+    let { result, update } = await attempt();
+    if (fixture.beforeRetry) {
+     fixture.beforeRetry();
+     ({ result, update } = await attempt());
+    }
+    if (update) {
+     fixture.ads = JSON.parse(JSON.stringify(update));
+     fixture.writes++;
+    }
+    return result;
+   }
+  }
+ };
+ runInNewContext('let userSavedAdsUnsubscribe, savedAdsGuestImport, currentProduct; const pendingSavedAds=new Set(), products=[];'
+  + section('function getSavedAdsStorageKey()', 'function triggerPushNotification(')
+  + section('async function saveAdMembership(', 'function toggleCartCurrentProduct()')
+  + section('function removeFromCart(', 'function closeCartModal()'), context);
+ return Object.assign(fixture, { context, user, snapshot });
+}
+
+test('Saved Ads sign-in uses the owner listener without replaying stale cache or repainting on unrelated changes', () => {
+ const signIn = section('auth.onAuthStateChanged(user =>', 'startGlobalUnreadMessagesListener(user.uid);');
+ assert.match(signIn, /startRealtimeSavedAdsSync\(user\);\s*importGuestSavedAds\(user\);/);
+ assert.doesNotMatch(signIn, /savedAds:\s*|oldx_saved_ads_/);
+ const { cache, context, listeners, renders, snapshot, user } = savedAdsFixture();
+ cache.set('oldx_saved_ads_owner', '["previously-removed"]');
+ context.startRealtimeSavedAdsSync(user);
+ listeners[0](snapshot());
+ listeners[0](snapshot());
+ assert.equal(cache.get('oldx_saved_ads_owner'), '[]');
+ assert.deepEqual(renders, ['profile', 'products', 'recent', 'saved']);
+ context.auth.currentUser = context.window.currentUser = { uid: 'next' };
+ listeners[0]({ exists: true, data: () => ({ savedAds: ['old-owner-item'] }) });
+ assert.equal(cache.has('oldx_saved_ads_next'), false);
+ assert.equal(cache.get('oldx_saved_ads_owner'), '[]');
+});
+
+test('guest Saved Ads import retains legacy IDs and objects and clears the guest cache only after commit', async () => {
+ const f = savedAdsFixture();
+ const guest = '["same",{"docId":"guest","title":"Legacy ad"}]';
+ f.cache.set('oldx_saved_ads_guest', guest);
+ f.ads = ['same', 'remote'];
+ f.fail = true;
+ await f.context.importGuestSavedAds(f.user);
+ assert.equal(f.cache.get('oldx_saved_ads_guest'), guest);
+ f.fail = false;
+ await f.context.importGuestSavedAds(f.user);
+ assert.deepEqual(f.ads, ['same', 'remote', { docId: 'guest', title: 'Legacy ad' }]);
+ assert.equal(f.cache.has('oldx_saved_ads_guest'), false);
+ await f.context.importGuestSavedAds(f.user);
+ assert.equal(f.transactions, 2);
+});
+
+test('Saved Ads retry keeps concurrent changes and failed removal leaves the confirmed UI state intact', async () => {
+ const f = savedAdsFixture();
+ f.ads = ['existing'];
+ f.beforeRetry = () => { f.ads = ['existing', 'other-device']; };
+ f.context.startRealtimeSavedAdsSync(f.user);
+ f.listeners[0](f.snapshot());
+ const add = f.context.toggleCartProduct('new');
+ await f.context.toggleCartProduct('new');
+ assert.equal(f.alerts.length, 0);
+ await add;
+ assert.deepEqual(f.ads.map(item => item.docId || item), ['existing', 'other-device', 'new']);
+ assert.equal(f.transactions, 1);
+ f.listeners[0](f.snapshot());
+ const confirmed = f.cache.get('oldx_saved_ads_owner');
+ f.fail = true;
+ await f.context.removeFromCart('new');
+ assert.equal(f.cache.get('oldx_saved_ads_owner'), confirmed);
+ assert.equal(f.alerts.at(-1)[2], 'error');
+ f.fail = false;
+ f.beforeRetry = null;
+ await f.context.removeFromCart('new');
+ assert.deepEqual(f.ads, ['existing', 'other-device']);
+ assert.equal(f.writes, 2);
+});

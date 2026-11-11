@@ -1698,6 +1698,8 @@
         let legacyChatState = null;
         let legacyReadReceiptTimer = null;
         let userSavedAdsUnsubscribe = null;
+        let savedAdsGuestImport = false;
+        const pendingSavedAds = new Set();
 
         let currentSelectedState = 'Gujarat';
         let currentSelectedDistance = 'all';
@@ -1955,26 +1957,68 @@
             return validList.length;
         }
 
-        function startRealtimeSavedAdsSync(userId) {
+        function savedAdId(item) {
+            return typeof item === 'string' ? item : item?.docId;
+        }
+
+        function savedAdsFromSnapshot(snapshot) {
+            const list = snapshot.exists ? snapshot.data().savedAds : undefined;
+            return Array.isArray(list) ? list.filter(item => typeof savedAdId(item) === 'string' && savedAdId(item)) : [];
+        }
+
+        function startRealtimeSavedAdsSync(user) {
             if (userSavedAdsUnsubscribe) userSavedAdsUnsubscribe();
-            
-            userSavedAdsUnsubscribe = db.collection('users').doc(userId).onSnapshot(docSnap => {
-                if (docSnap.exists && docSnap.data().savedAds) {
-                    const cloudAds = docSnap.data().savedAds;
-                    const storageKey = getSavedAdsStorageKey();
-                    localStorage.setItem(storageKey, JSON.stringify(cloudAds));
-                    
-                    if(window.currentUser) {
-                        updateProfileDetails(window.currentUser);
-                    }
-                    renderProducts();
-                    if(currentProduct) {
-                        renderProductDetailView(currentProduct);
-                    }
-                }
+
+            const storageKey = 'oldx_saved_ads_' + user.uid;
+            userSavedAdsUnsubscribe = db.collection('users').doc(user.uid).onSnapshot(docSnap => {
+                if (window.currentUser !== user || auth.currentUser?.uid !== user.uid) return;
+                const serialized = JSON.stringify(savedAdsFromSnapshot(docSnap));
+                if (localStorage.getItem(storageKey) === serialized) return;
+                localStorage.setItem(storageKey, serialized);
+                updateProfileDetails(user);
+                renderProducts();
+                renderRecentlyViewed();
+                if (currentProduct) renderProductDetailView(currentProduct);
+                if (document.getElementById('cartModal')?.style.display === 'flex') openCartModal();
             }, err => {
                 console.log("Saved ads realtime sync error:", err);
             });
+        }
+
+        async function importGuestSavedAds(user) {
+            if (savedAdsGuestImport) return;
+            const guestKey = 'oldx_saved_ads_guest';
+            const stored = localStorage.getItem(guestKey);
+            let guestAds;
+            try {
+                guestAds = JSON.parse(stored || '[]');
+            } catch {
+                return;
+            }
+            if (!Array.isArray(guestAds) || !guestAds.length) return;
+
+            savedAdsGuestImport = true;
+            try {
+                const ref = db.collection('users').doc(user.uid);
+                await db.runTransaction(async transaction => {
+                    const list = savedAdsFromSnapshot(await transaction.get(ref));
+                    if (window.currentUser !== user || auth.currentUser?.uid !== user.uid) throw new Error('Saved ads session changed');
+                    const ids = new Set(list.map(savedAdId));
+                    const previousSize = list.length;
+                    for (const item of guestAds) {
+                        const id = savedAdId(item);
+                        if (typeof id !== 'string' || !id || ids.has(id)) continue;
+                        ids.add(id);
+                        list.push(item);
+                    }
+                    if (list.length !== previousSize) transaction.set(ref, { savedAds: list }, { merge: true });
+                });
+                if (localStorage.getItem(guestKey) === stored) localStorage.removeItem(guestKey);
+            } catch (err) {
+                console.log('Guest saved ads sync error:', err);
+            } finally {
+                savedAdsGuestImport = false;
+            }
         }
 
         function triggerPushNotification(title, body) {
@@ -2267,42 +2311,8 @@
                         }, { merge: true });
                     }).catch(err => console.log("User IP fetch error:", err));
 
-                const guestKey = 'oldx_saved_ads_guest';
-                const userKey = 'oldx_saved_ads_' + user.uid;
-                let guestAds = JSON.parse(localStorage.getItem(guestKey) || '[]');
-                let userAds = JSON.parse(localStorage.getItem(userKey) || '[]');
-                
-                if (guestAds.length > 0) {
-                    guestAds.forEach(gItem => {
-                        const gId = (typeof gItem === 'string') ? gItem : gItem.docId;
-                        if (!userAds.some(uItem => ((typeof uItem === 'string') ? uItem : uItem.docId) === gId)) {
-                            userAds.push(gItem);
-                        }
-                    });
-                    localStorage.setItem(userKey, JSON.stringify(userAds));
-                    localStorage.removeItem(guestKey);
-                }
-
-                db.collection('users').doc(user.uid).get().then(docSnap => {
-                    if (docSnap.exists && docSnap.data().savedAds) {
-                        let firestoreAds = docSnap.data().savedAds;
-                        firestoreAds.forEach(fItem => {
-                            const fId = (typeof fItem === 'string') ? fItem : fItem.docId;
-                            if (!userAds.some(uItem => ((typeof uItem === 'string') ? uItem : uItem.docId) === fId)) {
-                                userAds.push(fItem);
-                            }
-                        });
-                        localStorage.setItem(userKey, JSON.stringify(userAds));
-                        db.collection('users').doc(user.uid).set({ savedAds: userAds }, { merge: true });
-                    } else {
-                        db.collection('users').doc(user.uid).set({ savedAds: userAds }, { merge: true });
-                    }
-                    renderProducts();
-                }).catch(() => {
-                    renderProducts();
-                });
-
-                startRealtimeSavedAdsSync(user.uid);
+                startRealtimeSavedAdsSync(user);
+                importGuestSavedAds(user);
                 startGlobalUnreadMessagesListener(user.uid);
 
                 const setUserOnlineStatus = (status) => {
@@ -3828,67 +3838,61 @@
             if (logoutModal) logoutModal.style.display = 'none';
         }
 
+        async function saveAdMembership(user, docId, shouldSave, entry) {
+            const key = JSON.stringify([user.uid, docId]);
+            if (pendingSavedAds.has(key)) return;
+            pendingSavedAds.add(key);
+            const isCurrentSession = () => window.currentUser === user && auth.currentUser?.uid === user.uid;
+            try {
+                const ref = db.collection('users').doc(user.uid);
+                const changed = await db.runTransaction(async transaction => {
+                    const list = savedAdsFromSnapshot(await transaction.get(ref));
+                    if (!isCurrentSession()) throw new Error('Saved ads session changed');
+                    const exists = list.some(item => savedAdId(item) === docId);
+                    if (exists === shouldSave) return false;
+                    const savedAds = shouldSave ? [...list, entry] : list.filter(item => savedAdId(item) !== docId);
+                    transaction.set(ref, { savedAds }, { merge: true });
+                    return true;
+                });
+                if (!changed || !isCurrentSession()) return;
+                if (shouldSave) {
+                    showCustomAlert("Saved!", "Ad saved successfully!", "success");
+                    triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
+                } else {
+                    showCustomAlert("Removed", "Ad removed from saved list!", "success");
+                }
+            } catch (err) {
+                console.log("Saved ads sync error:", err);
+                if (isCurrentSession()) {
+                    const message = {
+                        gu: 'સાચવેલી જાહેરાતોની યાદી અપડેટ થઈ શકી નથી. ફરી પ્રયાસ કરો.',
+                        hi: 'सहेजे गए विज्ञापनों की सूची अपडेट नहीं हो सकी। फिर से कोशिश करें।',
+                        en: 'Could not update saved ads. Please try again.'
+                    };
+                    showCustomAlert('', message[document.documentElement.lang] || message.en, 'error');
+                }
+            } finally {
+                pendingSavedAds.delete(key);
+            }
+        }
+
         function toggleCartProduct(docId, event) {
-            if(event) event.stopPropagation();
-            
-            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
-            
-            if(!activeUser || !activeUser.uid) {
+            if (event) event.stopPropagation();
+            const user = window.currentUser;
+            if (!user || auth.currentUser?.uid !== user.uid) {
                 showCustomAlert("Login Required", "Please login to bookmark / save ads!", "error");
                 openAuthModal();
                 return;
             }
-            
-            let productObj = products.find(p => p.docId === docId);
-            if (!productObj && currentProduct && currentProduct.docId === docId) {
-                productObj = currentProduct;
-            }
 
-            const storageKey = getSavedAdsStorageKey();
-            let savedList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-            const idx = savedList.findIndex(item => {
-                const itemId = (typeof item === 'string') ? item : item.docId;
-                return itemId === docId;
-            });
-
-            if(idx > -1) { 
-                savedList.splice(idx, 1); 
-                showCustomAlert("Removed", "Ad removed from saved list!", "success"); 
-            } else { 
-                savedList.push({
-                    docId: docId,
-                    title: productObj ? productObj.title : "Saved Ad",
-                    finalPriceStr: productObj ? productObj.finalPriceStr : "&#8377;0",
-                    image: (productObj && productObj.images && productObj.images.length > 0) ? productObj.images[0] : ""
-                });
-                showCustomAlert("Saved!", "Ad saved successfully!", "success"); 
-                triggerPushNotification("Ad Bookmarked", "You successfully saved an ad to your wishlist!");
-            }
-            
-            localStorage.setItem(storageKey, JSON.stringify(savedList));
-
-            updateProfileDetails(activeUser);
-            renderProducts();
-            // Refresh Recently Viewed cards immediately so the heart reflects
-            // the updated saved-ads localStorage state without a page reload.
-            renderRecentlyViewed();
-            
-            if(currentProduct && currentProduct.docId === docId) {
-                renderProductDetailView(currentProduct);
-            }
-            
-            const modalEl = document.getElementById('cartModal');
-            if (modalEl && modalEl.style.display === 'flex') {
-                openCartModal();
-            }
-
-            db.collection('users').doc(activeUser.uid).set({ 
-                savedAds: savedList 
-            }, { merge: true }).then(() => {
-                console.log("Cloud sync successful!");
-            }).catch(err => {
-                console.log("Firestore sync error:", err);
+            const list = JSON.parse(localStorage.getItem(getSavedAdsStorageKey()) || '[]');
+            if (list.some(item => savedAdId(item) === docId)) return saveAdMembership(user, docId, false);
+            const product = products.find(p => p.docId === docId) || (currentProduct?.docId === docId ? currentProduct : null);
+            return saveAdMembership(user, docId, true, {
+                docId,
+                title: product?.title || "Saved Ad",
+                finalPriceStr: product?.finalPriceStr || "&#8377;0",
+                image: product?.images?.[0] || ""
             });
         }
 
@@ -3971,23 +3975,8 @@
         }
 
         function removeFromCart(id) {
-            const activeUser = (typeof auth !== 'undefined' && auth.currentUser) ? auth.currentUser : window.currentUser;
-            if(!activeUser || !activeUser.uid) return;
-            
-            const storageKey = getSavedAdsStorageKey();
-            let cartList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-            cartList = cartList.filter(item => {
-                const itemId = (typeof item === 'string') ? item : item.docId;
-                return itemId !== id;
-            });
-            
-            localStorage.setItem(storageKey, JSON.stringify(cartList));
-            
-            db.collection('users').doc(activeUser.uid).set({ savedAds: cartList }, { merge: true }).then(() => {
-                updateProfileDetails(activeUser);
-                renderProducts();
-                openCartModal();
-            }).catch(err => console.log("Firestore remove error:", err));
+            const user = window.currentUser;
+            if (user && auth.currentUser?.uid === user.uid) return saveAdMembership(user, id, false);
         }
 
         function closeCartModal() { document.getElementById('cartModal').style.display = 'none'; }
