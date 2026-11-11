@@ -2,19 +2,20 @@ import {createHash} from 'node:crypto';
 import {runVerifiedOperation} from './verified-operation.mjs';
 import {isolatedFirestoreContext,copyRecord,safeId,isolatedTransactionCheck} from './isolated-firestore-context.mjs';
 import {validateProcessedImage} from './image-upload-contract-policy.mjs';
+import {createMarketplaceMediaQueueCursor,isMarketplaceMediaAssetId} from './marketplace-media-queue-cursor.mjs';
 const roles=['assets','associations','reviews','publications','permissions','generations','receipts','audits'];
 export const MEDIA_RELEASE_TEST_SCHEMA=Object.freeze({assets:'testOldxPhotoAssets',associations:'testOldxPhotoAssociations',reviews:'testOldxMediaReviews',publications:'testOldxMediaPublications',permissions:'testOldxMediaReleasePermissions',generations:'testOldxMediaReleaseGenerations',receipts:'testOldxMediaReleaseReceipts',audits:'testOldxMediaReleaseAudits'});
 export const MEDIA_MODERATION_FIELDS=Object.freeze(['requestId','imageId','expectedAssetRevision','expectedReviewRevision','decision']);
 export const MEDIA_MODERATION_QUEUE_FIELDS=Object.freeze(['kind','limit','cursor']);
 const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),int=v=>Number.isSafeInteger(v)&&v>=0,fail=code=>({ok:false,code});
-const managedId=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{20,80}$/.test(v);
 const cursorToken=v=>typeof v==='string'&&v.length>0&&v.length<=1024;
 const processed=a=>a&&typeof a.processedDigest==='string'&&/^[a-f0-9]{64}$/.test(a.processedDigest)&&a.processed?.metadataStripped===true&&a.processed?.contentScanned===true&&validateProcessedImage({...a.processed,surface:a.kind==='provider'?'profile':a.kind,fileCount:1}).ok;
 // Isolated metadata transactions, not real moderation or publication activation.
 // No image provider, credentials, endpoint, existing gallery or v1 schema mutation.
-export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,parentCollections,publicCollections,actorCollections,authenticate,readCursor,issueCursor,now=Date.now,timeoutMs=5000}={}){
+export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,parentCollections,publicCollections,actorCollections,authenticate,queueCursorKey,now=Date.now,timeoutMs=5000}={}){
  if(enabled!==true)return Object.freeze({moderate:async()=>fail('UNAVAILABLE'),moderateMarketplace:async()=>fail('UNAVAILABLE'),queueMarketplace:async()=>fail('UNAVAILABLE'),release:async()=>fail('UNAVAILABLE')});
  const {db,collections:c}=isolatedFirestoreContext({firestore,sdk,schema,roles});
+ const queueCursor=createMarketplaceMediaQueueCursor({key:queueCursorKey,now});
  for(const mapping of [parentCollections,actorCollections])if(!copyRecord(mapping,['product','store','provider'])||Object.values(mapping).some(v=>typeof v!=='string'||!/^test(?:Oldx|Provider)[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated media scope');
  if(!copyRecord(publicCollections,['product','store'])||Object.values(publicCollections).some(v=>typeof v!=='string'||!/^testOldx[A-Za-z0-9]{1,48}$/.test(v)))throw new Error('Unactivated public scope');
  const parents={...parentCollections},actors={...actorCollections},views={...publicCollections};const ref=(role,key)=>sdk.doc(db,c[role],key);
@@ -61,15 +62,14 @@ export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,p
  async function queueMarketplace(request,{credential,signal}={}){
   const r=copyRecord(request,MEDIA_MODERATION_QUEUE_FIELDS);
   if(!r||!['product','store'].includes(r.kind)||!Number.isInteger(r.limit)||r.limit<1||r.limit>10||r.cursor!==null&&!cursorToken(r.cursor))return fail('INVALID_REQUEST');
-  if(typeof readCursor!=='function'||typeof issueCursor!=='function')return fail('UNAVAILABLE');
+  if(!queueCursor)return fail('UNAVAILABLE');
   return runVerifiedOperation({authenticate,credential,signal,now,timeoutMs,run:async context=>{
-   const uid=context.actorUid,scope=hash(['marketplace-media-review-v1',uid,r.kind,r.limit]);
+   const uid=context.actorUid,scope=hash([db.app.options.projectId,c.assets,uid,r.kind,r.limit]);
    if((await permission({get:ref=>sdk.getDocFromServer(ref)},uid))?.canModerate!==true)return fail('DENIED');
    let after=null;
    if(r.cursor!==null){
-    let decoded;try{decoded=copyRecord(await readCursor(r.cursor),['scope','after']);}catch{return fail('CURSOR_INVALID');}
-    if(decoded?.scope!==scope||!managedId(decoded.after))return fail('CURSOR_INVALID');
-    after=decoded.after;
+    after=queueCursor.read(r.cursor,scope);
+    if(after===null)return fail('CURSOR_INVALID');
    }
    context.checkpoint();
    const query=sdk.query(sdk.collection(db,c.assets),sdk.where('kind','==',r.kind),sdk.orderBy('imageId','asc'),
@@ -79,7 +79,7 @@ export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,p
    if(found.metadata?.fromCache!==false||found.metadata?.hasPendingWrites!==false||found.docs.length>r.limit+1)return fail('UNAVAILABLE');
    let previous=after;
    for(const doc of found.docs){
-    if(!managedId(doc.id)||doc.data()?.imageId!==doc.id||previous!==null&&doc.id<=previous)return fail('UNAVAILABLE');
+    if(!isMarketplaceMediaAssetId(doc.id)||doc.data()?.imageId!==doc.id||previous!==null&&doc.id<=previous)return fail('UNAVAILABLE');
     previous=doc.id;
    }
    const candidates=found.docs.slice(0,r.limit);
@@ -108,9 +108,9 @@ export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,p
    },{maxAttempts:3});
    if(!result.ok)return result;
    const hasMore=found.docs.length>r.limit;
-   const nextCursor=hasMore?await issueCursor({scope,after:candidates.at(-1).id}):null;
+   const nextCursor=hasMore?queueCursor.issue(candidates.at(-1).id,scope):null;
    context.checkpoint();
-   return hasMore&&!cursorToken(nextCursor)?fail('UNAVAILABLE'):{...result,nextCursor};
+   return {...result,nextCursor};
   }});
  }
  return Object.freeze({
