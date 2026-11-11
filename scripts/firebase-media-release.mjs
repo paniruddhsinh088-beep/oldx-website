@@ -39,7 +39,25 @@ export function createIsolatedMediaRelease({enabled=false,firestore,sdk,schema,p
      return {ok:true,status:'replayed',revision:receipt.revision};
     }
     if(audit||asset.revision!==input.expectedAssetRevision||(review?.revision??0)!==input.expectedReviewRevision||input.expectedReviewRevision===Number.MAX_SAFE_INTEGER)return fail('REVISION_CONFLICT');
-    let revoke=null;if(input.decision!=='approved'&&asset.publicRelease?.approved===true){const scopeId=hash([asset.kind,asset.parentId,null]),publication=await read(raw,ref('publications',scopeId)),generation=await read(raw,ref('generations','current'));if(!publication||publication.ownerUid!==asset.ownerUid||!Array.isArray(publication.photos)||publication.photos.length>6||!int(publication.revision)||publication.revision===Number.MAX_SAFE_INTEGER||!generation||!int(generation.value)||generation.value===Number.MAX_SAFE_INTEGER)return fail('CONFLICT');const related=[];for(const photo of publication.photos){const item=photo.imageId===asset.imageId?asset:await read(raw,ref('assets',photo.imageId));if(!item||item.ownerUid!==asset.ownerUid||item.parentId!==asset.parentId||item.kind!==asset.kind||!Array.isArray(item.references)||!int(item.revision)||item.revision===Number.MAX_SAFE_INTEGER)return fail('CONFLICT');related.push(item);}revoke={scopeId,publication,generation,related};}
+    const staleParent=asset.parentRevision!==parent.revision;
+    const withdrawPublic=input.decision!=='approved'&&asset.kind!=='provider'&&asset.publicRelease?.approved===true;
+    if(staleParent&&!withdrawPublic)return fail('REVISION_CONFLICT');
+    let revoke=null;
+    if(withdrawPublic){
+     const scopeId=hash([asset.kind,asset.parentId,null]),publication=await read(raw,ref('publications',scopeId)),generation=await read(raw,ref('generations','current'));
+     if(!publication||publication.ownerUid!==asset.ownerUid||!Array.isArray(publication.photos)||publication.photos.length>6||!int(publication.revision)||publication.revision===Number.MAX_SAFE_INTEGER||!generation||!int(generation.value)||generation.value===Number.MAX_SAFE_INTEGER)return fail('CONFLICT');
+     // A newer private edit must still allow withdrawal of the exact older public photo.
+     if(staleParent&&(publication.published!==true||publication.kind!==asset.kind||publication.parentId!==asset.parentId||
+      publication.parentRevision!==asset.parentRevision||publication.revision!==asset.publicRelease.version||
+      !publication.photos.some(photo=>photo.imageId===asset.imageId&&photo.processedDigest===asset.processedDigest)))return fail('REVISION_CONFLICT');
+     const related=[];
+     for(const photo of publication.photos){
+      const item=photo.imageId===asset.imageId?asset:await read(raw,ref('assets',photo.imageId));
+      if(!item||item.ownerUid!==asset.ownerUid||item.parentId!==asset.parentId||item.kind!==asset.kind||!Array.isArray(item.references)||!int(item.revision)||item.revision===Number.MAX_SAFE_INTEGER)return fail('CONFLICT');
+      related.push(item);
+     }
+     revoke={scopeId,publication,generation,related};
+    }
     const revision=input.expectedReviewRevision+1;check();if(revoke){for(const item of revoke.related){const references=item.references.filter(id=>id!==revoke.publication.referenceId);raw.set(ref('assets',item.imageId),{...item,references,state:references.length?'attached':'quarantined',revision:item.revision+1,publicRelease:null,committedAt:sdk.serverTimestamp()});}raw.set(ref('publications',revoke.scopeId),{...revoke.publication,published:false,photos:[],revision:revoke.publication.revision+1,generation:revoke.generation.value+1});raw.set(ref('generations','current'),{value:revoke.generation.value+1});}
     raw.set(ref('reviews',asset.imageId),{imageId:asset.imageId,ownerUid:asset.ownerUid,moderatorUid:uid,assetRevision:asset.revision,processedDigest:asset.processedDigest,revision,decision:input.decision,committedAt:sdk.serverTimestamp()});raw.set(ref('receipts',key),{actorUid:uid,fingerprint,imageId:asset.imageId,revision});raw.set(ref('audits',key),{requestKey:key,actorUid:uid,imageId:asset.imageId,assetRevision:asset.revision,processedDigest:asset.processedDigest,operation:'moderate',decision:input.decision,fromRevision:input.expectedReviewRevision,toRevision:revision,revokedScopeId:revoke?.scopeId??null,releaseGeneration:revoke?revoke.generation.value+1:null});check();return {ok:true,status:'moderated',revision};
    }

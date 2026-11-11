@@ -50,6 +50,20 @@ async function moderateBeforePublication({f,seed,get,hash,kind,id,imageId,reques
   return response.body.items;
  };
  assert.deepEqual(await queue(),[{kind,parentId:id,imageId,expectedAssetRevision:asset.revision,expectedReviewRevision:0}]);
+ const parentKey=kind+'_'+id,parent=await get(f.m.privateRecords,parentKey);
+ await seed(f.m.privateRecords,parentKey,{...parent,revision:parent.revision+1});
+ assert.deepEqual(await queue(),[]);
+ for(const decision of ['approved','rejected']){
+  const requestId='stale-parent-'+kind+'-'+decision;
+  assert.equal((await call({...base,requestId,decision})).body.error?.code,'REVISION_CONFLICT');
+  const key=hash([reviewer,'moderate',requestId]);
+  assert.equal(await get(f.c.reviews,imageId),null);
+  assert.equal(await get(f.c.receipts,key),null);
+  assert.equal(await get(f.c.audits,key),null);
+  assert.equal(await get(f.c.publications,hash([kind,id,null])),null);
+  assert.equal(await get(f.m.publicViews,parentKey),null);
+ }
+ await seed(f.m.privateRecords,parentKey,parent);
  assert.equal((await call(approve,null)).status,401);
  for(const actor of ['atomic-owner','foreign'])assert.equal((await call(approve,actor)).status,403);
  assert.equal((await call({...approve,moderatorUid:reviewer})).status,400);
@@ -70,8 +84,11 @@ async function moderateBeforePublication({f,seed,get,hash,kind,id,imageId,reques
  assert.equal((await get(f.c.reviews,imageId)).decision,'rejected');
  assert.equal(await get(f.c.audits,auditId),null);
  assert.equal(await get(f.c.receipts,auditId),null);
- assert.equal((await call(currentApproval)).body.status,'moderated');
+ const duplicate=await Promise.all([call(currentApproval),call(currentApproval)]);
+ assert.deepEqual(duplicate.map(response=>response.body.status).sort(),['moderated','replayed']);
+ await seed(f.m.privateRecords,parentKey,{...parent,revision:parent.revision+1});
  assert.equal((await call(currentApproval)).body.status,'replayed');
+ await seed(f.m.privateRecords,parentKey,parent);
  assert.deepEqual(await queue(),[]);
  const audit=await get(f.c.audits,auditId);
  assert.equal(audit.assetRevision,asset.revision);
