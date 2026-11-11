@@ -1,3 +1,4 @@
+import {createUnifiedInbox} from '../../features/chat/unified-inbox.mjs';
 import assert from 'node:assert/strict';import {createHash} from 'node:crypto';import {createIsolatedTrustedInboxIndex,INBOX_INDEX_TEST_SCHEMA as c,inboxRowId} from '../../scripts/trusted-inbox-index.mjs';import {createProviderDiscoveryCursorCodec} from '../../scripts/provider-discovery-cursor.mjs';import {reconcileInboxHistory} from '../../scripts/inbox-history-reconciliation.mjs';import {createIsolatedChatNotificationOutbox} from '../../scripts/chat-notification-outbox.mjs';import {createNotificationPrivacyPolicy} from '../../scripts/notification-privacy.mjs';import {createIsolatedNotificationWorker,createRecordingNotificationTransport} from '../../scripts/notification-worker.mjs';
 const stable=v=>Array.isArray(v)?v.map(stable):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,stable(v[k])])):v;const hash=v=>createHash('sha256').update(JSON.stringify(v)).digest('hex'),digest=v=>hash(stable(v));
 export async function inboxWorkerAcceptance({sdk,db,seed,get,namespace='Next'}){
@@ -17,7 +18,23 @@ export async function inboxWorkerAcceptance({sdk,db,seed,get,namespace='Next'}){
  for(let n=1;n<=40;n++){const v={...reconciliation.views[0],sourceRevision:1,mode:'canonical',item:{kind:n%2?'product':'provider',threadId:'thread'+n,providerId:n%2?null:'provider',title:'Catalogue '+n,preview:'Authorized',unreadCount:n%3?1:0,readSequence:0,lastSequence:1,lastMessageAtMillis:100+n}};await store([v]);}
  reads=writes=queryDocs=0;const first=await page();assert.equal(first.items.length,20);assert.ok(first.nextCursor);const second=await index.page({limit:20,cursor:first.nextCursor,snapshotId:first.snapshotId});assert.equal(second.items.length,20);const third=await index.page({limit:20,cursor:second.nextCursor,snapshotId:second.snapshotId});assert.equal(third.items.length,1);assert.equal(first.totalUnread,28);assert.equal(third.totalUnread,28);assert.equal(new Set([...first.items,...second.items,...third.items].map(r=>r.kind+':'+r.threadId)).size,41);assert.equal(writes,0);console.log('MEASURE trusted Inbox 41 rows: 3 pages, '+queryDocs+' query documents + '+reads+' point reads incl fresh policy; 0 writes/history scans');
  assert.equal((await index.page({limit:20,cursor:'forged',snapshotId:first.snapshotId})).code,'CURSOR_INVALID');uid='foreign';assert.equal((await index.page({limit:20,cursor:first.nextCursor,snapshotId:first.snapshotId})).code,'CURSOR_INVALID');uid='buyer';
- const unread={...reconciliation.views[0],sourceRevision:6,item:{...reconciliation.views[0].item,readSequence:5,lastSequence:6,unreadCount:0}};await store([unread]);assert.equal((await index.page({limit:20,cursor:first.nextCursor,snapshotId:first.snapshotId})).code,'CURSOR_INVALID');assert.equal((await page()).totalUnread,27);
+ const unread={...reconciliation.views[0],sourceRevision:6,item:{...reconciliation.views[0].item,readSequence:5,lastSequence:6,unreadCount:0}};const client=createUnifiedInbox({enabled:true,loadPage:r=>index.page(r)});
+ client.setSession({uid:'buyer',sessionId:'mixed-inbox'});
+ await client.refresh();
+ assert.equal(client.snapshot().totalUnread,28);
+ await store([unread]);
+ reads=writes=queryDocs=0;
+ await client.next();
+ assert.equal(client.snapshot().status,'unavailable');
+ assert.deepEqual(client.snapshot().items,[]);
+ assert.equal(client.snapshot().totalUnread,null);
+ assert.equal(queryDocs,0);
+ const staleReads=reads;
+ await client.refresh();
+ assert.equal(client.snapshot().totalUnread,27);
+ assert.deepEqual(new Set(client.snapshot().items.map(r=>r.kind)),new Set(['product','provider']));
+ assert.equal(writes,0);
+ console.log('MEASURE Inbox retry: stale cursor '+staleReads+' point reads, fresh page '+(reads-staleReads)+' point reads + '+queryDocs+' query documents, 0 writes');
  await seed(policies,'buyer',{empty:false,active:false,epoch:'epoch2'});assert.equal((await page()).code,'INDEX_UNAVAILABLE');await seed(policies,'buyer',{empty:false,active:true,epoch:'epoch1'});
  // Fresh privacy policy and recording-only worker use actual transactional reads.
  const queue={events:'testOldx'+namespace+'WorkerEvents',audits:'testOldx'+namespace+'WorkerAudits'},facts='testOldx'+namespace+'DeliveryFacts';

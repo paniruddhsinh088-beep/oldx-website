@@ -498,6 +498,7 @@ export default Object.freeze({
   "market.product.photosUnavailable": "प्रकाशन के लिए फोटो आवश्यक हैं। फोटो प्रक्रिया उपलब्ध नहीं है या अधूरी है।",
   "market.product.disabled": "विश्वसनीय इंटीग्रेशन निष्क्रिय है।",
   "market.product.next": "अगला पृष्ठ",
+  "market.inbox.reload": "इनबॉक्स फिर से लोड करें",
   "market.product.reload": "निजी ड्राफ्ट फिर लोड करें",
   "market.product.moreHistory": "अगले संदेश",
   "market.store.description": "स्टोर का विवरण",

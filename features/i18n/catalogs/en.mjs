@@ -496,6 +496,7 @@ export default Object.freeze({
   "market.product.photosUnavailable": "Photos are required to publish. Photo processing is unavailable or incomplete.",
   "market.product.disabled": "Trusted integration is disabled.",
   "market.product.next": "Next page",
+  "market.inbox.reload": "Reload inbox",
   "market.product.reload": "Reload private draft",
   "market.product.moreHistory": "Next messages",
   "market.store.description": "Store description",
