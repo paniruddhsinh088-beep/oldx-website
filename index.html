@@ -997,8 +997,8 @@
     <div id="fullChatPage" style="display: none;" class="fixed inset-0 z-50 bg-gray-100 dark:bg-gray-900 flex flex-col animate-slide-up">
         <div class="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b px-4 py-3 flex justify-between items-center shadow-sm shrink-0">
             <div class="flex items-center gap-3 overflow-hidden">
-                <button onclick="closeFullChatPage()" class="text-gray-600 dark:text-gray-300 hover:text-black cursor-pointer shrink-0">
-                    <i class="fa-solid fa-arrow-left text-lg"></i>
+                <button type="button" onclick="closeFullChatPage()" aria-label="Back" data-i18n-aria-label="market.product.chatBack" class="min-h-11 min-w-11 text-gray-600 dark:text-gray-300 hover:text-black cursor-pointer shrink-0">
+                    <i class="fa-solid fa-arrow-left text-lg" aria-hidden="true"></i>
                 </button>
                 <div class="relative shrink-0">
                     <img id="chatSellerPhoto" src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-10 h-10 rounded-full object-cover border">

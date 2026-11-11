@@ -478,6 +478,7 @@ export default Object.freeze({
   "market.product.withdraw": "Withdraw",
   "market.product.remove": "Remove",
   "market.product.retry": "Retry same request",
+  "market.product.chatBack": "Back",
   "market.product.discover": "Browse products",
   "market.product.inbox": "Seller inbox",
   "market.product.enquire": "Private enquiry",

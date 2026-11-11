@@ -480,6 +480,7 @@ export default Object.freeze({
   "market.product.withdraw": "પ્રકાશન પાછું ખેંચો",
   "market.product.remove": "દૂર કરો",
   "market.product.retry": "એ જ વિનંતી ફરી કરો",
+  "market.product.chatBack": "પાછા જાઓ",
   "market.product.discover": "પ્રોડક્ટ જુઓ",
   "market.product.inbox": "વેચનારનું ઇનબોક્સ",
   "market.product.enquire": "ખાનગી પૂછપરછ",

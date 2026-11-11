@@ -16,7 +16,8 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
  const listen=(node,type,fn)=>{node?.addEventListener(type,fn,true);listeners.push(()=>node?.removeEventListener(type,fn,true));};
  if(inbox.enabled===true)unifiedInbox=mountUnifiedInbox({...inbox,root,enabled:true,openConversation:row=>{root.getElementById('inboxModal').style.display='none';if(row.kind==='product')return products.navigate('thread',row.threadId);return navigation.go('conversation',{providerId:row.providerId,enquiryId:row.threadId});}});
  const cancelProviders=()=>providers?.navigation?.changeScope?.();
- products=mountProductIntegration({...product,root,enabled,managedRoutes:true,beforeNavigate:()=>{stores?.model.changeScope();cancelProviders();},openStore:id=>navigation.go('store',id)});
+ function openInbox(){root.getElementById('inboxModal').style.display='flex';return unifiedInbox.open();}
+ products=mountProductIntegration({...product,root,enabled,managedRoutes:true,beforeNavigate:()=>{stores?.model.changeScope();cancelProviders();},openInbox:unifiedInbox?openInbox:product.openInbox,openStore:id=>navigation.go('store',id)});
  stores=mountStoreIntegration({...store,root,enabled,managedRoutes:true,beforeNavigate:()=>{products.model.changeScope();cancelProviders();},onProduct:id=>navigation.go('product',id),onAddProduct:id=>products.navigate('sell',id)});
  function directory(){view.history.pushState(view.history.state,'',view.location.pathname+view.location.search+'#stores');products.show('homeView');return stores.discover({category:root.getElementById('trustedStoreFilter')?.value??''});}
  navigation=createMarketplaceNavigation({enabled,product:{changeScope:()=>products.model.changeScope(),discover:()=>products.navigate('home'),openProduct:id=>products.navigate('product',id)},store:{changeScope:()=>stores.model.changeScope(),open:id=>stores.open(id),discover:directory},providers:providers?.navigation,onView});
@@ -44,7 +45,7 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
  });
  listen(root.getElementById('trustedStoreBrowse'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('stores');});
  if(providers?.navigation)for(const node of root.querySelectorAll('a[href="./service-preview.html?mode=website#services"]'))listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('providers');});
- if(unifiedInbox)for(const node of [root.getElementById('productOwnerInbox'),...root.querySelectorAll('[onclick="openInboxModal()"]')])listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();root.getElementById('inboxModal').style.display='flex';unifiedInbox.open();});
+ if(unifiedInbox)for(const node of [root.getElementById('productOwnerInbox'),...root.querySelectorAll('[onclick="openInboxModal()"]')])listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();openInbox();});
  const sessions=createMarketplaceSessionIntegration({enabled,bindings:[products,stores,...(unifiedInbox?[unifiedInbox]:[]),...(providers?.journey?[providerSessionBinding(providers.journey)]:[])]});
  return Object.freeze({product:products,store:stores,inbox:unifiedInbox,restoreRoute,async setSession(value){const result=sessions.setSession(value);if(!value&&active&&view.location.hash==='#sell')products.show('homeView');if(await result&&active){await restoreRoute();return true;}return false;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();unifiedInbox?.destroy();products.destroy();stores.destroy();}});
 }
