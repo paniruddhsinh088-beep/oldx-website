@@ -95,6 +95,11 @@
         #homeCatGrid .oldx-category-icon { width: 2rem; height: 2rem; }
         #homeCatGrid button span { overflow-wrap: anywhere; }
         #searchInput { min-width: 0; scroll-margin-block-start: 8rem; }
+        #oldxStatePicker, #oldxDistancePicker, #oldxVoiceSearch { min-height: 44px; }
+        #oldxVoiceSearch { min-width: 44px; }
+        #oldxDistancePicker { max-width: 48%; }
+        #selectedDistanceText { min-width: 0; overflow-wrap: anywhere; }
+        #oldxHomeHero button:focus-visible { outline: 2px solid var(--oldx-navy); outline-offset: -2px; }
         #homeCatGrid :focus-visible, #oldxMobileNav :focus-visible, #searchInput:focus-visible,
         [data-card-title]:focus-visible { outline: 2px solid var(--oldx-navy); outline-offset: -2px; }
         .dark #homeCatGrid :focus-visible, .dark #oldxMobileNav :focus-visible, .dark #searchInput:focus-visible,
@@ -110,6 +115,8 @@
             #homeCatGrid button { min-width: 0; }
         }
         @media (max-width: 767.98px) {
+            #oldxHomeHero { padding-block: .875rem; }
+            #oldxHomeHero p { margin-bottom: .625rem; }
             body.pb-24 { padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px)); }
             #oldxMobileNav { position: fixed; inset: auto 0 0; z-index: 40; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); padding: .25rem .375rem calc(.25rem + env(safe-area-inset-bottom, 0px)); }
             #oldxMobileNav button, #oldxMobileNav a { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 44px; min-width: 0; gap: .125rem; padding: .25rem .125rem; text-align: center; text-decoration: none; overflow-wrap: anywhere; }
@@ -120,7 +127,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <!-- Environment-specific config is generated during the Vercel build. -->
     <script src="firebase-env.js"></script>
     <script src="firebase-config-guard.js"></script>
@@ -191,13 +197,13 @@
                 <!-- Search Bar Container -->
                 <div class="bg-white/95 dark:bg-gray-800/95 backdrop-blur-lg p-2 rounded-2xl shadow-xl border border-white/20 flex flex-col md:flex-row items-center gap-2 max-w-3xl mx-auto text-gray-800 relative z-30">
                     
-                    <div onclick="openCustomStatePicker()" class="flex items-center justify-between px-3.5 py-2.5 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition">
-                        <div class="flex items-center gap-2 truncate">
-                            <i class="fa-solid fa-location-dot text-red-500 text-base shrink-0"></i>
+                    <button type="button" id="oldxStatePicker" aria-controls="customStateModal" onclick="openCustomStatePicker()" class="flex items-center justify-between px-3.5 py-2.5 w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl transition">
+                        <span class="flex items-center gap-2 truncate">
+                            <i class="fa-solid fa-location-dot text-red-500 text-base shrink-0" aria-hidden="true"></i>
                             <span id="selectedStateText" class="font-bold text-xs md:text-sm text-gray-800 dark:text-gray-200 truncate">Gujarat</span>
-                        </div>
-                        <i class="fa-solid fa-chevron-down text-xs text-gray-400 shrink-0 ml-1"></i>
-                    </div>
+                        </span>
+                        <i class="fa-solid fa-chevron-down text-xs text-gray-400 shrink-0 ml-1" aria-hidden="true"></i>
+                    </button>
 
                     <div class="flex items-center gap-2 px-3 py-2 w-full md:w-2/3 relative">
                         <i class="fa-solid fa-magnifying-glass text-teal-600 text-base shrink-0"></i>
@@ -206,13 +212,13 @@
                         <!-- Instant Search Autocomplete Dropdown Fixed -->
                         <div id="searchAutocompleteDropdown" style="display: none;" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 z-[999] max-h-60 overflow-y-auto text-left p-2 space-y-1"></div>
 
-                        <div onclick="openCustomDistancePicker()" class="flex items-center gap-1.5 bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-3 py-2 rounded-xl border border-teal-200 dark:border-gray-600 cursor-pointer hover:bg-teal-100 transition shrink-0">
-                            <i class="fa-solid fa-route text-teal-600"></i>
+                        <button type="button" id="oldxDistancePicker" aria-controls="customDistanceModal" onclick="openCustomDistancePicker()" class="flex items-center gap-1.5 bg-teal-50 dark:bg-gray-700 text-teal-800 dark:text-teal-300 font-bold text-[11px] px-3 py-2 rounded-xl border border-teal-200 dark:border-gray-600 cursor-pointer hover:bg-teal-100 transition shrink-0">
+                            <i class="fa-solid fa-route text-teal-600 shrink-0" aria-hidden="true"></i>
                             <span id="selectedDistanceText" data-i18n="market.home.distanceAll">Any Distance</span>
-                            <i class="fa-solid fa-chevron-down text-[9px]"></i>
-                        </div>
+                            <i class="fa-solid fa-chevron-down text-[9px] shrink-0" aria-hidden="true"></i>
+                        </button>
 
-                        <button onclick="startVoiceSearch()" title="Voice Search" aria-label="Voice Search" data-i18n-title="market.home.voice" data-i18n-aria-label="market.home.voice" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9 cursor-pointer">
+                        <button type="button" id="oldxVoiceSearch" onclick="startVoiceSearch()" title="Voice Search" aria-label="Voice Search" data-i18n-title="market.home.voice" data-i18n-aria-label="market.home.voice" class="bg-teal-50 dark:bg-gray-700 text-teal-700 dark:text-teal-300 hover:bg-teal-100 p-2 rounded-full transition flex items-center justify-center shrink-0 w-9 h-9 cursor-pointer">
                             <i class="fa-solid fa-microphone"></i>
                         </button>
                     </div>
@@ -1469,7 +1475,6 @@
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const storeStorage = firebase.storage();
         let currentStoreData = null;
         let storeMapInstance = null;
         let storeMapMarker = null;

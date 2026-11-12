@@ -1,5 +1,85 @@
 import test,{before,after} from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';import {chromium} from 'playwright-core';import {startPreviewServer} from './preview-server.mjs';
 let server,browser,origin;const source=await readFile(new URL('../../index.html',import.meta.url),'utf8');
+const homepageFirebaseFixture = `
+ const account = {currentUser:null, setPersistence:async()=>{}, onAuthStateChanged(callback){
+  window.setFixtureAccount = user => { this.currentUser=user; callback(user); };
+  document.addEventListener('DOMContentLoaded',()=>window.setFixtureAccount(null),{once:true});
+ }};
+ const empty={docs:[],empty:true,metadata:{fromCache:false,hasPendingWrites:false}};
+ const query={where:()=>query,orderBy:()=>query,limit:()=>query,startAfter:()=>query,
+  collection:()=>query,doc:()=>query,get:async()=>empty,set:async()=>{},onSnapshot:()=>()=>{}};
+ window.firebase={apps:[],initializeApp(){},auth:Object.assign(()=>account,{Auth:{Persistence:{LOCAL:'local'}}}),
+  firestore:Object.assign(()=>query,{FieldPath:{documentId:()=> '__name__'},FieldValue:{serverTimestamp:()=>null}}),
+  storage:()=>({})};
+`;
+
+async function fullHomepage(){
+ const context=await browser.newContext({viewport:{width:320,height:850}});
+ const intercepted=[],errors=[];
+ await context.route('**/*',async route=>{
+  const url=new URL(route.request().url());
+  if(url.href===origin+'/homepage-fixture')return route.fulfill({contentType:'text/html',body:source});
+  if(url.origin===origin&&url.pathname.startsWith('/features/'))return route.continue();
+  if(url.origin===origin)return route.fulfill({status:404});
+  intercepted.push(url.href);
+  if(url.hostname==='cdn.tailwindcss.com'&&url.pathname==='/')return route.fulfill({contentType:'text/javascript',
+   body:process.env.OLDX_TEST_TAILWIND_FILE?await readFile(process.env.OLDX_TEST_TAILWIND_FILE,'utf8'):'window.tailwind={}'});
+  if(url.pathname.endsWith('/firebase-app-compat.js'))return route.fulfill({contentType:'text/javascript',body:homepageFirebaseFixture});
+  if(url.hostname==='api.ipify.org')return route.fulfill({contentType:'application/json',body:'{"ip":"synthetic"}'});
+  return route.fulfill({contentType:'text/plain',body:''});
+ });
+ const page=await context.newPage();
+ page.setDefaultTimeout(5000);
+ page.on('pageerror',error=>errors.push(error.message));
+ return {context,page,intercepted,errors};
+}
+
+test('full homepage gives location and search controls keyboard access and mobile touch targets',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  const state=page.locator('#selectedStateText').locator('../..');
+  const distance=page.locator('#selectedDistanceText').locator('..');
+  for(const width of [320,375,768,1280]){
+   await page.setViewportSize({width,height:850});
+   const locale=width===320?'gu':width===375?'hi':'en';
+   await page.locator('#marketplaceLocale').selectOption(locale);
+   await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+   for(const [button,modal] of [[state,'#customStateModal'],[distance,'#customDistanceModal']]){
+    assert.equal(await button.evaluate(node=>node.tagName),'BUTTON');
+    await button.press('Enter');
+    assert.equal(await page.locator(modal).isVisible(),true);
+    await page.locator(modal).evaluate(node=>node.style.display='none');
+    assert.ok((await button.boundingBox()).height>=44);
+   }
+   assert.ok((await page.locator('[data-i18n-aria-label="market.home.voice"]').boundingBox()).height>=44);
+   assert.equal(await page.locator('#oldxMobileNav').isVisible(),width<768);
+   if(process.env.OLDX_TEST_TAILWIND_FILE)assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+  }
+  await page.setViewportSize({width:375,height:850});
+  await page.locator('#oldxMobileNav [data-i18n="market.nav.search"]').click();
+  await page.waitForFunction(()=>location.hash==='#search'&&document.activeElement.id==='searchInput');
+  await page.locator('#oldxMobileNav [data-i18n="market.nav.sell"]').click();
+  assert.equal(await page.locator('#authModal').isVisible(),true);
+  await page.locator('#authModal').evaluate(node=>node.style.display='none');
+  await page.evaluate(()=>setFixtureAccount({uid:'fixture-owner',email:'owner@example.invalid'}));
+  assert.equal(await page.locator('#authContainer [data-i18n]').getAttribute('data-i18n'),'market.home.logout');
+  await page.evaluate(()=>setFixtureAccount(null));
+  assert.equal(await page.locator('#authContainer [data-i18n]').getAttribute('data-i18n'),'market.home.login');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
+test('full homepage starts without requesting the unused Firebase Storage SDK',async()=>{
+ const {context,page,intercepted,errors}=await fullHomepage();
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  await page.waitForSelector('#homeCatGrid button');
+  assert.ok(intercepted.some(url=>url.endsWith('/firebase-firestore-compat.js')));
+  assert.equal(intercepted.filter(url=>url.endsWith('/firebase-storage-compat.js')).length,0);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
 before(async()=>{server=await startPreviewServer([]);origin=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});});after(async()=>{await browser?.close();await new Promise(r=>server.close(r));});
 async function fixture(){const context=await browser.newContext({viewport:{width:320,height:900}});const remote=[];await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){remote.push(route.request().url());return route.abort();}if(route.request().url()===origin+'/fixture')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><body></body></html>'});return route.continue();});const page=await context.newPage();await page.goto(origin+'/fixture');const panel=source.slice(source.indexOf('<div class="flex flex-wrap items-center gap-2 px-4 py-2 text-sm"'),source.indexOf('</div>',source.indexOf('id="marketplaceLocaleStatus"'))+6);const controls=[...source.matchAll(/<label for="(?:login|signup)[^"]+"[^>]*>[^<]*<\/label>|<input[^>]+id="(?:searchInput|loginEmail|loginPassword|signupEmail|signupPassword|signupConfirmPassword)"[^>]*>/g)].map(m=>m[0]).join('');await page.setContent('<style>*{box-sizing:border-box}body{margin:12px}input,select{max-width:100%;min-height:44px}label,span{overflow-wrap:anywhere}label,input{display:block}span{display:block}</style>'+panel+controls+'<p id="authored">ગુજરાતી नमूना seller text</p><script type="module" src="/features/i18n/marketplace.mjs"></script>');await page.waitForFunction(()=>document.querySelector('#marketplaceLocale').getAttribute('aria-busy')===null&&document.documentElement.lang==='en');return {context,page,remote};}
 test('actual essential-control markup localizes gu/hi/en without altering credentials, seller text or keyboard focus',async()=>{const {context,page,remote}=await fixture();try{await page.locator('#loginPassword').fill('  preserve spaces  ');await page.locator('#searchInput').fill('ખાનગી search');for(const locale of ['gu','hi','en']){await page.locator('#marketplaceLocale').focus();await page.locator('#marketplaceLocale').selectOption(locale);await page.waitForFunction(code=>document.documentElement.lang===code,locale);const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;assert.equal(await page.locator('label[for="loginEmail"]').textContent(),catalog['market.email']);assert.equal(await page.locator('#searchInput').getAttribute('aria-label'),catalog['market.search']);assert.equal(await page.locator('#loginPassword').inputValue(),'  preserve spaces  ');assert.equal(await page.locator('#authored').textContent(),'ગુજરાતી नमूना seller text');assert.equal(await page.locator('#marketplaceLocale').evaluate(n=>document.activeElement===n),true);await page.evaluate(()=>document.body.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}assert.deepEqual(remote,[]);assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),['oldx.preview.locale.v1']);}finally{await context.close();}});
