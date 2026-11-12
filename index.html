@@ -84,8 +84,11 @@
         #fullChatPage { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
         #fullChatPage > .sticky { position: relative; top: auto; flex: 0 0 auto; }
         #fullChatMessages { min-height: 0; flex: 1 1 auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-        #fullChatPage input#fullChatInput { min-width: 0; min-height: 42px; font-size: 16px !important; line-height: 1.35; }
+        #fullChatPage input#fullChatInput { min-width: 0; min-height: 44px; font-size: 16px !important; line-height: 1.35; }
         #fullChatPage > .bg-white.border-t { flex: 0 0 auto; padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+        #fullChatPage [data-chat-touch], #inboxModal [data-chat-touch] { min-width:44px; min-height:44px; flex-shrink:0; }
+        #fullChatPage :focus-visible, #inboxModal :focus-visible { outline:2px solid var(--oldx-navy); outline-offset:2px; }
+        .dark #fullChatPage :focus-visible, .dark #inboxModal :focus-visible { outline-color:#fdba74; }
 
         #oldxHomeHero { padding-block: 1.25rem; }
         #oldxHomeHero h2 { margin-bottom: .375rem; }
@@ -416,8 +419,8 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400">Your conversations</p>
                         </div>
                     </div>
-                    <button onclick="closeInboxModal()" aria-label="Close messages" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-200 hover:bg-teal-50 hover:text-teal-700 transition cursor-pointer">
-                        <i class="fa-solid fa-xmark text-lg"></i>
+                    <button type="button" onclick="closeInboxModal()" data-chat-touch aria-label="Close messages" data-i18n-aria-label="market.chat.closeInbox" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-200 hover:bg-teal-50 hover:text-teal-700 transition cursor-pointer">
+                        <i class="fa-solid fa-xmark text-lg" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
@@ -1028,10 +1031,10 @@
             </div>
             
             <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300 shrink-0">
-                <a id="chatCallBtn" href="tel:" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
-                    <i class="fa-solid fa-phone"></i>
+                <a id="chatCallBtn" href="tel:" data-chat-touch aria-label="Call seller" data-i18n-aria-label="market.chat.call" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
+                    <i class="fa-solid fa-phone" aria-hidden="true"></i>
                 </a>
-                <button onclick="openChatPrivacyMenu()" title="Chat privacy" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                <button type="button" onclick="openChatPrivacyMenu()" data-chat-touch aria-label="Chat privacy" data-i18n-aria-label="market.chat.privacy" title="Chat privacy" data-i18n-title="market.chat.privacy" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
             </div>
         </div>
 
@@ -1041,7 +1044,7 @@
 
         <div id="chatAttachmentPreview" style="display: none;" class="bg-gray-200 dark:bg-gray-700 px-4 py-2 flex items-center justify-between text-xs shrink-0">
             <span id="chatAttachmentName" class="truncate font-semibold text-gray-700 dark:text-gray-200"></span>
-            <button onclick="clearChatAttachment()" class="text-red-500 font-bold cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            <button type="button" onclick="clearChatAttachment()" data-chat-touch aria-label="Remove attachment" data-i18n-aria-label="market.chat.removeAttachment" class="text-red-500 font-bold cursor-pointer"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
         </div>
 
         <div id="chatSafetyWarning" style="display: none;" class="bg-red-50 dark:bg-red-950/50 border-t border-red-200 px-4 py-2 flex items-center gap-2 text-red-600 dark:text-red-300 text-xs font-semibold shrink-0">
@@ -1052,18 +1055,18 @@
         <div class="bg-white dark:bg-gray-800 border-t p-3 flex items-center gap-2 shrink-0">
             <input type="file" id="chatFileInput" class="hidden" accept="image/*,video/*,.pdf,.doc,.docx" onchange="handleChatFileUpload(event)">
             
-            <button onclick="document.getElementById('chatFileInput').click()" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 p-2.5 rounded-full text-base flex items-center justify-center transition cursor-pointer shrink-0">
-                <i class="fa-solid fa-paperclip"></i>
+            <button type="button" onclick="document.getElementById('chatFileInput').click()" data-chat-touch aria-label="Attach file" data-i18n-aria-label="market.chat.attach" class="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-600 dark:text-gray-300 p-2.5 rounded-full text-base flex items-center justify-center transition cursor-pointer shrink-0">
+                <i class="fa-solid fa-paperclip" aria-hidden="true"></i>
             </button>
 
-            <button onclick="startChatVoiceInput()" title="Voice Input" class="bg-teal-50 dark:bg-gray-700 hover:bg-teal-100 text-teal-700 dark:text-teal-300 p-2.5 rounded-full text-base flex items-center justify-center transition cursor-pointer shrink-0 w-10 h-10">
-                <i class="fa-solid fa-microphone"></i>
+            <button type="button" onclick="startChatVoiceInput()" data-chat-touch aria-label="Voice input" data-i18n-aria-label="market.chat.voice" title="Voice input" data-i18n-title="market.chat.voice" class="bg-teal-50 dark:bg-gray-700 hover:bg-teal-100 text-teal-700 dark:text-teal-300 p-2.5 rounded-full text-base flex items-center justify-center transition cursor-pointer shrink-0 w-10 h-10">
+                <i class="fa-solid fa-microphone" aria-hidden="true"></i>
             </button>
 
-            <input type="text" id="fullChatInput" placeholder="Type a message..." class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
+            <input type="text" id="fullChatInput" aria-label="Your message" data-i18n-aria-label="market.provider.messageDraft" placeholder="Your message" data-i18n-placeholder="market.provider.messageDraft" class="flex-1 border px-4 py-2.5 rounded-full text-xs dark:bg-gray-700 dark:border-gray-600 focus:outline-none">
             
-            <button type="button" id="chatSendButton" onpointerdown="event.preventDefault()" onclick="checkScamAndSendChatMessage()" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow cursor-pointer shrink-0">
-                <i class="fa-solid fa-paper-plane"></i>
+            <button type="button" id="chatSendButton" onpointerdown="event.preventDefault()" onclick="checkScamAndSendChatMessage()" data-chat-touch aria-label="Send message" data-i18n-aria-label="market.provider.sendMessage" class="bg-primary hover:bg-teal-800 text-white p-2.5 rounded-full text-base flex items-center justify-center transition w-10 h-10 shadow cursor-pointer shrink-0">
+                <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
             </button>
         </div>
     </div>

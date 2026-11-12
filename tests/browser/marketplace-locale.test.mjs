@@ -70,6 +70,60 @@ test('full homepage gives location and search controls keyboard access and mobil
  }finally{await context.close();}
 });
 
+test('real Product Chat and Inbox expose localized mobile controls and keyboard focus',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  const chat=page.locator('#fullChatPage'),inbox=page.locator('#inboxModal');
+  const draft=page.locator('#fullChatInput');
+  const authored='મારો સંદેશ मेरा संदेश';
+  const controls=page.locator('[data-chat-touch]');
+  for(const width of [320,375]){
+   await page.setViewportSize({width,height:850});
+   for(const locale of ['gu','hi','en']){
+    await page.locator('#marketplaceLocale').selectOption(locale);
+    await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+    const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+    assert.equal(await controls.count(),7);
+    for(const control of await controls.all()){
+     const key=await control.getAttribute('data-i18n-aria-label');
+     assert.ok(catalog[key],key);
+     assert.equal(await control.getAttribute('aria-label'),catalog[key]);
+     assert.deepEqual(await control.evaluate(node=>{
+      const style=getComputedStyle(node);
+      return [style.minWidth,style.minHeight];
+     }),['44px','44px']);
+    }
+    await inbox.evaluate(node=>node.style.display='flex');
+    const close=inbox.locator('[data-chat-touch]');
+    assert.ok((await close.boundingBox()).height>=44);
+    await close.press('Enter');
+    assert.equal(await inbox.isVisible(),false);
+    await chat.evaluate(node=>node.style.display='flex');
+    await chat.evaluate(node=>Promise.all(node.getAnimations().map(animation=>animation.finished)));
+    assert.equal(await draft.getAttribute('aria-label'),catalog['market.provider.messageDraft']);
+    assert.equal(await draft.getAttribute('placeholder'),catalog['market.provider.messageDraft']);
+    assert.ok((await draft.boundingBox()).height>=44);
+    if(width===320&&locale==='gu')await draft.fill(authored);
+    assert.equal(await draft.inputValue(),authored);
+    await draft.press('Tab');
+    assert.equal(await page.evaluate(()=>document.activeElement.id),'chatSendButton');
+    assert.equal(await page.locator('#chatSendButton').evaluate(node=>getComputedStyle(node).outlineWidth),'2px');
+    if(process.env.OLDX_TEST_TAILWIND_FILE){
+     for(const control of await chat.locator('[data-chat-touch]:visible').all()){
+      const box=await control.boundingBox();
+      const key=await control.getAttribute('data-i18n-aria-label');
+      assert.ok(box.width>=44&&box.height>=44&&box.x>=0&&box.x+box.width<=width,
+       `${key} at ${width}px/${locale}: ${JSON.stringify(box)}`);
+     }
+    }
+    await chat.evaluate(node=>node.style.display='none');
+   }
+  }
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('full homepage starts without requesting the unused Firebase Storage SDK',async()=>{
  const {context,page,intercepted,errors}=await fullHomepage();
  try{
