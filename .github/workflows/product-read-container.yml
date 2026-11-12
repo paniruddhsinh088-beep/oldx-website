@@ -6,6 +6,8 @@ on:
       - '.github/workflows/product-read-container.yml'
       - 'Dockerfile.product-read*'
       - 'functions/staging-marketplace/product-read-server.mjs'
+      - 'scripts/audit-product-read-image.py'
+      - 'tests/integration/product-read-image-audit.test.py'
 
 permissions:
   contents: read
@@ -25,10 +27,25 @@ jobs:
       - name: Build and check disabled startup
         shell: bash
         run: |
-          node --test tests/integration/product-read-container.test.mjs
-          docker build -f Dockerfile.product-read -t oldx-product-read:smoke .
-          # Check the merged filesystem and image configuration, not deleted files in lower layers.
-          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled oldx-image-audit >/dev/null 2>&1 || true' EXIT
+          node --test tests/integration/product-read-container.test.mjs tests/integration/product-read-server.test.mjs
+          python3 tests/integration/product-read-image-audit.test.py
+          docker pull node:24-bookworm-slim
+          docker build --no-cache -f Dockerfile.product-read -t oldx-product-read:smoke .
+          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled oldx-image-audit >/dev/null 2>&1 || true; rm -f "$RUNNER_TEMP/oldx-product-read.tar"' EXIT
+          image=oldx-product-read:smoke
+          test "$(docker image inspect --format '{{.Config.User}}' "$image")" = node
+          test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 1000
+          case "$(docker image inspect --format '{{json .RepoDigests}}' "$image")" in
+            '[]'|null) ;;
+            *) echo 'Unexpected registry digest on local build' >&2; exit 1 ;;
+          esac
+          metadata=$(docker image inspect --format 'local_image_id={{.Id}} size_bytes={{.Size}} platform={{.Os}}/{{.Architecture}}' "$image")
+          echo "::notice title=Product read image::source_sha=$GITHUB_SHA $metadata"
+          docker run --rm --network none --entrypoint cat node:24-bookworm-slim /usr/local/lib/node_modules/npm/.npmrc > "$RUNNER_TEMP/oldx-base-npmrc"
+          docker save -o "$RUNNER_TEMP/oldx-product-read.tar" "$image"
+          layer_count=$(docker image inspect --format '{{len .RootFS.Layers}}' "$image")
+          layer_result=$(python3 scripts/audit-product-read-image.py "$RUNNER_TEMP/oldx-product-read.tar" "$RUNNER_TEMP/oldx-base-npmrc" "$layer_count")
+          echo "::notice title=Product read layer audit::$layer_result"
           docker create --name oldx-image-audit oldx-product-read:smoke >/dev/null
           docker export oldx-image-audit | tar -tf - > "$RUNNER_TEMP/oldx-image-files"
           sed -nE 's|^\./||; /^app\/node_modules(\/|$)/d; /^app\/[^/]/ { /\/$/!p; }' "$RUNNER_TEMP/oldx-image-files" | sort > "$RUNNER_TEMP/oldx-app-files"
@@ -38,7 +55,6 @@ jobs:
           npm_config_path=usr/local/lib/node_modules/npm/.npmrc
           sed 's|^\./||' "$RUNNER_TEMP/oldx-image-files" > "$RUNNER_TEMP/oldx-normalized-files"
           if grep -Fxq "$npm_config_path" "$RUNNER_TEMP/oldx-normalized-files"; then
-            docker run --rm --network none --entrypoint cat node:24-bookworm-slim "/$npm_config_path" > "$RUNNER_TEMP/oldx-base-npmrc"
             docker cp "oldx-image-audit:/$npm_config_path" "$RUNNER_TEMP/oldx-image-npmrc"
             cmp "$RUNNER_TEMP/oldx-base-npmrc" "$RUNNER_TEMP/oldx-image-npmrc"
           fi
@@ -66,10 +82,29 @@ jobs:
             grep -Fxq 'Product read server startup failed.' "$RUNNER_TEMP/oldx-invalid-port"
           fi
           echo 'Invalid PORT exited with code 1'
-          docker run -d --name oldx-disabled -e PORT=18081 -p 127.0.0.1:18080:18081 oldx-product-read:smoke
-          status=$(curl -sS --retry 15 --retry-all-errors --retry-delay 1 --max-time 3 -o "$RUNNER_TEMP/oldx-product-read-probe.json" -w '%{http_code}' -X POST http://127.0.0.1:18080/api/staging/marketplace/owner)
-          test "$status" = 503
-          curl -fsS --max-time 3 http://127.0.0.1:18080/healthz | grep -Fxq '{"ok":true}'
+          docker run -d --name oldx-disabled --network none -e PORT=18081 "$image"
+          docker exec oldx-disabled node -e '
+            const assert = require("node:assert/strict");
+            const base = "http://127.0.0.1:18081";
+            (async () => {
+              let health;
+              for (let attempt = 0; attempt < 15 && !health; attempt++) {
+                try {
+                  health = await fetch(base + "/healthz", {signal: AbortSignal.timeout(1000)});
+                } catch {
+                  await require("node:timers/promises").setTimeout(250);
+                }
+              }
+              assert.ok(health, "Container health endpoint did not become reachable");
+              assert.equal(health.status, 200);
+              assert.deepEqual(await health.json(), {ok: true});
+              const owner = await fetch(base + "/api/staging/marketplace/owner", {
+                method: "POST", signal: AbortSignal.timeout(3000)
+              });
+              assert.equal(owner.status, 503);
+              assert.deepEqual(await owner.json(), {ok: false, error: {code: "ENFORCEMENT_UNAVAILABLE"}});
+            })().catch(error => { console.error(error); process.exitCode = 1; });
+          '
           echo 'Custom PORT: owner route 503 and /healthz 200'
           docker stop -s SIGTERM -t 10 oldx-disabled
           test "$(docker inspect -f '{{.State.ExitCode}}' oldx-disabled)" = 0
