@@ -34,6 +34,45 @@ async function fullHomepage(){
  return {context,page,intercepted,errors};
 }
 
+test('real mobile Search and Product cards work across narrow layouts and languages',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ const title='મૂળ मोबाइल Phone and charger';
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  await page.evaluate(()=>{initDetailMap=()=>{};});
+  const search=page.locator('#searchInput'),nav=page.locator('#oldxMobileNav');
+  for(const width of [320,375]){
+   await page.setViewportSize({width,height:850});
+   for(const locale of ['gu','hi','en']){
+    await page.locator('#marketplaceLocale').selectOption(locale);
+    await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+    await nav.locator('[data-i18n="market.nav.search"]').click();
+    await page.waitForFunction(()=>location.hash==='#search'&&document.activeElement.id==='searchInput');
+    assert.equal(await nav.locator('button[aria-current="page"] [data-i18n]').getAttribute('data-i18n'),'market.nav.search');
+    if(process.env.OLDX_TEST_TAILWIND_FILE){
+     assert.ok((await search.boundingBox()).width>=width*.5);
+     assert.ok((await page.locator('#oldxDistancePicker').boundingBox()).height<=66);
+    }
+    assert.ok((await search.boundingBox()).height>=44);
+    await page.evaluate(title=>{
+     products=[{docId:'mobile-fixture',title,category:'mobiles',state:currentSelectedState,location:'અમદાવાદ',finalPriceStr:'₹8,500'}];
+    },title);
+    await search.fill('Phone');
+    const card=page.locator('#productGrid [data-card-body]');
+    assert.equal(await card.locator('[data-card-title]').textContent(),title);
+    assert.ok(await card.evaluate(node=>Boolean(node.querySelector('[data-card-price]').compareDocumentPosition(node.querySelector('[data-card-title]'))&Node.DOCUMENT_POSITION_FOLLOWING)));
+    await card.locator('[data-card-title]').click();
+    await page.locator('#productDetailView').waitFor({state:'visible'});
+    assert.equal(await page.locator('#detailTitle').textContent(),title);
+    await page.locator('#productDetailView button[onclick="closeProductDetailView()"]').click();
+    await page.waitForFunction(()=>location.hash==='');
+    await search.fill('');
+   }
+  }
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('real Product Chat keeps delayed sends and drafts scoped to the active conversation and account',async()=>{
  const {context,page,errors}=await fullHomepage();
  try{
