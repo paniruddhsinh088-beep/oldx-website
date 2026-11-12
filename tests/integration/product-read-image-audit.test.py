@@ -62,6 +62,11 @@ class ProductReadImageAudit(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Credential marker in layer 1"):
             audit([(AUDITOR["GNUTLS_PATH"], KEY)])
 
+    def test_npm_auth_assignment_requires_a_complete_key(self):
+        self.assertEqual(audit([("app/constants.js", b"SOCKS5_NO_ACCEPTABLE_AUTH = syntheticIdentifier")]), 2)
+        with self.assertRaisesRegex(ValueError, "Credential marker in layer 1"):
+            audit([("app/renamed", b"//registry.example/:_authToken=syntheticFixtureValue")])
+
 
 if __name__ == "__main__":
     unittest.main()
