@@ -197,6 +197,8 @@ export default Object.freeze({
   "error.experienceYears": "0 से 80 के बीच पूरे वर्ष भरें या खाली छोड़ें।",
   "error.description":
     "परिचय अधिकतम 1200 अक्षरों का होना चाहिए; HTML और नियंत्रण अक्षर मान्य नहीं हैं।",
+  "website.resultCount": "दिखाए गए सेवा प्रदाता: {count}",
+  "website.emptyFiltered": "इन फ़िल्टर से कोई सेवा प्रदाता नहीं मिला।",
   resultCount: {
     one: "{count} डेमो प्रोफ़ाइल",
     other: "{count} डेमो प्रोफ़ाइलें",

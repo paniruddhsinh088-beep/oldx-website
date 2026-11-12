@@ -48,6 +48,7 @@ function preferenceStorage() {
 }
 
 let activeCategory = "બધી સેવાઓ";
+let publicReadStatus = null;
 let validated = false;
 let returnToResult = null;
 const $ = (id) => document.getElementById(id);
@@ -80,13 +81,17 @@ function render() {
   if (sort === "experience") rows.sort((a, b) => b.experienceYears - a.experienceYears);
   if (sort === "name")
     rows.sort((a, b) => a.displayName.localeCompare(b.displayName, translator.locale));
-  $("resultCount").textContent = t("resultCount", { count: rows.length });
+  const ready = !providerIntegrationEnabled || publicReadStatus === "ready";
+  $("resultCount").textContent = ready && (!websiteMode || providerIntegrationEnabled)
+    ? t(websiteMode ? "website.resultCount" : "resultCount", { count: rows.length }) : "";
   const results = $("results");
+  results.setAttribute("aria-busy", String(publicReadStatus === "loading"));
   results.replaceChildren();
+  if (!ready) return;
   if (!rows.length) {
     const empty = document.createElement("div");
     empty.className = "empty";
-    empty.textContent = t("emptyResults");
+    empty.textContent = t(websiteMode && providerIntegrationEnabled ? "website.emptyFiltered" : "emptyResults");
     results.append(empty);
   } else {
     rows.forEach((p) => {
@@ -124,8 +129,11 @@ function render() {
       );
       const foot = document.createElement("div");
       foot.className = "provider-foot";
-      const label = document.createElement("strong");
-      label.textContent = t("demoProfile");
+      if (!websiteMode) {
+        const label = document.createElement("strong");
+        label.textContent = t("demoProfile");
+        foot.append(label);
+      }
       const button = document.createElement("button");
       button.className = "btn";
       button.dataset.providerId = p.id;
@@ -134,7 +142,7 @@ function render() {
         returnToResult = button;
         navigate("#provider/" + p.id);
       });
-      foot.append(label, button);
+      foot.append(button);
       article.append(top, tags, meta, availability, foot);
       results.append(article);
     });
@@ -163,7 +171,10 @@ function show(id, restoreResult = false, focus = true) {
               ? "providerHeading"
               : id === "notFoundView" ? "notFoundHeading" : "resultsHeading",
         );
-  if (focus) { target.focus(); window.scrollTo({ top: 0, behavior: "instant" }); }
+  if (focus) {
+    target.focus({ preventScroll: true });
+    target.scrollIntoView({ block: "center", behavior: "instant" });
+  }
 }
 function openProfile(id, focus = true) {
   const p = publicProfiles.find((x) => x.id === id);
@@ -199,7 +210,10 @@ $("categories").addEventListener("click", (e) => {
   });
   render();
 });
-$("searchBtn").addEventListener("click",()=>providerIntegrationEnabled?refreshDiscovery():render());
+$("providerSearchForm").addEventListener("submit",event=>{
+  event.preventDefault();
+  if(providerIntegrationEnabled)refreshDiscovery();else render();
+});
 $("q").addEventListener("input", render);
 $("area").addEventListener("input", render);
 $("sort").addEventListener("change", render);
@@ -460,7 +474,7 @@ window.addEventListener('pagehide',()=>clearTimeout(discoveryTimer));
 export function configureProviderIntegration(options={}){
  providerApprovedPhotos?.destroy();providerApprovedPhotos=null;document.getElementById('providerApprovedPhotos')?.remove();
  if(websiteMode&&options.enabled===true&&options.publicPhotos){const box=document.createElement('div');box.id='providerApprovedPhotos';$('pArea').after(box);providerApprovedPhotos=mountApprovedProviderPhotoView({enabled:true,root:document,container:box,readManifest:options.publicPhotos.manifest,readBytes:options.publicPhotos.bytes,translate:t});}
- trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;if(websiteMode&&!providerIntegrationEnabled){publicProfiles=[];clearProfile(true);render();}clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
+ trustedOptions=options;trustedCatalog=options.catalog??null;providerIntegrationEnabled=options.enabled===true;publicReadStatus=null;if(websiteMode&&!providerIntegrationEnabled){publicProfiles=[];clearProfile(true);render();}clearTimeout(discoveryTimer);trustedCursor=null;trustedPublicationEpoch=0;
  $('providerPublicStatus').hidden=$('trustedProviderPublicControls').hidden=$('trustedEnquiryStatus').hidden=$('retryTrustedEnquiry').hidden=!providerIntegrationEnabled;
  if(providerIntegrationEnabled){publicProfiles=[];clearProfile(true);$('results').replaceChildren();if(trustedCatalog?.services){$('categories').replaceChildren();for(const service of ['બધી સેવાઓ',...trustedCatalog.services]){const button=document.createElement('button');button.type='button';button.className='chip';button.dataset.cat=service;button.textContent=service==='બધી સેવાઓ'?t('serviceAll'):(options.categoryLabel?.(service,translator.locale)??service);button.setAttribute('aria-pressed',String(service===activeCategory));$('categories').append(button);}}}
  providerIntegration=mountProviderUiIntegration({...options,root:document,managedRoutes:true,translate:t,onSearchScope:queueDiscovery,buyer:{...options.buyer,onChange:state=>{if(providerIntegrationEnabled){$('trustedEnquiryStatus').textContent=t('market.provider.enquiry_'+state.status);$('retryTrustedEnquiry').disabled=!state.canRetry;$('enquiryDescription').readOnly=state.canRetry||state.status==='loading';$('sampleEnquiryForm').querySelector('button[type=submit]').disabled=state.canRetry||state.status==='loading';$('trustedEnquiryLink').hidden=state.status!=='created'||typeof options.openPrivateEnquiry!=='function';if(state.status==='created')$('trustedEnquiryLink').href='#inbox/'+currentProfile?.id+'/enquiry/'+state.enquiryId;}options.buyer?.onChange?.(state);}},
@@ -475,10 +489,11 @@ export function configureProviderIntegration(options={}){
    validated=false;updatePreview();
   },
   onPublicState:state=>{
-   clearProfile(true);trustedCursor=state.nextCursor??null;trustedPublicationEpoch=state.publicationEpoch??0;$('nextProviderPage').disabled=!trustedCursor;$('providerPublicStatus').textContent=t('integration.read_'+state.status);
+   publicReadStatus=state.status;clearProfile(true);trustedCursor=state.nextCursor??null;trustedPublicationEpoch=state.publicationEpoch??0;$('nextProviderPage').disabled=!trustedCursor;$('providerPublicStatus').textContent=t('integration.read_'+state.status);
    publicProfiles=state.status==='ready'?(state.items??[state.profile]):[];
-   if(state.status==='ready'&&state.profile){openProfile(state.profile.id,false);return;}
-   render();if(state.status!=='ready'){const message=document.createElement('p');message.setAttribute('role','status');message.textContent=t('integration.read_'+state.status);$('results').replaceChildren(message);$('profileShareStatus').textContent=message.textContent;}
+   if(state.status==='ready'&&state.profile){$('results').setAttribute('aria-busy','false');openProfile(state.profile.id,false);return;}
+   render();
+   if(state.status!=='ready')$('profileShareStatus').textContent=$('providerPublicStatus').textContent;
   }
  });const binding=providerIntegration;return Object.freeze({...binding,setSession(value){binding.setSession(value);if(providerIntegrationEnabled)syncRoute({force:true,focus:false});},restoreRoute:()=>syncRoute({force:true}),discover:()=>navigate('#services'),detail:request=>navigate('#provider/'+request.providerId),async openEnquiry(providerId){await navigate('#provider/'+providerId);if(currentProfile?.id===providerId)$('enquiryService').focus();},changeScope:()=>binding.changeScope()});
 }
@@ -499,6 +514,7 @@ export function configureWebsiteProviderFirebase({enabled=false,auth,sendCommand
 if(websiteMode){
  const back=document.createElement('a');back.href='./index.html';back.className='btn';back.textContent='OLDX';document.querySelector('.nav-actions').prepend(back);
  for(const a of document.querySelectorAll('a[href*="service-inbox-preview"],a[href*="service-discovery-preview"]'))a.hidden=true;
+ for(const label of document.querySelectorAll('[data-i18n="sampleData"],[data-i18n="demoProfile"]'))label.hidden=true;
  $('sampleEnquiryForm').querySelector('button[type=submit]').disabled=true;
  websitePhotos=mountWebsiteProviderPhotos({root:document,translate:t,onChange:()=>updatePreview()});
 }

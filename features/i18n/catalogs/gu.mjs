@@ -197,6 +197,8 @@ export default Object.freeze({
     "અનુભવ 0 થી 80 વચ્ચે પૂર્ણ વર્ષોમાં ઉમેરો અથવા ખાલી રાખો.",
   "error.description":
     "પરિચય મહત્તમ 1200 અક્ષરનો હોવો જોઈએ; HTML અથવા નિયંત્રણ અક્ષરો માન્ય નથી.",
+  "website.resultCount": "દેખાતા સેવા પ્રદાતાઓ: {count}",
+  "website.emptyFiltered": "આ ફિલ્ટર સાથે કોઈ સેવા પ્રદાતા મળ્યા નથી.",
   resultCount: {
     one: "{count} ડેમો પ્રોફાઇલ",
     other: "{count} ડેમો પ્રોફાઇલ્સ",

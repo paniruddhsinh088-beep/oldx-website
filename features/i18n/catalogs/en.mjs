@@ -195,6 +195,8 @@ export default Object.freeze({
   "error.experienceYears": "Enter whole years from 0 to 80, or leave blank.",
   "error.description":
     "Introduction must be at most 1200 characters; HTML and control characters are not allowed.",
+  "website.resultCount": "Providers shown: {count}",
+  "website.emptyFiltered": "No providers match these filters.",
   resultCount: {
     one: "{count} demo profile",
     other: "{count} demo profiles",

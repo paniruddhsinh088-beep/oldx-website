@@ -12,6 +12,8 @@ The homepage keeps the existing synthetic Product, Store, Provider and Chat jour
 
 The listing page copies the authored homepage CSS and uses local equivalents for the extracted Tailwind layout utilities. Fonts, icons, and some utility styling differ from the real website. The visual review omits live maps, contact actions, accounts, admin and uploads. The regular synthetic demo still offers in-memory Chat.
 
+The synthetic Services route remains the mobile-demo view. The real Service page entry imports website Auth session ports, private photo controls and media transports. Batch C verifies the real UI with isolated browser fixtures and leaves those modules outside the hosted-review artifact. Real Service visual parity would require extracting a read-only renderer and reviewing its dependency boundary.
+
 Run `node --test tests/service/mobile-demo-safety.test.mjs` and `node --test tests/browser/mobile-demo.test.mjs`. Set `CHROMIUM_PATH` to a local Chrome or Chromium executable when needed.
 
 ## Future Cloudflare Pages handoff

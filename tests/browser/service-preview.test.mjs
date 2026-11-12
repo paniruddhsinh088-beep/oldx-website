@@ -60,6 +60,10 @@ test('profile navigation hides incompatible views, moves focus, and restores res
   assert.equal(await page.locator('.contact-demo:disabled').count(), 3);
   await page.locator('#backBtn').click();
   assert.equal(await button.evaluate(el => el === document.activeElement), true);
+  assert.equal(await button.evaluate(el => {
+    const box = el.getBoundingClientRect();
+    return box.top >= document.querySelector('header').getBoundingClientRect().bottom && box.bottom <= innerHeight;
+  }), true);
   await page.locator('#providerTab').click();
   assert.equal(await page.locator('#profileView').isVisible(), false);
   assert.equal(await page.locator('#providerHeading').evaluate(el => el === document.activeElement), true);
