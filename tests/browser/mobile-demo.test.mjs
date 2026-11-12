@@ -9,7 +9,12 @@ for(const width of [320,375])for(const locale of ['gu','hi','en'])test(`isolated
  try{
  await page.goto(origin+'/mobile-demo.html');await page.locator('#language').selectOption(locale);await page.waitForFunction(l=>document.documentElement.lang===l,locale);await page.waitForSelector('.card');
  const original=await page.locator('.card h3').first().textContent();assert.ok(original.includes('ખુરશી'));assert.equal(await page.locator('.art img').first().evaluate(img=>img.complete&&img.naturalWidth>0),true);
- await page.locator('.card a').first().click();await page.waitForSelector('.detail');assert.equal(await page.locator('.detail h2').textContent(),original);await page.locator('.detail button').first().click();await page.locator('.detail a[href="#stores"]').click();await page.waitForSelector('.panel h2');assert.ok((await page.locator('.panel h2').textContent()).includes('કિરણ'));
+ await page.locator('.card a').first().click();await page.waitForSelector('.detail');assert.equal(await page.locator('.detail h2').textContent(),original);await page.locator('.detail button').first().click();
+ await page.locator('.detail a[href="#stores"]').click();
+ await page.waitForURL(url=>url.hash==='#stores');
+ const storeHeading=page.locator('main > .panel > h2').filter({hasText:'કિરણ'});
+ await storeHeading.waitFor();
+ assert.ok((await storeHeading.textContent()).includes('કિરણ'));
  await page.locator('nav a[href="#services"]').click();await page.waitForSelector('.service-icon');await page.locator('.card a').first().click();await page.waitForURL(url=>url.hash==='#provider/p1');await page.locator('.card button').click();await page.waitForSelector('textarea');
  await page.locator('textarea').fill('મૂળ हिन्दी hello');await page.locator('form button').click();await page.waitForFunction(()=>document.querySelector('.conversation')?.textContent.includes('મૂળ हिन्दी hello'));assert.equal(await page.locator('textarea').inputValue(),'');
  await page.locator('.actions button').first().click();assert.equal(await page.locator('textarea').isDisabled(),true);await page.locator('.actions button').first().click();assert.equal(await page.locator('textarea').isDisabled(),false);
