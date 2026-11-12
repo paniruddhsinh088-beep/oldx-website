@@ -114,6 +114,7 @@
         [data-save-button], [data-card-buy], #productDetailView button, #detailWhatsappBtn,
         #storePublicWrap button, #storeProductSearch, #storeProductSort { min-height: 44px; }
         [data-save-button], #detailImgBadge { min-width: 44px; }
+        #chatCallBtn[hidden], #detailWhatsappBtn[hidden] { display: none; }
         #storePublicWrap a[href] { display: inline-flex; align-items: center; min-height: 44px; }
         #storeProductSearch, #storeProductSort { min-width: 0; max-width: 100%; }
         [data-card-title] { width: 100%; }
@@ -1036,7 +1037,7 @@
             </div>
             
             <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300 shrink-0">
-                <a id="chatCallBtn" href="tel:" data-chat-touch aria-label="Call seller" data-i18n-aria-label="market.chat.call" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
+                <a id="chatCallBtn" hidden data-chat-touch aria-label="Call seller" data-i18n-aria-label="market.chat.call" class="hover:text-teal-600 text-lg flex items-center justify-center p-1">
                     <i class="fa-solid fa-phone" aria-hidden="true"></i>
                 </a>
                 <button type="button" onclick="openChatPrivacyMenu()" data-chat-touch aria-label="Chat privacy" data-i18n-aria-label="market.chat.privacy" title="Chat privacy" data-i18n-title="market.chat.privacy" class="w-9 h-9 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"><i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i></button>
@@ -1354,7 +1355,7 @@
                 <button onclick="openOfferModal()" class="flex-1 bg-primary text-white font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-teal-900 shadow cursor-pointer">
                     <i class="fa-solid fa-hand-holding-dollar text-base"></i> Make Offer
                 </button>
-                <a id="detailWhatsappBtn" target="_blank" rel="noopener" onclick="return handleOldxWhatsApp(event, this)" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow transition">
+                <a id="detailWhatsappBtn" hidden target="_blank" rel="noopener" onclick="return handleOldxWhatsApp(event, this)" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-black px-4 py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow transition">
                     <i class="fa-brands fa-whatsapp text-lg"></i> Direct WhatsApp
                 </a>
             </div>
@@ -2640,8 +2641,12 @@
             const otherUserId = sellerId;
             
             document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
-            const sellerPhone = currentProduct.phone || '919876543210';
-            document.getElementById('chatCallBtn').href = `tel:${sellerPhone}`;
+            const sellerPhone = productContactNumber(currentProduct.phone);
+            if (sellerPhone) {
+                const call = document.getElementById('chatCallBtn');
+                call.href = `tel:+${sellerPhone}`;
+                call.hidden = false;
+            }
 
             document.getElementById('fullChatPage').style.display = 'flex';
             history.pushState({page: 'chat'}, "", "#chat");
@@ -2667,6 +2672,11 @@
             activeStatusUnsubscribe = null;
             document.getElementById('fullChatInput').value = '';
             document.getElementById('chatSafetyWarning').style.display = 'none';
+            const call = document.getElementById('chatCallBtn');
+            if (call) {
+                call.removeAttribute('href');
+                call.hidden = true;
+            }
             clearChatAttachment();
         }
 
@@ -5018,6 +5028,16 @@
 
         function deg2rad(deg) { return deg * (Math.PI / 180); }
 
+        function productContactNumber(value) {
+            if (Number.isSafeInteger(value)) value = String(value);
+            if (typeof value !== 'string' || !/^\+?[\d ()-]+$/.test(value.trim())) return '';
+            const compact = value.trim().replace(/[ ()-]/g, '');
+            if (/^[1-9]\d{9}$/.test(compact)) return '91' + compact;
+            if (/^0[1-9]\d{9}$/.test(compact)) return '91' + compact.slice(1);
+            const international = compact.replace(/^\+/, '');
+            return /^[1-9]\d{7,14}$/.test(international) ? international : '';
+        }
+
         function renderProductDetailView(p) {
             document.getElementById('detailTitle').innerText = p.title;
             document.getElementById('detailPrice').innerText = p.finalPriceStr;
@@ -5112,9 +5132,15 @@
                 }
             }
 
-            const phone = p.phone || '919876543210';
-            const waMsg = encodeURIComponent(`Hi, I am interested in this item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
-            document.getElementById('detailWhatsappBtn').href = `https://wa.me/${phone}?text=${waMsg}`;
+            const phone = productContactNumber(p.phone);
+            const whatsapp = document.getElementById('detailWhatsappBtn');
+            whatsapp.hidden = !phone;
+            if (phone) {
+                const waMsg = encodeURIComponent(`Hi, I am interested in this item "${p.title}" listed on OldX for ${p.finalPriceStr}. Link: ${window.location.href}`);
+                whatsapp.href = `https://wa.me/${phone}?text=${waMsg}`;
+            } else {
+                whatsapp.removeAttribute('href');
+            }
         }
 
         let lightboxCurrentIndex = 0;

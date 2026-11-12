@@ -34,6 +34,82 @@ async function fullHomepage(){
  return {context,page,intercepted,errors};
 }
 
+test('real buyer journey keeps Product contact unavailable without a seller number',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ const title='સ્થાનિક Phone';
+ try{
+  await page.setViewportSize({width:375,height:850});
+  await page.goto(origin+'/homepage-fixture');
+  await page.locator('#marketplaceLocale').selectOption('gu');
+  await page.waitForFunction(()=>document.documentElement.lang==='gu');
+  await page.locator('#appLaunchBannerModal').waitFor({state:'hidden',timeout:15000});
+  await page.evaluate(title=>{
+   initDetailMap=()=>{};
+   ++productsReadGeneration;
+   productFeedState=null;
+   hasMoreProducts=false;
+   products=[{docId:'buyer-fixture',sellerUid:'seller-fixture',title,desc:'Fixture',category:'mobiles',state:currentSelectedState,location:'અમદાવાદ',finalPriceStr:'₹8,500',images:[]}];
+   const collection=db.collection;
+   db.collection=name=>name!=='stores'?collection(name):{...collection(name),doc:id=>({
+    ...collection(name).doc(id),get:async()=>id==='seller-fixture'
+     ?{exists:true,data:()=>({shopName:'Fixture seller shop',categories:[]})}
+     :{exists:false}
+   })};
+  },title);
+  await page.locator('#oldxMobileNav [data-i18n="market.nav.search"]').click();
+  await page.waitForFunction(()=>document.activeElement.id==='searchInput');
+  await page.locator('#searchInput').fill('Phone');
+  await page.locator('#productGrid [data-card-title]').press('Enter');
+  const detail=page.locator('#productDetailView');
+  await detail.waitFor({state:'visible'});
+  assert.equal(await page.locator('#detailTitle').textContent(),title);
+  const whatsapp=page.locator('#detailWhatsappBtn'),call=page.locator('#chatCallBtn');
+  assert.equal(await whatsapp.getAttribute('href'),null);
+  assert.equal(await whatsapp.isHidden(),true);
+  assert.equal(await page.locator('#detailShopBadge').isHidden(),true);
+  assert.equal(await page.locator('#productStoreLink').isHidden(),true);
+  // The legacy detail has no Store link. Exercise the standalone Store route explicitly.
+  await page.evaluate(()=>{history.pushState(null,'','#store-seller-fixture');handleHashChange();});
+  await page.locator('#storePublicWrap h2').waitFor();
+  assert.equal(await page.locator('#storePublicWrap h2').textContent(),'Fixture seller shop');
+  assert.equal(await page.locator('#storePublicWrap button[onclick="editMyStore()"]').count(),0);
+  await page.evaluate(()=>history.back());
+  await detail.waitFor({state:'visible'});
+  await detail.locator('button[onclick="openLiveChatModal()"]').press('Enter');
+  await page.locator('#authModal').waitFor({state:'visible'});
+  assert.equal(await page.locator('#fullChatPage').isHidden(),true);
+  await page.evaluate(()=>{
+   document.getElementById('customAlertModal').style.display='none';
+   closeAuthModal();
+   setFixtureAccount({uid:'buyer-fixture-user'});
+  });
+  await detail.locator('button[onclick="openLiveChatModal()"]').click();
+  await page.locator('#fullChatPage').waitFor({state:'visible'}).catch(error=>{
+   throw new Error(errors.join('; ')||error.message,{cause:error});
+  });
+  assert.equal(await call.getAttribute('href'),null);
+  assert.equal(await call.isHidden(),true);
+  await page.evaluate(()=>setFixtureAccount({uid:'other-fixture-user'}));
+  assert.equal(await page.locator('#fullChatPage').isHidden(),true);
+  await page.evaluate(()=>{
+   currentProduct.phone='+91 00000 00000';
+   renderProductDetailView(currentProduct);
+  });
+  assert.match(await whatsapp.getAttribute('href'),/^https:\/\/wa\.me\/910000000000\?text=/);
+  await page.evaluate(()=>openLiveChatModal());
+  assert.equal(await call.getAttribute('href'),'tel:+910000000000');
+  await page.evaluate(()=>setFixtureAccount(null));
+  assert.equal(await call.getAttribute('href'),null);
+  await page.evaluate(()=>{
+   currentProduct.phone='invalid';
+   renderProductDetailView(currentProduct);
+  });
+  assert.equal(await whatsapp.getAttribute('href'),null);
+  assert.equal(await whatsapp.isHidden(),true);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('real mobile Search and Product cards work across narrow layouts and languages',async()=>{
  const {context,page,errors}=await fullHomepage();
  const title='મૂળ मोबाइल Phone and charger';

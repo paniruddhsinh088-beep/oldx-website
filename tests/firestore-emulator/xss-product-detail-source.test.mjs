@@ -6,7 +6,7 @@ const source = await readFile(new URL('../../index.html', import.meta.url), 'utf
 
 test('Product detail highlights render dynamic labels and values as text', () => {
   const start = source.indexOf("const grid = document.getElementById('detailHighlightsGrid');");
-  const end = source.indexOf("const phone = p.phone", start);
+  const end = source.indexOf("const whatsapp = document.getElementById('detailWhatsappBtn');", start);
   assert.notEqual(start, -1);
   assert.notEqual(end, -1);
   const block = source.slice(start, end);
