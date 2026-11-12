@@ -17,8 +17,8 @@ SENSITIVE_NAME = re.compile(
 )
 SECRET = re.compile(
     rb"-----BEGIN (?:[A-Z0-9]{1,24} ){0,4}PRIVATE KEY-----(?:[\r\n]|\\{1,3}[rn]){1,4}[A-Za-z0-9+/]{16,}|"
-    rb'(?:\\?"private_key\\?"\s*:\s*\\?")[^"\\]{16,256}|'
-    rb'(?:\\?"type\\?"\s*:\s*\\?"service_account\\?")|'
+    rb'(?:\\?"private_key\\?"\s*:\s*\\?")(?!your-private-key\\?")[^"\\]{16,256}|'
+    rb'(?:\\?"private_key_id\\?"\s*:\s*\\?")[a-f0-9]{40}\\?"|'
     rb"\b(?:gh[pousr]_[A-Za-z0-9]{30,255}|github_pat_[A-Za-z0-9_]{50,255}|"
     rb"(?:AKIA|ASIA)[A-Z0-9]{16}|npm_[A-Za-z0-9]{30,100})\b|"
     rb"(?<![\w])(?:_authToken|_auth)\s*=\s*[A-Za-z0-9+/=_-]{12,256}",

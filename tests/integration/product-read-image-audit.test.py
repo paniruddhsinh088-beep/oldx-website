@@ -67,6 +67,12 @@ class ProductReadImageAudit(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Credential marker in layer 1"):
             audit([("app/renamed", b"//registry.example/:_authToken=syntheticFixtureValue")])
 
+    def test_google_auth_documentation_placeholder_is_not_key_material(self):
+        example = b'{"type":"service_account","private_key_id":"your-private-key-id","private_key":"your-private-key"}'
+        self.assertEqual(audit([("app/node_modules/google-auth-library/README.md", example)]), 2)
+        with self.assertRaisesRegex(ValueError, "Credential marker in layer 1"):
+            audit([("app/renamed", example.replace(b'"your-private-key"', b'"fixture-key-material"'))])
+
 
 if __name__ == "__main__":
     unittest.main()
