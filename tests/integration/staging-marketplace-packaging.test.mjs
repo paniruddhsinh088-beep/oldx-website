@@ -24,6 +24,6 @@ test('generated staging routes package complete server import closure and remain
    execFileSync(process.execPath,['--input-type=module','--eval',probe],{env:{OLDX_STAGING_COMMANDS_ENABLED:'false',VERCEL_ENV:'preview'},timeout:5000,stdio:'pipe'});
   }
   assert.ok(seen.size>5);for(const suffix of ['app','auth','firestore'])assert.ok(import.meta.resolve('firebase-admin/'+suffix).includes('firebase-admin'));
-  const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));assert.equal(pkg.dependencies['firebase-admin'],'14.5.0');assert.equal(pkg.dependencies.sharp,'0.35.5');assert.equal(pkg.devDependencies.sharp,undefined);assert.equal((await import('sharp')).default.versions.sharp,'0.35.5');
+  const pkg=JSON.parse(await readFile(resolve(root,'package.json'),'utf8'));assert.equal(pkg.dependencies['firebase-admin'],'14.5.1');assert.equal(pkg.dependencies.sharp,'0.35.5');assert.equal(pkg.devDependencies.sharp,undefined);assert.equal((await import('sharp')).default.versions.sharp,'0.35.5');
  }finally{await rm(output,{recursive:true,force:true});}
 });
