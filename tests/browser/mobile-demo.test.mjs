@@ -121,6 +121,10 @@ test('packaged visual review uses real homepage markup and isolated synthetic jo
      await cards.locator('[data-card-title]').first().press('Enter');
      const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
      assert.equal(await gallery.getAttribute('aria-label'),catalog['market.listing.photos']);
+     // Chromium can report a fractional rectangle during the slide transition.
+     await gallery.evaluate(button=>Promise.all(
+      button.closest('#productDetailView').getAnimations().map(animation=>animation.finished)
+     ));
      assert.ok((await gallery.boundingBox()).height>=44);
      assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
      await gallery.press('Enter');
