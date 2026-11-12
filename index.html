@@ -262,6 +262,21 @@
                 <div class="flex items-center gap-3 overflow-x-auto no-scrollbar md:grid md:grid-cols-6 md:gap-4 pb-2" id="homeCatGrid"></div>
             </section>
 
+            <!-- FRESH RECOMMENDATIONS / ALL PRODUCTS -->
+            <section class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-amber-500"></i> <span data-i18n="market.home.fresh">Fresh Local Recommendations</span>
+                        </h3>
+                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.freshHint">Handpicked local listings near you</p>
+                    </div>
+                </div>
+                <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6"></div>
+                <button type="button" id="productNext" hidden data-i18n="market.product.next" class="p-3 border rounded-xl">Next page</button>
+
+            </section>
+
             <!-- LOCAL STORES DISCOVERY -->
             <section id="homeStoresSection" class="space-y-4" style="display:none;" aria-labelledby="homeStoresHeading">
                 <div class="flex items-center justify-between gap-3">
@@ -340,25 +355,10 @@
                 <div id="recentlyViewedGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6 pb-2"></div>
             </section>
 
-            <!-- 6. FRESH RECOMMENDATIONS / ALL PRODUCTS -->
-            <section class="space-y-4">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-lg md:text-xl font-black text-gray-900 dark:text-white tracking-tight flex items-center gap-2">
-                            <i class="fa-solid fa-fire text-amber-500"></i> <span data-i18n="market.home.fresh">Fresh Local Recommendations</span>
-                        </h3>
-                        <p class="text-xs text-gray-400 font-medium" data-i18n="market.home.freshHint">Handpicked local listings near you</p>
-                    </div>
-                </div>
-                
-                <div id="productGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-6"></div>
-                <button type="button" id="productNext" hidden data-i18n="market.product.next" class="p-3 border rounded-xl">Next page</button>
-                
-                <!-- INFINITE SCROLL SENTINEL CONTAINER -->
-                <div id="scrollSentinel" class="h-12 w-full flex items-center justify-center pt-4">
-                    <i id="scrollLoadingSpinner" style="display: none;" class="fa-solid fa-spinner fa-spin text-teal-600 text-xl"></i>
-                </div>
-            </section>
+            <!-- Load the next page after the discovery sections enter view. -->
+            <div id="scrollSentinel" class="h-12 w-full flex items-center justify-center pt-4">
+                <i id="scrollLoadingSpinner" style="display: none;" class="fa-solid fa-spinner fa-spin text-teal-600 text-xl"></i>
+            </div>
         </main>
 
         <!-- FOOTER -->
@@ -4171,7 +4171,7 @@
                 more.addEventListener('click', loadMoreProducts);
                 refresh.addEventListener('click', () => listenToProductsFromFirebase());
                 const note = document.createElement('p'); note.dataset.feedStatus = ''; note.setAttribute('role', 'status'); note.className = 'w-full text-xs text-gray-500';
-                controls.append(more, refresh, note); sentinel.before(controls);
+                controls.append(more, refresh, note); document.getElementById('productGrid').after(controls);
             }
             const more = controls.querySelector('[data-feed-more]');
             more.disabled = state.loading; more.hidden = !hasMoreProducts && !error;

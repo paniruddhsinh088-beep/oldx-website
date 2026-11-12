@@ -41,6 +41,18 @@ test('real mobile Search and Product cards work across narrow layouts and langua
   await page.goto(origin+'/homepage-fixture');
   await page.evaluate(()=>{initDetailMap=()=>{};});
   const search=page.locator('#searchInput'),nav=page.locator('#oldxMobileNav');
+  const discoveryBetweenFeedAndPagination=await page.locator('#productGrid').evaluate(grid=>{
+   const sentinel=document.getElementById('scrollSentinel');
+   return ['homeStoresSection','homeServicesPreviewSection'].every(id=>{
+    const section=document.getElementById(id);
+    return Boolean(grid.compareDocumentPosition(section)&Node.DOCUMENT_POSITION_FOLLOWING)
+     && Boolean(section.compareDocumentPosition(sentinel)&Node.DOCUMENT_POSITION_FOLLOWING);
+   });
+  });
+  assert.equal(discoveryBetweenFeedAndPagination,true);
+  assert.equal(await nav.locator('a, button').count(),5);
+  assert.equal(await page.locator('#homeServicesPreviewSection a[href="./service-preview.html?mode=website#services"]').count(),1);
+  assert.equal(await page.locator('#storeHeaderBtn').isVisible(),true);
   for(const width of [320,375]){
    await page.setViewportSize({width,height:850});
    for(const locale of ['gu','hi','en']){
@@ -55,6 +67,9 @@ test('real mobile Search and Product cards work across narrow layouts and langua
     }
     assert.ok((await search.boundingBox()).height>=44);
     await page.evaluate(title=>{
+     ++productsReadGeneration;
+     productFeedState=null;
+     hasMoreProducts=false;
      products=[{docId:'mobile-fixture',title,category:'mobiles',state:currentSelectedState,location:'અમદાવાદ',finalPriceStr:'₹8,500'}];
     },title);
     await search.fill('Phone');
