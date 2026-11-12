@@ -105,8 +105,19 @@
         .dark #homeCatGrid :focus-visible, .dark #oldxMobileNav :focus-visible, .dark #searchInput:focus-visible,
         .dark [data-card-title]:focus-visible { outline-color: #fdba74; }
         [data-card-image-area] { aspect-ratio: 4 / 3; }
-        [data-card-price], [data-card-location] { overflow-wrap: anywhere; }
+        [data-card-price], [data-card-location], [data-card-title], [data-card-category],
+        #detailTitle, #detailDescription, #detailLocation, #detailPrice, #storePublicWrap { overflow-wrap: anywhere; }
         [data-card-location] { display: block; }
+        [data-save-button], [data-card-buy], #productDetailView button, #detailWhatsappBtn,
+        #storePublicWrap button, #storeProductSearch, #storeProductSort { min-height: 44px; }
+        [data-save-button], #detailImgBadge { min-width: 44px; }
+        #storePublicWrap a[href] { display: inline-flex; align-items: center; min-height: 44px; }
+        #storeProductSearch, #storeProductSort { min-width: 0; max-width: 100%; }
+        [data-card-title] { width: 100%; }
+        #detailGallery { height: clamp(12rem, 70vw, 23.75rem); }
+        #detailActions { padding-bottom: max(.75rem, env(safe-area-inset-bottom, 0px)); }
+        #detailActions > div > :is(button, a) { min-width: 0; padding-inline: .25rem; text-align: center; overflow-wrap: anywhere; }
+        #detailImgBadge[hidden] { display: none; }
         #oldxMobileNav { display: none; }
         #oldxMobileNav [aria-current="page"] { color: var(--oldx-navy); }
         .dark #oldxMobileNav [aria-current="page"] { color: #fdba74; }
@@ -1247,43 +1258,36 @@
     <!-- PRODUCT DETAILS PAGE -->
     <div id="productDetailView" style="display: none;" class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-24 animate-slide-up">
         <div class="fixed top-0 left-0 right-0 z-50 p-3 flex justify-between items-center pointer-events-none">
-            <button onclick="closeProductDetailView()" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
+            <button type="button" onclick="closeProductDetailView()" aria-label="Back" data-i18n-aria-label="market.product.chatBack" class="pointer-events-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-11 h-11 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
                 <i class="fa-solid fa-arrow-left text-lg"></i>
             </button>
             <div class="flex gap-2 pointer-events-auto">
-                <button onclick="toggleCartCurrentProduct()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
+                <button type="button" onclick="toggleCartCurrentProduct()" aria-label="Save ad" data-i18n-aria-label="market.listing.save" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-11 h-11 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
                     <i class="fa-solid fa-heart text-lg text-red-500" id="detailCartIcon"></i>
                 </button>
-                <button onclick="shareProductLink()" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-10 h-10 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
+                <button type="button" onclick="shareProductLink()" aria-label="Share product" data-i18n-aria-label="market.listing.share" class="bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-11 h-11 rounded-full shadow-lg flex items-center justify-center text-gray-800 dark:text-white font-bold cursor-pointer">
                     <i class="fa-solid fa-share-nodes text-lg"></i>
                 </button>
             </div>
         </div>
 
-        <div class="relative bg-black w-full h-[380px] cursor-pointer" onclick="openLightboxFromDetail()">
+        <div id="detailGallery" class="relative bg-black w-full cursor-pointer" onclick="openLightboxFromDetail()">
             <div id="detailImageSlider" class="flex overflow-x-auto snap-x snap-mandatory h-full no-scrollbar" onscroll="updateImageCounter()"></div>
-            <div id="detailImgBadge" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
+            <button type="button" id="detailImgBadge" hidden aria-label="Open product photos" data-i18n-aria-label="market.listing.photos" class="absolute bottom-4 right-4 bg-black/60 text-white text-xs font-bold px-3 py-1 rounded-full backdrop-blur-sm flex items-center gap-1.5">
                 <span>1/1</span> <i class="fa-solid fa-expand text-[10px] ml-1"></i>
-            </div>
-        </div>
-
-        <div class="bg-primary text-white px-4 py-2 text-xs font-semibold flex items-center justify-center gap-2 shadow-inner">
-            <i class="fa-regular fa-eye text-amber-400"></i> <span id="detailViewsText">Active buyers viewing this ad now</span>
+            </button>
         </div>
 
         <div class="max-w-3xl mx-auto px-3 py-3 space-y-3">
             <div class="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm border border-gray-200/80 dark:border-gray-700">
                 <div class="flex justify-between items-start">
                     <div class="flex items-center gap-1.5">
-                        <span class="bg-teal-50 text-teal-800 text-[10px] font-bold px-2.5 py-1 rounded-full border border-teal-200 flex items-center gap-1">
-                            <i class="fa-solid fa-circle-check text-teal-600"></i> Verified Seller
-                        </span>
                         <span id="detailShopBadge" style="display: none;" class="bg-blue-100 text-blue-800 text-[10px] font-black px-2.5 py-1 rounded-full border border-blue-200 flex items-center gap-1">
                             <i class="fa-solid fa-store text-blue-600"></i> LOCAL SHOP
                         </span>
                     </div>
                     <button onclick="toggleCartCurrentProduct()" class="text-teal-700 dark:text-teal-400 text-xs font-bold bg-teal-50 dark:bg-gray-700 px-3 py-1.5 rounded-xl border border-teal-200 flex items-center gap-1 cursor-pointer">
-                        <i class="fa-solid fa-heart text-red-500"></i> Save Ad
+                        <i class="fa-solid fa-heart text-red-500"></i> <span data-i18n="market.listing.save">Save ad</span>
                     </button>
                 </div>
 
@@ -1291,7 +1295,7 @@
                 <button type="button" id="productEnquire" hidden data-i18n="market.product.enquire">Private enquiry</button>
                 <h2 id="detailTitle" class="text-xl font-black text-gray-900 dark:text-white mt-2 tracking-tight"></h2>
                 
-                <div class="flex items-baseline gap-2 mt-2">
+                <div class="flex flex-wrap items-baseline gap-2 mt-2">
                     <p id="detailPrice" class="text-2xl font-black text-primary dark:text-teal-400"></p>
                     <p id="detailMrpPrice" class="text-sm font-semibold text-gray-400 line-through"></p>
                     <span id="detailDiscountBadge" class="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full"></span>
@@ -1334,7 +1338,7 @@
             </div>
         </div>
 
-        <div class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
+        <div id="detailActions" class="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 shadow-2xl">
             <div class="max-w-3xl mx-auto flex items-center gap-2">
                 <button onclick="openLiveChatModal()" class="flex-1 bg-white border-2 border-primary text-primary font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 hover:bg-gray-50 cursor-pointer">
                     <i class="fa-regular fa-comments text-base"></i> In-App Chat
@@ -4654,6 +4658,8 @@
             wrap.querySelectorAll('[data-store-category]').forEach(button => {
                 button.addEventListener('click', () => filterStoreProducts(button.getAttribute('data-store-category')));
             });
+            const storefrontImage = wrap.querySelector('img');
+            storefrontImage?.addEventListener('error', () => storefrontImage.remove(), { once: true });
             const storeSearch = document.getElementById('storeProductSearch');
             const storeSort = document.getElementById('storeProductSort');
             if (storeSearch) storeSearch.addEventListener('input', () => filterStoreProducts(window.activeStoreCategoryFilter || 'all'));
@@ -4675,15 +4681,15 @@
         function storeCatalogueCopy(key) {
             const locale = document.documentElement.lang;
             const copy = {
-                en: { empty: 'No match in loaded products. Load more to continue.', loaded: 'loaded', more: 'Load more products', loading: 'Loading...', retry: 'Retry loading products', scope: 'Search and sort apply to loaded products. Load more to browse the rest.' },
-                gu: { empty: 'લોડ થયેલા પ્રોડક્ટમાં મેળ નથી. વધુ લોડ કરો.', loaded: 'લોડ થયેલા', more: 'વધુ પ્રોડક્ટ જુઓ', loading: 'લોડ થઈ રહ્યું છે...', retry: 'ફરી લોડ કરો', scope: 'શોધ અને ક્રમ લોડ થયેલા પ્રોડક્ટ માટે છે. બાકીના જોવા વધુ લોડ કરો.' },
-                hi: { empty: 'लोड किए उत्पादों में मिलान नहीं। और लोड करें।', loaded: 'लोड किए गए', more: 'और उत्पाद देखें', loading: 'लोड हो रहा है...', retry: 'फिर से लोड करें', scope: 'खोज और क्रम लोड किए गए उत्पादों पर लागू हैं। बाकी देखने के लिए और लोड करें।' }
+                en: { empty: 'No match in loaded products. Load more to continue.', noMatch: 'No products match your filters.', noProducts: 'This store has no products yet.', count: 'Products shown', loaded: 'loaded', more: 'Load more products', loading: 'Loading products…', retry: 'Retry loading products', unavailable: 'Could not load products.', scope: 'Search and sort apply to loaded products. Load more to browse the rest.' },
+                gu: { empty: 'લોડ થયેલા પ્રોડક્ટમાં મેળ નથી. વધુ લોડ કરો.', noMatch: 'તમારા ફિલ્ટર સાથે કોઈ પ્રોડક્ટ મેળ ખાતી નથી.', noProducts: 'આ સ્ટોરમાં હજી કોઈ પ્રોડક્ટ નથી.', count: 'દેખાતી પ્રોડક્ટ્સ', loaded: 'લોડ થયેલા', more: 'વધુ પ્રોડક્ટ જુઓ', loading: 'પ્રોડક્ટ્સ લોડ થઈ રહી છે…', retry: 'ફરી લોડ કરો', unavailable: 'પ્રોડક્ટ્સ લોડ થઈ શકી નથી.', scope: 'શોધ અને ક્રમ લોડ થયેલા પ્રોડક્ટ માટે છે. બાકીના જોવા વધુ લોડ કરો.' },
+                hi: { empty: 'लोड किए उत्पादों में मिलान नहीं। और लोड करें।', noMatch: 'आपके फ़िल्टर से कोई उत्पाद मेल नहीं खाता।', noProducts: 'इस स्टोर में अभी कोई उत्पाद नहीं है।', count: 'दिखाए गए उत्पाद', loaded: 'लोड किए गए', more: 'और उत्पाद देखें', loading: 'उत्पाद लोड हो रहे हैं…', retry: 'फिर से लोड करें', unavailable: 'उत्पाद लोड नहीं हो सके।', scope: 'खोज और क्रम लोड किए गए उत्पादों पर लागू हैं। बाकी देखने के लिए और लोड करें।' }
             };
             return (copy[locale] || copy.en)[key];
         }
 
         function startStoreCatalogue(ownerUid) {
-            const state = { generation: ++storeCatalogueGeneration, ownerUid, cursor: null, hasMore: true, loading: false };
+            const state = { generation: ++storeCatalogueGeneration, ownerUid, cursor: null, hasMore: true, loading: false, failed: false };
             storeCatalogueState = state;
             window.activeStoreCategoryFilter = 'all';
             currentStoreProductsCache = [];
@@ -4712,8 +4718,10 @@
             const button = document.getElementById('storeCataloguePaging')?.querySelector('button');
             if (!grid || !button) return;
             state.loading = true;
+            state.failed = false;
             button.disabled = true;
             button.textContent = storeCatalogueCopy('loading');
+            if (!currentStoreProductsCache.length) filterStoreProducts(window.activeStoreCategoryFilter || 'all');
             try {
                 let query = db.collection('products').where('sellerUid', '==', state.ownerUid)
                     .orderBy(firebase.firestore.FieldPath.documentId()).limit(24);
@@ -4727,13 +4735,20 @@
                 rows.forEach(row => { if (!ids.has(row.docId)) { currentStoreProductsCache.push(row); ids.add(row.docId); } });
                 state.cursor = snapshot.docs.at(-1) || state.cursor;
                 state.hasMore = snapshot.docs.length === 24;
+                state.loading = false;
                 button.hidden = !state.hasMore;
                 button.textContent = storeCatalogueCopy('more');
                 filterStoreProducts(window.activeStoreCategoryFilter || 'all');
             } catch (error) {
                 if (state !== storeCatalogueState || state.generation !== storeCatalogueGeneration) return;
+                state.loading = false;
+                state.failed = true;
                 button.textContent = storeCatalogueCopy('retry');
-                if (!currentStoreProductsCache.length) grid.textContent = storeCatalogueCopy('retry');
+                if (!currentStoreProductsCache.length) filterStoreProducts(window.activeStoreCategoryFilter || 'all');
+                else {
+                    const count = document.getElementById('storeProductsCount');
+                    if (count) count.textContent = storeCatalogueCopy('unavailable');
+                }
             } finally {
                 if (state === storeCatalogueState && state.generation === storeCatalogueGeneration) {
                     state.loading = false;
@@ -4774,20 +4789,25 @@
                 return tb - ta;
             });
             document.querySelectorAll('#storeCategoryFilters button').forEach(btn => {
-                btn.className = 'px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold';
-            });
-            document.querySelectorAll('#storeCategoryFilters button').forEach(btn => {
-                if (btn.getAttribute('data-store-category') === window.activeStoreCategoryFilter) btn.className = 'px-3 py-2 rounded-full bg-primary text-white text-xs font-bold';
+                const selected = btn.getAttribute('data-store-category') === window.activeStoreCategoryFilter;
+                btn.setAttribute('aria-pressed', String(selected));
+                btn.className = selected ? 'px-3 py-2 rounded-full bg-primary text-white text-xs font-bold'
+                    : 'px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold';
             });
             const count = document.getElementById('storeProductsCount');
-            if (count) count.textContent = search ? `${items.length} matching product(s)` : `${items.length} product(s) in this shop`;
-            if (count && storeCatalogueState?.hasMore) count.textContent += ' · ' + storeCatalogueCopy('loaded');
-            if (!items.length && storeCatalogueState?.hasMore) {
-                grid.textContent = storeCatalogueCopy('empty');
-                return;
+            const state = storeCatalogueState;
+            if (count) {
+                count.textContent = !currentStoreProductsCache.length && state?.loading ? storeCatalogueCopy('loading')
+                    : state?.failed ? storeCatalogueCopy('unavailable')
+                    : `${storeCatalogueCopy('count')}: ${items.length}${state?.hasMore ? ' · ' + storeCatalogueCopy('loaded') : ''}`;
             }
             if (!items.length) {
-                grid.innerHTML = `<p class="col-span-full text-sm text-gray-500 py-5">${search ? 'No products match your search.' : (window.activeStoreCategoryFilter === 'all' ? 'No products are available in this store yet.' : 'No products are available in this category.')}</p>`;
+                const message = document.createElement('p');
+                message.className = 'col-span-full text-sm text-gray-500 py-5';
+                const key = state?.loading ? 'loading' : state?.failed ? 'unavailable' : state?.hasMore ? 'empty'
+                    : search || window.activeStoreCategoryFilter !== 'all' ? 'noMatch' : 'noProducts';
+                message.textContent = storeCatalogueCopy(key);
+                grid.append(message);
                 return;
             }
             items.forEach(p => { if (typeof createProductCard === 'function') grid.appendChild(createProductCard(p, false)); });
@@ -4958,6 +4978,7 @@
             });
             const imageBadge = document.getElementById('detailImgBadge');
             imageBadge.replaceChildren();
+            imageBadge.hidden = currentProductSafeImages.length === 0;
             if (currentProductSafeImages.length > 0) {
                 const count = document.createElement('span');
                 count.textContent = `1/${currentProductSafeImages.length}`;
@@ -5584,7 +5605,7 @@
                     <div data-card-image-area class="bg-gray-100 dark:bg-gray-700 overflow-hidden relative">
                         <div data-image-placeholder class="w-full h-full flex items-center justify-center text-gray-400"><i class="fa-solid fa-image text-3xl"></i></div>
                         <div data-card-badges class="absolute top-2 left-2 flex items-center gap-1 z-10"></div>
-                        <button data-save-button type="button" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-7 h-7 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110" aria-label="Save ad"><i data-heart-icon class="fa-solid fa-heart"></i></button>
+                        <button data-save-button type="button" class="absolute top-2 right-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md w-11 h-11 rounded-full shadow-md flex items-center justify-center transition z-10 cursor-pointer hover:scale-110" aria-label="Save ad" aria-pressed="${isSaved}"><i data-heart-icon class="fa-solid fa-heart"></i></button>
                     </div>
                     <div class="p-3 space-y-1.5">
                         <div class="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
@@ -5602,12 +5623,14 @@
             const imageValue = Array.isArray(p.images) && typeof p.images[0] === 'string' ? p.images[0].trim() : '';
             if (/^https?:\/\//i.test(imageValue) || /^data:image\/(?:png|jpeg|webp|gif);base64,/i.test(imageValue)) {
                 const image = document.createElement('img');
-                image.src = imageValue;
+                const placeholder = card.querySelector('[data-image-placeholder]');
+                image.addEventListener('error', () => image.replaceWith(placeholder), { once: true });
                 image.alt = String(p.title || 'Product image');
                 image.loading = 'lazy';
                 image.decoding = 'async';
                 image.className = "w-full h-full object-cover group-hover:scale-105 transition-transform duration-500";
-                card.querySelector('[data-image-placeholder]').replaceWith(image);
+                placeholder.replaceWith(image);
+                image.src = imageValue;
             }
 
             const badges = card.querySelector('[data-card-badges]');
@@ -5620,7 +5643,7 @@
             }
             if (p.isSold) {
                 const overlay = document.createElement('div');
-                overlay.className = "absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20";
+                overlay.className = "pointer-events-none absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center z-20";
                 const label = document.createElement('span');
                 label.className = "bg-red-600 text-white font-black text-[10px] px-2 py-1 rounded uppercase tracking-wider shadow-lg";
                 label.textContent = 'OUT OF STOCK';

@@ -80,6 +80,52 @@ test('full homepage starts without requesting the unused Firebase Storage SDK',a
   assert.deepEqual(errors,[]);
  }finally{await context.close();}
 });
+
+test('real Product and Store layouts keep controls usable and long seller text intact',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ const authored='વેચનારहिन्दीSeller'.repeat(20);
+ const image='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aau8AAAAASUVORK5CYII=';
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  await page.evaluate(({authored,image})=>{
+   currentProduct={docId:'sample',title:authored,desc:authored,location:authored,finalPriceStr:'₹12,345',images:[image]};
+   renderProductDetailView(currentProduct);
+   document.getElementById('productGrid').replaceChildren(createProductCard({...currentProduct,images:['data:image/png;base64,AAAA']}));
+   renderStorePublicContent({uid:'sample-store',shopName:authored,address:authored,categories:['cars'],photoURL:'data:image/png;base64,AAAA'},false);
+  },{authored,image});
+  const detail=page.locator('#productDetailView'),store=page.locator('#storePublicWrap'),gallery=page.locator('#detailImgBadge');
+  const show=async id=>page.evaluate(id=>{
+   for(const key of ['homeView','productDetailView','storePage','storePublicWrap'])document.getElementById(key).style.display=
+    key===id||id==='storePublicWrap'&&key==='storePage'?'block':'none';
+  },id);
+  await page.locator('#productGrid [data-image-placeholder]').waitFor({state:'attached'});
+  assert.equal(await page.locator('#productGrid [data-save-button]').getAttribute('aria-pressed'),'false');
+  assert.ok((await page.locator('#productGrid [data-save-button]').boundingBox()).height>=44);
+  await page.locator('#storePublicWrap img').waitFor({state:'detached'});
+  for(const width of [320,375,768,1280]){
+   await page.setViewportSize({width,height:850});
+   for(const locale of ['gu','hi','en']){
+    await page.locator('#marketplaceLocale').selectOption(locale);
+    await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+    const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+    await show('productDetailView');
+    assert.equal(await detail.locator('#detailTitle').textContent(),authored);
+    assert.doesNotMatch(await detail.textContent(),/Verified Seller|Active buyers viewing/);
+    assert.equal(await gallery.getAttribute('aria-label'),catalog['market.listing.photos']);
+    assert.ok((await gallery.boundingBox()).height>=44);
+    if(process.env.OLDX_TEST_TAILWIND_FILE)assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`Product ${width} ${locale}`);
+    await show('storePublicWrap');
+    assert.equal(await store.locator('h2').textContent(),authored);
+    assert.ok((await store.locator('#storeProductSort').boundingBox()).height>=44);
+    if(process.env.OLDX_TEST_TAILWIND_FILE)assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`Store ${width} ${locale}`);
+   }
+  }
+  await show('productDetailView');
+  await gallery.press('Enter');
+  assert.equal(await page.locator('#imageLightboxModal').isVisible(),true);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
 before(async()=>{server=await startPreviewServer([]);origin=`http://127.0.0.1:${server.address().port}`;browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});});after(async()=>{await browser?.close();await new Promise(r=>server.close(r));});
 async function fixture(){const context=await browser.newContext({viewport:{width:320,height:900}});const remote=[];await context.route('**/*',route=>{if(new URL(route.request().url()).origin!==origin){remote.push(route.request().url());return route.abort();}if(route.request().url()===origin+'/fixture')return route.fulfill({contentType:'text/html',body:'<!doctype html><html><body></body></html>'});return route.continue();});const page=await context.newPage();await page.goto(origin+'/fixture');const panel=source.slice(source.indexOf('<div class="flex flex-wrap items-center gap-2 px-4 py-2 text-sm"'),source.indexOf('</div>',source.indexOf('id="marketplaceLocaleStatus"'))+6);const controls=[...source.matchAll(/<label for="(?:login|signup)[^"]+"[^>]*>[^<]*<\/label>|<input[^>]+id="(?:searchInput|loginEmail|loginPassword|signupEmail|signupPassword|signupConfirmPassword)"[^>]*>/g)].map(m=>m[0]).join('');await page.setContent('<style>*{box-sizing:border-box}body{margin:12px}input,select{max-width:100%;min-height:44px}label,span{overflow-wrap:anywhere}label,input{display:block}span{display:block}</style>'+panel+controls+'<p id="authored">ગુજરાતી नमूना seller text</p><script type="module" src="/features/i18n/marketplace.mjs"></script>');await page.waitForFunction(()=>document.querySelector('#marketplaceLocale').getAttribute('aria-busy')===null&&document.documentElement.lang==='en');return {context,page,remote};}
 test('actual essential-control markup localizes gu/hi/en without altering credentials, seller text or keyboard focus',async()=>{const {context,page,remote}=await fixture();try{await page.locator('#loginPassword').fill('  preserve spaces  ');await page.locator('#searchInput').fill('ખાનગી search');for(const locale of ['gu','hi','en']){await page.locator('#marketplaceLocale').focus();await page.locator('#marketplaceLocale').selectOption(locale);await page.waitForFunction(code=>document.documentElement.lang===code,locale);const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;assert.equal(await page.locator('label[for="loginEmail"]').textContent(),catalog['market.email']);assert.equal(await page.locator('#searchInput').getAttribute('aria-label'),catalog['market.search']);assert.equal(await page.locator('#loginPassword').inputValue(),'  preserve spaces  ');assert.equal(await page.locator('#authored').textContent(),'ગુજરાતી नमूना seller text');assert.equal(await page.locator('#marketplaceLocale').evaluate(n=>document.activeElement===n),true);await page.evaluate(()=>document.body.style.fontSize='200%');assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);}assert.deepEqual(remote,[]);assert.deepEqual(await page.evaluate(()=>Object.keys(localStorage)),['oldx.preview.locale.v1']);}finally{await context.close();}});
