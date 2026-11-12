@@ -58,6 +58,10 @@ class ProductReadImageAudit(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Saved layer count"):
             audit([], count=3)
 
+    def test_known_base_path_does_not_exempt_changed_binary(self):
+        with self.assertRaisesRegex(ValueError, "Credential marker in layer 1"):
+            audit([(AUDITOR["GNUTLS_PATH"], KEY)])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -31,7 +31,7 @@ jobs:
           python3 tests/integration/product-read-image-audit.test.py
           docker pull node:24-bookworm-slim
           docker build --no-cache -f Dockerfile.product-read -t oldx-product-read:smoke .
-          trap 'docker logs oldx-disabled 2>&1 || true; docker rm -f oldx-disabled oldx-image-audit >/dev/null 2>&1 || true; rm -f "$RUNNER_TEMP/oldx-product-read.tar"' EXIT
+          trap 'if docker inspect oldx-disabled >/dev/null 2>&1; then docker logs oldx-disabled; fi; docker rm -f oldx-disabled oldx-image-audit >/dev/null 2>&1 || true; rm -f "$RUNNER_TEMP/oldx-product-read.tar"' EXIT
           image=oldx-product-read:smoke
           test "$(docker image inspect --format '{{.Config.User}}' "$image")" = node
           test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 1000

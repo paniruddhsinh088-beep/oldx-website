@@ -1,5 +1,7 @@
 """Inspect the config, history and every layer in a single-image docker save."""
 
+import hashlib
+import io
 import json
 import re
 import sys
@@ -23,6 +25,10 @@ SECRET = re.compile(
     re.I,
 )
 NPMRC = "usr/local/lib/node_modules/npm/.npmrc"
+# The public Debian base ships GnuTLS known-answer self-test key material.
+# A changed binary or a copy in any later layer is scanned normally.
+GNUTLS_PATH = "usr/lib/x86_64-linux-gnu/libgnutls.so.30.34.3"
+GNUTLS_SHA256 = "779b25d20249988bea2c1aa6bbeb218f5ae7ea8a9d30ce4f54ea37372965cc4b"
 
 
 def contains_marker(stream):
@@ -54,8 +60,17 @@ def audit(image_stream, base_npmrc, expected_layers):
                         continue
                     if SENSITIVE_NAME.fullmatch(path.name):
                         raise ValueError(f"Sensitive filename in layer {index}")
-                    if entry.isfile() and contains_marker(layer.extractfile(entry)):
-                        raise ValueError(f"Credential marker in layer {index}")
+                    if entry.isfile():
+                        stream = layer.extractfile(entry)
+                        if index == 1 and path.as_posix() == GNUTLS_PATH:
+                            content = stream.read(4 * 1024 * 1024 + 1)
+                            if len(content) > 4 * 1024 * 1024:
+                                raise ValueError(f"Unreviewed GnuTLS binary size in layer {index}")
+                            if hashlib.sha256(content).hexdigest() == GNUTLS_SHA256:
+                                continue
+                            stream = io.BytesIO(content)
+                        if contains_marker(stream):
+                            raise ValueError(f"Credential marker in layer {index}")
                     if (entry.issym() or entry.islnk()) and SENSITIVE_NAME.fullmatch(PurePosixPath(entry.linkname).name):
                         raise ValueError(f"Sensitive link target in layer {index}")
         return len(layers)
@@ -68,7 +83,7 @@ if __name__ == "__main__":
     except ValueError as error:
         # Report only messages authored above. Parser errors may include input.
         message = str(error)
-        if not re.fullmatch(r"(?:Credential marker in image config or history|Saved layer count does not match the inspected image|(?:Modified built-in npm config|Sensitive filename|Credential marker|Sensitive link target) in layer \d+)", message):
+        if not re.fullmatch(r"(?:Credential marker in image config or history|Saved layer count does not match the inspected image|(?:Modified built-in npm config|Sensitive filename|Credential marker|Sensitive link target|Unreviewed GnuTLS binary size) in layer \d+)", message):
             message = "Invalid saved image metadata"
         sys.exit(message)
     except (OSError, KeyError, TypeError, tarfile.TarError):
