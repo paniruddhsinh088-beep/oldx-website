@@ -1699,6 +1699,7 @@
         let pendingDeleteDocId = null;
         let activeChatRoomId = null;
         let activeChatOtherUserId = null;
+        let legacyChatViewGeneration = 0;
         let activeChatUnsubscribe = null;
         let activeStatusUnsubscribe = null;
         let activeTypingUnsubscribe = null;
@@ -2303,6 +2304,14 @@
             stopLegacyChatRead();
             invalidateLegacyInbox();
             inboxViewGeneration++;
+            if (previousUser !== user) {
+                if (activeChatRoomId) {
+                    resetLegacyChatView();
+                    document.getElementById('fullChatPage').style.display = 'none';
+                }
+                document.getElementById('inboxConversationsList').replaceChildren();
+                closeInboxModal();
+            }
             window.currentUser = user;
             if (previousUser !== user) listenToProductsFromFirebase();
             refreshStoreHeader(user);
@@ -2515,6 +2524,7 @@
                           div.onclick = () => {
                               if (!current()) return;
                               closeInboxModal();
+                              resetLegacyChatView();
                               activeChatRoomId = chat.chatRoomId;
                               const otherUid = (chat.participants || []).find(id => id !== currentUid && id !== 'guest');
                               const otherUserId = otherUid || chat.productId;
@@ -2604,8 +2614,9 @@
                 return;
             }
 
+            resetLegacyChatView();
             activeChatRoomId = `${currentProduct.docId}_${buyerId}`;
-            const otherUserId = (window.currentUser.uid === sellerId) ? buyerId : sellerId;
+            const otherUserId = sellerId;
             
             document.getElementById('chatSellerName').innerText = (window.currentUser.uid === sellerId) ? "Buyer" : (currentProduct.sellerName || 'Seller');
             const sellerPhone = currentProduct.phone || '919876543210';
@@ -2624,11 +2635,22 @@
             watchTypingStatus(activeChatRoomId, otherUserId);
         }
 
-        function closeFullChatPage() {
+        function resetLegacyChatView() {
+            legacyChatViewGeneration++;
+            activeChatRoomId = null;
+            activeChatOtherUserId = null;
+            clearTimeout(window.typingTimer);
             stopTypingStatus();
             stopLegacyChatRead();
-            if (activeChatUnsubscribe) activeChatUnsubscribe();
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
+            activeStatusUnsubscribe = null;
+            document.getElementById('fullChatInput').value = '';
+            document.getElementById('chatSafetyWarning').style.display = 'none';
+            clearChatAttachment();
+        }
+
+        function closeFullChatPage() {
+            resetLegacyChatView();
             document.getElementById('fullChatPage').style.display = 'none';
             if(window.location.hash === '#chat') {
                 history.back();
@@ -2638,7 +2660,9 @@
         function trackUserStatus(otherUserId) {
             if(!otherUserId) return;
             if (activeStatusUnsubscribe) activeStatusUnsubscribe();
+            const generation = legacyChatViewGeneration;
             activeStatusUnsubscribe = db.collection('users').doc(otherUserId).onSnapshot(doc => {
+                if (generation !== legacyChatViewGeneration) return;
                 if(doc.exists) {
                     const data = doc.data();
                     const profileName = data.displayName || data.name || data.fullName || data.username;
@@ -2981,7 +3005,8 @@
 
         function handleChatFileUpload(e) {
             const file = e.target.files && e.target.files[0];
-            if (!file) return;
+            const generation = legacyChatViewGeneration;
+            if (!file || !activeChatRoomId) return;
             const allowedTypes = [
                 'image/jpeg', 'image/png', 'image/gif', 'image/webp',
                 'video/mp4', 'application/pdf', 'application/msword',
@@ -2994,6 +3019,7 @@
             }
             const reader = new FileReader();
             reader.onload = function(evt) {
+                if (generation !== legacyChatViewGeneration) return;
                 const result = evt.target && typeof evt.target.result === 'string' ? evt.target.result : '';
                 if (!result.startsWith('data:')) {
                     showCustomAlert('Upload error', 'Could not read this attachment. Please try again.', 'error');
@@ -3004,6 +3030,7 @@
                 document.getElementById('chatAttachmentPreview').style.display = 'flex';
             };
             reader.onerror = function() {
+                if (generation !== legacyChatViewGeneration) return;
                 showCustomAlert('Upload error', 'Could not read this attachment. Please try again.', 'error');
             };
             reader.readAsDataURL(file);
@@ -3013,15 +3040,19 @@
         function clearChatAttachment() {
             currentChatAttachment = null;
             document.getElementById('chatFileInput').value = '';
+            document.getElementById('chatAttachmentName').textContent = '';
             document.getElementById('chatAttachmentPreview').style.display = 'none';
         }
 
         function checkScamAndSendChatMessage() {
             const input = document.getElementById('fullChatInput');
-            const msg = input.value.trim();
-
-            if (!msg && !currentChatAttachment) return;
-            if (!activeChatRoomId || !window.currentUser) return;
+            const draft = input.value, msg = draft.trim(), attachment = currentChatAttachment;
+            const roomId = activeChatRoomId, user = window.currentUser, generation = legacyChatViewGeneration;
+            if ((!msg && !attachment) || !roomId || !user) return;
+            // Permission and write callbacks belong to the conversation the user acted in.
+            const isCurrent = () => generation === legacyChatViewGeneration && activeChatRoomId === roomId &&
+                user === window.currentUser && auth.currentUser?.uid === user.uid;
+            const send = () => sendChatMessageNow({msg, input, draft, attachment, roomId, user, isCurrent});
 
             const lowerMsg = msg.toLowerCase();
             const scamKeywords = ['http://', 'https://', 'bit.ly', 'paytm.com/pay', 'upi.me', 'lucky draw', 'won', 'prize', 'kyc update', 'bank account block', 'qr code scan'];
@@ -3041,55 +3072,56 @@
 
             if (activeChatOtherUserId) {
                 db.collection('users').doc(activeChatOtherUserId).get().then(recipientSnap => {
+                    if (!isCurrent()) return;
                     const blocked = recipientSnap.exists ? (recipientSnap.data().blockedUsers || []) : [];
-                    if (blocked.includes(window.currentUser.uid)) {
+                    if (blocked.includes(user.uid)) {
                         showCustomAlert("Message not sent", "This user has blocked you.", "error");
                         return;
                     }
-                    sendChatMessageNow(msg, input);
-                }).catch(err => { console.error(err); showCustomAlert("Error", "Could not verify chat permissions.", "error"); });
+                    send();
+                }).catch(err => { if (isCurrent()) { console.error(err); showCustomAlert("Error", "Could not verify chat permissions.", "error"); } });
                 return;
             }
-            sendChatMessageNow(msg, input);
+            send();
         }
 
-        function sendChatMessageNow(msg, input) {
-            if (activeChatRoomId && window.currentUser) {
-                db.collection('chats').doc(activeChatRoomId).set({
-                    [`typing_${window.currentUser.uid}`]: false
-                }, { merge: true });
-            }
+        function sendChatMessageNow({msg, input, draft, attachment, roomId, user, isCurrent}) {
+            if (!isCurrent()) return;
+            const room = db.collection('chats').doc(roomId);
+            room.set({ [`typing_${user.uid}`]: false }, { merge: true });
 
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             // Do not rebuild participants from the chat ID here: its second part is
             // the chat starter UID, not necessarily the seller. Preserve the verified list.
-            db.collection('chats').doc(activeChatRoomId).set({
+            room.set({
                 lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            db.collection('chats').doc(activeChatRoomId).collection('messages').add({
+            room.collection('messages').add({
                 text: msg,
-                attachment: currentChatAttachment || null,
-                senderUid: window.currentUser.uid,
-                senderName: window.currentUser.displayName || 'User',
+                attachment,
+                senderUid: user.uid,
+                senderName: user.displayName || 'User',
                 status: 'sent',
                 time: timeStr,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             }).then(() => {
+                if (!isCurrent()) return;
                 const keepKeyboardOpen = document.activeElement === input ||
                     (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
-                input.value = '';
-                clearChatAttachment();
+                if (input.value === draft) input.value = '';
+                if (currentChatAttachment === attachment) clearChatAttachment();
                 // Re-focus after the send button interaction so mobile users can
                 // continue typing without reopening the keyboard each time.
                 if (keepKeyboardOpen) {
                     requestAnimationFrame(() => {
+                        if (!isCurrent()) return;
                         try { input.focus({ preventScroll: true }); }
                         catch (_) { input.focus(); }
                     });
                 }
             }).catch(err => {
-                console.error("Error sending message: ", err);
+                if (isCurrent()) console.error("Error sending message: ", err);
             });
         }
 

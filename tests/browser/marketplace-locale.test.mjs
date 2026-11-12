@@ -34,6 +34,83 @@ async function fullHomepage(){
  return {context,page,intercepted,errors};
 }
 
+test('real Product Chat keeps delayed sends and drafts scoped to the active conversation and account',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ try{
+  const composer=page.locator('#fullChatInput'),chat=page.locator('#fullChatPage');
+  for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']]){
+   await page.setViewportSize({width,height:850});
+   await page.goto(origin+'/homepage-fixture');
+   await page.locator('#marketplaceLocale').selectOption(locale);
+   await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+   await page.evaluate(()=>{
+    setFixtureAccount({uid:'fixture-buyer'});
+    window.fixtureSends=[];
+    const collection=db.collection;
+    db.collection=name=>{
+     if(name==='users')return {...collection(name),doc:uid=>({...collection(name).doc(uid),
+      get:()=>uid==='fixture-seller-a'
+       ?new Promise(resolve=>{window.finishPermission=()=>resolve({exists:false});})
+       :Promise.resolve({exists:false})})};
+     if(name==='chats')return {...collection(name),doc:room=>({...collection(name).doc(room),
+      collection:child=>({...collection(name).doc(room).collection(child),
+       add:async message=>fixtureSends.push({room,text:message.text,sender:message.senderUid})})})};
+     return collection(name);
+    };
+    readLegacyInboxSummaries=async()=>[{chat:{chatRoomId:'fixture-room-a',participants:['fixture-buyer','fixture-seller-a']},unreadCount:0}];
+    window.finishPermission=null;
+    window.openFixtureProduct=()=>{
+     currentProduct={docId:'fixture-product-b',sellerUid:'fixture-seller-b',title:'Seller ગુજરાતી हिन्दी',desc:'',images:[]};
+     renderProductDetailView(currentProduct);
+     document.getElementById('homeView').style.display='none';
+     document.getElementById('productDetailView').style.display='block';
+    };
+   });
+   await page.locator('[onclick="openInboxModal()"]').click();
+   await page.locator('#inboxConversationsList').getByText('Chat Room').click();
+   await page.evaluate(()=>{
+    const originalReader=window.FileReader;
+    window.FileReader=class {
+     readAsDataURL(){
+      window.FileReader=originalReader;
+      window.finishAttachment=()=>this.onload({target:{result:'data:image/png;base64,AA=='}});
+     }
+    };
+   });
+   await page.locator('#chatFileInput').setInputFiles({
+    name:'fixture.png',mimeType:'image/png',buffer:Buffer.from([0]),
+   });
+   await composer.fill('Room A ગુજરાતી हिन्दी');
+   await page.locator('#chatSendButton').click();
+   await page.waitForFunction(()=>typeof window.finishPermission==='function');
+   await chat.getByRole('button',{name:(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default['market.product.chatBack']}).click();
+   await page.waitForFunction(()=>location.hash!=='#chat');
+   await page.evaluate(()=>openFixtureProduct());
+   await page.locator('[onclick="openLiveChatModal()"]').click();
+   await composer.fill('Room B ગુજરાતી हिन्दी');
+   await page.evaluate(async()=>{finishAttachment();finishPermission();await Promise.resolve();});
+   assert.deepEqual(await page.evaluate(()=>fixtureSends),[]);
+   assert.equal(await composer.inputValue(),'Room B ગુજરાતી हिन्दी');
+   assert.equal(await page.locator('#chatAttachmentName').textContent(),'');
+   await page.locator('#chatSendButton').click();
+   await page.waitForFunction(()=>fixtureSends.length===1);
+   assert.deepEqual(await page.evaluate(()=>fixtureSends),[
+    {room:'fixture-product-b_fixture-buyer',text:'Room B ગુજરાતી हिन्दी',sender:'fixture-buyer'},
+   ]);
+   await composer.fill('Prior account draft');
+   await page.evaluate(()=>{
+    document.getElementById('fullChatMessages').textContent='Prior account message';
+    setFixtureAccount({uid:'fixture-other'});
+   });
+   assert.equal(await chat.isVisible(),false);
+   assert.equal(await composer.inputValue(),'');
+   assert.equal(await page.locator('#fullChatMessages').textContent(),'');
+   assert.equal(await page.locator('#inboxConversationsList').textContent(),'');
+  }
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('full homepage gives location and search controls keyboard access and mobile touch targets',async()=>{
  const {context,page,errors}=await fullHomepage();
  try{

@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/product-read-container.yml'
       - 'Dockerfile.product-read*'
+      - 'package.json'
+      - 'package-lock.json'
       - 'functions/staging-marketplace/product-read-server.mjs'
       - 'scripts/audit-product-read-image.py'
       - 'tests/integration/product-read-image-audit.test.py'
