@@ -138,6 +138,46 @@ test('packaged visual review uses real homepage markup and isolated synthetic jo
      await page.locator('[data-review-action="back"]').press('Enter');
     }
    }
+   await page.goto(base);
+   await page.getByRole('link',{name:'Service Provider visual review'}).click();
+   const services=page.locator('#results'),servicesScenario=page.locator('#reviewScenario');
+   await services.locator('article').first().waitFor();
+   assert.match(await page.getByRole('note').textContent(),new RegExp(sha));
+   assert.equal(await page.locator('#sampleEnquiryForm, #providerForm, #profileLink, .contact-demo, input[type=file]').count(),0);
+   for(const width of [320,375,768,1280]){
+    await page.setViewportSize({width,height:850});
+    for(const locale of ['gu','hi','en']){
+     const {loadTranslator}=await import('../../features/i18n/i18n.mjs');
+     const t=(await loadTranslator(locale)).t;
+     await page.locator('#reviewLocale').selectOption(locale);
+     await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+     await servicesScenario.selectOption('loading');
+     assert.equal(await services.getAttribute('aria-busy'),'true');
+     assert.equal(await page.locator('#reviewReadStatus').textContent(),t('integration.read_loading'));
+     await servicesScenario.selectOption('empty');
+     assert.equal(await services.locator('.empty').textContent(),t('emptyResults'));
+     await servicesScenario.selectOption('error');
+     assert.equal(await page.locator('#reviewReadStatus').textContent(),t('integration.read_unavailable'));
+     await page.locator('#reviewRetry').press('Enter');
+     const category=page.locator('[data-cat="સુથાર"]');
+     await category.press('Enter');
+     assert.equal(await category.getAttribute('aria-pressed'),'true');
+     assert.equal(await services.locator('article').count(),1);
+     assert.ok((await category.boundingBox()).height>=44);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+     const provider=services.locator('[data-provider-id="p1"]');
+     await provider.press('Enter');
+     await page.waitForURL(url=>url.hash==='#provider/p1');
+     assert.equal(await page.locator('#pServices .tag').count(),2);
+     assert.match(await page.locator('#pAbout').textContent(),/નમૂનાનુંવર્ણનनमूनेकाविवरणSyntheticDescription/);
+     assert.equal(await page.locator('#pName').evaluate(node=>node===document.activeElement),true);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+     await page.locator('#backBtn').press('Enter');
+     await page.waitForURL(url=>url.hash==='#services');
+     assert.equal(await provider.evaluate(node=>node===document.activeElement),true);
+     await page.locator('#resetSearch').press('Enter');
+    }
+   }
    assert.deepEqual(unexpected,[]);
    assert.deepEqual(errors,[]);
    assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);

@@ -19,6 +19,15 @@ test('visual-review packaging rejects unsafe material before writing',async()=>{
  await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path)).replace(
   'onclick="closeProductDetailView()"','onfocus="alert(1)"'
  )}),/Unexpected runtime connection or handler/);
+ await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path)).replace(
+  'function render() {','function render() { fetch("/private");'
+ )}),/Unexpected runtime connection or private control in Services review/);
+ await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path))+
+  (path==='scripts/visual-review-services-client.mjs'?'\nlocalStorage.clear();':'')
+ }),/Unexpected Services review client dependency/);
+ await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path))+
+  (path==='scripts/visual-review-services-client.mjs'?"\nimport './features/service-providers/service-preview.mjs';":'')
+ }),/Unexpected Services review client dependency/);
 });
 
 test('local demo server serves only reviewed browser assets and rejects private files',async()=>{

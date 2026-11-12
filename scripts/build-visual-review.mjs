@@ -3,6 +3,7 @@ import {lstat,mkdir,mkdtemp,writeFile} from 'node:fs/promises';
 import {dirname,join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {listingReviewSource} from './visual-review-listings.mjs';
+import {servicesReviewSource} from './visual-review-services.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const assets=[
@@ -32,13 +33,21 @@ export async function buildVisualReview({readSource,sha,date,out}){
  const demo=await readSource('mobile-demo.html');
  const homepage=await readSource('index.html');
  const listings=listingReviewSource(homepage);
+ const services=servicesReviewSource(await readSource('service-preview.html'),await readSource('features/service-providers/service-preview.mjs'));
+ const servicesClient=await readSource('scripts/visual-review-services-client.mjs');
+ const servicesImports=new Set(['./features/i18n/i18n.mjs','./features/i18n/dom.mjs',
+  './features/service-providers/preview-fixtures.mjs','./features/service-providers/provider-public-profile.mjs']);
+ const servicesLogic=servicesClient.replace(/^import \{[\w, ]+\} from '([^']+)';$/gm,(statement,path)=>servicesImports.delete(path)?'':statement);
+ if(servicesImports.size||/\b(?:import|firebase|fetch|XMLHttpRequest|WebSocket|sendBeacon|localStorage|sessionStorage|navigator)\b/i.test(servicesLogic+services.renderers)){
+  throw new Error('Unexpected Services review client dependency');
+ }
  const notice=`<div class="demo-notice" role="note"><strong>SYNTHETIC PREVIEW</strong> · Non-production · Source <code>${sha}</code> · Build ${date}</div>`;
  if(!demo.includes('<div id="demoNotice"')||!demo.includes('</head>')||!demo.includes('</body>'))throw new Error('Demo shell changed; review the visual preview build');
  const html=demo
   .replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/,`<meta http-equiv="Content-Security-Policy" content="${csp}">`)
   .replace('</head>','<meta name="robots" content="noindex, nofollow"><link rel="stylesheet" href="./visual-review.css"></head>')
   .replace('<div id="demoNotice"',notice+'<div id="demoNotice"')
-  .replace('</body>',homepageTemplate(homepage)+'<a class="action" href="./listings.html">Product &amp; Store visual review</a></body>');
+  .replace('</body>',homepageTemplate(homepage)+'<a class="action" href="./listings.html">Product &amp; Store visual review</a> <a class="action" href="./services-review.html">Service Provider visual review</a></body>');
  const files=new Map([
   ['index.html',html],
   ['listings.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -52,6 +61,15 @@ export async function buildVisualReview({readSource,sha,date,out}){
 ${listings.markup}</body></html>`],
   ['listings.css',listings.styles+'\n'+await readSource('scripts/visual-review-listings.css')],
   ['listings.mjs',(await readSource('scripts/visual-review-listings-client.mjs'))+'\n'+listings.renderers],
+  ['services-review.html',`<!doctype html><html lang="gu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="robots" content="noindex, nofollow">
+<title>OLDX · Service Provider visual review</title><link rel="stylesheet" href="./services-review.css"><script type="module" src="./services-review.mjs"></script></head>
+<body>${notice}<header><div class="nav"><a class="btn" href="./index.html">OLDX</a></div><div class="locale-bar">
+<label for="reviewLocale" data-i18n="languageLabel">Language</label><select id="reviewLocale"><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option><option value="en">English</option></select>
+<label for="reviewScenario">Discovery fixture</label><select id="reviewScenario"><option value="ready">Loaded</option><option value="loading">Loading</option><option value="empty">Empty</option><option value="error">Error and retry</option></select></div></header>
+<main><p id="reviewReadStatus" role="status"></p><button type="button" id="reviewRetry" class="btn" hidden data-i18n="market.provider.reload">Reload providers</button>${services.markup}</main></body></html>`],
+  ['services-review.css',services.styles],
+  ['services-review.mjs',servicesClient+'\n'+services.renderers],
   ['visual-review.css','.demo-notice code{overflow-wrap:anywhere}#oldxHomeHero{background:#102a43}#oldxHomeHero .toolbar{margin-bottom:0}'],
   ['404.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Not found</title><h1>Preview page not found</h1><a href="/">Return to synthetic preview</a>'],
   ['robots.txt','User-agent: *\nDisallow: /\n'],
