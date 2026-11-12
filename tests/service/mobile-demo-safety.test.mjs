@@ -15,7 +15,10 @@ test('visual-review packaging rejects unsafe material before writing',async()=>{
   await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path))+
    (path==='features/mobile-demo/demo.mjs'?injection:'')}),new RegExp(error));
  }
- await assert.rejects(buildVisualReview({...options,readSource:path=>path==='index.html'?'':readSource(path)}),/Homepage markup changed/);
+ await assert.rejects(buildVisualReview({...options,readSource:path=>path==='index.html'?'':readSource(path)}),/Listing review source changed/);
+ await assert.rejects(buildVisualReview({...options,readSource:async path=>(await readSource(path)).replace(
+  'onclick="closeProductDetailView()"','onfocus="alert(1)"'
+ )}),/Unexpected runtime connection or handler/);
 });
 
 test('local demo server serves only reviewed browser assets and rejects private files',async()=>{

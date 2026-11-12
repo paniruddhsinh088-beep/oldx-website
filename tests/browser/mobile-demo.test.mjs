@@ -84,6 +84,51 @@ test('packaged visual review uses real homepage markup and isolated synthetic jo
     await page.goto(base+'/'+route);await page.locator('main h1').waitFor();
     assert.equal(await page.locator('main form, nav a[href="#admin"]').count(),0);
    }
+   await page.goto(base);
+   await page.getByRole('link',{name:'Product & Store visual review'}).click();
+   await page.locator('#storeProductsGrid [data-card-title]').first().waitFor();
+   assert.match(await page.getByRole('note').textContent(),new RegExp(sha));
+   const cards=page.locator('#reviewCards'),store=page.locator('#storePublicWrap');
+   assert.ok(await cards.locator('img').first().evaluate(image=>image.complete&&image.naturalWidth>0));
+   await cards.locator('[data-image-placeholder]').waitFor();
+   assert.equal(await cards.locator('[data-card-title]').nth(1).textContent(),
+    'વેચનારનુંમૂળલખાણविक्रेताकामूलपाठSellerOriginalText'.repeat(5));
+   const scenario=page.locator('#reviewScenario'),gallery=page.locator('#detailImgBadge');
+   for(const width of [320,375,768,1280]){
+    await page.setViewportSize({width,height:850});
+    for(const locale of ['gu','hi','en']){
+     await page.locator('#reviewLocale').selectOption(locale);
+     await page.waitForFunction(code=>document.documentElement.lang===code,locale);
+     await scenario.selectOption('loading');
+     assert.equal(await store.locator('#storeCataloguePaging button').isDisabled(),true);
+     await scenario.selectOption('empty');
+     await page.waitForFunction(()=>document.querySelector('#storeCataloguePaging button').hidden);
+     assert.match(await store.locator('#storeProductsGrid').textContent(),{
+      en:/no products yet/,gu:/હજી કોઈ પ્રોડક્ટ નથી/,hi:/अभी कोई उत्पाद नहीं/
+     }[locale]);
+     await scenario.selectOption('error');
+     const retry=store.locator('#storeCataloguePaging button');
+     await page.waitForFunction(()=>!document.querySelector('#storeCataloguePaging button').disabled);
+     assert.match(await store.locator('#storeProductsCount').textContent(),{
+      en:/Could not load/,gu:/લોડ થઈ શકી નથી/,hi:/लोड नहीं हो सके/
+     }[locale]);
+     await retry.press('Enter');
+     await store.locator('[data-store-category="mobiles"]').press('Enter');
+     assert.equal(await store.locator('[data-store-category="mobiles"]').getAttribute('aria-pressed'),'true');
+     assert.equal(await store.locator('[data-card-title]').count(),1);
+     assert.ok((await store.locator('[data-store-category="mobiles"]').boundingBox()).height>=44);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+     await cards.locator('[data-card-title]').first().press('Enter');
+     const catalog=(await import('../../features/i18n/catalogs/'+locale+'.mjs')).default;
+     assert.equal(await gallery.getAttribute('aria-label'),catalog['market.listing.photos']);
+     assert.ok((await gallery.boundingBox()).height>=44);
+     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+     await gallery.press('Enter');
+     assert.equal(await page.locator('#imageLightboxModal').isVisible(),true);
+     await page.keyboard.press('Escape');
+     await page.locator('[data-review-action="back"]').press('Enter');
+    }
+   }
    assert.deepEqual(unexpected,[]);
    assert.deepEqual(errors,[]);
    assert.equal(await page.evaluate(()=>localStorage.length+sessionStorage.length),0);

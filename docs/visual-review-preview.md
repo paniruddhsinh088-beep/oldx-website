@@ -8,7 +8,9 @@ From the review repository, run `node scripts/build-visual-review.mjs HEAD` or s
 
 For local visual inspection, serve the printed directory on loopback only. With Python installed, run `python -m http.server 8080 --bind 127.0.0.1 --directory "<printed directory>"` and open `http://127.0.0.1:8080/` in the same environment. The HTML enforces its CSP locally. The browser regression also serves the artifact with the Pages header rules.
 
-The preview reuses the homepage hero headings and search control with the existing mobile-demo styling, fixture cards, Store, Provider and Chat views. It omits live account, admin, upload and location controls. Search and Chat operate on synthetic data in memory. The rest of the live homepage shell, production styles and end-to-end integrations are outside this review surface.
+The homepage keeps the existing synthetic Product, Store, Provider and Chat journeys. Its **Product & Store visual review** link opens `/listings.html`, which uses the real Product Card, detail/gallery and Storefront/Catalogue renderers from `index.html`. It includes a valid sample image, a failed-image fallback and long seller text. Use the catalogue fixture selector to inspect loaded, loading, empty and error states, then retry or filter by category. Data and interactions stay in memory.
+
+The listing page copies the authored homepage CSS and uses local equivalents for the extracted Tailwind layout utilities. Fonts, icons, and some utility styling differ from the real website. The visual review omits live maps, contact actions, accounts, admin and uploads. The regular synthetic demo still offers in-memory Chat.
 
 Run `node --test tests/service/mobile-demo-safety.test.mjs` and `node --test tests/browser/mobile-demo.test.mjs`. Set `CHROMIUM_PATH` to a local Chrome or Chromium executable when needed.
 

@@ -2,11 +2,12 @@ import {execFileSync} from 'node:child_process';
 import {lstat,mkdir,mkdtemp,writeFile} from 'node:fs/promises';
 import {dirname,join} from 'node:path';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {listingReviewSource} from './visual-review-listings.mjs';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
 const assets=[
  'features/mobile-demo/demo.mjs','features/mobile-demo/copy.mjs','features/mobile-demo/demo.css','features/mobile-demo/sample-art.svg',
- 'features/i18n/i18n.mjs',...['en','gu','hi'].map(lang=>'features/i18n/catalogs/'+lang+'.mjs'),
+ 'features/i18n/i18n.mjs','features/i18n/dom.mjs',...['en','gu','hi'].map(lang=>'features/i18n/catalogs/'+lang+'.mjs'),
  'features/stores/preview-fixtures.mjs','features/stores/store-catalogue.mjs',
  'features/service-providers/preview-fixtures.mjs','features/service-providers/provider-public-profile.mjs',
  'features/service-providers/provider-public-card.mjs','features/service-providers/service-selections.mjs',
@@ -29,14 +30,28 @@ function homepageTemplate(homepage){
 export async function buildVisualReview({readSource,sha,date,out}){
  if(!/^[a-f0-9]{40}$/.test(sha)||!/^\d{4}-\d{2}-\d{2}$/.test(date))throw new Error('Invalid source provenance');
  const demo=await readSource('mobile-demo.html');
+ const homepage=await readSource('index.html');
+ const listings=listingReviewSource(homepage);
+ const notice=`<div class="demo-notice" role="note"><strong>SYNTHETIC PREVIEW</strong> · Non-production · Source <code>${sha}</code> · Build ${date}</div>`;
  if(!demo.includes('<div id="demoNotice"')||!demo.includes('</head>')||!demo.includes('</body>'))throw new Error('Demo shell changed; review the visual preview build');
  const html=demo
   .replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/,`<meta http-equiv="Content-Security-Policy" content="${csp}">`)
   .replace('</head>','<meta name="robots" content="noindex, nofollow"><link rel="stylesheet" href="./visual-review.css"></head>')
-  .replace('<div id="demoNotice"',`<div class="demo-notice" role="note"><strong>SYNTHETIC PREVIEW</strong> · Non-production · Source <code>${sha}</code> · Build ${date}</div><div id="demoNotice"`)
-  .replace('</body>',homepageTemplate(await readSource('index.html'))+'</body>');
+  .replace('<div id="demoNotice"',notice+'<div id="demoNotice"')
+  .replace('</body>',homepageTemplate(homepage)+'<a class="action" href="./listings.html">Product &amp; Store visual review</a></body>');
  const files=new Map([
   ['index.html',html],
+  ['listings.html',`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="${csp}"><meta name="robots" content="noindex, nofollow">
+<title>OLDX · Product and Store visual review</title><link rel="stylesheet" href="./features/mobile-demo/demo.css">
+<link rel="stylesheet" href="./visual-review.css"><link rel="stylesheet" href="./listings.css"><script type="module" src="./listings.mjs"></script></head>
+<body>${notice}<div class="review-toolbar"><a href="./index.html">Back to synthetic demo</a>
+<label><span data-i18n="market.language">Language</span><select id="reviewLocale"><option value="en">English</option><option value="gu">ગુજરાતી</option><option value="hi">हिन्दी</option></select></label>
+<label>Catalogue fixture<select id="reviewScenario"><option value="ready">Loaded</option><option value="loading">Loading</option><option value="empty">Empty</option><option value="error">Error and retry</option></select></label></div>
+<main id="reviewOverview"><h1 data-i18n="market.product.discover">Browse products</h1><div id="reviewCards"></div><h2 data-i18n="market.home.store">Store</h2><section id="storePublicWrap"></section></main>
+${listings.markup}</body></html>`],
+  ['listings.css',listings.styles+'\n'+await readSource('scripts/visual-review-listings.css')],
+  ['listings.mjs',(await readSource('scripts/visual-review-listings-client.mjs'))+'\n'+listings.renderers],
   ['visual-review.css','.demo-notice code{overflow-wrap:anywhere}#oldxHomeHero{background:#102a43}#oldxHomeHero .toolbar{margin-bottom:0}'],
   ['404.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="robots" content="noindex"><title>Not found</title><h1>Preview page not found</h1><a href="/">Return to synthetic preview</a>'],
   ['robots.txt','User-agent: *\nDisallow: /\n'],
