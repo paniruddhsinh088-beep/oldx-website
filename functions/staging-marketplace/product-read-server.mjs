@@ -55,7 +55,7 @@ export function createProductReadServer({enabled=false,runtime}={}){
     chunks.push(chunk);
    }
    const body=Buffer.concat(chunks,bytes),parsed=parseBoundedJson(body,{maxBytes});
-   if(parsed.ok&&parsed.value.kind!=='product')return send(failure(400,'INVALID_REQUEST'));
+   if(!parsed.ok||parsed.value===null||typeof parsed.value!=='object'||Array.isArray(parsed.value)||parsed.value.kind!=='product')return send(failure(400,'INVALID_REQUEST'));
    return send(await runtime.handle(route,{method:req.method,headers,body},{signal:controller.signal}));
   }catch{return send(failure(503,'ENFORCEMENT_UNAVAILABLE'));}
  });

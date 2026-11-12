@@ -45,6 +45,24 @@ test('owner HTTP boundary is default-off and exposes one bounded read route',asy
  await assert.rejects(listenProductReadServer(createProductReadServer(),{port:'bad'}),/Invalid PORT/);
 });
 
+test('owner HTTP rejects malformed and non-object JSON before private runtime access',async()=>{
+ let calls=0;
+ const server=createProductReadServer({enabled:true,runtime:{async handle(){calls++;return {status:200,body:{ok:true}};}}});
+ server.listen(0,'127.0.0.1');await once(server,'listening');
+ try{
+  const origin='http://127.0.0.1:'+server.address().port+'/api/staging/marketplace/owner';
+  for(const body of ['{','null','[]','"product"','42','true','{"kind":"store"}']){
+   const response=await fetch(origin,{method:'POST',headers:{'Content-Type':'application/json'},body});
+   assert.equal(response.status,400,body);
+   assert.deepEqual(await response.json(),{ok:false,error:{code:'INVALID_REQUEST'}});
+  }
+  assert.equal(calls,0);
+  const valid=await fetch(origin,{method:'POST',headers:{'Content-Type':'application/json'},body:'{"kind":"product","id":"fixture"}'});
+  assert.equal(valid.status,200);
+  assert.equal(calls,1);
+ }finally{await drainProductReadServer(server);}
+});
+
 test('drain stops new connections and lets an in-flight owner request finish',async()=>{
  let entered,release;
  const received=new Promise(resolve=>entered=resolve);
