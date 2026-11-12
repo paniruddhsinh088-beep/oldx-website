@@ -1583,11 +1583,8 @@
                 );
             }
 
-            if ("Notification" in window && Notification.permission !== "granted") {
-                Notification.requestPermission().then(permission => {
-                    if (permission === "granted") { console.log("Push Notification permission granted."); }
-                });
-            }
+            // Do not request browser notification permission on page load.
+            // Enable only through an explicit user action after a verified notification inbox exists.
         }
 
         function autoDetectUserLocation() {
