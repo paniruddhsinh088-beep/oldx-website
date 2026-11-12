@@ -1523,7 +1523,7 @@
             renderHomeCategories();
             loadHomeStores();
             initCustomPickers();
-            autoDetectUserLocation();
+            detectPreviouslyGrantedLocation();
             initNativePermissionsAndBackButton();
             initInfiniteScrollObserver();
         });
@@ -1575,16 +1575,19 @@
                 }
             });
 
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => { console.log("Geolocation permission granted successfully."); },
-                    (error) => { console.log("Geolocation permission denied or not available:", error.message); },
-                    { timeout: 10000, maximumAge: 60000 }
-                );
-            }
-
+            // Location permission is checked separately without prompting on startup.
             // Do not request browser notification permission on page load.
             // Enable only through an explicit user action after a verified notification inbox exists.
+        }
+
+        function detectPreviouslyGrantedLocation() {
+            // Browser startup must not prompt for precise location.
+            if (!navigator.geolocation || !navigator.permissions?.query) return;
+            navigator.permissions.query({ name: 'geolocation' }).then(permission => {
+                if (permission.state === 'granted') autoDetectUserLocation();
+            }).catch(() => {
+                // Browsers without a supported permissions query use the manual state picker.
+            });
         }
 
         function autoDetectUserLocation() {
@@ -1862,13 +1865,6 @@
         
         let userCategoryViews = JSON.parse(localStorage.getItem('oldx_cat_views') || '{}');
         let userCurrentLocation = { lat: 22.3039, lng: 70.8022 };
-
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(pos => {
-                userCurrentLocation.lat = pos.coords.latitude;
-                userCurrentLocation.lng = pos.coords.longitude;
-            });
-        }
 
         let createAdMap = null;
         let createAdMarker = null;
