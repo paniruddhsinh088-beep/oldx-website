@@ -42,7 +42,9 @@ jobs:
         run: npm run test:firebase-config
 
       - name: Run dependency-free safety tests
-        run: npm run test:emulator:safety
+        run: |
+          npm run test:emulator:safety
+          node --test scripts/check-staging-deny-all-rules.test.mjs
 
       - name: Run synthetic product privacy migration tests
         run: npm run test:product-migration

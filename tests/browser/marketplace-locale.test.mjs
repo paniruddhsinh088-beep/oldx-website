@@ -201,6 +201,26 @@ test('real Product Chat and Inbox expose localized mobile controls and keyboard 
  }finally{await context.close();}
 });
 
+test('editing an owned public Store opens a freshly loaded owner form',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  await page.evaluate(()=>{
+   const collection=db.collection;
+   db.collection=name=>name!=='stores'?collection(name):{...collection(name),doc:uid=>({
+    ...collection(name).doc(uid),get:async()=>({exists:true,data:()=>({shopName:'Fixture shop',mobile:'0123456789'})})
+   })};
+   setFixtureAccount({uid:'owner'});
+   location.hash='#store-owner';
+  });
+  await page.locator('#storePublicWrap button[onclick="editMyStore()"]').click();
+  assert.equal(new URL(page.url()).hash,'#store');
+  await page.waitForFunction(()=>document.getElementById('storeMobile').value==='0123456789');
+  assert.equal(await page.locator('#saveStoreBtn').isEnabled(),true);
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('real Store owner form clears private state before the next account read',async()=>{
  const {context,page,errors}=await fullHomepage();
  try{

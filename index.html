@@ -4487,7 +4487,7 @@
             document.getElementById('saveStoreBtn').textContent = 'Save Store';
         }
 
-        async function openOwnStorePage() {
+        async function openOwnStorePage(editing = false) {
             const generation = ++storePageReadGeneration;
             const user = window.currentUser;
             if (!user) { openAuthModal(); return; }
@@ -4520,7 +4520,7 @@
                 if (d.shopName) {
                     document.getElementById('storePageHeading').textContent = 'My Store';
                     document.getElementById('saveStoreBtn').textContent = 'Update Store';
-                    renderOwnStoreSummary();
+                    if (!editing) renderOwnStoreSummary();
                 } else document.getElementById('saveStoreBtn').textContent = 'Save Store';
             } catch (err) {
                 if (!current()) return;
@@ -4898,7 +4898,21 @@
         }
 
         function escapeStoreHtml(value) { return String(value == null ? '' : value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
-        function editMyStore() { if (!window.currentUser || !currentStoreData || currentStoreData.uid !== window.currentUser.uid) return; document.getElementById('storePublicWrap').style.display='none'; document.getElementById('storeFormWrap').style.display='block'; document.getElementById('storeShareTopBtn').style.display='none'; renderStoreCategoryChoices(currentStoreData.categories || []); setTimeout(initStoreMapPicker, 200); }
+        function editMyStore() {
+            if (!window.currentUser || currentStoreData?.uid !== window.currentUser.uid) return;
+            if (window.location.hash !== '#store') {
+                history.pushState(null, '', '#store');
+                storeCatalogueGeneration++;
+                storeCatalogueState = null;
+                openOwnStorePage(true);
+                return;
+            }
+            document.getElementById('storePublicWrap').style.display = 'none';
+            document.getElementById('storeFormWrap').style.display = 'block';
+            document.getElementById('storeShareTopBtn').style.display = 'none';
+            renderStoreCategoryChoices(currentStoreData.categories || []);
+            setTimeout(initStoreMapPicker, 200);
+        }
         async function shareCurrentStore() {
             const data = currentStoreData;
             if (!data || !data.uid) { showCustomAlert('Store unavailable', 'Open your Store first to share it.', 'error'); return; }
