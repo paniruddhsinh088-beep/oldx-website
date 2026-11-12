@@ -2313,7 +2313,23 @@
                 closeInboxModal();
             }
             window.currentUser = user;
-            if (previousUser !== user) listenToProductsFromFirebase();
+            if (previousUser !== user) {
+                if (window.location.hash === '#store') {
+                    if (!user) {
+                        resetStoreOwnerForm();
+                        currentStoreData = null;
+                        document.getElementById('storePublicWrap').replaceChildren();
+                    }
+                    handleHashChange();
+                } else if (previousUser) {
+                    resetStoreOwnerForm();
+                    if (!window.location.hash.startsWith('#store-')) {
+                        currentStoreData = null;
+                        document.getElementById('storePublicWrap').replaceChildren();
+                    }
+                }
+                listenToProductsFromFirebase();
+            }
             refreshStoreHeader(user);
             renderHomepageAuth(user);
             const adminBtn = document.getElementById('headerAdminBtn');
@@ -4454,19 +4470,41 @@
             });
         }
 
+        function resetStoreOwnerForm() {
+            document.getElementById('createStoreForm').reset();
+            document.getElementById('storeWhatsapp').readOnly = false;
+            const preview = document.getElementById('storePhotoPreview');
+            preview.removeAttribute('src');
+            preview.style.display = 'none';
+            document.getElementById('storeSaveNotice').style.display = 'none';
+            document.getElementById('storeCoordsText').textContent = '';
+            document.getElementById('storeCategoriesList').replaceChildren();
+            if (storeMapInstance) storeMapInstance.remove();
+            storeMapInstance = null;
+            storeMapMarker = null;
+            storeMapCoords = { lat: 23.0225, lng: 72.5714 };
+            document.getElementById('saveStoreBtn').disabled = true;
+            document.getElementById('saveStoreBtn').textContent = 'Save Store';
+        }
+
         async function openOwnStorePage() {
             const generation = ++storePageReadGeneration;
             const user = window.currentUser;
             if (!user) { openAuthModal(); return; }
+            const current = () => generation === storePageReadGeneration && window.currentUser === user;
+            resetStoreOwnerForm();
+            currentStoreData = null;
             document.getElementById('storePageHeading').textContent = 'My Store';
             document.getElementById('storeShareTopBtn').style.display = 'none';
             document.getElementById('storeFormWrap').style.display = 'block';
-            document.getElementById('storePublicWrap').style.display = 'none';
+            const summary = document.getElementById('storePublicWrap');
+            summary.replaceChildren();
+            summary.style.display = 'none';
             // Render category choices immediately, even if the Firestore store read is denied.
             renderStoreCategoryChoices();
             try {
                 const snap = await db.collection('stores').doc(user.uid).get();
-                if (generation !== storePageReadGeneration || window.currentUser !== user) return;
+                if (!current()) return;
                 currentStoreData = snap.exists ? { ...snap.data(), uid: user.uid } : null;
                 const d = currentStoreData || {};
                 document.getElementById('storeShopName').value = d.shopName || '';
@@ -4478,14 +4516,14 @@
                 if (d.photoURL) { const im = document.getElementById('storePhotoPreview'); im.src = d.photoURL; im.style.display = 'block'; }
                 renderStoreCategoryChoices(d.categories || []);
                 storeMapCoords = d.coords && Number.isFinite(d.coords.lat) && Number.isFinite(d.coords.lng) ? d.coords : { lat: 23.0225, lng: 72.5714 };
-                setTimeout(initStoreMapPicker, 250);
+                setTimeout(() => { if (current()) initStoreMapPicker(); }, 250);
                 if (d.shopName) {
                     document.getElementById('storePageHeading').textContent = 'My Store';
                     document.getElementById('saveStoreBtn').textContent = 'Update Store';
                     renderOwnStoreSummary();
                 } else document.getElementById('saveStoreBtn').textContent = 'Save Store';
             } catch (err) {
-                if (generation !== storePageReadGeneration || window.currentUser !== user) return;
+                if (!current()) return;
                 console.error('Store load error:', err);
                 // Keep the form and map usable even when Firestore denies reading this user's store.
                 currentStoreData = null;
@@ -4499,9 +4537,9 @@
                 document.getElementById('storePhotoPreview').style.display = 'none';
                 document.getElementById('saveStoreBtn').textContent = 'Save Store';
                 renderStoreCategoryChoices();
-                setTimeout(initStoreMapPicker, 250);
+                setTimeout(() => { if (current()) initStoreMapPicker(); }, 250);
                 showCustomAlert('Store Read Error', 'Could not load the existing store information from Firebase. The map has been opened. To save, Firestore Rules must allow the signed-in user to access their own stores/{uid} document.', 'error');
-            }
+            } finally { if (current()) document.getElementById('saveStoreBtn').disabled = false; }
         }
 
         function initStoreMapPicker() {
@@ -4524,6 +4562,8 @@
         });
 
         function locateStoreOnMap() {
+            const generation = storePageReadGeneration, user = window.currentUser;
+            const current = () => generation === storePageReadGeneration && window.currentUser === user;
             if (!navigator.geolocation) {
                 showCustomAlert('GPS unavailable', 'GPS/location services are not available in this browser.', 'error');
                 return;
@@ -4535,6 +4575,7 @@
             const coordsText = document.getElementById('storeCoordsText');
             coordsText.textContent = 'Getting your GPS location...';
             navigator.geolocation.getCurrentPosition(pos => {
+                if (!current()) return;
                 const lat = pos.coords.latitude;
                 const lng = pos.coords.longitude;
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
@@ -4552,6 +4593,7 @@
                 }
                 coordsText.textContent = `Latitude: ${lat.toFixed(6)}, Longitude: ${lng.toFixed(6)} (GPS accuracy ±${Math.round(pos.coords.accuracy)} m). If the pin is slightly inaccurate, tap the correct place on the map or drag the pin.`;
             }, err => {
+                if (!current()) return;
                 console.error('Store GPS error:', err.code, err.message);
                 const messages = {
                     1: 'Location permission is denied for this website. Open the site settings from your browser address bar and set Location to Allow.',
@@ -4585,6 +4627,10 @@
             event.preventDefault();
             const user = window.currentUser;
             if (!user) { openAuthModal(); return; }
+            const btn = document.getElementById('saveStoreBtn');
+            if (btn.disabled) return;
+            const generation = storePageReadGeneration;
+            const current = () => generation === storePageReadGeneration && window.currentUser === user;
             const shopName = document.getElementById('storeShopName').value.trim();
             const ownerName = document.getElementById('storeOwnerName').value.trim();
             const address = document.getElementById('storeAddress').value.trim();
@@ -4596,7 +4642,7 @@
             if (!categories.length) { showCustomAlert('Categories required', 'Please select at least one product category.', 'error'); return; }
             if (!currentStoreData?.photoURL && !file) { showCustomAlert('Photo required', 'Please upload a photo of your store.', 'error'); return; }
             if (!Number.isFinite(storeMapCoords.lat) || !Number.isFinite(storeMapCoords.lng)) { showCustomAlert('Location required', 'Please select your store location on the map.', 'error'); return; }
-            const btn = document.getElementById('saveStoreBtn'); btn.disabled = true; btn.textContent = 'Saving...';
+            btn.disabled = true; btn.textContent = 'Saving...';
             try {
                 let photoURL = currentStoreData?.photoURL || '';
                 if (file) {
@@ -4619,9 +4665,11 @@
                     }
                     photoURL = cloudinaryResult.secure_url;
                 }
+                if (!current()) return;
                 const data = { uid: user.uid, shopName, ownerName, address, mobile, whatsapp, sameAsMobile, photoURL, categories, coords: storeMapCoords, updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
                 if (!currentStoreData) data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                 await storeOperationTimeout(db.collection('stores').doc(user.uid).set(data, { merge: true }), 'Firestore save');
+                if (!current()) return;
                 currentStoreData = { ...currentStoreData, ...data };
                 refreshStoreHeader(user);
                 closeCustomAlert();
@@ -4633,9 +4681,10 @@
                 }
                 renderOwnStoreSummary();
             } catch (err) {
+                if (!current()) return;
                 console.error('Save store failed:', err);
                 showCustomAlert('Save Failed', 'Could not save the store. Please check the Cloudinary upload and Firestore rules/configuration. ' + (err.message || ''), 'error');
-            } finally { btn.disabled = false; btn.textContent = currentStoreData?.shopName ? 'Update Store' : 'Save Store'; }
+            } finally { if (current()) { btn.disabled = false; btn.textContent = currentStoreData?.shopName ? 'Update Store' : 'Save Store'; } }
         }
 
         function renderOwnStoreSummary() {

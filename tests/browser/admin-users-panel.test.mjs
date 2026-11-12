@@ -20,10 +20,10 @@ test('Admin user directory is opt-in, paged and clears private rows on account c
    const {mountAdminUsers}=await import('/features/admin/users-panel.mjs');
    let observe;
    const auth={app:{options:{projectId:'oldx-staging'}},currentUser:null,onIdTokenChanged(fn){observe=fn;fn(null);return ()=>{};}};
-   window.calls=[];
+   window.calls=[];window.directoryRevoked=false;
    const fetchImpl=async(url,options)=>{
     calls.push(url);
-    if(options.headers.Authorization!=='Bearer admin.fixture.token')return {ok:false,status:403,json:async()=>({ok:false})};
+    if(directoryRevoked||options.headers.Authorization!=='Bearer admin.fixture.token')return {ok:false,status:403,json:async()=>({ok:false})};
     if(url.includes('pageToken='))return new Promise(resolve=>window.releasePage=()=>resolve({ok:true,status:200,json:async()=>({ok:true,data:{items:[{displayName:'Stale private row'}]}})}));
     return {ok:true,status:200,json:async()=>({ok:true,data:{items:[{displayName:'મૂળ हिन्दी <script>',status:'active',email:'never-render'}],nextPageToken:'signed.page'}})};
    };
@@ -36,6 +36,12 @@ test('Admin user directory is opt-in, paged and clears private rows on account c
   await page.getByText('મૂળ हिन्दी <script>',{exact:true}).waitFor();
   assert.equal(await page.getByText('never-render').count(),0);
   assert.deepEqual(await page.evaluate(()=>calls),['/api/admin/users?pageSize=20']);
+  await page.evaluate(()=>{directoryRevoked=true;window.dispatchEvent(new Event('focus'));});
+  assert.equal(await page.locator('#adminUsersTableBody tr').count(),0,'refocus clears previously authorized rows before revalidation');
+  await page.getByText('User directory access denied.').waitFor();
+  assert.equal(await page.getByRole('button',{name:'Next page'}).isHidden(),true);
+  await page.evaluate(()=>{directoryRevoked=false;window.dispatchEvent(new Event('focus'));});
+  await page.getByText('મૂળ हिन्दी <script>',{exact:true}).waitFor();
   await page.getByRole('button',{name:'Next page'}).click();
   await page.waitForFunction(()=>typeof releasePage==='function');
   await page.evaluate(()=>{switchAdmin('ordinary');releasePage();});

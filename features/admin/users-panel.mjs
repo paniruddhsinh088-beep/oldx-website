@@ -61,8 +61,8 @@ function mountAdminList({enabled=false,root=document,auth,fetchImpl,products=fal
  view.addEventListener('pagehide',clear);
  const restore=event=>{if(event.persisted&&session)load();};
  view.addEventListener('pageshow',restore);
- const revalidate=event=>{if(products&&event.target===view&&session)load();};
- if(products)view.addEventListener('focus',revalidate);
+ const revalidate=event=>{if(event.target===view&&session)load();};
+ view.addEventListener('focus',revalidate);
  return Object.freeze({destroy(){ports.destroy();clear();next.remove();if(products)status.remove();view.removeEventListener('focus',revalidate);view.removeEventListener('pagehide',clear);view.removeEventListener('pageshow',restore);}});
 }
 

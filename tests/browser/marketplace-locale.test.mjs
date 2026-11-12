@@ -201,6 +201,34 @@ test('real Product Chat and Inbox expose localized mobile controls and keyboard 
  }finally{await context.close();}
 });
 
+test('real Store owner form clears private state before the next account read',async()=>{
+ const {context,page,errors}=await fullHomepage();
+ try{
+  await page.goto(origin+'/homepage-fixture');
+  await page.evaluate(()=>{
+   const collection=db.collection;
+   db.collection=name=>name!=='stores'?collection(name):{...collection(name),doc:uid=>{
+    const ref=collection(name).doc(uid);
+    return {...ref,get:()=>uid==='first-owner'
+     ?Promise.resolve({exists:true,data:()=>({mobile:'0123456789',address:'મૂળ हिन्दी address'})})
+     :(window.pendingStoreRead??=new Promise(resolve=>{window.finishStoreRead=()=>resolve({exists:false});}))};
+   }};
+   setFixtureAccount({uid:'first-owner'});
+   location.hash='#store';
+  });
+  const mobile=page.locator('#storeMobile'),address=page.locator('#storeAddress');
+  await page.waitForFunction(()=>document.getElementById('storeMobile').value==='0123456789');
+  await page.evaluate(()=>setFixtureAccount({uid:'second-owner'}));
+  assert.equal(await mobile.inputValue(),'');
+  assert.equal(await address.inputValue(),'');
+  assert.equal(await page.locator('#saveStoreBtn').isDisabled(),true);
+  await page.evaluate(()=>finishStoreRead());
+  await page.waitForFunction(()=>!document.getElementById('saveStoreBtn').disabled);
+  assert.equal(await mobile.inputValue(),'');
+  assert.deepEqual(errors,[]);
+ }finally{await context.close();}
+});
+
 test('full homepage starts without requesting the unused Firebase Storage SDK',async()=>{
  const {context,page,intercepted,errors}=await fullHomepage();
  try{
