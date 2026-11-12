@@ -35,7 +35,7 @@ export function listingReviewSource(homepage){
  const withoutStorage=source=>replace(source,/const storageKey = getSavedAdsStorageKey\(\);\s*const rawList = JSON\.parse\(localStorage\.getItem\(storageKey\) \|\| '\[\]'\);/,
   'const rawList = [];');
  let detail=withoutStorage(section(homepage,'        function renderProductDetailView(','        function shareProductLink('));
- detail=replace(detail,/            const phone = p\.phone[\s\S]*?(?=        \}\s*let lightboxCurrentIndex)/,'');
+ detail=replace(detail,/            const phone = productContactNumber\(p\.phone\);[\s\S]*?(?=        \}\s*let lightboxCurrentIndex)/,'');
  detail=replace(detail,"document.getElementById('imageLightboxModal').style.display = 'flex';","document.getElementById('imageLightboxModal').hidden = false;");
  detail=replace(detail,"document.getElementById('imageLightboxModal').style.display = 'none';","document.getElementById('imageLightboxModal').hidden = true;");
  let card=withoutStorage(section(homepage,'        function createProductCard(','    </script>'));
