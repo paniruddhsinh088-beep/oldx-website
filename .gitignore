@@ -4,5 +4,6 @@
 # Local dependencies, generated build output and emulator diagnostics
 /node_modules/
 /public/
+/visual-review/
 /.firebase/
 /*-debug.log
