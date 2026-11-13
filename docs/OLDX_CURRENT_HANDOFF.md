@@ -554,3 +554,7 @@ Owner-verified Linux journal result: 4 PASS, 0 FAIL. This supersedes the Windows
 ## 2026-11-14 — Phase B final identity checks
 
 Offline acceptance now checks the dedicated Google caller and exact staging Firebase identities before transport. The read-only configuration report distinguishes configuration drift from missing evidence and keeps hosted acceptance, rollback, cleanup, and effective permissions unverified. Node 24 affected offline suites: 16 passed, zero failed or skipped. No live checks or mutations ran. The hosted keyless transport and approved rollback execution remain open. Production HOLD / NO-GO.
+
+## 2026-11-14 — Hosted keyless transport source
+
+Implemented the hard-disabled hosted Owner Read adapter and IAM Credentials token exchange in the existing acceptance module. Node 24 mocked suite: 7 passed, 0 failed, 0 skipped. No hosted requests, token minting, fixture operations or cloud changes occurred. The exact operator credential source, live audience, invoker and database IAM, revision mapping and edge denial format still need independent verification before supervised execution. Production HOLD / NO-GO.

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {runOwnerReadAcceptance} from '../../scripts/phase-b-owner-read-acceptance.mjs';
+import {runOwnerReadAcceptance, runHostedOwnerReadAcceptance, simulateKeylessOwnerReadAcceptance} from '../../scripts/phase-b-owner-read-acceptance.mjs';
 import {privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
 
 const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
@@ -90,4 +90,87 @@ test('wrong origin or shared identity cannot send requests and optional probes r
   }
   const result = await runOwnerReadAcceptance({...inputs, send});
   assert.deepEqual(result.deferred, ['wrong-project', 'quota-limit', 'quota-failure']);
+});
+
+const hosted = {...inputs, projectId: 'oldx-staging', getOperatorAccessToken: async () => 'synthetic-access-token'};
+
+test('keyless transport mints once and keeps operator OAuth separate from hosted headers', async () => {
+  const cases = Object.keys(responses).slice(0, 7);
+  let requests = 0;
+  const result = await simulateKeylessOwnerReadAcceptance(hosted, async (url, options) => {
+    assert.equal(options.redirect, 'error');
+    assert.ok(options.signal instanceof AbortSignal);
+    if (requests++ === 0) {
+      assert.equal(url, 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com:generateIdToken');
+      assert.equal(options.method, 'POST');
+      assert.equal(options.headers.Authorization, 'Bearer synthetic-access-token');
+      assert.equal(options.headers['X-Goog-User-Project'], 'oldx-staging');
+      assert.deepEqual(JSON.parse(options.body), {
+        audience: 'https://oldx-owner-read-38472235077.asia-south1.run.app', includeEmail: true,
+      });
+      return Response.json({token: googleToken});
+    }
+    const name = cases[requests - 2];
+    const origin = name.startsWith('disabled') ? inputs.disabledOrigin : inputs.enabledOrigin;
+    const health = ['disabled-health', 'invoker-denied'].includes(name);
+    assert.equal(url, origin + (health ? '/health' : '/api/staging/marketplace/owner'));
+    assert.equal(options.method, health ? 'GET' : 'POST');
+    assert.equal(options.headers['X-Serverless-Authorization'], name === 'invoker-denied' ? undefined : 'Bearer ' + googleToken);
+    const firebase = {'disabled-owner': inputs.ownerToken, owner: inputs.ownerToken,
+      'foreign-buyer': inputs.buyerToken, 'invalid-firebase': 'invalid.test.signature'}[name];
+    assert.equal(options.headers.Authorization, firebase ? 'Bearer ' + firebase : undefined);
+    const [status, body] = responses[name];
+    return body === undefined ? new Response(null, {status}) :
+      Response.json(body, {status, headers: {'cache-control': 'private, no-store'}});
+  });
+  assert.equal(requests, 8);
+  assert.deepEqual(result.passed, cases);
+});
+
+test('hosted gate and invalid project or fixture identity stop before credentials', async () => {
+  const options = {...hosted, getOperatorAccessToken() { assert.fail('Credential callback reached'); }};
+  const noFetch = () => assert.fail('Fetch reached');
+  await assert.rejects(runHostedOwnerReadAcceptance(options), {message: 'HOSTED_ACCEPTANCE_DISABLED'});
+  await assert.rejects(simulateKeylessOwnerReadAcceptance({...options, projectId: 'another-project'}, noFetch),
+    {message: 'INVALID_HOSTED_ACCEPTANCE_INPUT'});
+  await assert.rejects(simulateKeylessOwnerReadAcceptance({...options, buyerToken: inputs.ownerToken}, noFetch),
+    {message: 'FIXTURE_IDENTITY_UNVERIFIED'});
+});
+
+test('mint denial, timeout, wrong claims and malformed responses stop without retry', async () => {
+  const cases = [
+    [() => new Response('private detail', {status: 403}), 'INVOCATION_TOKEN_GENERATION_FAILED'],
+    [() => { throw new DOMException('private timeout detail', 'TimeoutError'); }, 'INVOCATION_TOKEN_GENERATION_FAILED'],
+    [() => new Response('{'), 'INVOCATION_TOKEN_GENERATION_FAILED'],
+    [() => Response.json({token: 'fake.invalid.token'}), 'INVOCATION_AUDIENCE_UNVERIFIED'],
+    [() => {
+      const claims = JSON.parse(Buffer.from(googleToken.split('.')[1], 'base64url'));
+      claims.email = 'wrong@example.invalid';
+      return Response.json({token: 'fake.' + Buffer.from(JSON.stringify(claims)).toString('base64url') + '.token'});
+    }, 'INVOCATION_IDENTITY_UNVERIFIED'],
+  ];
+  for (const [respond, message] of cases) {
+    let count = 0;
+    await assert.rejects(simulateKeylessOwnerReadAcceptance(hosted, () => {
+      count++;
+      return respond();
+    }), {message});
+    assert.equal(count, 1);
+  }
+});
+
+test('hosted transport fails closed on oversized or unexpected denial body', async () => {
+  let count = 0;
+  await assert.rejects(simulateKeylessOwnerReadAcceptance(hosted, () => {
+    switch (++count) {
+      case 1: return Response.json({token: googleToken});
+      case 2: return Response.json({ok: true}, {headers: {'cache-control': 'private, no-store'}});
+      case 3: return Response.json(error('ENFORCEMENT_UNAVAILABLE'),
+        {status: 503, headers: {'cache-control': 'private, no-store'}});
+      default: return Response.json({unexpected: true}, {status: 403});
+    }
+  }), {message: 'ACCEPTANCE_STOPPED_invoker-denied'});
+  assert.equal(count, 4);
+  await assert.rejects(simulateKeylessOwnerReadAcceptance(hosted, () => new Response('x'.repeat(32_769))),
+    {message: 'INVOCATION_TOKEN_GENERATION_FAILED'});
 });
