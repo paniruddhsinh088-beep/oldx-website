@@ -8,7 +8,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {pathToFileURL} from 'node:url';
 import {authUids, database, firestoreDocs, project} from './phase-b-http-contract-review.mjs';
 import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
-import {runOwnerReadAcceptance, ownerReadAudience, readBounded} from './phase-b-owner-read-acceptance.mjs';
+import {runOwnerReadAcceptance, ownerReadAudience, readBounded, inspectAnonymousDenial} from './phase-b-owner-read-acceptance.mjs';
 
 const LIVE_EXECUTION_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
@@ -519,13 +519,10 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
     const response = await request(ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health', {
       method: 'GET', credentials: 'omit', redirect: 'error', signal,
     });
-    const denial = {result: 'BLOCKED', httpStatus: response.status,
-      mediaType: ['text/html', 'text/plain', 'application/json'].find((type) =>
-        response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() === type) ?? 'OTHER_OR_ABSENT'};
-    report.anonymousDenial = denial;
+    report.anonymousDenial = {result: 'BLOCKED', httpStatus: response.status};
     const body = await readBounded(response);
-    denial.body = body.length === 0 ? 'EMPTY' : body.trim() === '' ? 'WHITESPACE_ONLY' : 'NONEMPTY';
-    if (!signal.aborted && !response.redirected && response.status === 403 && body.trim() === '') denial.result = 'MATCH';
+    if (signal.aborted) throw new Error('PROBE_TIMEOUT');
+    report.anonymousDenial = inspectAnonymousDenial(response, body);
   } catch {
     report.anonymousDenial.reason = 'REQUEST_OR_BODY_UNVERIFIED';
   }

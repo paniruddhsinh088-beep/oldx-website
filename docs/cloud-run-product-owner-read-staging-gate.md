@@ -328,3 +328,7 @@ The owner observed the exact IAM Credentials service name in the staging enabled
 ### Persistent enabled-list mismatch
 
 At 2be411c, the exact owner-reported stdout already matched after trimming whitespace. A MISMATCH therefore means the preflight command returned blank stdout after a successful exit. Failed commands and malformed output are UNAVAILABLE. The owner command used a different filter and omitted the limit. The exact cause of the live command returning no row has not been independently reproduced. The staging lookup now uses anchored regex matching without a limit and still requires exactly one matching service name on stdout. It retains the exact staging project and operator scope. Eight focused offline tests passed, covering LF/CRLF, wrong project, empty and duplicate output, and command failure. No cloud requests were made.
+
+### Anonymous denial provenance
+
+Owner evidence showed configuration MATCH and a nonempty HTML 403. That combination does not establish Cloud Run IAM provenance. The existing response contract still blocks nonblank bodies. The preflight and disabled hosted adapter now share a classifier that reports only status, allowlisted media type, body class, redirect status and a normalized Google Frontend server hint. A server hint is corroborating metadata only and does not qualify an unknown body. Review already available response evidence and request-correlated Cloud Run logs through the approved operator process before considering a new format. No additional hosted requests were made.

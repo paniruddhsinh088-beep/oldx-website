@@ -578,3 +578,7 @@ Owner evidence shows iamcredentials.googleapis.com in the oldx-staging enabled-s
 ## Phase B persistent IAM Credentials mismatch
 
 The preflight accepted the owner-reported service name when fed verbatim. The runtime MISMATCH path required blank stdout from the earlier scoped lookup. Replaced its equality filter and result limit with an anchored exact-name filter and no limit. Live behavior of the revised lookup remains unverified. Focused tests passed 8/8. No IAM, token minting or hosted operation ran. Production HOLD / NO-GO.
+
+## Phase B anonymous denial evidence
+
+The observed nonempty HTML 403 remains BLOCKED because IAM provenance was not established from the supplied metadata. Shared offline classification preserves the blank 403 contract and redacts response content. Focused suites passed 16/16. Effective invocation and Firestore IAM remain UNVERIFIED. No hosted or cloud operations ran. Production HOLD / NO-GO.

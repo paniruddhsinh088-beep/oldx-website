@@ -56,6 +56,22 @@ export async function readBounded(response) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
+// Header hints are diagnostic only. An intermediary or application can emit
+// a 403 and the same headers, so these hints cannot qualify a nonblank body.
+export function inspectAnonymousDenial(response, body) {
+  const blank = body.trim() === '';
+  return {
+    result: !response.redirected && response.status === 403 && blank ? 'MATCH' : 'BLOCKED',
+    httpStatus: response.status,
+    mediaType: ['text/html', 'text/plain', 'application/json'].find((type) =>
+      response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() === type) ?? 'OTHER_OR_ABSENT',
+    body: body.length === 0 ? 'EMPTY' : blank ? 'WHITESPACE_ONLY' : 'NONEMPTY',
+    serverHint: response.headers.get('server')?.trim().toLowerCase() === 'google frontend'
+      ? 'GOOGLE_FRONTEND' : 'OTHER_OR_ABSENT',
+    redirected: response.redirected,
+  };
+}
+
 async function runKeylessAcceptance({
   projectId, getOperatorAccessToken, ownerToken, buyerToken,
   disabledOrigin, enabledOrigin, enabledTag,
@@ -96,7 +112,7 @@ async function runKeylessAcceptance({
       if (caseId === 'invoker-denied') {
         // Only the status is consumed by the harness. Never discard unexpected
         // application data and count it as an invocation denial.
-        if (raw.trim() !== '') throw new Error('EDGE_DENIAL_BODY_UNVERIFIED');
+        if (inspectAnonymousDenial(response, raw).result !== 'MATCH') throw new Error('EDGE_DENIAL_UNVERIFIED');
         return {status: response.status};
       }
       return {status: response.status, cacheControl: response.headers.get('cache-control'), body: JSON.parse(raw)};

@@ -243,3 +243,19 @@ test('owner service-name output matches with LF or CRLF and the wrong project ne
   assert.deepEqual(calls, ['config', 'auth']);
   assert.equal(report.configuration, 'BLOCKED');
 });
+
+test('anonymous denial status, redirect and Google Frontend hints cannot qualify an unknown body', async () => {
+  for (const status of [200, 401, 404, 500, 503]) {
+    const report = await inspectPhaseBPreflight(preflightRead(), () => new Response(null, {status}));
+    assert.equal(report.anonymousDenial.result, 'BLOCKED');
+  }
+  const report = await inspectPhaseBPreflight(preflightRead(), () => new Response('<html>Forbidden</html>', {
+    status: 403, headers: {'content-type': 'text/html', server: 'Google Frontend'},
+  }));
+  assert.equal(report.anonymousDenial.result, 'BLOCKED');
+  assert.equal(report.anonymousDenial.serverHint, 'GOOGLE_FRONTEND');
+  assert.doesNotMatch(JSON.stringify(report), /<html>/);
+  const redirected = new Response(null, {status: 403});
+  Object.defineProperty(redirected, 'redirected', {value: true});
+  assert.equal((await inspectPhaseBPreflight(preflightRead(), () => redirected)).anonymousDenial.result, 'BLOCKED');
+});
