@@ -122,9 +122,12 @@ test('public binding, IAM bypass, changed condition, traffic drift or failed rea
 function preflightRead(mutate = () => {}) {
   return (...args) => {
     if (args[0] === 'services') {
-      const data = [{config: {name: 'iamcredentials.googleapis.com'}, state: 'ENABLED'}];
+      assert.ok(args.includes('--enabled') && args.includes('--project=oldx-staging'));
+      assert.ok(args.includes('--filter=config.name=iamcredentials.googleapis.com'));
+      assert.ok(args.includes('--format=value(config.name)'));
+      const data = ['iamcredentials.googleapis.com'];
       mutate('api', data);
-      return JSON.stringify(data);
+      return data.join('\n');
     }
     if (args[2] === 'keys') {
       const data = [{keyType: 'SYSTEM_MANAGED', name: 'private-key-metadata-id'}];
@@ -203,5 +206,23 @@ test('anonymous denial status and body are classified without exposing body cont
     assert.equal(report.anonymousDenial.httpStatus, response.status);
     assert.equal(report.anonymousDenial.body, body);
     assert.ok(!JSON.stringify(report).includes('private detail'));
+  }
+});
+
+test('enabled-only API lookup distinguishes empty, failed and malformed results', async () => {
+  for (const [patch, expected] of [
+    [(data) => { data.pop(); }, 'MISMATCH'],
+    [() => { throw new Error('private upstream detail'); }, 'UNAVAILABLE'],
+    [(data) => { data.push(data[0]); }, 'UNAVAILABLE'],
+    [(data) => { data[0] = 'other.googleapis.com'; }, 'UNAVAILABLE'],
+  ]) {
+    let requests = 0;
+    const report = await inspectPhaseBPreflight(preflightRead((command, data) => {
+      if (command === 'api') patch(data);
+    }), () => { requests++; });
+    assert.equal(report.checks.iamCredentialsApi, expected);
+    assert.equal(report.anonymousDenial.reason, 'CONFIGURATION_NOT_MATCHED');
+    assert.equal(requests, 0);
+    assert.doesNotMatch(JSON.stringify(report), /private upstream detail|other\.googleapis/);
   }
 });

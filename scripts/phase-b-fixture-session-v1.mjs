@@ -384,10 +384,14 @@ export function inspectPhaseBConfiguration(read = gcloud, {preflight = false} = 
   if (preflight) {
     result.operatorCredentialSource = 'GCLOUD_ACTIVE_ACCOUNT';
     result.effectiveTokenMintPermission = 'UNVERIFIED';
-    check('iamCredentialsApi', () => json('services', 'list', '--enabled',
-      '--filter=config.name=iamcredentials.googleapis.com', '--limit=2', ...scoped),
-    (rows) => Array.isArray(rows) && rows.length === 1 &&
-      rows[0]?.config?.name === 'iamcredentials.googleapis.com' && rows[0]?.state === 'ENABLED');
+    const apiName = 'iamcredentials.googleapis.com';
+    check('iamCredentialsApi', () => read('services', 'list', '--enabled',
+      '--filter=config.name=' + apiName, '--limit=2',
+      ...scoped.slice(0, -1), '--format=value(config.name)').trim(), (name) => {
+      // Membership in this enabled-only list is the state evidence.
+      requireSafe(name === '' || name === apiName, 'INVALID_ENABLED_SERVICE_OUTPUT');
+      return name === apiName;
+    });
     for (const [label, email] of [['runtimeKeys', runtime], ['invokerKeys', invoker]]) {
       check(label, () => json('iam', 'service-accounts', 'keys', 'list', '--iam-account=' + email, ...scoped), (keys) => {
         requireSafe(Array.isArray(keys) && keys.every((key) =>

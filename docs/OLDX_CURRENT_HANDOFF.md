@@ -570,3 +570,7 @@ The reported UNVERIFIED audience identifies a pinned status.url mismatch or miss
 ## Phase B audience pin aligned with owner-verified metadata
 
 The verified staging service reports the hash-based hostname. Updated the exact audience and tagged host checks to match that evidence while preserving the IAM, revision and disabled execution gates. The preflight parses JSON; the YAML metadata read was diagnostic only. Focused offline checks passed 23/23. See [staging gate](cloud-run-product-owner-read-staging-gate.md#owner-verified-phase-b-hostname).
+
+## Phase B IAM Credentials API check
+
+Owner evidence shows iamcredentials.googleapis.com in the oldx-staging enabled-services list. The preflight now consumes the exact service-name projection and fails closed on empty, unavailable or malformed output. Focused offline tests passed 7/7. No API, IAM, token or hosted operation ran. Production HOLD / NO-GO.
