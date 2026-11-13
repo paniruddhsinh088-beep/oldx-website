@@ -63,3 +63,79 @@ def classify_recovery(receipt,observed):
     if not receipt['createdAt'] or receipt['createdAt']!=observed.get('createdAt'):
         return 'STOP_CREATION_EVIDENCE_MISSING_OR_MISMATCH'
     return 'PRESENT_MATCHES_RECEIPT_MANUAL_APPROVAL_REQUIRED'
+
+# Explicit finite-state journal transitions. This is an OFFLINE-only journal:
+# transitions never call Firebase and never authorize a deletion.
+ALLOWED_TRANSITIONS = {
+    'INTENT_RECORDED': 'CREATE_UNKNOWN',
+    'CREATE_UNKNOWN': 'CREATED_VERIFIED',
+    'CREATED_VERIFIED': 'DELETE_UNKNOWN',
+    'DELETE_UNKNOWN': 'CLEANUP_VERIFIED',
+}
+
+def transition_receipt(path, expected_state, next_state, *, created_at=None):
+    """Atomically advance one existing private journal; fail closed on mismatch.
+
+    Linux Cloud Shell: advisory flock prevents cooperating writers racing.
+    Durable rename + parent fsync protects completed transitions from crashes,
+    but it CANNOT make a remote Firebase create/delete atomic with a journal.
+    No automated cleanup is performed or implied.
+    """
+    import fcntl
+    import tempfile
+
+    p = pathlib.Path(path)
+    parent = p.parent.resolve(strict=True)
+    if (not stat.S_ISDIR(parent.stat().st_mode) or
+            parent.stat().st_mode & (stat.S_IWGRP | stat.S_IWOTH)):
+        raise ValueError('STOP: unsafe parent')
+    if ALLOWED_TRANSITIONS.get(expected_state) != next_state:
+        raise ValueError('STOP: invalid state transition')
+    lock_path = p.with_name(p.name + '.lock')
+    lock_flags = os.O_RDWR | os.O_CREAT
+    if hasattr(os, 'O_NOFOLLOW'):
+        lock_flags |= os.O_NOFOLLOW
+    lock_fd = os.open(lock_path, lock_flags, 0o600)
+    temp_path = None
+    try:
+        if os.fstat(lock_fd).st_mode & 0o077:
+            raise ValueError('STOP: unsafe lock permissions')
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        previous = read_receipt(p)
+        if previous['state'] != expected_state:
+            raise ValueError('STOP: stale journal state')
+        updated = dict(previous, state=next_state)
+        if next_state == 'CREATED_VERIFIED':
+            if not isinstance(created_at, str) or not created_at:
+                raise ValueError('STOP: missing Auth creation evidence')
+            updated['createdAt'] = created_at
+        elif created_at is not None:
+            raise ValueError('STOP: unexpected timestamp argument')
+        validate(updated)
+        fd, temp_path = tempfile.mkstemp(prefix='.phase-b-journal-', dir=parent)
+        try:
+            os.fchmod(fd, 0o600)
+            with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+                json.dump(updated, handle, sort_keys=True)
+                handle.write('\\n')
+                handle.flush()
+                os.fsync(handle.fileno())
+        except BaseException:
+            raise
+        # The lock covers cooperative transitions; never write another target.
+        os.replace(temp_path, p)
+        temp_path = None
+        directory_fd = os.open(parent, os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0))
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+        return updated
+    finally:
+        if temp_path is not None:
+            try:
+                os.unlink(temp_path)
+            except FileNotFoundError:
+                pass
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
