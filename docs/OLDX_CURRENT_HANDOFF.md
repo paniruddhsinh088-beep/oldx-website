@@ -154,6 +154,16 @@ Yasmin specifically approved the **scope** of two synthetic Auth UID creates and
 
 Documented the blocker and nonmutating context preflight in `docs/phase-b-fixture-execution-review.md` (commit `34df5daec9aa1c5725efc1e5e34a81689b205f71`). Next step: operator read-only context checks and decide, via separate review, secure Firebase Admin credentials + verified manual/automated cleanup path; only then furnish independently reviewed executable create/verify/delete scripts for approval. No cloud mutation, Phase A remains disabled, production HOLD/NO-GO.
 
+## 2026-11-13 23:03 IST — Owner project/ADC help preflight PASS
+
+Owner-provided Cloud Shell screenshot after running strictly non-mutating context checks:
+- `gcloud config get-value project` matched `oldx-staging`.
+- Active `gcloud auth list` account matched Yasmin's expected operator account.
+- Terminal printed `PROJECT_AND_OPERATOR_MATCH` and `ADC_HELP_AVAILABLE_NOT_AUTH_VERIFIED`; `gcloud auth application-default login --help` was available.
+- **Not verified:** usable Firebase Admin Auth credential, Auth create/delete endpoints, Firestore exact-document create/delete, race-safe per-ID cleanup, or any 24-hour automatic/manual cleanup execution.
+
+This check is **not** an ADC login; no new credential was created or verified. Earlier exact Firebase Auth REST lookups remained HTTP 403; Firebase Console UID search showed both test UIDs absent at inspection time. User approved four-fixture creation and exact-ID cleanup *conditionally on showing commands and proving cleanup first*. **No creates/deletes may run yet**; do not suggest that `gcloud auth application-default login` by itself resolves the Admin Auth issue. Continue only with source-only credential/cleanup design or separately authorized non-mutating diagnostics. No change to IAM, Rules, Cloud Run, Billing or production. **HOLD/NO-GO.**
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
