@@ -117,7 +117,7 @@ def transition_receipt(path, expected_state, next_state, *, created_at=None):
             os.fchmod(fd, 0o600)
             with os.fdopen(fd, 'w', encoding='utf-8') as handle:
                 json.dump(updated, handle, sort_keys=True)
-                handle.write('\\n')
+                handle.write('\n')
                 handle.flush()
                 os.fsync(handle.fileno())
         except BaseException:
