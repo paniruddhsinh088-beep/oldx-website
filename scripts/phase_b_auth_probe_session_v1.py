@@ -11,6 +11,7 @@ No guaranteed rollback: ambiguous API results may leave a disabled user.
 import argparse
 import getpass
 import json
+import os
 from pathlib import Path
 import stat
 import subprocess
@@ -31,10 +32,12 @@ else:
         transition_receipt, classify_recovery,
     )
 
-# Review-branch safeguard: a prior conceptual approval is NOT live-run approval.
-# Tests may patch this flag using their fake backend, but this committed script
-# cannot send any write/delete requests in normal operator use.
-LIVE_EXECUTION_ENABLED = False
+# Default OFF. Yasmin's specific one-user live test approval requires an
+# explicit one-command acknowledgement, plus the interactive confirmations.
+# No other user/document or project can be targeted.
+LIVE_EXECUTION_ENABLED = (
+    os.environ.get('OLDX_ONE_USER_AUTH_PROBE_APPROVED') == UID
+)
 
 OPERATOR = 'yasminparmar087@gmail.com'
 BASE = 'https://identitytoolkit.googleapis.com/v1/projects/' + PROJECT
