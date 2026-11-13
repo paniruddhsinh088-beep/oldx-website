@@ -121,6 +121,15 @@ Owner-provided screenshot from Google Cloud Shell after fast-forward pulling `se
 
 **Next decision:** after review of `docs/phase-b-fixture-execution-review.md`, seek separate, precise Yasmin approval before any live create/delete operation. Need safe temporary Firebase Auth credentials, exact UID/document collision checks, per-ID cleanup with race-safe preconditions, rate counter scope and 24-hour retention decision; missing items remain blockers. Keep staging Owner Read default-off; Cloud Run original disabled revision at 100% main traffic, tagged revision at 0%; production HOLD / NO-GO.
 
+## 2026-11-13 22:48 IST — Exact-ID collision check partial, Auth blocked
+
+Yasmin explicitly approved **read-only exact-ID collision checks only** for two Firebase Auth UIDs `synthetic-seller-a`, `synthetic-buyer-b` and two Firestore documents `marketplaceActors_v1/synthetic-seller-a`, `marketplacePrivate_v1/product_synthetic-phase-b-read-01` in `oldx-staging/(default)`. Owner-provided Cloud Shell screenshot reports:
+- Auth exact `POST https://identitytoolkit.googleapis.com/v1/projects/oldx-staging/accounts:lookup` with OAuth Bearer access token returned **403 for both UIDs**; account existence **UNRESOLVED**, not missing.
+- Firestore exact-document REST GET returned **404 / NOT_FOUND** for each named path. These are point-in-time observations, not a durable collision-free creation guarantee; future creates must use atomic create-only operations and fresh guards.
+- Overall `BLOCKED: Some checks could not be verified`. No users/documents created, changed or deleted.
+
+Official Identity Platform REST documentation provides an alternative admin exact lookup `POST /v1/accounts:lookup` with body `targetProjectId=oldx-staging` plus `localId=[uid]`, requiring `firebaseauth.users.get` and an appropriate OAuth scope. It is valid for the already-approved read-only lookup scope; **success not yet observed**, and repeating without fixing OAuth/API access might still 403. Do not enable APIs or grant IAM as a workaround without separate approval. If the alternate request is blocked, stop and request a narrowly scoped access decision rather than assuming the IDs are vacant. No Phase B cloud creation/deletion or runtime activation authorized. Production HOLD / NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
