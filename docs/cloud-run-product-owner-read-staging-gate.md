@@ -332,3 +332,9 @@ At 2be411c, the exact owner-reported stdout already matched after trimming white
 ### Anonymous denial provenance
 
 Owner evidence showed configuration MATCH and a nonempty HTML 403. That combination does not establish Cloud Run IAM provenance. The existing response contract still blocks nonblank bodies. The preflight and disabled hosted adapter now share a classifier that reports only status, allowlisted media type, body class, redirect status and a normalized Google Frontend server hint. A server hint is corroborating metadata only and does not qualify an unknown body. Review already available response evidence and request-correlated Cloud Run logs through the approved operator process before considering a new format. No additional hosted requests were made.
+
+### Correlated anonymous health denial
+
+Owner evidence for the historical health probe identified an authentication-denial request log on revision oldx-owner-read-00002-tid at 2026-11-13T23:05:52.337034Z. Each new preflight needs its own evidence. After configuration MATCH, the existing anonymous health GET sends a fresh trace context. A nonblank HTML 403 qualifies only with exactly one matching staging Cloud Run request log for that trace, exact URL, method, revision, status and authentication-denial text within the probe window plus five seconds of clock tolerance. A conflicting response trace blocks. The report exposes only the evidence disposition. No raw log, trace ID, response content or credentials are printed.
+
+The single bounded read needs existing Cloud Logging access. If trace propagation, log ingestion timing, URL representation or permissions prevent a match, preflight remains BLOCKED. A blank unredirected 403 follows the existing rule. The hard-disabled hosted adapter keeps its existing contract because its future enabled revision needs separately verified mapping and evidence. Effective Firestore IAM and named invocation remain UNVERIFIED. Production HOLD / NO-GO.

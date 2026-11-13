@@ -154,7 +154,7 @@ test('consolidated preflight only sends one anonymous GET and leaves effective a
     assert.equal(options.method, 'GET');
     assert.equal(options.redirect, 'error');
     assert.equal(options.credentials, 'omit');
-    assert.equal(options.headers, undefined);
+    assert.match(options.headers['X-Cloud-Trace-Context'], /^[a-f0-9]{32}\/1;o=0$/);
     return new Response(null, {status: 403});
   });
   assert.equal(calls, 1);
@@ -258,4 +258,73 @@ test('anonymous denial status, redirect and Google Frontend hints cannot qualify
   const redirected = new Response(null, {status: 403});
   Object.defineProperty(redirected, 'redirected', {value: true});
   assert.equal((await inspectPhaseBPreflight(preflightRead(), () => redirected)).anonymousDenial.result, 'BLOCKED');
+});
+
+async function correlatedDenial(change = (entry) => [entry], echo) {
+  let probe;
+  const fallback = preflightRead();
+  return inspectPhaseBPreflight((...args) => {
+    if (args[0] !== 'logging') return fallback(...args);
+    assert.deepEqual(args.slice(3), ['--project=oldx-staging', '--account=yasminparmar087@gmail.com',
+      '--limit=2', '--format=json', '--quiet']);
+    assert.ok(args[2].includes('trace="' + probe.trace + '"'));
+    return JSON.stringify(change({
+      logName: 'projects/oldx-staging/logs/run.googleapis.com%2Frequests',
+      trace: probe.trace, timestamp: new Date().toISOString(),
+      resource: {type: 'cloud_run_revision', labels: {
+        project_id: 'oldx-staging', service_name: 'oldx-owner-read', revision_name: health,
+      }},
+      httpRequest: {requestMethod: 'GET', requestUrl: probe.url, status: 403},
+      textPayload: 'The request was not authenticated. Private detail.',
+    }));
+  }, (url, options) => {
+    assert.equal(options.credentials, 'omit');
+    assert.deepEqual(Object.keys(options.headers), ['X-Cloud-Trace-Context']);
+    probe = {url, trace: 'projects/oldx-staging/traces/' + options.headers['X-Cloud-Trace-Context'].split('/')[0]};
+    return new Response('<html>Private detail</html>', {status: 403, headers: {
+      'content-type': 'text/html', ...(echo && {'x-cloud-trace-context': echo}),
+    }});
+  });
+}
+
+test('fresh exact request log qualifies HTML denial and redacts response and trace', async () => {
+  const {anonymousDenial} = await correlatedDenial();
+  assert.equal(anonymousDenial.result, 'MATCH');
+  assert.equal(anonymousDenial.loggingEvidence, 'MATCH');
+  assert.doesNotMatch(JSON.stringify(anonymousDenial), /Private detail|<html>|[a-f0-9]{32}/);
+});
+
+test('trace, revision, service, project, method, URL, status, stale time and text mismatches block HTML denial', async () => {
+  for (const patch of [
+    (e) => { e.trace += '0'; },
+    (e) => { e.resource.labels.revision_name = main; },
+    (e) => { e.resource.labels.service_name = 'another-service'; },
+    (e) => { e.resource.labels.project_id = 'other-project'; },
+    (e) => { e.httpRequest.requestMethod = 'POST'; },
+    (e) => { e.httpRequest.requestUrl += '?other'; },
+    (e) => { e.httpRequest.status = 401; },
+    (e) => { e.timestamp = '2026-11-13T23:05:52.337034Z'; },
+    (e) => { e.textPayload = 'Unrelated 403'; },
+  ]) {
+    const {anonymousDenial} = await correlatedDenial((entry) => { patch(entry); return [entry]; });
+    assert.equal(anonymousDenial.result, 'BLOCKED');
+    assert.equal(anonymousDenial.loggingEvidence, 'MISMATCH');
+  }
+  const {anonymousDenial} = await correlatedDenial(undefined, '0'.repeat(32));
+  assert.equal(anonymousDenial.loggingEvidence, 'RESPONSE_TRACE_MISMATCH');
+});
+
+test('missing, duplicate, malformed and denied logging reads fail closed', async () => {
+  for (const [change, reason] of [
+    [() => [], 'MISSING'],
+    [(entry) => [entry, entry], 'AMBIGUOUS'],
+    [() => ({}), 'UNAVAILABLE'],
+    [() => { throw new Error('PERMISSION_DENIED private credential'); }, 'UNAVAILABLE'],
+    [() => { throw new Error('Logging API unavailable'); }, 'UNAVAILABLE'],
+  ]) {
+    const {anonymousDenial} = await correlatedDenial(change);
+    assert.equal(anonymousDenial.result, 'BLOCKED');
+    assert.equal(anonymousDenial.loggingEvidence, reason);
+    assert.doesNotMatch(JSON.stringify(anonymousDenial), /private credential/);
+  }
 });

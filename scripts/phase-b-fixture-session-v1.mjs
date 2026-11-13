@@ -12,6 +12,9 @@ import {runOwnerReadAcceptance, ownerReadAudience, readBounded, inspectAnonymous
 
 const LIVE_EXECUTION_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
+const healthRevision = 'oldx-owner-read-00002-tid';
+const healthProbeUrl = ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health';
+const requestLog = 'projects/oldx-staging/logs/run.googleapis.com%2Frequests';
 const authRoot = 'https://identitytoolkit.googleapis.com/v1';
 const auth = authRoot + '/projects/' + project + '/';
 const documentRoot = 'projects/' + project + '/databases/' + database + '/documents/';
@@ -354,7 +357,6 @@ export function inspectPhaseBConfiguration(read = gcloud, {preflight = false} = 
   const region = 'asia-south1';
   const service = 'oldx-owner-read';
   const mainRevision = service + '-00001-8kr';
-  const healthRevision = service + '-00002-tid';
   const scoped = ['--project=' + project, '--account=' + operator, '--quiet', '--format=json'];
   const regional = ['--region=' + region, ...scoped];
   const result = {
@@ -499,6 +501,40 @@ export function inspectPhaseBConfiguration(read = gcloud, {preflight = false} = 
   return result;
 }
 
+function correlateHealthDenial(read, traceId, started, finished) {
+  const trace = 'projects/' + project + '/traces/' + traceId;
+  const from = started - 5000;
+  const until = finished + 5000;
+  // Query by trace rather than filtering away conflicting entries for that trace.
+  const filter = [
+    'logName="' + requestLog + '"',
+    'trace="' + trace + '"',
+    'timestamp>="' + new Date(from).toISOString() + '"',
+    'timestamp<="' + new Date(until).toISOString() + '"',
+  ].join(' AND ');
+  try {
+    const entries = JSON.parse(read('logging', 'read', filter, '--project=' + project,
+      '--account=' + operator, '--limit=2', '--format=json', '--quiet'));
+    if (!Array.isArray(entries)) return 'UNAVAILABLE';
+    if (entries.length === 0) return 'MISSING';
+    if (entries.length !== 1) return 'AMBIGUOUS';
+    const entry = entries[0];
+    const labels = entry?.resource?.labels;
+    const http = entry?.httpRequest;
+    const at = Date.parse(entry?.timestamp);
+    return entry?.logName === requestLog && entry.trace === trace &&
+      entry.resource?.type === 'cloud_run_revision' &&
+      labels?.project_id === project && labels.service_name === 'oldx-owner-read' &&
+      labels.revision_name === healthRevision &&
+      http?.requestMethod === 'GET' && http.requestUrl === healthProbeUrl && http.status === 403 &&
+      Number.isFinite(at) && at >= from && at <= until &&
+      typeof entry.textPayload === 'string' && /^The request was not authenticated\.(?:\s|$)/.test(entry.textPayload)
+      ? 'MATCH' : 'MISMATCH';
+  } catch {
+    return 'UNAVAILABLE';
+  }
+}
+
 export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
   const report = inspectPhaseBConfiguration(read, {preflight: true});
   report.anonymousDenial = {result: 'BLOCKED', reason: 'CONFIGURATION_NOT_MATCHED'};
@@ -515,14 +551,27 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
   }
 
   const signal = AbortSignal.timeout(5000);
+  const traceId = randomBytes(16).toString('hex');
+  const started = Date.now();
   try {
-    const response = await request(ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health', {
+    const response = await request(healthProbeUrl, {
       method: 'GET', credentials: 'omit', redirect: 'error', signal,
+      headers: {'X-Cloud-Trace-Context': traceId + '/1;o=0'},
     });
     report.anonymousDenial = {result: 'BLOCKED', httpStatus: response.status};
     const body = await readBounded(response);
     if (signal.aborted) throw new Error('PROBE_TIMEOUT');
-    report.anonymousDenial = inspectAnonymousDenial(response, body);
+    const denial = inspectAnonymousDenial(response, body);
+    report.anonymousDenial = denial;
+    if (denial.redirected || denial.httpStatus !== 403 ||
+        denial.body !== 'NONEMPTY' || denial.mediaType !== 'text/html') return report;
+    const echoed = response.headers.get('x-cloud-trace-context');
+    if (echoed !== null && !new RegExp('^' + traceId + '(?:/[0-9]+)?(?:;o=[01])?$').test(echoed)) {
+      denial.loggingEvidence = 'RESPONSE_TRACE_MISMATCH';
+      return report;
+    }
+    denial.loggingEvidence = correlateHealthDenial(read, traceId, started, Date.now());
+    if (denial.loggingEvidence === 'MATCH') denial.result = 'MATCH';
   } catch {
     report.anonymousDenial.reason = 'REQUEST_OR_BODY_UNVERIFIED';
   }

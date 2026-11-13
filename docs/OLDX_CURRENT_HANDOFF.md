@@ -582,3 +582,7 @@ The preflight accepted the owner-reported service name when fed verbatim. The ru
 ## Phase B anonymous denial evidence
 
 The observed nonempty HTML 403 remains BLOCKED because IAM provenance was not established from the supplied metadata. Shared offline classification preserves the blank 403 contract and redacts response content. Focused suites passed 16/16. Effective invocation and Firestore IAM remain UNVERIFIED. No hosted or cloud operations ran. Production HOLD / NO-GO.
+
+## Phase B correlated anonymous denial
+
+Preflight now supports fresh trace-correlated Cloud Run request logs for nonempty HTML 403 on the pinned disabled tag. Historical owner evidence is context only. Node 24.22.3 focused mocked tests passed 12/12. Live trace propagation, Logging read permission, effective IAM and named invocation remain unverified. No hosted request, token minting or cloud change occurred. Production HOLD / NO-GO.
