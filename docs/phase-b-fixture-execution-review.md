@@ -330,3 +330,25 @@ The future mutating command is shown solely for owner review; it cannot provisio
 **Single next owner-facing authorization question**, only after showing implementation/risks: “Do you authorize one supervised staging-only session to create the two exact enabled synthetic Auth accounts and two exact synthetic Firestore docs, briefly obtain two Firebase ID tokens in process memory (without storing credentials), and afterward delete exactly those four resources under guarded cleanup with no guarantee of rollback? No IAM, provider, Rules, Billing, Cloud Run or production changes.”
 
 **Security and cost:** Read-only and source preparation costs limited to existing project requests; budget alerts are not hard caps. No automatic cleanup timer is provisioned. A 24h retention ceiling is not a guarantee. Production remains HOLD/NO-GO.
+
+
+## 2026-11-14 — Email/Password provider confirmed enabled; final four-fixture approval boundary
+
+**Owner's fresh read-only console observation:** `oldx-staging` Firebase Authentication Email/Password sign-in is **Enabled**. No provider toggle or IAM change is needed; this is operator-reported configuration state, not a new tool-side verification. No new credentials or API keys are requested in chat.
+
+**Go/no-go for next operation:** The path to a real Firebase *end-user* ID token is now defined and provider-enabled: two specifically named temporary **enabled** Auth accounts with strong independent ephemeral passwords, then `accounts:signInWithPassword` in an isolated operator process with only returned UID checked and token held in RAM, never printed. Firebase docs confirm sign-in returns both short-lived ID and refresh tokens; deliberately discard refresh tokens. This differs from the prior **disabled** one-user Auth CRUD probe, which was successfully cleaned and must not be recreated. [Admin-create contract](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects/accounts) and [password sign-in](https://firebase.google.com/docs/reference/rest/auth#section-sign-in-email-password).
+
+**Exact data awaiting separate execution consent:**
+| Resource | Fixed name | Create-only requirement | Cleanup proof |
+| --- | --- | --- | --- |
+| Auth user | `synthetic-seller-a` | Unique unused UID/email; enabled ephemeral password; no email sends | Exact UID/email/creation timestamp lookup before one delete; confirm absent |
+| Auth user | `synthetic-buyer-b` | Same, independently generated password | Same exact UID/email/time and absent check |
+| Firestore actor | `marketplaceActors_v1/synthetic-seller-a` | Create-only typed schema already reviewed, optional fixed nonsecret run marker only after schema review | Compare full expected fields and original creation/updateTime; conditional delete with `currentDocument.updateTime` |
+| Firestore product | `marketplacePrivate_v1/product_synthetic-phase-b-read-01` | Create-only typed schema already reviewed | Same conditional exact-ID cleanup |
+
+**One bounded future session, NOT YET APPROVED:** new immutable session-scoped run marker and private journal; project+operator guard; fresh exact-four read-only preflight right before first write; two Auth create+identity verification; two conditional create-only Firestore writes; short-lived user sign-in for token acquisition (without printing tokens); private owner/buyer identity checks only, **no enabled Owner Read HTTP requests** until separate IAM/Cloud Run approval; and same-session Firestore-then-Auth exact cleanup with absent verification. Stop on all uncertain mutations and obtain read-only per-ID state before any recovery. No guarantee that credentials remain secure on a compromised Cloud Shell or that Auth delete is race-free. Test data must be removed by the agreed session cutoff; 24 hours is a maximum proposed retention, NOT an automatic cleanup guarantee.
+
+**Before creating live users/docs:** implement and independently review the versioned fail-closed runner and private journal with sandboxed fake-transport tests; show the owner the entire executable command and deletion hazards. **The owner's earlier approval was only for the different fifth disposable Auth test**, not these four resources. Get new explicit informed approval naming all four creates, their exact-ID deletes, the two sign-ins and retention. This does NOT grant runtime IAM/identity/ingress/traffic/Rules/Billing modification, and still does not resolve least-privilege Cloud Run invoker or effective database IAM scope.
+
+**Near-term fastest path:** do not rerun the successful 24 focused offline checks, the completed live one-user Auth CRUD, or the completed four-ABSENT read-only gate. Concentrate new engineering on a single guarded four-fixture runner and its cleanup evidence, then one consolidated owner-supervised attempt if approved.
+
