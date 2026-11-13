@@ -91,3 +91,18 @@ This object is a **schema review reference only**. Validate any additional field
 **Minimum live-write manifest to approve separately:** two synthetic Auth identities (owner and foreign buyer); one private actor document; one private product document; any quota-counter document(s) automatically created/updated by `marketplaceRateLimits_v1` for authenticated requests. No write to `products`, public views, legacy stores, other real users or production. Document IDs, creation timestamps, and deletion cutoff must be recorded at creation; cleanup is per-ID with verification of ownership and no broad collection deletes. The test initiator must approve both creation and cleanup independently. A rejected foreign request must not read or expose the private record; counter side effects must be budgeted and logged only as counts.
 
 **Offline gate before actual Phase B:** execute `node --test tests/integration/phase-b-owner-read-fixtures.test.mjs` using the required Node 24 runtime and confirm current commit's CI. Do not relabel static fixture assertions as deployed IAM enforcement. Only after explicit cloud-data and activation approval should direct private-scope testing start. Preserve Phase A default-off revisions and unchanged main traffic.
+
+
+## Exact cloud-data approval request — not yet granted
+
+The requested **next owner decision** is deliberately narrower than Phase B activation:
+
+- **Purpose:** authorize a *separate future, explicitly reviewed* staging-only fixture-creation step. No real data and no new project/database.
+- **Resources proposed:** two new Firebase Auth test users with reserved synthetic UIDs `synthetic-seller-a` and `synthetic-buyer-b`, after proving the UIDs are unused; actor `marketplaceActors_v1/synthetic-seller-a`; private product `marketplacePrivate_v1/product_synthetic-phase-b-read-01` in `oldx-staging/(default)` after checking paths do not already exist. This is **not permission to create them yet**.
+- **Record content:** exactly the schema-review fields above, no contact details, images, coordinates, IP addresses or external URLs. No broad collection queries, no legacy namespace changes, no public projections, no uploads.
+- **Auth-user provisioning blocker:** choose a secure, independently approved method to issue two **real test Firebase ID tokens** without storing passwords, tokens, service-account keys or account credentials in GitHub/Chat. Existing fixture JSON identities do not produce usable Firebase Auth accounts. No unauthorised `firebaseauth.users.create` IAM grant.
+- **Writes and retention:** actor/product creates require explicit cloud-write approval; atomic rate-limit quota-counter create/update occurs only in a separately approved, activated test. Record exact paths and result counts; maximum retention proposed is 24 hours from first creation. Because destructive operations require separate approval, obtain specific per-ID deletion/cleanup permission and confirm before creation that these exact identities and paths can be cleaned up safely.
+- **Not in this approval:** Cloud Run deployment, IAM binding, impersonation, ingress alteration, Firebase Rules changes, Billing changes, live owner-read activation or service traffic promotion. **Production HOLD / NO-GO**.
+- **Stop:** if actor IDs or doc paths already exist, cannot prove isolated identity, lack permissions for cleanup, or any price/usage unknown, stop before a write.
+
+Once this precise proposal is approved by Yasmin, the operator must still prepare and review a bounded, copy-pastable create/verify/cleanup procedure before any cloud mutation; her general “continue” does not grant mutation authority.
