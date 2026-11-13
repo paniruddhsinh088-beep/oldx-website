@@ -115,6 +115,12 @@ Created `scripts/phase-b-offline-inventory.mjs` and `tests/integration/phase-b-o
 
 **New targeted test not yet executed:** `node --test tests/integration/phase-b-offline-inventory.test.mjs` on Node 24 in the existing Cloud Shell Docker; do not claim pass without evidence. Do not repeat prior passing tests. Pending separate owner approvals: exact four cloud creates, separately authorized per-ID cleanup, ephemeral Auth test token method, rate-limit counter retention and runtime/IAM acceptance. Keep Phase A revisions default-off, original 100% main traffic, healthcheck 0%; production HOLD / NO-GO.
 
+## 2026-11-13 22:42 IST — Phase B offline inventory tests PASS
+
+Owner-provided screenshot from Google Cloud Shell after fast-forward pulling `security-hardening-review` shows `node --test tests/integration/phase-b-offline-inventory.test.mjs` executed in Node 24 Docker: **2 tests / 2 passed / 0 failed / 0 skipped**. The tests validated exact synthetic Auth UIDs `synthetic-seller-a`, `synthetic-buyer-b`, exact Firestore actor/product document paths and rejected unauthorized project/path/permission/mutation-status changes. This is offline code evidence only, not a live Firebase access check or a Cloud IAM test. Do not repeat these 2 tests without a code change.
+
+**Next decision:** after review of `docs/phase-b-fixture-execution-review.md`, seek separate, precise Yasmin approval before any live create/delete operation. Need safe temporary Firebase Auth credentials, exact UID/document collision checks, per-ID cleanup with race-safe preconditions, rate counter scope and 24-hour retention decision; missing items remain blockers. Keep staging Owner Read default-off; Cloud Run original disabled revision at 100% main traffic, tagged revision at 0%; production HOLD / NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
