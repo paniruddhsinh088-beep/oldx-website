@@ -302,3 +302,15 @@ cd ~/oldx-staging-build && git pull --ff-only origin security-hardening-review &
 The JSON report contains `configuration` (MATCH, FAIL or BLOCKED), per-check labels, key counts by management type, the verified service audience and latest ready revision, and the anonymous denial status, media type and body classification. Configuration failure skips HTTP. The only HTTP probe is one anonymous GET to the pinned disabled health tag, with redirects refused and a five-second timeout. A nonblank denial body blocks the probe even if its status is 403. The acceptance harness is unchanged in this respect. No credential or response body is printed.
 
 The API listing and direct OpenID binding are configuration evidence. Effective token mint permission, Firestore IAM and invocation remain UNVERIFIED. Rollback baseline is configuration evidence only. The cleanup section describes fixed source safeguards and does not inspect or mutate fixtures. Exit 0 means the configuration and anonymous response matched; staging execution still reports NO_GO. Exit 3 means a check needs review. Hosted execution, rollback, supervised cleanup and any activation retain their separate approval gates.
+
+### Diagnosing CONFIGURATION_NOT_MATCHED
+
+An audience of UNVERIFIED in serviceBaseline means the describe response did not supply the exact pinned untagged status.url. This is a sufficient blocker, independent of IAM counts. The report now lists every failing or unavailable check in anonymousDenial.blockingChecks. Expected direct binding counts are zero at project level and one at service level, with no public grants. Counts alone do not prove the exact invoker, unconditional binding or effective authorization.
+
+Use the following targeted metadata read in the approved staging operator session. It prints only the service URL, readiness, and tagged traffic fields.
+
+```sh
+gcloud run services describe oldx-owner-read --project=oldx-staging --region=asia-south1 --format='yaml(status.url,status.latestReadyRevisionName,status.traffic)'
+```
+
+Compare the untagged URL with the pinned audience, and compare the healthcheck tag URL separately. Cloud Run can report a hash-based URL. A different URL needs independent review before changing any pin. Verify main revision oldx-owner-read-00001-8kr at 100 percent and healthcheck revision oldx-owner-read-00002-tid at zero percent, then use the existing revision checks for the runtime identity and absence of activation flags. This establishes rollback configuration evidence only. No minting, HTTP probe, traffic change or rollback is needed for this diagnosis. Effective IAM and invocation remain UNVERIFIED. [Cloud Run URLs](https://docs.cloud.google.com/run/docs/triggering/https-request) and [service audience](https://docs.cloud.google.com/run/docs/authenticating/service-to-service).

@@ -503,7 +503,12 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
     authAtomicDelete: false, executionEnabled: LIVE_EXECUTION_ENABLED,
   };
   report.rollbackBaseline = report.configuration === 'MATCH' ? 'CONFIGURATION_MATCH' : 'UNVERIFIED';
-  if (report.configuration !== 'MATCH') return report;
+  if (report.configuration !== 'MATCH') {
+    report.anonymousDenial.blockingChecks = Object.entries(report.checks)
+      .filter(([, status]) => status !== 'MATCH')
+      .map(([check, status]) => ({check, status}));
+    return report;
+  }
 
   const signal = AbortSignal.timeout(5000);
   try {

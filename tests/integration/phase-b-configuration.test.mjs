@@ -59,6 +59,10 @@ function fakeRead(mutate = () => {}) {
 test('matching fixed configuration leaves effective IAM, invocation and release unresolved', () => {
   const report = inspectPhaseBConfiguration(fakeRead());
   assert.equal(report.configuration, 'MATCH');
+  assert.equal(report.checks.projectPolicy, 'MATCH');
+  assert.equal(report.checks.servicePolicy, 'MATCH');
+  assert.deepEqual(report.projectPolicy, {directInvokerBindings: 0, publicBindings: 0});
+  assert.deepEqual(report.servicePolicy, {directInvokerBindings: 1, publicBindings: 0});
   assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
   assert.equal(report.leastPrivilegeInvoker, 'UNVERIFIED');
   assert.equal(report.stagingExecution, 'NO_GO');
@@ -80,6 +84,12 @@ test('wrong local project stops before cloud configuration commands', () => {
 test('public binding, IAM bypass, changed condition, traffic drift or failed read blocks configuration', () => {
   const cases = [
     ['servicePolicy', 'run services get-iam-policy', (data) => { delete data.bindings; }],
+    ['servicePolicy', 'run services get-iam-policy', (data) => {
+      data.bindings[0].members = ['serviceAccount:' + runtime];
+    }],
+    ['servicePolicy', 'run services get-iam-policy', (data) => {
+      data.bindings[0].condition = {expression: 'true'};
+    }],
     ['projectPolicy', 'projects get-iam-policy', (data) => {
       data.bindings.push({role: 'roles/run.invoker', members: ['serviceAccount:' + invoker]});
     }],
@@ -167,6 +177,8 @@ test('operator mismatch, missing API, key drift, wrong audience and broader Fire
     }), () => assert.fail('Unexpected HTTP'));
     assert.equal(report.checks[check], 'MISMATCH');
     assert.equal(report.anonymousDenial.reason, 'CONFIGURATION_NOT_MATCHED');
+    assert.ok(report.anonymousDenial.blockingChecks.some((item) =>
+      item.check === check && item.status === 'MISMATCH'));
   }
   const report = await inspectPhaseBPreflight((...args) => {
     if (args[0] === 'config') return 'oldx-staging';

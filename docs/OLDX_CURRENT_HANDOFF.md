@@ -562,3 +562,7 @@ Implemented the hard-disabled hosted Owner Read adapter and IAM Credentials toke
 ## 2026-11-14 — Consolidated Phase B read-only preflight
 
 The existing fixture CLI now provides `--cloud-preflight` for exact staging configuration, IAM Credentials API status, key metadata counts, service audience and revision mapping, and a single bounded anonymous health denial observation. See the [Cloud Shell command and report](cloud-run-product-owner-read-staging-gate.md#consolidated-read-only-cloud-shell-preflight). Focused offline configuration tests passed 6/6. No cloud preflight or hosted probe ran during coding. Effective permissions remain UNVERIFIED and both live execution gates remain disabled.
+
+## Phase B preflight mismatch diagnosis
+
+The reported UNVERIFIED audience identifies a pinned status.url mismatch or missing URL. Project/service direct invoker counts of 0/1 are expected; exact principal and condition checks still apply. The preflight now lists all blocking check names without exposing raw metadata. Focused offline tests: 6 passed, 0 failed. See the staging gate for the targeted read-only metadata command. No Cloud requests or changes. Production HOLD / NO-GO.
