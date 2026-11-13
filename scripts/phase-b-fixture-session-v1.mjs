@@ -325,6 +325,113 @@ function guardOperator() {
     gcloud('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)') === operator, 'WRONG_OPERATOR_OR_PROJECT');
 }
 
+// Fixed read-only command list. Return labels and counts, never raw policy,
+// principal lists or revision environment values.
+export function inspectPhaseBConfiguration(read = gcloud) {
+  const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
+  const projectNumber = '38472235077';
+  const region = 'asia-south1';
+  const service = 'oldx-owner-read';
+  const mainRevision = service + '-00001-8kr';
+  const healthRevision = service + '-00002-tid';
+  const scoped = ['--project=' + project, '--account=' + operator, '--quiet', '--format=json'];
+  const regional = ['--region=' + region, ...scoped];
+  const result = {
+    configuration: 'BLOCKED', checks: {}, effectiveDatabaseIam: 'UNVERIFIED',
+    leastPrivilegeInvoker: 'UNVERIFIED', stagingExecution: 'NO_GO', production: 'HOLD_NO_GO',
+  };
+  function check(label, query, inspect) {
+    try {
+      const value = query();
+      result.checks[label] = inspect(value) ? 'MATCH' : 'MISMATCH';
+      return value;
+    } catch {
+      result.checks[label] = 'UNAVAILABLE';
+    }
+  }
+  const json = (...args) => JSON.parse(read(...args));
+  check('operatorAndProject', () => [
+    read('config', 'get-value', 'project'),
+    read('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)'),
+  ], (value) => isDeepStrictEqual(value, [project, operator]));
+  if (result.checks.operatorAndProject !== 'MATCH') return result;
+  check('projectNumber', () => json('projects', 'describe', project, ...scoped),
+    (value) => value.projectId === project && String(value.projectNumber) === projectNumber);
+  if (result.checks.projectNumber !== 'MATCH') return result;
+
+  const roles = {
+    oldxProductReadFirestore: ['datastore.databases.get', 'datastore.entities.create',
+      'datastore.entities.get', 'datastore.entities.update'],
+    oldxProductReadAuth: ['firebaseauth.users.get'],
+  };
+  const rolePath = (role) => 'projects/' + project + '/roles/' + role;
+  for (const [role, permissions] of Object.entries(roles)) {
+    check(role, () => json('iam', 'roles', 'describe', role, ...scoped), (value) =>
+      value.name === rolePath(role) && value.stage === 'ALPHA' && value.deleted !== true &&
+      Array.isArray(value.includedPermissions) &&
+      isDeepStrictEqual([...value.includedPermissions].sort(), permissions));
+  }
+  check('runtimeIdentity', () => json('iam', 'service-accounts', 'describe', runtime, ...scoped),
+    (value) => value.email === runtime && value.projectId === project && value.disabled !== true);
+
+  const bindings = (policy) => {
+    requireSafe(policy && typeof policy.etag === 'string', 'INVALID_POLICY');
+    const rows = policy.bindings ?? [];
+    requireSafe(Array.isArray(rows) && rows.every((row) =>
+      typeof row.role === 'string' && Array.isArray(row.members) &&
+      row.members.every((member) => typeof member === 'string') &&
+      !row.role.includes('_withcond_')), 'INVALID_BINDINGS');
+    return rows;
+  };
+  const publicMember = (member) => ['allUsers', 'allAuthenticatedUsers'].includes(member);
+  function inspectPolicy(label, policy) {
+    const rows = bindings(policy);
+    const invokers = rows.filter(({role}) => ['roles/run.invoker', 'roles/run.servicesInvoker'].includes(role));
+    const publicBindings = rows.filter(({members}) => members.some(publicMember));
+    result[label] = {directInvokerBindings: invokers.length, publicBindings: publicBindings.length};
+    return rows;
+  }
+  check('projectPolicy', () => json('projects', 'get-iam-policy', project, ...scoped), (policy) => {
+    const rows = inspectPolicy('projectPolicy', policy);
+    const forRuntime = rows.filter(({members}) => members.includes('serviceAccount:' + runtime));
+    const authRole = forRuntime.filter(({role}) => role === rolePath('oldxProductReadAuth'));
+    const firestoreRole = forRuntime.filter(({role}) => role === rolePath('oldxProductReadFirestore'));
+    return forRuntime.length === 2 && authRole.length === 1 && !authRole[0].condition &&
+      firestoreRole.length === 1 && firestoreRole[0].condition?.title === 'OLDX_Staging_Default_DB_Only' &&
+      firestoreRole[0].condition.expression === 'resource.name == "projects/oldx-staging/databases/(default)"' &&
+      result.projectPolicy.publicBindings === 0;
+  });
+  check('servicePolicy', () => json('run', 'services', 'get-iam-policy', service, ...regional), (policy) => {
+    inspectPolicy('servicePolicy', policy);
+    return result.servicePolicy.publicBindings === 0;
+  });
+  check('serviceAndTraffic', () => json('run', 'services', 'describe', service, ...regional), (value) => {
+    const annotations = value.metadata?.annotations;
+    const traffic = value.status?.traffic;
+    if (annotations?.['run.googleapis.com/ingress'] === 'all') result.ingress = 'INTERNET_REACHABLE';
+    return value.metadata?.name === service && String(value.metadata?.namespace) === projectNumber &&
+      result.ingress === 'INTERNET_REACHABLE' &&
+      (annotations['run.googleapis.com/invoker-iam-disabled'] === undefined ||
+        annotations['run.googleapis.com/invoker-iam-disabled'] === 'false') &&
+      value.spec?.template?.spec?.serviceAccountName === runtime &&
+      Array.isArray(traffic) && traffic.length === 2 &&
+      traffic.some((row) => row.revisionName === mainRevision && row.percent === 100 && !row.tag) &&
+      traffic.some((row) => row.revisionName === healthRevision && (row.percent ?? 0) === 0 && row.tag === 'healthcheck');
+  });
+  for (const revision of [mainRevision, healthRevision]) {
+    check(revision, () => json('run', 'revisions', 'describe', revision, ...regional), (value) => {
+      const containers = value.spec?.containers;
+      const env = containers?.[0]?.env ?? [];
+      return value.metadata?.name === revision && value.metadata?.labels?.['serving.knative.dev/service'] === service &&
+        value.spec?.serviceAccountName === runtime && Array.isArray(containers) && containers.length === 1 &&
+        Array.isArray(env) && env.every((entry) => entry && typeof entry.name === 'string' &&
+          !['OLDX_PRODUCT_READ_ACTIVATE_STAGING', 'OLDX_PRODUCT_READ_EMULATOR'].includes(entry.name));
+    });
+  }
+  if (Object.values(result.checks).every((status) => status === 'MATCH')) result.configuration = 'MATCH';
+  return result;
+}
+
 async function liveSend({method, url, body, publicRequest}) {
   guardOperator();
   const headers = {'Content-Type': 'application/json'};
@@ -390,6 +497,11 @@ async function main(args) {
     if (journal?.stale) console.log('JOURNAL_STALE_MANUAL_REVIEW_REQUIRED');
     if (allAbsent) console.log('ALL_FOUR_ABSENT_AT_CHECK_TIME');
     return allAbsent && journal?.completed && !journal.stale ? 0 : 3;
+  }
+  if (args.length === 1 && args[0] === '--check-configuration') {
+    const report = inspectPhaseBConfiguration();
+    console.log(JSON.stringify(report, null, 2));
+    return report.configuration === 'MATCH' ? 0 : 3;
   }
   requireSafe(args.length === 1 && args[0] === '--execute' && LIVE_EXECUTION_ENABLED, 'LIVE_EXECUTION_DISABLED');
   requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
