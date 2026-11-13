@@ -14,6 +14,34 @@ class StopProbe(RuntimeError):
     pass
 
 
+class OfflineFakeAuth:
+    """Simulation only. No networking; never pass a real HTTP transport."""
+    def __init__(self):
+        self.user = None
+        self.create_timeout = False
+        self.delete_timeout = False
+
+    def lookup_uid(self):
+        return dict(self.user) if self.user else None
+
+    def lookup_email(self):
+        return self.lookup_uid()
+
+    def create_disabled_exact_uid(self):
+        self.user = {
+            'localId': UID, 'email': EMAIL, 'disabled': True,
+            'createdAt': '1731543000000',
+        }
+        if self.create_timeout:
+            raise TimeoutError('simulated create interruption')
+        return {'localId': UID}
+
+    def delete_exact_uid(self):
+        self.user = None
+        if self.delete_timeout:
+            raise TimeoutError('simulated delete interruption')
+
+
 def _stop(reason):
     raise StopProbe('STOP: ' + reason)
 
@@ -34,7 +62,7 @@ def offline_create(journal_path, session_id, adapter):
     A receipt is written BEFORE create; on any uncertain API result the journal
     remains CREATE_UNKNOWN, deliberately requiring manual recovery.
     """
-    if getattr(adapter, 'offline_fake', False) is not True:
+    if type(adapter) is not OfflineFakeAuth:
         _stop('live adapters forbidden in this offline module')
     if adapter.lookup_uid() is not None or adapter.lookup_email() is not None:
         _stop('pre-existing UID/email')
@@ -59,7 +87,7 @@ def offline_cleanup(journal_path, adapter):
     A genuine Auth delete has NO compare-and-swap/createdAt precondition;
     even this matching demo must not be treated as live deletion authority.
     """
-    if getattr(adapter, 'offline_fake', False) is not True:
+    if type(adapter) is not OfflineFakeAuth:
         _stop('live adapters forbidden in this offline module')
     receipt = read_receipt(journal_path)
     if receipt['state'] != 'CREATED_VERIFIED':
