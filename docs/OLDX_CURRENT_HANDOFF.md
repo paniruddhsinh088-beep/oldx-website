@@ -206,6 +206,12 @@ Yasmin approved the *plan* to perform the four-resource Phase B synthetic test i
 
 **Immediate next safe action:** complete offline review of Admin Auth fixed-UID create and delete semantics and the proposed executable commands before the supervised session; avoid repeated successful tests and preserve HOLD/NO-GO.
 
+## 2026-11-13 — Fixed-UID Auth REST contract clarified
+
+Current official Identity Platform `projects.accounts` REST reference explicitly permits an admin-authorized OAuth request to choose a unique `localId` when creating an account; the earlier apparently contradictory sentence about `localId` is located in the `idToken` account-linking field description. For exact-UID creation the payload must omit `idToken` and use the approved `localId`. The method is `POST /v1/projects/oldx-staging/accounts` with an approved staging Web API key, Google OAuth Bearer token and `X-Goog-User-Project: oldx-staging`. This is a **documented API contract**, not verified live Auth create/delete. Firestore createDocument supports exact `documentId` create-only; Firestore delete supports `currentDocument.updateTime` concurrency guard; Auth exact UID delete lacks the same timestamp precondition. A detailed eight-step request/cleanup contract table is now in `docs/phase-b-fixture-execution-review.md` (commit `3aefc03870634320a8a89329fc9fb6033fd3299d`). **No cloud requests, users or docs created, changed, deleted; no credentials acquired.**
+
+**Next:** Verify a secure nonpersistent execution wrapper, provenance and supervised same-day cleanup plan before showing the exact *runnable* commands for the owner's promised pre-run review. In particular, there is no observed successful live Auth deletion and no automatic 24h cleanup mechanism; with unresolved cleanup, remain fixture creation NO-GO. Do not repeat passed offline tests. Cloud Run Owner Read default-off; production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
