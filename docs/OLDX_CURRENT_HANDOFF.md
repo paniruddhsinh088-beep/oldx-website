@@ -268,6 +268,14 @@ Owner's Cloud Shell screenshot shows `git pull --ff-only origin security-hardeni
 
 No need to repeat this passing test without new changes. Next substantive gate: prepare/review runnable fail-closed, credential-protected exact-UID Admin Auth create/delete and conditional document operations; independently verify cleanup capability and supervised same-day window before any fixture creation, then show owner exact commands. Remain fixture execution NO-GO, Owner Read default-off, production HOLD/NO-GO.
 
+## 2026-11-14 — Hard-disabled Phase B CRUD source review skeleton
+
+Official Identity Platform API review reconfirms that admin-authorized Auth creation accepts a unique `localId` via `POST /v1/projects/oldx-staging/accounts` (API key required), while `POST /v1/projects/oldx-staging/accounts:delete` accepts the exact `localId` and requires `firebaseauth.users.delete`. Both accept cloud-platform OAuth; these facts do **not** prove successful live mutation or safe cleanup. Auth deletion still lacks a Firestore `updateTime` generation precondition.
+
+Added `scripts/phase-b-crud-source-review.py` on `security-hardening-review` (commit `7a8302bc`). It hardcodes **`WRITE_GATE = False`**, and `--mode plan` is the only executable path, printing exact resources, API method/URL *templates*, and STOP/approval requirements with NO credentials or API calls. `--mode create` and `--mode cleanup` intentionally STOP *before* token retrieval; actual mutating implementation does not exist in this review commit. The file includes narrower pure helpers for future reviewed authenticated lookup/document GET and HTTP error redaction, but these are **not presently reachable** from any CLI mode and have **not been executed**. No live Firebase user, document or cloud setting changed; this is not proof of CRUD or same-day cleanup. Do not bypass `WRITE_GATE` or edit source in Cloud Shell.
+
+**Next substantive work:** independently review proposed mutating call implementation, secure ephemeral credential handling and a robust persisted per-ID cleanup inventory, then show *complete exact runnable* create, verify and cleanup commands to Yasmin before authorizing a supervised session. The necessary cleanup capability remains unverified; keep creation and enabled Owner Read NO-GO, production HOLD/NO-GO. Do not rerun previously passing offline tests.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
