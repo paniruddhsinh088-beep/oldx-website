@@ -274,3 +274,9 @@ Before hosted execution, independently confirm the service-reported audience, na
 - **Cleanup:** existing read-only recovery, secure journal and conditional Firestore deletion have offline evidence; destructive recovery after a failure remains separately per-ID gated, and Auth delete has no atomic UID-generation precondition.
 
 **Present these decisions to Yasmin as one compact scoped approval proposal.** A bundled proposal reduces repeated conversations but does not allow the assistant/Codex to perform IAM, Cloud Run or Firestore mutations unless their specific scopes are explicitly approved. All present work is source/documentation-only; no calls, changes, deployment or new tests. Production HOLD / NO-GO.
+
+### Post-invoker configuration and test evidence
+
+The historical zero-service-grant snapshot predates the dedicated invoker. The current `--check-configuration` baseline expects only the documented unconditional service-level invoker grant and exact operator OpenID token creator grant on that service account. Direct project-level invoker bindings, a project-level grant to the dedicated identity, and extra service or token-policy bindings block the match. The verifier checks the existing disabled revision and traffic baseline. A configuration MATCH leaves effective IAM and invocation UNVERIFIED. No new live configuration check was performed for this batch.
+
+Owner-verified Linux journal suite: 4 PASS, 0 FAIL. Changed offline configuration and HTTP contract suites: 6 PASS, 0 FAIL, 0 SKIP. Existing emulator evidence covers exact fixture creation and guarded cleanup. Before staging GO, verify effective database scope and named caller allow/deny evidence, then separately approve the exact tagged runtime, rollback and supervised cleanup. Keep LIVE_EXECUTION_ENABLED=false and production HOLD / NO-GO.

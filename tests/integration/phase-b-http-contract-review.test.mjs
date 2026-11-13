@@ -11,7 +11,11 @@ test('uses exact four synthetic resources and twelve request descriptions', () =
 test('Firestore writes are create-only and deletion requires an updateTime guard', () => {
   const steps = buildContract();
   assert.equal(steps.filter(s => s.stage === 'create/firestore' && s.url.includes('?documentId=')).length, 2);
-  assert.equal(steps.filter(s => s.stage === 'cleanup/firestore' && s.url.includes('currentDocument.updateTime=')).length, 2);
+  const cleanup = steps.filter(s => s.stage === 'cleanup/firestore');
+  assert.deepEqual(cleanup.map(s => s.bodyExample.writes[0].delete),
+    firestoreDocs.map(path => 'projects/oldx-staging/databases/(default)/documents/' + path));
+  assert.throws(() => validateContract(steps.map(s => s === cleanup[0]
+    ? {...s, bodyExample: {writes: [{delete: s.bodyExample.writes[0].delete}]}} : s)));
   assert.equal(steps.some(s => s.method === 'PATCH' || s.url.includes(':batchDelete')), false);
 });
 

@@ -546,3 +546,7 @@ Added a read-only configuration mode to the existing fixture runner for staging 
 ## 2026-11-14 — Phase B fixed-ID REST regression
 
 Node 24 focused run with isolated Auth and Firestore Emulators reported 21 passed, zero failed, four Linux-only tests skipped on Windows. Both synthetic Auth IDs and Firestore documents were created and removed in the demo emulators. The runner independently rereads created documents and uses a single conditional commit per Firestore deletion. Google invocation audience and Firebase identity checks are separate. No live Firebase or Cloud Run requests were made. Hosted effective IAM, named invocation, rollback and supervised cleanup remain gated. Production HOLD / NO-GO.
+
+## 2026-11-14 — Phase B consolidation
+
+Owner-verified Linux journal result: 4 PASS, 0 FAIL. This supersedes the Windows skips for journal evidence; it does not establish hosted cleanup. The updated read-only configuration verifier checks the documented service-only invoker grant, exact OpenID token creator grant, and absence of project-level direct invoker bindings. The offline HTTP contract now documents the tested single-document conditional commit with the original updateTime. Node 24 focused configuration and HTTP contract suites: 6 PASS, 0 FAIL, 0 SKIP. No cloud checks or mutations ran in this batch. Effective database IAM and named invocation remain UNVERIFIED. Production HOLD / NO-GO.

@@ -333,10 +333,14 @@ function gcloud(...args) {
   return execFileSync('gcloud', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000}).trim();
 }
 
-function guardOperator() {
+function guardGcloudEnvironment() {
   requireSafe(!Object.keys(process.env).some((name) =>
     /^CLOUDSDK_(API_ENDPOINT_OVERRIDES_|AUTH_|CORE_(ACCOUNT|PROJECT)$)/i.test(name)),
   'GCLOUD_OVERRIDE_BLOCKED');
+}
+
+function guardOperator() {
+  guardGcloudEnvironment();
   requireSafe(gcloud('config', 'get-value', 'project') === project &&
     gcloud('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)') === operator, 'WRONG_OPERATOR_OR_PROJECT');
 }
@@ -345,6 +349,7 @@ function guardOperator() {
 // principal lists or revision environment values.
 export function inspectPhaseBConfiguration(read = gcloud) {
   const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
+  const invoker = 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com';
   const projectNumber = '38472235077';
   const region = 'asia-south1';
   const service = 'oldx-owner-read';
@@ -366,6 +371,7 @@ export function inspectPhaseBConfiguration(read = gcloud) {
     }
   }
   const json = (...args) => JSON.parse(read(...args));
+  if (read === gcloud) guardGcloudEnvironment();
   check('operatorAndProject', () => [
     read('config', 'get-value', 'project'),
     read('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)'),
@@ -415,11 +421,22 @@ export function inspectPhaseBConfiguration(read = gcloud) {
     return forRuntime.length === 2 && authRole.length === 1 && !authRole[0].condition &&
       firestoreRole.length === 1 && firestoreRole[0].condition?.title === 'OLDX_Staging_Default_DB_Only' &&
       firestoreRole[0].condition.expression === 'resource.name == "projects/oldx-staging/databases/(default)"' &&
-      result.projectPolicy.publicBindings === 0;
+      result.projectPolicy.publicBindings === 0 && result.projectPolicy.directInvokerBindings === 0 &&
+      !rows.some(({members}) => members.includes('serviceAccount:' + invoker));
   });
   check('servicePolicy', () => json('run', 'services', 'get-iam-policy', service, ...regional), (policy) => {
-    inspectPolicy('servicePolicy', policy);
-    return result.servicePolicy.publicBindings === 0;
+    const rows = inspectPolicy('servicePolicy', policy);
+    return result.servicePolicy.publicBindings === 0 && rows.length === 1 &&
+      rows[0].role === 'roles/run.invoker' && rows[0].condition === undefined &&
+      isDeepStrictEqual(rows[0].members, ['serviceAccount:' + invoker]);
+  });
+  check('invokerIdentity', () => json('iam', 'service-accounts', 'describe', invoker, ...scoped),
+    (value) => value.email === invoker && value.projectId === project && value.disabled !== true);
+  check('invokerTokenPolicy', () =>
+    json('iam', 'service-accounts', 'get-iam-policy', invoker, ...scoped), (policy) => {
+    const rows = bindings(policy);
+    return rows.length === 1 && rows[0].role === 'roles/iam.serviceAccountOpenIdTokenCreator' &&
+      rows[0].condition === undefined && isDeepStrictEqual(rows[0].members, ['user:' + operator]);
   });
   check('serviceAndTraffic', () => json('run', 'services', 'describe', service, ...regional), (value) => {
     const annotations = value.metadata?.annotations;

@@ -4,6 +4,7 @@ import {inspectPhaseBConfiguration} from '../../scripts/phase-b-fixture-session-
 
 const service = 'oldx-owner-read';
 const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
+const invoker = 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com';
 const main = service + '-00001-8kr';
 const health = service + '-00002-tid';
 const role = (name) => 'projects/oldx-staging/roles/' + name;
@@ -24,7 +25,13 @@ const responses = {
       title: 'OLDX_Staging_Default_DB_Only', expression: 'resource.name == "projects/oldx-staging/databases/(default)"',
     }},
   ]},
-  ['run services get-iam-policy ' + service]: {etag: 'fixture'},
+  ['iam service-accounts describe ' + invoker]: {email: invoker, projectId: 'oldx-staging'},
+  ['iam service-accounts get-iam-policy ' + invoker]: {etag: 'fixture', bindings: [
+    {role: 'roles/iam.serviceAccountOpenIdTokenCreator', members: ['user:yasminparmar087@gmail.com']},
+  ]},
+  ['run services get-iam-policy ' + service]: {etag: 'fixture', bindings: [
+    {role: 'roles/run.invoker', members: ['serviceAccount:' + invoker]},
+  ]},
   ['run services describe ' + service]: {
     metadata: {name: service, namespace: '38472235077', annotations: {'run.googleapis.com/ingress': 'all'}},
     spec: {template: {spec: {serviceAccountName: runtime}}},
@@ -57,6 +64,7 @@ test('matching fixed configuration leaves effective IAM, invocation and release 
   assert.equal(report.stagingExecution, 'NO_GO');
   assert.equal(report.ingress, 'INTERNET_REACHABLE');
   assert.ok(!JSON.stringify(report).includes(runtime));
+  assert.ok(!JSON.stringify(report).includes(invoker));
 });
 
 test('wrong local project stops before cloud configuration commands', () => {
@@ -71,6 +79,13 @@ test('wrong local project stops before cloud configuration commands', () => {
 
 test('public binding, IAM bypass, changed condition, traffic drift or failed read blocks configuration', () => {
   const cases = [
+    ['servicePolicy', 'run services get-iam-policy', (data) => { delete data.bindings; }],
+    ['projectPolicy', 'projects get-iam-policy', (data) => {
+      data.bindings.push({role: 'roles/run.invoker', members: ['serviceAccount:' + invoker]});
+    }],
+    ['invokerTokenPolicy', 'iam service-accounts get-iam-policy', (data) => {
+      data.bindings[0].role = 'roles/iam.serviceAccountTokenCreator';
+    }],
     ['servicePolicy', 'run services get-iam-policy', (data) => {
       data.bindings = [{role: 'roles/run.invoker', members: ['allUsers']}];
     }],

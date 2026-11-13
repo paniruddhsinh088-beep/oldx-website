@@ -46,9 +46,10 @@ export function buildContract() {
       bodyKeys: ['fields'], bodyExample: { fields: '<SCHEMA_REVIEW_REQUIRED>' }, mutation: true });
   }
   for (const path of firestoreDocs) {
-    actions.push({ stage: 'cleanup/firestore', method: 'DELETE',
-      url: `${fsUrl(path)}?currentDocument.updateTime=<URL_ENCODED_FRESH_UPDATE_TIME>`,
-      bodyKeys: [], mutation: true });
+    actions.push({ stage: 'cleanup/firestore', method: 'POST',
+      url: fsBase + ':commit', bodyKeys: ['writes'],
+      bodyExample: {writes: [{delete: `projects/${project}/databases/${database}/documents/${path}`,
+        currentDocument: {updateTime: '<ORIGINAL_VERIFIED_UPDATE_TIME>'}}]}, mutation: true });
   }
   for (const uid of authUids) {
     actions.push({ stage: 'cleanup/auth', method: 'POST', url: `${authBase}/accounts:delete`,
@@ -67,8 +68,16 @@ export function validateContract(steps) {
     assert.match(s.url, /oldx-staging/);
     assert.equal(s.url.includes('oldx-1c983'), false);
     assert.equal(/<IN_MEMORY_ONLY>|<SCHEMA_REVIEW_REQUIRED>/.test(JSON.stringify(s)), true === (s.stage === 'create/auth' || s.stage === 'create/firestore'));
-    if (s.stage === 'cleanup/firestore') assert.match(s.url, /currentDocument.updateTime=/);
     if (s.stage === 'create/firestore') assert.match(s.url, /\?documentId=/);
+  }
+  const cleanup = steps.filter((step) => step.stage === 'cleanup/firestore');
+  for (const [index, path] of firestoreDocs.entries()) {
+    assert.equal(cleanup[index].method, 'POST');
+    assert.equal(cleanup[index].url, fsBase + ':commit');
+    assert.deepEqual(cleanup[index].bodyExample, {writes: [{
+      delete: `projects/${project}/databases/${database}/documents/${path}`,
+      currentDocument: {updateTime: '<ORIGINAL_VERIFIED_UPDATE_TIME>'},
+    }]});
   }
   return true;
 }
