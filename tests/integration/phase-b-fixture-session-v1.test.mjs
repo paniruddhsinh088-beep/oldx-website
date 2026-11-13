@@ -6,6 +6,7 @@ import {authUids, firestoreDocs} from '../../scripts/phase-b-http-contract-revie
 import {offlinePayloads, privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
 import {simulateFixtureSession, simulateFixtureAcceptance} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
+const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
 const prefix = 'projects/oldx-staging/databases/(default)/documents/';
 const time = '2026-11-14T00:00:00.000001Z';
 const createdAt = '1794614400000';
@@ -231,7 +232,7 @@ test('integrated Phase B acceptance binds fixture identities before guarded clea
       disabledOrigin: 'https://healthcheck' + root,
       enabledOrigin: 'https://phase-b-acceptance' + root,
       enabledTag: 'phase-b-acceptance',
-      googleToken: 'fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token',
+      googleToken: googleToken,
       send({caseId, headers}) {
         seen.push(caseId);
         assert.equal(session.records.length, 8);
@@ -241,7 +242,7 @@ test('integrated Phase B acceptance binds fixture identities before guarded clea
           assert.equal(sub, authUids[caseId === 'foreign-buyer' ? 1 : 0]);
         }
         assert.equal(headers['X-Serverless-Authorization'],
-          caseId === 'invoker-denied' ? undefined : 'Bearer fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token');
+          caseId === 'invoker-denied' ? undefined : 'Bearer ' + googleToken);
         const [status, body] = replies[caseId];
         return {status: rejectOwner && caseId === 'owner' ? 503 : status, body, cacheControl: 'private, no-store'};
       },

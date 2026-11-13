@@ -1,6 +1,7 @@
 /** Phase B acceptance contract. Import-only, with no live transport or credential loader. */
 import {isDeepStrictEqual} from 'node:util';
 import {privateProduct} from './phase-b-firestore-typed-fixture-preview.mjs';
+import {authUids, project} from './phase-b-http-contract-review.mjs';
 
 const route = '/api/staging/marketplace/owner';
 const fixtureRequest = JSON.stringify({kind: 'product', id: privateProduct.id, requestId: null});
@@ -26,11 +27,29 @@ function checkGoogleInvocationAudience(token) {
     if (parts.length === 3 && parts.every((part) => /^[A-Za-z0-9_-]+$/.test(part)) &&
         claims.aud === 'https://oldx-owner-read-38472235077.asia-south1.run.app' &&
         ['https://accounts.google.com', 'accounts.google.com'].includes(claims.iss) &&
-        Number.isSafeInteger(claims.exp) && claims.exp > Date.now() / 1000) return;
-  } catch {
+        Number.isSafeInteger(claims.exp) && claims.exp > Date.now() / 1000) {
+      if (claims.email === 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com' &&
+          claims.email_verified === true) return;
+      throw new Error('INVOCATION_IDENTITY_UNVERIFIED');
+    }
+  } catch (error) {
+    if (error.message === 'INVOCATION_IDENTITY_UNVERIFIED') throw error;
     // Never include token data in errors.
   }
   throw new Error('INVOCATION_AUDIENCE_UNVERIFIED');
+}
+
+function checkFirebaseIdentity(token, uid) {
+  try {
+    const claims = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+    if (claims.sub === uid && claims.aud === project &&
+        claims.iss === 'https://securetoken.google.com/' + project &&
+        claims.firebase?.sign_in_provider === 'password' &&
+        Number.isSafeInteger(claims.exp) && claims.exp > Date.now() / 1000) return;
+  } catch {
+    // Do not expose claims or parsing errors.
+  }
+  throw new Error('FIXTURE_IDENTITY_UNVERIFIED');
 }
 
 export async function runOwnerReadAcceptance({
@@ -51,6 +70,8 @@ export async function runOwnerReadAcceptance({
     throw new Error('INVALID_ACCEPTANCE_INPUT');
   }
   checkGoogleInvocationAudience(googleToken);
+  checkFirebaseIdentity(ownerToken, authUids[0]);
+  checkFirebaseIdentity(buyerToken, authUids[1]);
 
   const passed = [];
   const deadline = performance.now() + 60 * 60 * 1000;

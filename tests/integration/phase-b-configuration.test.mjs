@@ -103,7 +103,7 @@ test('public binding, IAM bypass, changed condition, traffic drift or failed rea
     const report = inspectPhaseBConfiguration(fakeRead((command, data) => {
       if (command.startsWith(prefix)) patch(data);
     }));
-    assert.equal(report.configuration, 'BLOCKED');
+    assert.equal(report.configuration, check === 'runtimeIdentity' ? 'BLOCKED' : 'FAIL');
     assert.notEqual(report.checks[check], 'MATCH');
     assert.ok(!JSON.stringify(report).includes('private detail'));
   }

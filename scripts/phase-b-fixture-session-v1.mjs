@@ -360,6 +360,7 @@ export function inspectPhaseBConfiguration(read = gcloud) {
   const result = {
     configuration: 'BLOCKED', checks: {}, effectiveDatabaseIam: 'UNVERIFIED',
     leastPrivilegeInvoker: 'UNVERIFIED', stagingExecution: 'NO_GO', production: 'HOLD_NO_GO',
+    hostedAcceptance: 'UNVERIFIED', rollback: 'UNVERIFIED', hostedFixtureCleanup: 'UNVERIFIED',
   };
   function check(label, query, inspect) {
     try {
@@ -462,6 +463,7 @@ export function inspectPhaseBConfiguration(read = gcloud) {
     });
   }
   if (Object.values(result.checks).every((status) => status === 'MATCH')) result.configuration = 'MATCH';
+  else if (Object.values(result.checks).includes('MISMATCH')) result.configuration = 'FAIL';
   return result;
 }
 

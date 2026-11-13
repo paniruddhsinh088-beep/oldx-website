@@ -3,14 +3,16 @@ import test from 'node:test';
 import {runOwnerReadAcceptance} from '../../scripts/phase-b-owner-read-acceptance.mjs';
 import {privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
 
+const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
 const root = '---oldx-owner-read-38472235077.asia-south1.run.app';
+const firebaseToken = (sub) => 'fake.' + Buffer.from(JSON.stringify({sub, aud: 'oldx-staging', iss: 'https://securetoken.google.com/oldx-staging', exp: 4102444800, firebase: {sign_in_provider: 'password'}})).toString('base64url') + '.token';
 const inputs = {
   disabledOrigin: 'https://healthcheck' + root,
   enabledOrigin: 'https://phase-b-acceptance' + root,
   enabledTag: 'phase-b-acceptance',
-  googleToken: 'fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token',
-  ownerToken: 'fake.owner.token',
-  buyerToken: 'fake.buyer.token',
+  googleToken: googleToken,
+  ownerToken: firebaseToken('synthetic-seller-a'),
+  buyerToken: firebaseToken('synthetic-buyer-b'),
 };
 const error = (code) => ({ok: false, error: {code}});
 const responses = {
@@ -68,6 +70,17 @@ test('unexpected data, caching or a transport failure stops immediately and stay
 });
 
 test('wrong origin or shared identity cannot send requests and optional probes report deferred', async () => {
+  const wrongCaller = 'fake.' + Buffer.from(JSON.stringify({
+    aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com',
+    exp: 4102444800, email: 'other@example.invalid', email_verified: true,
+  })).toString('base64url') + '.token';
+  for (const [patch, expected] of [
+    [{googleToken: wrongCaller}, /INVOCATION_IDENTITY_UNVERIFIED/],
+    [{ownerToken: firebaseToken('unrelated-owner')}, /FIXTURE_IDENTITY_UNVERIFIED/],
+  ]) {
+    await assert.rejects(runOwnerReadAcceptance({...inputs, ...patch,
+      send() { assert.fail('Unexpected request'); }}), expected);
+  }
   await assert.rejects(runOwnerReadAcceptance({...inputs, googleToken: 'fake.other.audience',
     send() { assert.fail('Unexpected request'); }}), /INVOCATION_AUDIENCE_UNVERIFIED/);
   const send = ({caseId}) => reply(caseId);
