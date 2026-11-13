@@ -38,7 +38,7 @@ export function createProductReadServer({enabled=false,runtime}={}){
    res.end(JSON.stringify(body));
   };
   try{
-   if(req.url==='/healthz'){
+   if(req.url==='/healthz'||req.url==='/health'){
     if(req.method!=='GET'&&req.method!=='HEAD')return send(failure(405,'METHOD_NOT_ALLOWED'));
     return send({status:200,body:{ok:true}});
    }
