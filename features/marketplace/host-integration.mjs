@@ -36,16 +36,23 @@ export function mountMarketplaceHost({root=document,enabled=false,product={},sto
   if(conversation)return navigation.go('conversation',{providerId:conversation.providerId,enquiryId:conversation.enquiryId});
   products.show('homeView');return false;
  }
- for(const type of ['hashchange','popstate'])listen(view,type,event=>{
+ let traversalUrl=null,traversalTimer;
+ listen(view,'popstate',event=>{
   event.stopImmediatePropagation();
-  const hash=view.location.hash;
-  // These destinations depend only on the fragment; hashchange handles traversal too.
-  if(event.type==='popstate'&&(hash==='#sell'||hash==='#search'))return;
+  // Fragment traversal dispatches popstate followed by hashchange.
+  traversalUrl=view.location.href;
+  view.clearTimeout(traversalTimer);
+  traversalTimer=view.setTimeout(()=>{traversalUrl=null;},0);
+  restoreRoute();
+ });
+ listen(view,'hashchange',event=>{
+  event.stopImmediatePropagation();
+  if(event.newURL===traversalUrl){traversalUrl=null;return;}
   restoreRoute();
  });
  listen(root.getElementById('trustedStoreBrowse'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('stores');});
  if(providers?.navigation)for(const node of root.querySelectorAll('a[href="./service-preview.html?mode=website#services"]'))listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();navigation.go('providers');});
  if(unifiedInbox)for(const node of [root.getElementById('productOwnerInbox'),...root.querySelectorAll('[onclick="openInboxModal()"]')])listen(node,'click',event=>{event.preventDefault();event.stopImmediatePropagation();openInbox();});
  const sessions=createMarketplaceSessionIntegration({enabled,bindings:[products,stores,...(unifiedInbox?[unifiedInbox]:[]),...(providers?.journey?[providerSessionBinding(providers.journey)]:[])]});
- return Object.freeze({product:products,store:stores,inbox:unifiedInbox,restoreRoute,async setSession(value){const result=sessions.setSession(value);if(!value&&active&&view.location.hash==='#sell')products.show('homeView');if(await result&&active){await restoreRoute();return true;}return false;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();unifiedInbox?.destroy();products.destroy();stores.destroy();}});
+ return Object.freeze({product:products,store:stores,inbox:unifiedInbox,restoreRoute,async setSession(value){const result=sessions.setSession(value);if(!value&&active&&view.location.hash==='#sell')products.show('homeView');if(await result&&active){await restoreRoute();return true;}return false;},go:(page,id)=>navigation.go(page,id),async destroy(){active=false;view.clearTimeout(traversalTimer);listeners.forEach(fn=>fn());navigation.clear();await sessions.logout();unifiedInbox?.destroy();products.destroy();stores.destroy();}});
 }

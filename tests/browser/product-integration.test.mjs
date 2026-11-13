@@ -66,7 +66,18 @@ for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('shared main
   expectedRevision:1,publication:'publish',profile:{...profile,isSold:true}}),linked.profile);
  await page.evaluate(()=>host.go('home'));
  await page.locator('#productGrid button').click();await page.waitForFunction(()=>document.querySelector('#productStoreLink').hidden===false);await page.locator('#productStoreLink').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');await page.locator('#storePublicWrap button').click();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');assert.equal(await page.locator('#storePage').isVisible(),false);
- await page.goBack();await page.waitForFunction(()=>document.querySelector('#storePage').style.display==='block');await page.goForward();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');await page.reload();await boot(locale);await bootHost();assert.equal(await page.locator('#detailTitle').textContent(),'મૂળ Cafe\u0301');
+ await page.evaluate(()=>{
+  window.storeRestorations=0;
+  const port=window.publicPorts.detail;
+  window.publicPorts={...window.publicPorts,detail:(body,context)=>{
+   if(body.kind==='store')window.storeRestorations++;
+   return port(body,context);
+  }};
+ });
+ await page.goBack();
+ await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');
+ assert.equal(await page.evaluate(()=>window.storeRestorations),1,'Back restores the Store through a single trusted read');
+ await page.goForward();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');await page.reload();await boot(locale);await bootHost();assert.equal(await page.locator('#detailTitle').textContent(),'મૂળ Cafe\u0301');
  await page.evaluate(()=>host.go('home'));await page.locator('#trustedStoreBrowse').click();assert.equal(await page.evaluate(()=>location.hash),'#stores');await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.reload();await boot('hi');await bootHost();await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.locator('#homeStoresGrid button').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2'));
  await page.evaluate(()=>host.go('home'));await page.locator('#homeServicesPreviewSection a[href*="mode=website"]').click();assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#services'});await page.evaluate(()=>{history.pushState(null,'','#provider/sp_public');return host.restoreRoute();});assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#provider/sp_public'});assert.equal(await page.evaluate(()=>host.go('conversation',{providerId:'sp_public',enquiryId:'enquiry'})),true);assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-conversation-preview.html',hash:'#conversation/buyer/sp_public/enquiry'});
 
