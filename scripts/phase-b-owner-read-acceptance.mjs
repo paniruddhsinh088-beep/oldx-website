@@ -4,7 +4,7 @@ import {privateProduct} from './phase-b-firestore-typed-fixture-preview.mjs';
 import {authUids, project} from './phase-b-http-contract-review.mjs';
 
 const route = '/api/staging/marketplace/owner';
-export const ownerReadAudience = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+export const ownerReadAudience = 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app';
 const audience = ownerReadAudience;
 const invoker = 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com';
 const LIVE_HOSTED_ACCEPTANCE_ENABLED = false;
@@ -16,9 +16,9 @@ const ownerResponse = {
 };
 
 function checkedOrigin(origin, tag) {
-  // Require the deterministic project-number URL. The operator must also
+  // Require the tag on the owner-verified staging service host. The operator must also
   // independently verify tag-to-revision and traffic mappings before any live run.
-  const expected = 'https://' + tag + '---oldx-owner-read-38472235077.asia-south1.run.app';
+  const expected = ownerReadAudience.replace('https://', 'https://' + tag + '---');
   if (origin !== expected || !/^[a-z][a-z0-9-]{0,30}$/.test(tag)) throw new Error('UNAPPROVED_ACCEPTANCE_TARGET');
   return origin;
 }

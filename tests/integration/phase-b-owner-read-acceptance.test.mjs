@@ -3,8 +3,8 @@ import test from 'node:test';
 import {runOwnerReadAcceptance, runHostedOwnerReadAcceptance, simulateKeylessOwnerReadAcceptance} from '../../scripts/phase-b-owner-read-acceptance.mjs';
 import {privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
 
-const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
-const root = '---oldx-owner-read-38472235077.asia-south1.run.app';
+const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
+const root = '---oldx-owner-read-lqpaz3pd5a-el.a.run.app';
 const firebaseToken = (sub) => 'fake.' + Buffer.from(JSON.stringify({sub, aud: 'oldx-staging', iss: 'https://securetoken.google.com/oldx-staging', exp: 4102444800, firebase: {sign_in_provider: 'password'}})).toString('base64url') + '.token';
 const inputs = {
   disabledOrigin: 'https://healthcheck' + root,
@@ -71,7 +71,7 @@ test('unexpected data, caching or a transport failure stops immediately and stay
 
 test('wrong origin or shared identity cannot send requests and optional probes report deferred', async () => {
   const wrongCaller = 'fake.' + Buffer.from(JSON.stringify({
-    aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com',
+    aud: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', iss: 'https://accounts.google.com',
     exp: 4102444800, email: 'other@example.invalid', email_verified: true,
   })).toString('base64url') + '.token';
   for (const [patch, expected] of [
@@ -106,7 +106,7 @@ test('keyless transport mints once and keeps operator OAuth separate from hosted
       assert.equal(options.headers.Authorization, 'Bearer synthetic-access-token');
       assert.equal(options.headers['X-Goog-User-Project'], 'oldx-staging');
       assert.deepEqual(JSON.parse(options.body), {
-        audience: 'https://oldx-owner-read-38472235077.asia-south1.run.app', includeEmail: true,
+        audience: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', includeEmail: true,
       });
       return Response.json({token: googleToken});
     }

@@ -314,3 +314,9 @@ gcloud run services describe oldx-owner-read --project=oldx-staging --region=asi
 ```
 
 Compare the untagged URL with the pinned audience, and compare the healthcheck tag URL separately. Cloud Run can report a hash-based URL. A different URL needs independent review before changing any pin. Verify main revision oldx-owner-read-00001-8kr at 100 percent and healthcheck revision oldx-owner-read-00002-tid at zero percent, then use the existing revision checks for the runtime identity and absence of activation flags. This establishes rollback configuration evidence only. No minting, HTTP probe, traffic change or rollback is needed for this diagnosis. Effective IAM and invocation remain UNVERIFIED. [Cloud Run URLs](https://docs.cloud.google.com/run/docs/triggering/https-request) and [service audience](https://docs.cloud.google.com/run/docs/authenticating/service-to-service).
+
+### Owner-verified Phase B hostname
+
+The approved audience is the untagged service URL `https://oldx-owner-read-lqpaz3pd5a-el.a.run.app`. The `healthcheck` URL is `https://healthcheck---oldx-owner-read-lqpaz3pd5a-el.a.run.app`, mapped to latest-ready revision `oldx-owner-read-00002-tid` at zero main traffic. Main traffic remains on `oldx-owner-read-00001-8kr` at 100 percent. The old project-number pin differed byte for byte from the owner-reported service URL. The preflight already requests JSON from gcloud and parses JSON. YAML was only used for the human-readable metadata check.
+
+The preflight and hosted adapter now share the exact owner-verified audience pin. Alternate audiences and tag URLs still block. Offline regression results: 23 passed, 0 failed. No hosted request or token minting ran. Effective IAM, named invocation and rollback behavior remain UNVERIFIED. Production HOLD / NO-GO.

@@ -566,3 +566,7 @@ The existing fixture CLI now provides `--cloud-preflight` for exact staging conf
 ## Phase B preflight mismatch diagnosis
 
 The reported UNVERIFIED audience identifies a pinned status.url mismatch or missing URL. Project/service direct invoker counts of 0/1 are expected; exact principal and condition checks still apply. The preflight now lists all blocking check names without exposing raw metadata. Focused offline tests: 6 passed, 0 failed. See the staging gate for the targeted read-only metadata command. No Cloud requests or changes. Production HOLD / NO-GO.
+
+## Phase B audience pin aligned with owner-verified metadata
+
+The verified staging service reports the hash-based hostname. Updated the exact audience and tagged host checks to match that evidence while preserving the IAM, revision and disabled execution gates. The preflight parses JSON; the YAML metadata read was diagnostic only. Focused offline checks passed 23/23. See [staging gate](cloud-run-product-owner-read-staging-gate.md#owner-verified-phase-b-hostname).

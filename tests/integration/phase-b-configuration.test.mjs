@@ -133,9 +133,9 @@ function preflightRead(mutate = () => {}) {
     }
     return fakeRead((command, data) => {
       if (command.startsWith('run services describe')) {
-        data.status.url = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+        data.status.url = 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app';
         data.status.latestReadyRevisionName = health;
-        data.status.traffic[1].url = data.status.url.replace('https://', 'https://healthcheck---');
+        data.status.traffic[1].url = 'https://healthcheck---oldx-owner-read-lqpaz3pd5a-el.a.run.app';
       }
       mutate(command, data);
     })(...args);
@@ -146,7 +146,7 @@ test('consolidated preflight only sends one anonymous GET and leaves effective a
   let calls = 0;
   const report = await inspectPhaseBPreflight(preflightRead(), (url, options) => {
     calls++;
-    assert.equal(url, 'https://healthcheck---oldx-owner-read-38472235077.asia-south1.run.app/health');
+    assert.equal(url, 'https://healthcheck---oldx-owner-read-lqpaz3pd5a-el.a.run.app/health');
     assert.equal(options.method, 'GET');
     assert.equal(options.redirect, 'error');
     assert.equal(options.credentials, 'omit');
@@ -167,7 +167,12 @@ test('operator mismatch, missing API, key drift, wrong audience and broader Fire
   for (const [match, patch, check] of [
     ['api', (data) => { data.pop(); }, 'iamCredentialsApi'],
     ['keys', (data) => { data.push({keyType: 'USER_MANAGED'}); }, 'runtimeKeys'],
-    ['run services describe', (data) => { data.status.url = 'https://unexpected.invalid'; }, 'serviceAudience'],
+    ['run services describe', (data) => {
+      data.status.url = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+    }, 'serviceAudience'],
+    ['run services describe', (data) => {
+      data.status.traffic[1].url = 'https://healthcheck---oldx-owner-read-38472235077.asia-south1.run.app';
+    }, 'taggedUrl'],
     ['iam roles describe oldxProductReadFirestore', (data) => {
       data.includedPermissions.push('datastore.entities.delete');
     }, 'oldxProductReadFirestore'],

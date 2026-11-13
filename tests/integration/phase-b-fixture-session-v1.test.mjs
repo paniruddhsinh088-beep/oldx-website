@@ -6,7 +6,7 @@ import {authUids, firestoreDocs} from '../../scripts/phase-b-http-contract-revie
 import {offlinePayloads, privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
 import {simulateFixtureSession, simulateFixtureAcceptance} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
-const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-38472235077.asia-south1.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
+const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
 const prefix = 'projects/oldx-staging/databases/(default)/documents/';
 const time = '2026-11-14T00:00:00.000001Z';
 const createdAt = '1794614400000';
@@ -213,7 +213,7 @@ test('successful delete response with residual resource cannot complete session'
 });
 
 test('integrated Phase B acceptance binds fixture identities before guarded cleanup', async () => {
-  const root = '---oldx-owner-read-38472235077.asia-south1.run.app';
+  const root = '---oldx-owner-read-lqpaz3pd5a-el.a.run.app';
   const error = (code) => ({ok: false, error: {code}});
   const replies = {
     'disabled-health': [200, {ok: true}],
