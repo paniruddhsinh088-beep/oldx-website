@@ -1,7 +1,7 @@
 /** Phase B staging fixtures. Live mutation is hard-disabled on the review branch. */
 import {execFileSync} from 'node:child_process';
 import {randomBytes, randomUUID} from 'node:crypto';
-import {closeSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, writeFileSync} from 'node:fs';
+import {closeSync, constants, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, writeFileSync} from 'node:fs';
 import {homedir} from 'node:os';
 import {join} from 'node:path';
 import {isDeepStrictEqual} from 'node:util';
@@ -190,10 +190,29 @@ export function journalStatus() {
   requireSafe(rootInfo.isDirectory() && !rootInfo.isSymbolicLink() &&
     privatePath(rootInfo), 'UNSAFE_JOURNAL_DIRECTORY');
   const path = join(root, 'journal.jsonl');
-  const info = lstatSync(path);
-  requireSafe(info.isFile() && !info.isSymbolicLink() &&
-    privatePath(info) && info.size > 0 && info.size <= 16_384, 'UNSAFE_JOURNAL');
-  const contents = readFileSync(path, 'utf8');
+  requireSafe(lstatSync(path).isFile(), 'UNSAFE_JOURNAL');
+  const file = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  let contents;
+  try {
+    const info = fstatSync(file);
+    requireSafe(info.isFile() && privatePath(info) && info.nlink === 1 &&
+      info.size > 0 && info.size <= 16_384, 'UNSAFE_JOURNAL');
+    const buffer = Buffer.alloc(info.size + 1);
+    let size = 0;
+    while (size < buffer.length) {
+      const count = readSync(file, buffer, size, buffer.length - size, null);
+      if (!count) break;
+      size += count;
+    }
+    requireSafe(size === info.size && fstatSync(file).mtimeMs === info.mtimeMs, 'JOURNAL_CHANGED_DURING_READ');
+    contents = buffer.toString('utf8', 0, size);
+  } finally {
+    closeSync(file);
+  }
+  return parseRecoveryJournal(contents);
+}
+
+export function parseRecoveryJournal(contents, now = Date.now()) {
   requireSafe(contents.endsWith('\n'), 'INCOMPLETE_JOURNAL');
   const lines = contents.slice(0, -1).split('\n');
   requireSafe(lines.length >= 1 && lines.length <= 40, 'INVALID_JOURNAL_LENGTH');
@@ -203,6 +222,9 @@ export function journalStatus() {
     typeof header.sessionId === 'string' &&
     /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(header.sessionId),
   'WRONG_JOURNAL');
+  const started = Date.parse(header.at);
+  requireSafe(Number.isFinite(started) && started <= now, 'INVALID_JOURNAL_TIME');
+  let previousTime = started;
   const latest = new Map();
   const evidence = new Map();
   let completed = false;
@@ -214,8 +236,11 @@ export function journalStatus() {
       requireSafe(latest.size === resources.length && resources.every(
         (item) => latest.get(item) === 'DELETE_ACKNOWLEDGED'), 'PREMATURE_JOURNAL_COMPLETION');
       completed = true;
-      continue;
     }
+    const at = Date.parse(entry.at);
+    requireSafe(Number.isFinite(at) && at >= previousTime && at <= now, 'INVALID_JOURNAL_TIME');
+    previousTime = at;
+    if (completed) continue;
     requireSafe(resources.includes(resource) && states.has(state), 'INVALID_JOURNAL_ENTRY');
     const previous = latest.get(resource);
     const next = {
@@ -229,8 +254,7 @@ export function journalStatus() {
     const ev = entry.evidence;
     if (state === 'CREATE_UNKNOWN') {
       requireSafe(authResource ?
-        (typeof ev?.email === 'string' && ev.email.startsWith(resource + '-') &&
-          ev.email.endsWith('@example.invalid') && ev.email.length < 160) :
+        (ev?.email === resource + '-' + header.sessionId + '@example.invalid') :
         ev === undefined, 'INVALID_CREATE_EVIDENCE');
       evidence.set(resource, ev);
     } else if (state === 'CREATED_VERIFIED') {
@@ -254,7 +278,40 @@ export function journalStatus() {
   // Metadata is local-only and MUST be corroborated with remote per-ID records.
   latest.evidence = evidence;
   latest.completed = completed;
+  latest.stale = now - started >= 86_400_000;
   return latest;
+}
+
+export async function inspectRecovery(send, journal) {
+  const api = transport(send);
+  const observations = [];
+  for (const resource of resources) {
+    const local = journal?.get(resource) ?? 'NO_RECORDED_MUTATION';
+    const evidence = journal?.evidence.get(resource);
+    const isAuth = authUids.includes(resource);
+    let observation = 'LOOKUP_UNVERIFIED';
+    try {
+      const remote = await (isAuth ? api.lookup(resource) : api.getDoc(resource));
+      if (remote === null) observation = 'ABSENT_AT_CHECK_TIME';
+      else if (local === 'DELETE_ACKNOWLEDGED') observation = 'PRESENT_AFTER_DELETE_ACK';
+      else if (!evidence || local === 'CREATE_UNKNOWN') observation = 'PRESENT_WITHOUT_VERIFIED_CREATION';
+      else {
+        observation = 'PRESENT_PROVENANCE_MISMATCH';
+        try {
+          const matches = isAuth
+            ? userEvidence(remote, resource, evidence.email) === evidence.createdAt
+            : documentEvidence(remote, resource) === evidence.updateTime;
+          if (matches) observation = 'PRESENT_MATCHES_JOURNAL_REQUIRES_OWNER_REVIEW';
+        } catch {
+          // Keep the mismatch label and suppress all remote data.
+        }
+      }
+    } catch {
+      // A failed lookup must never count as absence or suppress other exact lookups.
+    }
+    observations.push({resource, local, observation});
+  }
+  return {observations, allAbsent: observations.every(({observation}) => observation === 'ABSENT_AT_CHECK_TIME')};
 }
 
 function gcloud(...args) {
@@ -307,36 +364,20 @@ async function main(args) {
   }
   if (args.length === 1 && args[0] === '--status') {
     requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
-    const journal = journalStatus();
-    const api = transport(liveSend);
-    let unresolved = !journal.completed;
-    for (const resource of resources) {
-      const local = journal.get(resource) ?? 'NO_RECORDED_MUTATION';
-      const evidence = journal.evidence.get(resource);
-      let remote;
-      if (authUids.includes(resource)) remote = await api.lookup(resource);
-      else remote = await api.getDoc(resource);
-      let observation = 'ABSENT_AT_CHECK_TIME';
-      if (remote !== null) {
-        observation = 'PRESENT_UNVERIFIED';
-        try {
-          if (local !== 'CREATE_UNKNOWN' && evidence) {
-            if (authUids.includes(resource)) {
-              const actual = userEvidence(remote, resource, evidence.email);
-              if (actual === evidence.createdAt) observation = 'PRESENT_MATCHES_JOURNAL_NOT_DELETE_APPROVAL';
-            } else if (documentEvidence(remote, resource) === evidence.updateTime) {
-              observation = 'PRESENT_MATCHES_JOURNAL_NOT_DELETE_APPROVAL';
-            }
-          }
-        } catch {
-          // Never print remote content or raw errors. Only report unresolved.
-        }
-        unresolved = true;
-      }
+    guardOperator();
+    let journal;
+    try {
+      journal = journalStatus();
+    } catch {
+      console.log('JOURNAL_UNAVAILABLE_OR_INVALID_NO_PROVENANCE');
+    }
+    const {observations, allAbsent} = await inspectRecovery(liveSend, journal);
+    for (const {resource, observation, local} of observations) {
       console.log(resource, observation, local);
     }
-    console.log(journal.completed ? 'JOURNAL_COMPLETE_RECORDED' : 'JOURNAL_INCOMPLETE_MANUAL_REVIEW_REQUIRED');
-    return unresolved ? 3 : 0;
+    if (journal?.stale) console.log('JOURNAL_STALE_MANUAL_REVIEW_REQUIRED');
+    if (allAbsent) console.log('ALL_FOUR_ABSENT_AT_CHECK_TIME');
+    return allAbsent && journal?.completed && !journal.stale ? 0 : 3;
   }
   requireSafe(args.length === 1 && args[0] === '--execute' && LIVE_EXECUTION_ENABLED, 'LIVE_EXECUTION_DISABLED');
   requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
