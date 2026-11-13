@@ -424,6 +424,19 @@ Yasmin confirmed from Firebase Console that `oldx-staging` Email/Password sign-i
 
 Next actual engineering task: single versioned fail-closed, default-off four-fixture session runner with secure ephemeral credentials, exact-only Auth/Firestore create, journal, Firestore updateTime conditional delete, Auth creation-evidence delete check, read-only recovery, fake-only transport tests. Then present actual execution command and request separate, scoped approval for exactly two enabled Auth account creates/login/deletes and two Firestore document create/deletes (not covered by fifth-user probe consent). Cloud Run IAM, invoker, Rules, Billing and production remain unchanged. HOLD/NO-GO.
 
+
+## 2026-11-14 — Independent review of Codex four-fixture runner at 0c189f20
+
+Codex reported remote SHA 0c189f204244455d8e807fa1872d7f0b18b37b1d, Node 24.22.3 focused fixture-session tests 8 PASS, 0 FAIL, and no live cloud changes. Independent GitHub source inspection confirms scripts/phase-b-fixture-session-v1.mjs and focused fake tests. LIVE_EXECUTION_ENABLED=false. Reviewer has not rerun tests or verified CI/Linux. Runner has fixed Auth UIDs/doc paths, create-only Firestore, ephemeral passwords, password-sign-in token identity checks, Firestore conditional delete by updateTime, Auth UID/email/createdAt pre-delete check, and a Linux JSONL journal.
+
+BLOCKERS before live 4-resource approval:
+1. Linux openJournal (mode 0700 dir, 0600 exclusive file, fsync) and journalStatus were not exercised by the 8 mocked transport tests; validate persistence/crash/restart in isolated temporary HOME, with no Cloud requests.
+2. --status requires an existing journal and reports latest states only, without validating detailed receipt provenance. It is NOT a supervised per-resource cleanup/recovery procedure; no automatic deletion or session resumption is implemented.
+3. Password sign-in failure after four creations, or uncertain create/delete transport result, can leave resources. The runner stops without retry, correctly; a separately authorized manual recovery by exact identity evidence must be available before first live write.
+4. Fake responses do not establish remote Firestore create/conditional delete permissions or actual Password sign-in; provider Enabled is owner-reported. Effective Cloud Run IAM/invoker proof is still missing and runtime is default-off.
+
+Do NOT toggle live gate or run --execute now. Next efficient step: one focused Linux journal/recovery audit plus source-only exact-ID recovery plan, not repeated old tests; then review exact commands and seek fresh scoped owner authorization for two enabled Auth users, two private docs, two sign-ins and their exact-ID cleanup. No IAM/Rules/Billing/Cloud Run/production changes. Production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
