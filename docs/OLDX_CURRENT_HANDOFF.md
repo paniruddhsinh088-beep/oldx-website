@@ -493,6 +493,16 @@ Yasmin's Cloud Shell screenshot at approximately 02:40 IST shows the existing so
 
 User requested moving quickly without repetitive tests or code tasks. Consolidated the remaining Stage B IAM, named least-privilege invoker and supervised zero-main-traffic Owner Read acceptance dependencies into one source-only decision packet in `docs/cloud-run-product-owner-read-staging-gate.md` (commit `476ac6ed`). Baseline: earlier real read-only Cloud configuration was 10/10 MATCH with zero **direct** invoker and public bindings, ingress `all`; effective database IAM and least-privilege invoker remain UNVERIFIED. The next operator decision must explicitly scope: a named keyless Google caller and audienced ID token path, any service-level invocation grant or new identity, whether staging-only positive Firestore access proof is acceptable with unproven negative cross-database enforcement, an exact tagged 0%-traffic enabled revision and activation config, fixed 4-fixture and quota-counter writes/cleanup, 200-request/60-minute/1000-billed-instance-second operational stop, and manual rollback. Prior four-fixture approval does not authorize IAM changes or Cloud Run activation. Do not modify any cloud configuration or run repeated offline tests without a change. Production HOLD/NO-GO.
 
+## 2026-11-14 — Dedicated keyless staging invoker principal and scoped IAM bindings created
+
+Yasmin's Cloud Shell screenshots verify these **authorized staging-only IAM mutations**:
+- Created `oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com` in project `oldx-staging`.
+- Added `roles/run.invoker` for that service account on Cloud Run service `oldx-owner-read` only, region `asia-south1`.
+- Added `roles/iam.serviceAccountOpenIdTokenCreator` for `user:yasminparmar087@gmail.com` on that one service account only.
+- No service-account key created. No Cloud Run revision, traffic, ingress, Firebase, Firestore, billing, or production changes made.
+
+**Next:** read-only verify the IAM Credentials API is already enabled, retrieve the exact Cloud Run service URL, and inspect the two scoped policy bindings. Do not enable an API automatically. If API enabled and bindings exact, obtain a keyless ID token in a shell variable without printing it; token minting itself does not invoke Cloud Run. Invocation of the existing service and any fixture writes remain gated separately. Effective Firestore IAM is still UNVERIFIED; staging execution NO-GO; production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
