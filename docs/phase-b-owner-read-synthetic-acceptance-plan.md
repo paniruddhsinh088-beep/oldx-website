@@ -159,3 +159,33 @@ node --test tests/integration/phase-b-offline-fixture-preflight.test.mjs
 ```
 
 **These new tests have not been reported as executed yet.** This is an implementation checkpoint, not evidence of synthetic Firebase data being created, token acquisition, IAM enforcement, rollback or enabled runtime acceptance. A future create/verify/cleanup tool must remain a separate artifact and require another specific owner approval after the exact data retention, cleanup permission, identity/token path and access risks are closed.
+
+
+## Proposed token acquisition and exact-ID cleanup — decision checkpoint
+
+**2026-11-13: source/documentation review only. No credentials acquired or identity/provider settings changed.** Official Firebase references: [Admin manage users](https://firebase.google.com/docs/auth/admin/manage-users), [Firebase Auth REST API](https://firebase.google.com/docs/reference/rest/auth/).
+
+### Separate the two authentication layers
+
+1. **Cloud Run invocation:** an authorized Google IAM principal must supply a Google-signed identity token whose audience matches the target `run.app` service URL. It is passed in the `X-Serverless-Authorization` header (already exercised by the operator owner in Phase A, **not least-privilege proof**).
+2. **Firebase End User:** a *different* Firebase ID token is passed in `Authorization: Bearer <FIREBASE_ID_TOKEN>` and verified with revocation checks by the trusted runtime. The Firebase ID token is not a Cloud Run invoker token. Do not put either token in chat, GitHub, shell history, saved logs, screenshot or CI environment. Never combine two different tokens in the same header.
+
+### Recommended **future** test identity flow — NOT APPROVED TO EXECUTE
+
+- **Preflight:** independently confirm `oldx-staging` Firebase Email/Password sign-in provider is already enabled. If it is disabled, STOP; enabling a provider is a separate owner-gated settings change. Verify named operator can **already** create and delete Firebase Auth test accounts by exact UID without granting project-wide broader IAM. The dedicated runtime SA currently has only `firebaseauth.users.get`, not `users.create`, `users.delete` or a token signing grant; **do not expand it** for fixtures.
+- **Create:** after separate authorization and exact UID-not-found guard, use Firebase Admin SDK `getAuth(app).createUser({uid, email, password, emailVerified:false, disabled:false})` for the two synthetic users with locally generated strong, unique, temporary passwords supplied through a reviewed secure ephemeral channel. `example.invalid` emails in local JSON are placeholders: verify whether permitted by provider policy for test login; do not assume account or login already exists. Never record passwords in the manifest or source.
+- **Sign-in:** only after separately approved creation, use a dedicated isolated test client or the Firebase Authentication REST `accounts:signInWithPassword` method using the staging **Web API Key** from approved project configuration (not a service-account private key). Parse `localId` and require it matches the exact intended synthetic UID; use the returned **`idToken` in-memory only**. Avoid outputting the full JSON response, which also contains a refresh token; never run with shell tracing (`set -x`) or transmit tokens to the chat. Clear local temporary password/token holders after the bounded test. A public Firebase Web API Key is not itself authorization to access Firestore; deny-all client Rules remain.
+- **Revoke/negative test:** Do not actually disable/revoke or delete a test user merely to simulate revocation until explicit mutation and cleanup approvals. Existing offline doubles already cover simulated revoked tokens. If an approved live revocation test is needed later, budget it as an additional Auth mutation and avoid testing a real account.
+- **Two-factor caller identity:** the Cloud Run tester must have a named least-privilege IAM invocation path separately approved. Never silently rely on Yasmin's project-owner privileges as the production/test model.
+
+### Exact-ID cleanup contract and risk
+
+- **Creation manifest:** record only the two exact synthetic UIDs, two exact Firestore document paths, creation timestamp, proposed expiry within 24h, a random non-secret test-run marker, **redacted** result statuses and exact quota-counter paths actually touched. Reconcile manifest before enabling any runtime test.
+- **Document deletion:** using an already authorized test operator and a separately approved cleanup scope, re-read the two exact documents. Check the test-run marker, private product `ownerUid`, `kind`, `id`, and the expected payload before deleting. Delete each *exact* document by ID only; if changed, missing or unknown, STOP and log residue (not contents). For a race-free production-grade cleanup design, review Firestore update-time preconditions before any actual deletion; a pre-delete read alone is not atomic protection against intervening writes.
+- **Auth deletion:** using exact `getUser(uid)` read, verify the test-run marker or immutable creation evidence plus the known synthetic identity; then request separate permission to call `deleteUser(uid)` for those two UIDs only. Never list/export other users, call `deleteUsers` for multiple IDs, or use project-wide operations. If account ownership cannot be established, STOP.
+- **Quota counters:** no IDs are yet known. Never delete the entire `marketplaceRateLimits_v1` collection. If the runtime later creates counters, capture their exact IDs and approve individual cleanup, or leave them until retention rules are separately decided. Do not claim cleanup complete while any quota counter/test account remains.
+- **Stop and cost policy:** absence of Email/Password provider, identity-creation permissions, proper per-ID cleanup, accurate IAM enforcement proof, a safe token transport, or budget headroom is a BLOCKER, not a reason to weaken guards or switch to a service-account JSON key. Cloud data and auth operations can incur usage; budget alerts are advisory rather than hard limits. No automatic deletion is scheduled.
+
+### Current explicit permissions boundary
+
+Yasmin has approved **preparing this plan and offline-only tooling**. The owner has **not approved actual creation, login, token acquisition, Firestore record read/write, cleanup deletion, IAM change, enabled Cloud Run revision or production activation**. Next authorization must name exact create and delete resources, named actor, retention and cleanup, and how credentials will be handled. Provide a separate scoped execution checklist/script **for review** before asking to run it.
