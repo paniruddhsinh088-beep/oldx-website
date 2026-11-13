@@ -477,6 +477,12 @@ Owner Cloud Shell screenshot confirms `git pull --ff-only origin security-harden
 
 **Next actual blocker**, not more repetitive fake testing: obtain bounded read-only verification evidence of Cloud Run service IAM invoker policy and the existing conditional Firestore service-account access, clearly labeling unprovable effective enforcement as PENDING. Any IAM binding, tagged enabled revision, actual fixture/data mutation, or runtime activation requires independently scoped owner approvals; runner remains default-off. Production HOLD/NO-GO.
 
+## 2026-11-14 02:38 IST — Phase B configuration offline tests 3/3 PASS
+
+Yasmin's Cloud Shell screenshot at approximately 02:38 IST 2026-11-14 verifies fast-forward pull of `security-hardening-review` to `1a49ab2` and focused execution of `node --test tests/integration/phase-b-configuration.test.mjs`. Terminal confirms **tests 3, pass 3, fail 0, skipped 0** (~163 ms). Tests simulate fixed configuration matching without falsely granting effective IAM/invoker GO, wrong local project fail-closed, and rejection of public invoker bindings, IAM bypass, changed database condition, traffic drift, or failed read. These are **offline mock tests**, not actual Cloud IAM or Cloud Run live enforcement checks. No Cloud resources were changed.
+
+Next step: use only the existing `--check-configuration` read-only mode in `scripts/phase-b-fixture-session-v1.mjs` under the authorized staging operator, capturing its redacted configuration report and distinguishing MATCH from UNVERIFIED. It checks direct policy bindings but cannot prove inherited permissions, true effective Firestore condition enforcement, or least-privilege invocation. Do not change IAM/Cloud Run/Firebase/production or run `--execute`. Previous passed suites should not be repeated without relevant changes. Production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
