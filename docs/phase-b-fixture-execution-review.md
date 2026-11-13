@@ -241,3 +241,24 @@ The exact Firestore REST `createDocument` uses `documentId` on the create reques
 “`oldx-staging`માં માત્ર **`synthetic-auth-crud-probe-20261114`** UIDવાળો એક વધારાનો નકલી Firebase Auth User બનાવી, તેની ઓળખ ચકાસીને **એ જ નિયંત્રિત Sessionમાં Delete કરવાનો પ્રયાસ** કરવા મને અલગ મંજૂરી છે. Cleanup નિષ્ફળ જાય તો User અસ્થાયી રીતે બાકી રહી શકે છે તે જોખમ સમજું છું. પહેલા સંપૂર્ણ Executable Commands બતાવો. IAM, Rules, Billing, Cloud Run, Production અથવા અન્ય Users/Documentsમાં ફેરફાર મંજૂર નથી.”
 
 Only if Yasmin explicitly accepts this scope and risk, separately prepare/review exact commands and confirm supervised operator presence; **approval does not by itself trigger execution**. Without it, **NO-GO for fifth user and existing four-resource run**.
+
+
+## 2026-11-14 — Audit of uploaded one-user probe and recovery helper: pre-execution findings
+
+**Source review (no Cloud calls):** inspected the complete operator-uploaded `oldx_auth_crud_probe_REVIEW.py` and `oldx_auth_probe_recovery_readonly.py`. They are separate, user-downloaded files and **not tracked in this GitHub branch**. Prior screenshot established that `--review` prints `ZERO CLOUD REQUESTS`; no live mutation has yet occurred.
+
+**Verified strengths:** exact project `oldx-staging`, intended Yasmin account, single reserved UID `synthetic-auth-crud-probe-20261114`, isolated `example.invalid` email, account initially disabled and no password, no Firestore endpoints, UID/email collision lookup, explicit user confirmations, redacted API errors, no automatic retries on create/delete, independent read-only UID recovery script. Current official REST reference confirms Auth `projects.accounts.delete` uses `POST /v1/projects/{targetProjectId}/accounts:delete` with `localId` and `firebaseauth.users.delete`; a disabled-account-only `projects.accounts.batchDelete` endpoint exists but choosing it requires separate API, response and authorization review and does not supply a creation-generation guard.
+
+**Open defects/risk requiring operator review BEFORE `--execute`:**
+
+1. **No durable per-UID creation receipt.** In the existing CRUD script the creation timestamp lives only in a Python variable. If terminal disconnects after successful create or the create response times out, it is lost. Recovery only confirms exact UID/email/disabled state and presence of a timestamp; it does NOT prove the user belongs to *this* create attempt. A recovery report of `EXISTS` is **not permission to delete**. Record protected minimal per-UID creation evidence before any destructive recovery.
+2. **Single OAuth access token** is fetched once before create. Expiration or authorization revocation before deletion can block the operation. The recovery lookup can fetch another token; it cannot itself delete anything and does not guarantee that new authorization will succeed.
+3. **Ambiguous outcomes.** A POST may reach Google while the client times out. Do not blindly retry creation/deletion; use exact UID lookup plus creation evidence, STOP on mismatches. HTTP 200 from deletion is not sufficient without subsequent exact UID absence verification.
+4. **Second confirmation can be declined** after creation, leaving a disabled user. A supervised same-session cleanup operator and explicit action plan must be in place before the first write. The 24h deadline is a target, not a scheduled automatic deletion.
+5. **Time-of-check/time-of-use race**: no Auth `updateTime`/generation precondition. Checking `createdAt` and exact UID immediately before delete reduces—but cannot eliminate—risk if the UID is removed/reused concurrently.
+6. **Unverified live API create/delete**: the code's disabled/passwordless creation semantics and IAM permissions have only documentation-level support; `--review` never exercised them. A successful simulated output should not be called a successful cleanup.
+7. **API key in query URL**: only use staging project's Web API key, never print URLs or expose logs; never place the key in an argv argument or repo. Treat Google API keys as configurable project identifiers, not secret authorization (OAuth grants authorization). Do not log tokens, email records or raw responses.
+
+**Disposition:** existing uploaded `--execute` must remain **NO-GO** pending (a) reviewed remediation for durable receipt and time-of-failure handling, (b) a supervised deletion/recovery process including exact commands, and (c) *fresh separate owner confirmation* immediately before first write. Existing owner approval authorizes the one-user test concept and requests command review; it did not authorize executing commands now. Do not use the full four-resource scope as fallback.
+
+**Immediate safe next step:** prepare an operator-readable redacted receipt template and exact read-only recovery commands. Do not create or delete any Auth user merely to test the recovery workflow. No IAM, Billing, Rules, Cloud Run or production changes.
