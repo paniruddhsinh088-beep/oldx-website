@@ -27,18 +27,15 @@
 - Existing source `scripts/firebase-marketplace-repository.mjs` and `scripts/staging-marketplace-context.mjs` use actor namespace `marketplaceActors_v1`, owner record `marketplacePrivate_v1/product_{id}` and quota namespace `marketplaceRateLimits_v1`. Any actual fixture creation, Firebase Auth user, quota-counter write, cleanup, IAM mutation, enabled revision, and live traffic require **separate explicit Yasmin approval** with exact scope. No passwords/tokens in repo or chat.
 - Phase B remains blocked on *effective* per-database IAM evaluation, approved exact synthetic data creation and retention, narrowly scoped invocation identity/caller path, runtime enabled-image/env plan, budget/time cap and authorized rollback. Keep all default-off.
 
+## 2026-11-13 21:41 IST — Firestore metadata verification
+
+Owner-provided Cloud Shell screenshot verifies **read-only** `gcloud firestore databases describe` and `list` on `oldx-staging`. The described database is `projects/oldx-staging/databases/(default)`, `locationId: asia-south1`, `type: FIRESTORE_NATIVE`, `deleteProtectionState: DELETE_PROTECTION_DISABLED`. The list returned only `(default)`; `state` was not populated/displayed in the captured output, so do not assert a particular database state. No document contents accessed, no cloud modifications made. No other database visible at this checkpoint, but this **does not prove** the Firestore IAM Condition's effective permission scope. Delete protection disabled is a separate risk requiring owner approval before any change.
+
+**Next task:** evaluate whether the runtime service account's effective resource-scoped permissions can be assessed without enabling a new API or impersonating the service account. Use existing supported read-only means and report any unsupported/inconclusive result; do not guess PASS. Keep the two Cloud Run revisions, default-off backend, deny-all Rules and production HOLD/NO-GO unchanged.
+
 ## The exact NEXT action at snapshot
 
-The operator was given the following **READ-ONLY** Cloud Shell command, but **no result has yet been shared**:
-
-```bash
-set -euo pipefail
-P="oldx-staging"
-gcloud firestore databases describe --project="$P" --database="(default)" --format="yaml(name,locationId,type,state,deleteProtectionState)"
-gcloud firestore databases list --project="$P" --format="table(name,locationId,type,state)"
-```
-
-Wait for the screenshot/result or continue other **safe local documentation/tests** only. These read database metadata, not documents, and cannot by themselves prove service-account effective IAM. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
+The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
 
 ## Links and handoff discipline
 
