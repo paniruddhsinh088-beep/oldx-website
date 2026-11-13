@@ -41,3 +41,53 @@
 Stop on any unexpected 200, foreign UID acceptance, wrong project/database, unknown data, unapproved write, missing denial, observed spend/usage beyond the trial envelope, or failure to reach disabled revision. Record requests only by status and synthetic case IDs; keep tokens, record contents, PII and raw auth errors out of reports. Verify restoration to default-off before any cleanup. Synthetic user/document creation and deletion **must each be separately approved**; never use broad delete/list cleanup.
 
 **This document and its associated local-only fixture/test are not permission to deploy or access Firebase.**
+
+
+## Exact isolated fixture proposal from trusted source
+
+The existing `marketplaceCore.owner` implementation in `scripts/firebase-marketplace-repository.mjs` reads `marketplaceActors_v1/{verifiedUid}` and `marketplacePrivate_v1/product_{id}`. Its checks require an actor with `uid=verifiedUid`, `canWrite=true`, `suspended=false` and a private record whose `ownerUid` matches that identity, `kind=product`, matching `id`, `revision>=1`, `archived!==true`, valid `profile`, Boolean `published`, and integer `publicationRevision<=revision`. The HTTP owner request must supply `kind=product`, `id` (without the `product_` storage prefix), and `requestId=null` to avoid requiring historical receipt/audit records.
+
+**Review-only illustrative record shapes; not executable fixture seeding instructions:**
+
+```json
+{
+  "actorPath": "marketplaceActors_v1/synthetic-seller-a",
+  "actorFields": {
+    "uid": "synthetic-seller-a",
+    "canWrite": true,
+    "suspended": false
+  },
+  "recordPath": "marketplacePrivate_v1/product_synthetic-phase-b-read-01",
+  "recordFields": {
+    "id": "synthetic-phase-b-read-01",
+    "kind": "product",
+    "ownerUid": "synthetic-seller-a",
+    "revision": 1,
+    "archived": false,
+    "published": false,
+    "publicationRevision": 0,
+    "publicProfile": null,
+    "profile": {
+      "title": "Synthetic Product",
+      "description": "Fictional staging-only listing",
+      "category": "cars",
+      "locationLabel": "Synthetic location",
+      "basePrice": 100,
+      "isSold": false,
+      "storeId": null,
+      "photos": []
+    }
+  },
+  "ownerRequestBody": {
+    "kind": "product",
+    "id": "synthetic-phase-b-read-01",
+    "requestId": null
+  }
+}
+```
+
+This object is a **schema review reference only**. Validate any additional fields and the SDK's `validateMarketplaceProfile`/image-reference behavior with offline tests before owner approval to create anything. Do not assume document/actor fixtures already exist; avoid collisions and do not overwrite any existing entry. `firebaseauth.users.get` is separate from Firestore access. Firebase Auth users for testing must be created through a separately approved mechanism; a fake `example.invalid` identity in a JSON fixture does not make a usable Firebase ID token.
+
+**Minimum live-write manifest to approve separately:** two synthetic Auth identities (owner and foreign buyer); one private actor document; one private product document; any quota-counter document(s) automatically created/updated by `marketplaceRateLimits_v1` for authenticated requests. No write to `products`, public views, legacy stores, other real users or production. Document IDs, creation timestamps, and deletion cutoff must be recorded at creation; cleanup is per-ID with verification of ownership and no broad collection deletes. The test initiator must approve both creation and cleanup independently. A rejected foreign request must not read or expose the private record; counter side effects must be budgeted and logged only as counts.
+
+**Offline gate before actual Phase B:** execute `node --test tests/integration/phase-b-owner-read-fixtures.test.mjs` using the required Node 24 runtime and confirm current commit's CI. Do not relabel static fixture assertions as deployed IAM enforcement. Only after explicit cloud-data and activation approval should direct private-scope testing start. Preserve Phase A default-off revisions and unchanged main traffic.
