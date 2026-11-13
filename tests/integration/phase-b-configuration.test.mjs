@@ -375,7 +375,7 @@ test('effective IAM always lists five checks and classifies unavailable evidence
     ['', 'API_DISABLED'],
     ['unexpected output', 'EVIDENCE_UNAVAILABLE'],
     [new Error('PERMISSION_DENIED private detail'), 'PERMISSION_DENIED'],
-    [new Error('upstream HTTP 500 private detail'), 'API_ERROR'],
+    [new Error('upstream HTTP 500 private detail'), 'HTTP_5XX'],
   ]) {
     const fallback = preflightRead();
     const report = inspectPhaseBEffectiveIam((...args) => {
@@ -394,5 +394,32 @@ test('effective IAM always lists five checks and classifies unavailable evidence
     assert.ok(Object.values(report.databasePermissions).every(
       (item) => item.result === 'UNVERIFIED' && item.evidence === expected));
     assert.doesNotMatch(JSON.stringify(report), /private detail|unexpected output/);
+  }
+});
+
+test('Troubleshooter evaluation reports sanitized transport and response failures per permission', () => {
+  const cases = [
+    ['HTTP 400', 'HTTP_400'], ['HTTPError 403', 'HTTP_403'], ['HTTP 404', 'HTTP_404'],
+    ['HTTP 429', 'HTTP_429'], ['HTTP 503', 'HTTP_5XX'],
+    ['PERMISSION_DENIED', 'PERMISSION_DENIED'], ['unrecognized arguments', 'CLI_ARGUMENT_ERROR'],
+    ['unclassified failure', 'API_ERROR'], [null, 'MALFORMED_RESPONSE'], [undefined, 'MALFORMED_RESPONSE'],
+  ];
+  for (const [diagnostic, expected] of cases) {
+    const fallback = preflightRead();
+    const report = inspectPhaseBEffectiveIam((...args) => {
+      if (args[0] === 'logging') return '[]';
+      if (args[0] === 'services' && args.some((arg) => arg.includes('policytroubleshooter'))) {
+        return 'policytroubleshooter.googleapis.com';
+      }
+      if (args[0] !== 'policy-intelligence') return fallback(...args);
+      assert.equal(args[3], '//firestore.googleapis.com/projects/oldx-staging/databases/(default)');
+      assert.ok(args.includes('--resource-name=projects/oldx-staging/databases/(default)'));
+      if (diagnostic === null) return '{';
+      if (diagnostic === undefined) return '{}';
+      throw Object.assign(new Error('wrapper detail'), {stderr: diagnostic + ' private credential'});
+    });
+    assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
+    assert.ok(Object.values(report.databasePermissions).every((item) => item.evidence === expected));
+    assert.doesNotMatch(JSON.stringify(report), /private credential|wrapper detail/);
   }
 });

@@ -581,8 +581,18 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
 function iamReadFailure(error) {
   const diagnostic = String(error?.stderr ?? error?.message ?? '');
   if (/\bSERVICE_DISABLED\b/.test(diagnostic)) return 'API_DISABLED';
-  if (/\bPERMISSION_DENIED\b|\bHTTP(?:Error)?[ :]+403\b/i.test(diagnostic)) return 'PERMISSION_DENIED';
-  if (error instanceof SyntaxError || error?.code === 'ENOENT' || error?.code === 'ETIMEDOUT') {
+  const status = /\bHTTP(?:Error)?[ :]+(400|403|404|429|5\d{2})\b/i.exec(diagnostic)?.[1];
+  if (status) return Number(status) >= 500 ? 'HTTP_5XX' : 'HTTP_' + status;
+  if (/\bPERMISSION_DENIED\b|\bdoes not have (?:the )?(?:required )?permission\b|\bpermission .{1,120} denied\b/i.test(diagnostic)) {
+    return 'PERMISSION_DENIED';
+  }
+  if (/\bINVALID_ARGUMENT\b/.test(diagnostic)) return 'HTTP_400';
+  if (/\bNOT_FOUND\b/.test(diagnostic)) return 'HTTP_404';
+  if (/\bRESOURCE_EXHAUSTED\b/.test(diagnostic)) return 'HTTP_429';
+  if (/\b(?:INTERNAL|UNAVAILABLE|DEADLINE_EXCEEDED)\b/.test(diagnostic)) return 'HTTP_5XX';
+  if (/\binvalid choice\b|\bunrecognized arguments\b/i.test(diagnostic)) return 'CLI_ARGUMENT_ERROR';
+  if (error instanceof SyntaxError) return 'MALFORMED_RESPONSE';
+  if (error?.code === 'ENOENT' || error?.code === 'ETIMEDOUT') {
     return 'EVIDENCE_UNAVAILABLE';
   }
   return 'API_ERROR';
@@ -643,7 +653,8 @@ export function inspectPhaseBEffectiveIam(read = gcloud) {
         '--resource-name=' + resourceName, '--resource-service=firestore.googleapis.com',
         '--resource-type=firestore.googleapis.com/Database', ...scope));
       const tuple = evidence?.accessTuple;
-      item.evidence = 'EVIDENCE_UNAVAILABLE';
+      item.evidence = typeof evidence?.overallAccessState === 'string' && tuple
+        ? 'EVIDENCE_UNAVAILABLE' : 'MALFORMED_RESPONSE';
       if (tuple?.fullResourceName === resource && tuple.principal === principal && tuple.permission === permission) {
         const policies = evidence.allowPolicyExplanation?.explainedPolicies;
         if (Array.isArray(policies)) {

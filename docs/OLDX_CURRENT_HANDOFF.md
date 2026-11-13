@@ -594,3 +594,7 @@ Added a dedicated verifier mode for direct staging bindings, access to the known
 ## Phase B IAM readiness consolidation
 
 The read-only verifier now reports API_DISABLED, PERMISSION_DENIED, API_ERROR or EVIDENCE_UNAVAILABLE as applicable and always lists all five expected database permission evaluations. Direct binding results remain separate from inherited-policy observations and effective decisions. Focused offline suite: 14 passed, 0 failed, 0 skipped. No live verification or Cloud changes ran. Effective IAM and named invocation remain UNVERIFIED. Production HOLD / NO-GO.
+
+## Phase B Policy Troubleshooter diagnostics
+
+The prior API_ERROR did not establish an upstream cause. Offline regression now covers sanitized CLI, HTTP and malformed-response categories. Focused tests passed 15/15. No live call was made. Run the existing read-only --check-effective-iam mode to obtain the specific labels. Effective IAM remains UNVERIFIED until definitive scoped evidence. Production HOLD / NO-GO.
