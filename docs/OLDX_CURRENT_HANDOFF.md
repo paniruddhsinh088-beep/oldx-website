@@ -242,6 +242,12 @@ Yasmin's Cloud Shell screenshot shows successful `git pull --ff-only origin secu
 
 Do not rerun these passing tests without a relevant code change. Next substantive pending work remains review of a fail-closed, secure Auth + Firestore exact-ID execution/cleanup wrapper, verified Auth delete capability and owner-supervised same-day cleanup. Do not initiate cloud mutations or enable Owner Read without further explicit approved steps. Production HOLD/NO-GO.
 
+## 2026-11-13 — Exact four-ID read-only Cloud Shell preflight prepared
+
+Added `scripts/phase-b-staging-readonly-preflight.py` in commit `efab01f75f6889e3cd5d1c5fb46757ded6f02ed6` to the approved `security-hardening-review` branch. It is an operator-invoked **read-only** narrow preflight using existing gcloud user OAuth plus `X-Goog-User-Project: oldx-staging`; verifies active Yasmin account and project, then exact-UID Auth lookup (API's read-only POST) for both reserved UIDs, and Firestore GET for the two exact doc paths. It emits only ABSENT / EXISTS / BLOCKED, not user/document details, API error bodies, tokens or credentials. Unknown results and any existing IDs cause STOP. No SDK or mutation endpoints; no create/delete, IAM/Rules/Billing/Cloud Run modifications. **Not run on operator Cloud Shell yet**, and the read-only results are point-in-time, not a lock or cleanup proof. This file is a focused new check; do not repeat the older passing offline tests.
+
+**Specific remaining gate:** complete a secure *actual* Auth delete/read-before-delete implementation and supervised same-day cleanup plan, then show exact executable write/delete commands to Yasmin for separate pre-run approval. Auth delete documentation explicitly requires `firebaseauth.users.delete`; prior IAM permission tests were GRANTED but no actual Auth delete was attempted. Keep fixture writes NO-GO, Cloud Run Owner Read default-off, production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
