@@ -333,7 +333,7 @@ export async function inspectRecovery(send, journal) {
 }
 
 function gcloud(...args) {
-  return execFileSync('gcloud', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 15_000}).trim();
+  return execFileSync('gcloud', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000}).trim();
 }
 
 function guardGcloudEnvironment() {
@@ -578,10 +578,31 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
   return report;
 }
 
+function iamReadFailure(error) {
+  const diagnostic = String(error?.stderr ?? error?.message ?? '');
+  if (/\bSERVICE_DISABLED\b/.test(diagnostic)) return 'API_DISABLED';
+  if (/\bPERMISSION_DENIED\b|\bHTTP(?:Error)?[ :]+403\b/i.test(diagnostic)) return 'PERMISSION_DENIED';
+  if (error instanceof SyntaxError || error?.code === 'ENOENT' || error?.code === 'ETIMEDOUT') {
+    return 'EVIDENCE_UNAVAILABLE';
+  }
+  return 'API_ERROR';
+}
+
 export function inspectPhaseBEffectiveIam(read = gcloud) {
+  const expectedPermissions = {
+    'datastore.databases.get': 'CAN_ACCESS',
+    'datastore.entities.get': 'CAN_ACCESS',
+    'datastore.entities.create': 'CAN_ACCESS',
+    'datastore.entities.update': 'CAN_ACCESS',
+    'datastore.entities.delete': 'CANNOT_ACCESS',
+  };
   const report = inspectPhaseBConfiguration(read, {preflight: true});
   report.loggingRead = 'UNVERIFIED';
-  report.databasePermissions = {};
+  report.policyTroubleshooter = 'CONFIGURATION_NOT_MATCHED';
+  report.databasePermissions = Object.fromEntries(Object.keys(expectedPermissions).map((permission) => [
+    permission, {expected: expectedPermissions[permission], result: 'UNVERIFIED',
+      evidence: 'NOT_EVALUATED', inheritedAllowPolicies: 'UNVERIFIED'},
+  ]));
   if (report.configuration !== 'MATCH') return report;
 
   const scope = ['--project=' + project, '--account=' + operator, '--format=json', '--quiet'];
@@ -602,37 +623,44 @@ export function inspectPhaseBEffectiveIam(read = gcloud) {
 
   const api = 'policytroubleshooter.googleapis.com';
   try {
-    if (read('services', 'list', '--enabled', '--filter=config.name~^policytroubleshooter[.]googleapis[.]com$',
-      ...scope.slice(0, -2), '--quiet', '--format=value(config.name)').trim() !== api) return report;
-  } catch {
+    const enabled = read('services', 'list', '--enabled', '--filter=config.name~^policytroubleshooter[.]googleapis[.]com$',
+      ...scope.slice(0, -2), '--quiet', '--format=value(config.name)').trim();
+    report.policyTroubleshooter = enabled === api ? 'API_ENABLED' : enabled === '' ? 'API_DISABLED' : 'EVIDENCE_UNAVAILABLE';
+  } catch (error) {
+    report.policyTroubleshooter = iamReadFailure(error);
+  }
+  if (report.policyTroubleshooter !== 'API_ENABLED') {
+    for (const item of Object.values(report.databasePermissions)) item.evidence = report.policyTroubleshooter;
     return report;
   }
   const resourceName = 'projects/' + project + '/databases/' + database;
   const resource = '//firestore.googleapis.com/' + resourceName;
   const principal = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
-  for (const [permission, expected] of Object.entries({
-    'datastore.databases.get': 'CAN_ACCESS',
-    'datastore.entities.get': 'CAN_ACCESS',
-    'datastore.entities.create': 'CAN_ACCESS',
-    'datastore.entities.update': 'CAN_ACCESS',
-    'datastore.entities.delete': 'CANNOT_ACCESS',
-  })) {
-    report.databasePermissions[permission] = 'UNVERIFIED';
+  for (const [permission, item] of Object.entries(report.databasePermissions)) {
     try {
       const evidence = JSON.parse(read('policy-intelligence', 'troubleshoot-policy', 'iam', resource,
         '--principal-email=' + principal, '--permission=' + permission,
         '--resource-name=' + resourceName, '--resource-service=firestore.googleapis.com',
         '--resource-type=firestore.googleapis.com/Database', ...scope));
       const tuple = evidence?.accessTuple;
-      if (tuple?.fullResourceName === resource && tuple.principal === principal && tuple.permission === permission &&
-          ['CAN_ACCESS', 'CANNOT_ACCESS'].includes(evidence.overallAccessState)) {
-        report.databasePermissions[permission] = evidence.overallAccessState === expected ? 'MATCH' : 'MISMATCH';
+      item.evidence = 'EVIDENCE_UNAVAILABLE';
+      if (tuple?.fullResourceName === resource && tuple.principal === principal && tuple.permission === permission) {
+        const policies = evidence.allowPolicyExplanation?.explainedPolicies;
+        if (Array.isArray(policies)) {
+          item.inheritedAllowPolicies = policies.some((policy) =>
+            /^(\/\/cloudresourcemanager\.googleapis\.com\/(projects|folders|organizations)\/)/.test(policy?.fullResourceName ?? ''))
+            ? 'OBSERVED' : 'UNVERIFIED';
+        }
+        if (['CAN_ACCESS', 'CANNOT_ACCESS'].includes(evidence.overallAccessState)) {
+          item.evidence = evidence.overallAccessState;
+          item.result = item.evidence === item.expected ? 'MATCH' : 'MISMATCH';
+        }
       }
-    } catch {
-      // Never emit raw policy explanations.
+    } catch (error) {
+      item.evidence = iamReadFailure(error);
     }
   }
-  const results = Object.values(report.databasePermissions);
+  const results = Object.values(report.databasePermissions).map(({result}) => result);
   if (results.includes('MISMATCH')) report.effectiveDatabaseIam = 'MISMATCH';
   else if (results.every((status) => status === 'MATCH')) report.effectiveDatabaseIam = 'MATCH';
   return report;

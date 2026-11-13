@@ -369,3 +369,30 @@ test('effective IAM uses overall policy evidence and rejects excess inherited ac
     assert.doesNotMatch(JSON.stringify(report), /private log detail|explainedPolicies/);
   }
 });
+
+test('effective IAM always lists five checks and classifies unavailable evidence without raw errors', () => {
+  for (const [value, expected] of [
+    ['', 'API_DISABLED'],
+    ['unexpected output', 'EVIDENCE_UNAVAILABLE'],
+    [new Error('PERMISSION_DENIED private detail'), 'PERMISSION_DENIED'],
+    [new Error('upstream HTTP 500 private detail'), 'API_ERROR'],
+  ]) {
+    const fallback = preflightRead();
+    const report = inspectPhaseBEffectiveIam((...args) => {
+      if (args[0] === 'logging') return '[]';
+      if (args[0] === 'services' && args.some((arg) => arg.includes('policytroubleshooter'))) {
+        if (value instanceof Error) throw value;
+        return value;
+      }
+      if (args[0] === 'policy-intelligence') assert.fail('Evaluation must not run');
+      return fallback(...args);
+    });
+    assert.equal(report.policyTroubleshooter, expected);
+    assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
+    assert.equal(Object.keys(report.databasePermissions).length, 5);
+    assert.equal(report.databasePermissions['datastore.entities.delete'].expected, 'CANNOT_ACCESS');
+    assert.ok(Object.values(report.databasePermissions).every(
+      (item) => item.result === 'UNVERIFIED' && item.evidence === expected));
+    assert.doesNotMatch(JSON.stringify(report), /private detail|unexpected output/);
+  }
+});
