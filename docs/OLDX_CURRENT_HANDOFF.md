@@ -200,6 +200,12 @@ Rechecked current official Identity Platform `projects.accounts` / `accounts.sig
 
 **Next decision:** arrange a *specific supervised test/cleanup window* and secure method for confirmed Firebase Auth deletion without modifying IAM, OAuth client, Billing, Cloud Run, Rules or production. Only after offline/API contract validation and cleanup readiness should an executable script be shown for Yasmin's pre-run approval. No rerun of already passed tests. HOLD/NO-GO.
 
+## 2026-11-13 — Supervised same-day Phase B fixture session plan approved
+
+Yasmin approved the *plan* to perform the four-resource Phase B synthetic test in **one supervised session and clean up the same day**, instead of carrying test users/documents into the next day. `docs/phase-b-fixture-execution-review.md` now contains the GO/NO-GO checklist and order: confirm cleanup operator/window, verify fixed Firebase Auth UIDs and keyless CRUD/deletion semantics, review exact scripts before execution, protect credentials, freshly check four IDs, create only the two synthetic Auth users and two private Firestore documents, verify, run only **separately approved** tests (Owner Read remains default-off), conditionally delete just these four, re-verify absence and report residues. This is not permission for any enabled Cloud Run trial or IAM/Rules/Billing change. No automatic cleanup is scheduled and no resources have been created. If same-day per-ID deletion cannot be made safe, **NO-GO for writes**.
+
+**Immediate next safe action:** complete offline review of Admin Auth fixed-UID create and delete semantics and the proposed executable commands before the supervised session; avoid repeated successful tests and preserve HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
