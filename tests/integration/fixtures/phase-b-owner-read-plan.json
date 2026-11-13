@@ -1,0 +1,40 @@
+{
+  "mode": "LOCAL_PLAN_ONLY",
+  "cloudWriteApproved": false,
+  "runtimeActivationApproved": false,
+  "projectId": "oldx-staging",
+  "databaseId": "(default)",
+  "productionProjectForbidden": "oldx-1c983",
+  "sourceFixture": "tests/firestore-emulator/fixtures.json",
+  "actors": {
+    "owner": "synthetic-seller-a",
+    "foreignBuyer": "synthetic-buyer-b"
+  },
+  "proposedDocument": {
+    "collection": "marketplacePrivate_v1",
+    "id": "product_synthetic-phase-b-read-01",
+    "ownerUid": "synthetic-seller-a",
+    "data": "DESIGN_ONLY_NOT_A_FIRESTORE_WRITE_PAYLOAD"
+  },
+  "eligibleActorCollection": "marketplaceActors_v1",
+  "quotaCollection": "marketplaceRateLimits_v1",
+  "httpRoute": "/api/staging/marketplace/owner",
+  "httpMethod": "POST",
+  "scenarios": [
+    { "name": "owner-read", "identity": "owner", "expected": "eligible-owner-only" },
+    { "name": "foreign-owner", "identity": "foreignBuyer", "expected": "deny" },
+    { "name": "missing-firebase-token", "identity": "none", "expected": "deny" },
+    { "name": "revoked-token", "identity": "owner-revoked", "expected": "deny" },
+    { "name": "foreign-project-token", "identity": "foreign-project", "expected": "deny" },
+    { "name": "disabled-runtime", "identity": "owner", "expected": "503" },
+    { "name": "rate-limit-exceeded", "identity": "owner", "expected": "deny" }
+  ],
+  "prohibited": [
+    "production-user-data",
+    "live-user-identities",
+    "legacy-products-write",
+    "public-access-grant",
+    "service-account-key",
+    "firebase-rules-change"
+  ]
+}
