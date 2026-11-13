@@ -447,6 +447,12 @@ Created `tests/integration/phase-b-fixture-journal-linux.test.mjs` with **four n
 
 **Remaining distinct NO-GO gates:** no reviewed executable per-ID manual cleanup runner for an interrupted 4-resource session; journal and status only classify. No four-resource create/delete/sign-in consent has been issued, no Firestore live mutation test, no least-privilege invoker/effective runtime IAM proof. Existing `LIVE_EXECUTION_ENABLED=false` has not been changed. No cloud changes performed; production HOLD/NO-GO.
 
+## 2026-11-14 02:01 IST — Four Linux filesystem journal tests PASS
+
+Yasmin Cloud Shell screenshot at ~02:01 IST 2026-11-14 shows pull of security-hardening-review through e5a04ed and execution of Node's dedicated isolated Linux test file tests/integration/phase-b-fixture-journal-linux.test.mjs. Test runner summary: tests 4, pass 4, fail 0, skipped 0; duration ~268 ms. Cases confirmed private fsynced journal and restart readability, duplicate-create blocker, broken tail/perms/symlinks refusal, invalid evidence/premature completion refusal, full four-resource journal acceptance and replay rejection. No live Firebase mutations made; screenshot confirms local Cloud Shell prompt returned.
+
+This is focused filesystem/journal test evidence, NOT proof of real Auth/Firestore cleanup ability or runtime activation. The earlier Codex-reported fixture-session fake transport suite 8 PASS remains separate. No rerun of these passing cases needed without relevant code change. Next work is review-only exact-identity manual recovery procedure for partial live fixture creation before proposing narrowly scoped owner authorization; do not automatically delete or turn on LIVE_EXECUTION_ENABLED. Effective database IAM/least-privilege invoker and runtime activation remain independently blocked; production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
