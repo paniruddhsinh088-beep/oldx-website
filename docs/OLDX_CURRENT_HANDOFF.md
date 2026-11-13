@@ -574,3 +574,7 @@ The verified staging service reports the hash-based hostname. Updated the exact 
 ## Phase B IAM Credentials API check
 
 Owner evidence shows iamcredentials.googleapis.com in the oldx-staging enabled-services list. The preflight now consumes the exact service-name projection and fails closed on empty, unavailable or malformed output. Focused offline tests passed 7/7. No API, IAM, token or hosted operation ran. Production HOLD / NO-GO.
+
+## Phase B persistent IAM Credentials mismatch
+
+The preflight accepted the owner-reported service name when fed verbatim. The runtime MISMATCH path required blank stdout from the earlier scoped lookup. Replaced its equality filter and result limit with an anchored exact-name filter and no limit. Live behavior of the revised lookup remains unverified. Focused tests passed 8/8. No IAM, token minting or hosted operation ran. Production HOLD / NO-GO.

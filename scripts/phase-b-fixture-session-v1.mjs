@@ -386,7 +386,7 @@ export function inspectPhaseBConfiguration(read = gcloud, {preflight = false} = 
     result.effectiveTokenMintPermission = 'UNVERIFIED';
     const apiName = 'iamcredentials.googleapis.com';
     check('iamCredentialsApi', () => read('services', 'list', '--enabled',
-      '--filter=config.name=' + apiName, '--limit=2',
+      '--filter=config.name~^iamcredentials[.]googleapis[.]com$',
       ...scoped.slice(0, -1), '--format=value(config.name)').trim(), (name) => {
       // Membership in this enabled-only list is the state evidence.
       requireSafe(name === '' || name === apiName, 'INVALID_ENABLED_SERVICE_OUTPUT');

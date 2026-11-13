@@ -122,9 +122,10 @@ test('public binding, IAM bypass, changed condition, traffic drift or failed rea
 function preflightRead(mutate = () => {}) {
   return (...args) => {
     if (args[0] === 'services') {
-      assert.ok(args.includes('--enabled') && args.includes('--project=oldx-staging'));
-      assert.ok(args.includes('--filter=config.name=iamcredentials.googleapis.com'));
-      assert.ok(args.includes('--format=value(config.name)'));
+      assert.deepEqual(args, ['services', 'list', '--enabled',
+        '--filter=config.name~^iamcredentials[.]googleapis[.]com$',
+        '--project=oldx-staging', '--account=yasminparmar087@gmail.com', '--quiet',
+        '--format=value(config.name)']);
       const data = ['iamcredentials.googleapis.com'];
       mutate('api', data);
       return data.join('\n');
@@ -225,4 +226,20 @@ test('enabled-only API lookup distinguishes empty, failed and malformed results'
     assert.equal(requests, 0);
     assert.doesNotMatch(JSON.stringify(report), /private upstream detail|other\.googleapis/);
   }
+});
+
+test('owner service-name output matches with LF or CRLF and the wrong project never lists services', async () => {
+  for (const stdout of ['iamcredentials.googleapis.com\n', '  iamcredentials.googleapis.com\r\n']) {
+    const fallback = preflightRead();
+    const report = inspectPhaseBConfiguration((...args) =>
+      args[0] === 'services' ? stdout : fallback(...args), {preflight: true});
+    assert.equal(report.checks.iamCredentialsApi, 'MATCH');
+  }
+  const calls = [];
+  const report = inspectPhaseBConfiguration((...args) => {
+    calls.push(args[0]);
+    return args[0] === 'config' ? 'wrong-project' : 'yasminparmar087@gmail.com';
+  }, {preflight: true});
+  assert.deepEqual(calls, ['config', 'auth']);
+  assert.equal(report.configuration, 'BLOCKED');
 });

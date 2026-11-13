@@ -324,3 +324,7 @@ The preflight and hosted adapter now share the exact owner-verified audience pin
 ### IAM Credentials enabled-list evidence
 
 The owner observed the exact IAM Credentials service name in the staging enabled-services list. The earlier preflight also required a JSON state field, which the owner command did not establish and which the enabled-only lookup does not need. The preflight now requires exactly one matching name from the scoped enabled-only list. Empty output is a mismatch. A failed read or unexpected output is unavailable. Each blocks the anonymous probe. Effective token mint permission remains UNVERIFIED. [gcloud services list](https://docs.cloud.google.com/sdk/gcloud/reference/services/list)
+
+### Persistent enabled-list mismatch
+
+At 2be411c, the exact owner-reported stdout already matched after trimming whitespace. A MISMATCH therefore means the preflight command returned blank stdout after a successful exit. Failed commands and malformed output are UNAVAILABLE. The owner command used a different filter and omitted the limit. The exact cause of the live command returning no row has not been independently reproduced. The staging lookup now uses anchored regex matching without a limit and still requires exactly one matching service name on stdout. It retains the exact staging project and operator scope. Eight focused offline tests passed, covering LF/CRLF, wrong project, empty and duplicate output, and command failure. No cloud requests were made.
