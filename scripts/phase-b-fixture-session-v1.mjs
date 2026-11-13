@@ -153,7 +153,7 @@ function privatePath(info) {
   return info.uid === process.getuid() && (info.mode & 0o077) === 0;
 }
 
-function openJournal(sessionId) {
+export function openJournal(sessionId) {
   const root = journalRoot();
   mkdirSync(root, {mode: 0o700}); // Existing session, symlink or crash residue blocks a new run.
   const directory = openSync(root, 'r');
@@ -182,24 +182,76 @@ function openJournal(sessionId) {
   }
 }
 
-function journalStatus() {
+export function journalStatus() {
+  // Offline journal parser: validates local provenance and state transitions.
+  // Journal entries are NOT remote Firebase ownership proof or deletion authority.
   const root = journalRoot();
-  requireSafe(lstatSync(root).isDirectory() && privatePath(lstatSync(root)), 'UNSAFE_JOURNAL_DIRECTORY');
+  const rootInfo = lstatSync(root);
+  requireSafe(rootInfo.isDirectory() && !rootInfo.isSymbolicLink() &&
+    privatePath(rootInfo), 'UNSAFE_JOURNAL_DIRECTORY');
   const path = join(root, 'journal.jsonl');
   const info = lstatSync(path);
-  requireSafe(info.isFile() && privatePath(info) && info.size <= 16_384, 'UNSAFE_JOURNAL');
+  requireSafe(info.isFile() && !info.isSymbolicLink() &&
+    privatePath(info) && info.size > 0 && info.size <= 16_384, 'UNSAFE_JOURNAL');
   const contents = readFileSync(path, 'utf8');
   requireSafe(contents.endsWith('\n'), 'INCOMPLETE_JOURNAL');
   const lines = contents.slice(0, -1).split('\n');
+  requireSafe(lines.length >= 1 && lines.length <= 40, 'INVALID_JOURNAL_LENGTH');
   const header = JSON.parse(lines.shift());
-  requireSafe(header.version === 1 && header.project === project && header.database === database, 'WRONG_JOURNAL');
+  requireSafe(header.version === 1 && header.project === project &&
+    header.database === database &&
+    typeof header.sessionId === 'string' &&
+    /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(header.sessionId),
+  'WRONG_JOURNAL');
   const latest = new Map();
+  const evidence = new Map();
+  let completed = false;
   for (const line of lines) {
-    const {resource, state} = JSON.parse(line);
-    if (resource === undefined && state === 'ALL_ABSENT_VERIFIED') continue;
+    const entry = JSON.parse(line);
+    const {resource, state} = entry;
+    requireSafe(!completed, 'ENTRY_AFTER_COMPLETION');
+    if (resource === undefined && state === 'ALL_ABSENT_VERIFIED') {
+      requireSafe(latest.size === resources.length && resources.every(
+        (item) => latest.get(item) === 'DELETE_ACKNOWLEDGED'), 'PREMATURE_JOURNAL_COMPLETION');
+      completed = true;
+      continue;
+    }
     requireSafe(resources.includes(resource) && states.has(state), 'INVALID_JOURNAL_ENTRY');
+    const previous = latest.get(resource);
+    const next = {
+      undefined: 'CREATE_UNKNOWN',
+      CREATE_UNKNOWN: 'CREATED_VERIFIED',
+      CREATED_VERIFIED: 'DELETE_UNKNOWN',
+      DELETE_UNKNOWN: 'DELETE_ACKNOWLEDGED',
+    }[previous ?? 'undefined'];
+    requireSafe(state === next, 'INVALID_JOURNAL_TRANSITION');
+    const authResource = authUids.includes(resource);
+    const ev = entry.evidence;
+    if (state === 'CREATE_UNKNOWN') {
+      requireSafe(authResource ?
+        (typeof ev?.email === 'string' && ev.email.startsWith(resource + '-') &&
+          ev.email.endsWith('@example.invalid') && ev.email.length < 160) :
+        ev === undefined, 'INVALID_CREATE_EVIDENCE');
+      evidence.set(resource, ev);
+    } else if (state === 'CREATED_VERIFIED') {
+      requireSafe(authResource ?
+        (ev?.email === evidence.get(resource)?.email &&
+          typeof ev?.createdAt === 'string' && /^[1-9]\\d{10,15}$/.test(ev.createdAt)) :
+        (typeof ev?.updateTime === 'string' &&
+          /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$/.test(ev.updateTime)),
+      'INVALID_CREATION_EVIDENCE');
+      evidence.set(resource, ev);
+    } else if (state === 'DELETE_UNKNOWN') {
+      const old = evidence.get(resource);
+      requireSafe(authResource ?
+        ev?.email === old?.email && ev?.createdAt === old?.createdAt :
+        ev?.updateTime === old?.updateTime, 'DELETE_EVIDENCE_MISMATCH');
+    } else {
+      requireSafe(ev === undefined, 'INVALID_DELETE_ACK');
+    }
     latest.set(resource, state);
   }
+  // No automatic recovery/delete is ever authorized by local journal metadata.
   return latest;
 }
 
