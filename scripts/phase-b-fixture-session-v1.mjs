@@ -236,9 +236,9 @@ export function journalStatus() {
     } else if (state === 'CREATED_VERIFIED') {
       requireSafe(authResource ?
         (ev?.email === evidence.get(resource)?.email &&
-          typeof ev?.createdAt === 'string' && /^[1-9]\\d{10,15}$/.test(ev.createdAt)) :
+          typeof ev?.createdAt === 'string' && /^[1-9]\d{10,15}$/.test(ev.createdAt)) :
         (typeof ev?.updateTime === 'string' &&
-          /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,9})?Z$/.test(ev.updateTime)),
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(ev.updateTime)),
       'INVALID_CREATION_EVIDENCE');
       evidence.set(resource, ev);
     } else if (state === 'DELETE_UNKNOWN') {
