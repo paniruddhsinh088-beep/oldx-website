@@ -53,6 +53,13 @@ test('Docker COPY sources start on PORT without SDK credentials or operational a
   }
   assert.equal(reply?.status,200);
   assert.deepEqual(await reply.json(),{ok:true});
+  // Cloud Run can return a frontend 404 for /healthz; keep the legacy
+  // route while making /health available for private hosted readiness.
+  const alias=await fetch('http://127.0.0.1:'+port+'/health',{signal:AbortSignal.timeout(1000)});
+  assert.equal(alias.status,200);
+  assert.deepEqual(await alias.json(),{ok:true});
+  const rejected=await fetch('http://127.0.0.1:'+port+'/health',{method:'POST',signal:AbortSignal.timeout(1000)});
+  assert.equal(rejected.status,405);
   const owner=await fetch('http://127.0.0.1:'+port+'/api/staging/marketplace/owner',{
    method:'POST',signal:AbortSignal.timeout(1000)
   });
