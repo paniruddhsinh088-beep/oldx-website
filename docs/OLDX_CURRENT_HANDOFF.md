@@ -516,3 +516,7 @@ The existing fixture runner now composes the Owner Read harness with the two in-
 ## 2026-11-14 — Phase B bounded configuration verifier
 
 Added a read-only configuration mode to the existing fixture runner for staging project, operator, runtime service account, custom roles, direct bindings, ingress and disabled-baseline revision traffic. It emits redacted configuration findings while keeping effective IAM and least-privilege invocation unverified. Historical fixture, journal/recovery, acceptance and integrated offline evidence remains as recorded. New offline verifier tests await Cloud Shell. The hosted entry point, rollback and exact cleanup remain gated as described in the [consolidated operator decision](cloud-run-product-owner-read-staging-gate.md#consolidated-operator-decision). No Cloud checks or changes performed in this batch.
+
+## 2026-11-14 — Phase B fixed-ID REST regression
+
+Node 24 focused run with isolated Auth and Firestore Emulators reported 21 passed, zero failed, four Linux-only tests skipped on Windows. Both synthetic Auth IDs and Firestore documents were created and removed in the demo emulators. The runner independently rereads created documents and uses a single conditional commit per Firestore deletion. Google invocation audience and Firebase identity checks are separate. No live Firebase or Cloud Run requests were made. Hosted effective IAM, named invocation, rollback and supervised cleanup remain gated. Production HOLD / NO-GO.

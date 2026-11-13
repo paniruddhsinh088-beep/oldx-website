@@ -25,6 +25,14 @@ function fake(intercept = () => undefined) {
   let complete = false;
 
   async function send(req) {
+    if (req.url.endsWith('/documents:commit')) {
+      const [write] = req.body.writes;
+      assert.equal(req.body.writes.length, 1);
+      assert.ok(write.delete.startsWith(prefix));
+      const result = await send({method: 'DELETE', url: new URL(req.url).origin + '/v1/' +
+        write.delete + '?currentDocument.updateTime=' + encodeURIComponent(write.currentDocument.updateTime)});
+      return result.status === 204 ? ok({writeResults: [{}]}) : result;
+    }
     const {method, body, publicRequest} = req;
     const url = new URL(req.url);
     requests.push(method + ' ' + url.pathname);
@@ -141,6 +149,17 @@ test('ambiguous create records unknown before stopping, without retrying or expo
   assert.ok(session.closed && !session.complete);
 });
 
+test('permission denial after first Auth create preserves partial provenance and stops writes', async () => {
+  const session = fake(({body}) => {
+    if (body?.localId === authUids[1] && body.password) return {status: 403};
+  });
+  await assert.rejects(session.run(), /SIMULATION_STOPPED/);
+  assert.equal(session.latest(authUids[0]).state, 'CREATED_VERIFIED');
+  assert.equal(session.latest(authUids[1]).state, 'CREATE_UNKNOWN');
+  assert.equal(session.records.length, 3);
+  assert.ok(session.closed && !session.complete);
+});
+
 test('wrong sign-in UID or token audience stops before deletion', async () => {
   for (const localId of authUids) {
     const session = fake(({url}) => {
@@ -212,7 +231,7 @@ test('integrated Phase B acceptance binds fixture identities before guarded clea
       disabledOrigin: 'https://healthcheck' + root,
       enabledOrigin: 'https://phase-b-acceptance' + root,
       enabledTag: 'phase-b-acceptance',
-      googleToken: 'fake.google.token',
+      googleToken: 'fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token',
       send({caseId, headers}) {
         seen.push(caseId);
         assert.equal(session.records.length, 8);
@@ -222,7 +241,7 @@ test('integrated Phase B acceptance binds fixture identities before guarded clea
           assert.equal(sub, authUids[caseId === 'foreign-buyer' ? 1 : 0]);
         }
         assert.equal(headers['X-Serverless-Authorization'],
-          caseId === 'invoker-denied' ? undefined : 'Bearer fake.google.token');
+          caseId === 'invoker-denied' ? undefined : 'Bearer fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token');
         const [status, body] = replies[caseId];
         return {status: rejectOwner && caseId === 'owner' ? 503 : status, body, cacheControl: 'private, no-store'};
       },

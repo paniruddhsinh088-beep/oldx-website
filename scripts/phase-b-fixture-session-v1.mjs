@@ -24,13 +24,12 @@ function requireSafe(condition, code) {
   if (!condition) throw new Error(code);
 }
 
-function transport(send, key) {
-  async function call(method, url, body, {publicRequest = false, allowAbsent = false, empty = false} = {}) {
+function transport(send, key, identityProject = project) {
+  async function call(method, url, body, {publicRequest = false, allowAbsent = false} = {}) {
     const {status, data} = await send({method, url, body, publicRequest});
     if (allowAbsent && status === 404 && data?.error?.status === 'NOT_FOUND') return null;
-    requireSafe(status === 200 || (empty && status === 204), 'API_REQUEST_FAILED');
-    requireSafe((empty && status === 204) ||
-      (data && typeof data === 'object' && !Array.isArray(data) && !data.error), 'MALFORMED_RESPONSE');
+    requireSafe(status === 200, 'API_REQUEST_FAILED');
+    requireSafe(data && typeof data === 'object' && !Array.isArray(data) && !data.error, 'MALFORMED_RESPONSE');
     return data;
   }
   const withKey = (url) => url + '?key=' + encodeURIComponent(key);
@@ -58,16 +57,21 @@ function transport(send, key) {
         {email, password, returnSecureToken: true}, {publicRequest: true});
       requireSafe(localId === uid && typeof idToken === 'string', 'SIGN_IN_IDENTITY_MISMATCH');
       const parts = idToken.split('.');
-      requireSafe(parts.length === 3 && parts.every(Boolean), 'INVALID_ID_TOKEN');
+      requireSafe(parts.length === 3 && parts[0] && parts[1] &&
+        (parts[2] || identityProject === 'demo-oldx-phase-b'), 'INVALID_ID_TOKEN');
       const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-      requireSafe(claims.aud === project && claims.iss === 'https://securetoken.google.com/' + project &&
+      requireSafe(claims.aud === identityProject && claims.iss === 'https://securetoken.google.com/' + identityProject &&
         claims.sub === uid && claims.firebase?.sign_in_provider === 'password' &&
         Number.isSafeInteger(claims.exp) && claims.exp > Date.now() / 1000, 'SIGN_IN_PROJECT_MISMATCH');
       return idToken;
     },
     deleteUser: (uid) => call('POST', auth + 'accounts:delete', {localId: uid}),
-    deleteDoc: (path, updateTime) => call('DELETE',
-      firestore + path + '?currentDocument.updateTime=' + encodeURIComponent(updateTime), undefined, {empty: true}),
+    async deleteDoc(path, updateTime) {
+      const result = await call('POST', firestore.slice(0, -1) + ':commit', {
+        writes: [{delete: documentRoot + path, currentDocument: {updateTime}}],
+      });
+      requireSafe(Array.isArray(result.writeResults) && result.writeResults.length === 1, 'DELETE_NOT_ACKNOWLEDGED');
+    },
   };
 }
 
@@ -79,9 +83,17 @@ function userEvidence(user, uid, email) {
 }
 
 function documentEvidence(doc, path) {
+  const fields = doc?.fields;
+  const profile = fields?.profile?.mapValue?.fields;
+  // Firestore may omit the repeated values field for an empty array.
+  const photos = profile?.photos?.arrayValue;
+  const normalized = isDeepStrictEqual(photos, {}) ? {
+    ...fields, profile: {...fields.profile, mapValue: {...fields.profile.mapValue,
+      fields: {...profile, photos: {...profile.photos, arrayValue: {values: []}}}}},
+  } : fields;
   requireSafe(doc?.name === documentRoot + path &&
     typeof doc.updateTime === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(doc.updateTime) &&
-    isDeepStrictEqual(doc.fields, payloads[path].fields), 'DOCUMENT_PROVENANCE_MISMATCH');
+    isDeepStrictEqual(normalized, payloads[path].fields), 'DOCUMENT_PROVENANCE_MISMATCH');
   return doc.updateTime;
 }
 
@@ -118,6 +130,7 @@ async function runSession(api, openJournal, afterSignIn) {
     for (const path of firestoreDocs) {
       journal.record(path, 'CREATE_UNKNOWN');
       const updateTime = documentEvidence(await api.createDoc(path), path);
+      requireSafe(documentEvidence(await api.getDoc(path), path) === updateTime, 'DOCUMENT_CREATE_NOT_VERIFIED');
       journal.record(path, 'CREATED_VERIFIED', {updateTime});
       created.set(path, updateTime);
     }
@@ -321,6 +334,9 @@ function gcloud(...args) {
 }
 
 function guardOperator() {
+  requireSafe(!Object.keys(process.env).some((name) =>
+    /^CLOUDSDK_(API_ENDPOINT_OVERRIDES_|AUTH_|CORE_(ACCOUNT|PROJECT)$)/i.test(name)),
+  'GCLOUD_OVERRIDE_BLOCKED');
   requireSafe(gcloud('config', 'get-value', 'project') === project &&
     gcloud('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)') === operator, 'WRONG_OPERATOR_OR_PROJECT');
 }
@@ -441,11 +457,17 @@ async function liveSend({method, url, body, publicRequest}) {
     headers.Authorization = 'Bearer ' + token;
     headers['X-Goog-User-Project'] = project;
   }
-  const response = await fetch(url, {
+  return boundedPhaseBRequest(url, {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body),
     redirect: 'error', signal: AbortSignal.timeout(20_000),
   });
-  if (!response.body || (response.status !== 200 && response.status !== 404)) {
+}
+
+// Shared wire parsing for the fixed OAuth REST requests and isolated tests.
+export async function boundedPhaseBRequest(url, options) {
+  const response = await fetch(url, {...options, redirect: 'error'});
+  if (!response.body || (response.status !== 200 && response.status !== 404 &&
+      response.status !== 401 && response.status !== 403 && response.status !== 429 && response.status !== 503)) {
     await response.body?.cancel();
     return {status: response.status};
   }
@@ -459,9 +481,9 @@ async function liveSend({method, url, body, publicRequest}) {
   return {status: response.status, data: JSON.parse(Buffer.concat(chunks).toString('utf8'))};
 }
 
-export function simulateFixtureSession(fakeSend, fakeJournal, afterSignIn) {
+export function simulateFixtureSession(fakeSend, fakeJournal, afterSignIn, {emulator = false} = {}) {
   // Fake sign-in key only. This path never imports credentials or calls liveSend.
-  return runSession(transport(fakeSend, 'offline-test-key'), fakeJournal, afterSignIn)
+  return runSession(transport(fakeSend, 'offline-test-key', emulator ? 'demo-oldx-phase-b' : project), fakeJournal, afterSignIn)
     .catch(() => { throw new Error('SIMULATION_STOPPED'); });
 }
 

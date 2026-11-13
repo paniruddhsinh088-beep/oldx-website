@@ -17,6 +17,22 @@ function checkedOrigin(origin, tag) {
   return origin;
 }
 
+// The token is supplied in memory by a separately authorized keyless caller.
+// Cloud Run, not this local claims check, authenticates the signature and IAM.
+function checkGoogleInvocationAudience(token) {
+  try {
+    const parts = token.split('.');
+    const claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+    if (parts.length === 3 && parts.every((part) => /^[A-Za-z0-9_-]+$/.test(part)) &&
+        claims.aud === 'https://oldx-owner-read-38472235077.asia-south1.run.app' &&
+        ['https://accounts.google.com', 'accounts.google.com'].includes(claims.iss) &&
+        Number.isSafeInteger(claims.exp) && claims.exp > Date.now() / 1000) return;
+  } catch {
+    // Never include token data in errors.
+  }
+  throw new Error('INVOCATION_AUDIENCE_UNVERIFIED');
+}
+
 export async function runOwnerReadAcceptance({
   send, disabledOrigin, enabledOrigin, enabledTag, googleToken, ownerToken, buyerToken,
   wrongProjectToken, quotaMode = 'deferred',
@@ -34,6 +50,7 @@ export async function runOwnerReadAcceptance({
           [googleToken, ownerToken, buyerToken].includes(wrongProjectToken)))) {
     throw new Error('INVALID_ACCEPTANCE_INPUT');
   }
+  checkGoogleInvocationAudience(googleToken);
 
   const passed = [];
   const deadline = performance.now() + 60 * 60 * 1000;

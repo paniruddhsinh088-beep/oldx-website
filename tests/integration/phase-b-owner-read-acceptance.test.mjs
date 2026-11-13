@@ -8,7 +8,7 @@ const inputs = {
   disabledOrigin: 'https://healthcheck' + root,
   enabledOrigin: 'https://phase-b-acceptance' + root,
   enabledTag: 'phase-b-acceptance',
-  googleToken: 'fake.google.token',
+  googleToken: 'fake.eyJhdWQiOiJodHRwczovL29sZHgtb3duZXItcmVhZC0zODQ3MjIzNTA3Ny5hc2lhLXNvdXRoMS5ydW4uYXBwIiwiaXNzIjoiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tIiwiZXhwIjo0MTAyNDQ0ODAwfQ.token',
   ownerToken: 'fake.owner.token',
   buyerToken: 'fake.buyer.token',
 };
@@ -68,6 +68,8 @@ test('unexpected data, caching or a transport failure stops immediately and stay
 });
 
 test('wrong origin or shared identity cannot send requests and optional probes report deferred', async () => {
+  await assert.rejects(runOwnerReadAcceptance({...inputs, googleToken: 'fake.other.audience',
+    send() { assert.fail('Unexpected request'); }}), /INVOCATION_AUDIENCE_UNVERIFIED/);
   const send = ({caseId}) => reply(caseId);
   for (const patch of [{enabledOrigin: inputs.enabledOrigin + '/extra'}, {buyerToken: inputs.googleToken}]) {
     await assert.rejects(runOwnerReadAcceptance({...inputs, ...patch,
