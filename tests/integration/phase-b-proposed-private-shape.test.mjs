@@ -48,6 +48,6 @@ test('Phase B proposed private profile rejects unsafe or invalid values',()=>{
   {...profile,title:'<script>alert(1)</script>'},
   {...profile,basePrice:-1},
   {...profile,storeId:'bad/id'},
-  {...profile,photos:['https://example.invalid/unverified.jpg']}
+  {...profile,photos:Array(7).fill('synthetic-photo-placeholder')}
  ])assert.equal(validateMarketplaceProfile('product',bad),null);
 });
