@@ -1,5 +1,10 @@
 # OLDX Agent Instructions
 
+
+## Mandatory new-chat/current-status handoff
+- **Before requesting the owner to repeat OLDX status, read [docs/OLDX_CURRENT_HANDOFF.md](docs/OLDX_CURRENT_HANDOFF.md).** It tracks the latest verified cloud revisions, tests, approvals, remaining blockers and exact next step. Historical sections below may describe older stages; reconcile with dated verification, never silently overwrite evidence.
+- After a significant verified checkpoint, update that living handoff on `security-hardening-review`, without secrets or personal user data. Record source/verification and preserve HOLD / NO-GO. This is source documentation only, not permission to deploy or change IAM/Rules/Billing.
+
 ## Mission
 Help complete OLDX safely and efficiently. Work autonomously on clearly scoped, reversible repository tasks, run the relevant tests, fix failures where safe, and continue to the next independent task without waiting for the user to say "continue".
 
