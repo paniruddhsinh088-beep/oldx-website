@@ -106,3 +106,42 @@ The requested **next owner decision** is deliberately narrower than Phase B acti
 - **Stop:** if actor IDs or doc paths already exist, cannot prove isolated identity, lack permissions for cleanup, or any price/usage unknown, stop before a write.
 
 Once this precise proposal is approved by Yasmin, the operator must still prepare and review a bounded, copy-pastable create/verify/cleanup procedure before any cloud mutation; her general “continue” does not grant mutation authority.
+
+
+## Owner-approved procedure preparation — 2026-11-13
+
+**Approval interpretation:** Yasmin approved **preparation of the safe fixture provisioning/cleanup procedure** only. She has **not yet approved execution** of cloud writes, actual Firebase Auth user provisioning, deletion, IAM modification, Firestore Rules changes or runtime activation. No credential or token is needed to prepare this packet.
+
+### Exact proposed scope (no cloud writes executed)
+
+| Type | Exact proposed staging identifier | Safe creation / collision policy |
+| --- | --- | --- |
+| Firebase Auth owner | `synthetic-seller-a` | Preflight exact UID lookup only; must be `NOT_FOUND` before create; do not overwrite/enable/delete an existing user |
+| Firebase Auth foreign buyer | `synthetic-buyer-b` | Same exact-UID, non-destructive guard |
+| Firestore eligible actor | `marketplaceActors_v1/synthetic-seller-a` | Exact-document read check absent, then create-only; never set/merge/overwrite |
+| Firestore private product | `marketplacePrivate_v1/product_synthetic-phase-b-read-01` | Exact-document read check absent, then create-only |
+| Firestore rate counters | `marketplaceRateLimits_v1` | Not seeded by fixture preparation. Writes only by separately approved enabled runtime. Capture exact touched counter IDs for later per-ID cleanup; no bulk delete |
+
+All identifiers are staging-only, synthetic and proposed. They may not be used if a collision is found, even if an existing record has the expected shape. No existing data contents should be captured in logs or reports.
+
+### Proposed secure operator procedure — review draft, DO NOT RUN
+
+**Gate 0 — owner and access:** confirm a separate written authorization for the exact four creates and separately authorized deletion of those same IDs, plus a decision on whether cleanup of any generated rate counters is permitted. Identify a named operator with already permitted Auth user creation and Firestore document creation/deletion access, without adding broad IAM grants. If unavailable, remain BLOCKED. Pre-approve how the two synthetic users will obtain genuine Firebase ID tokens for later tests without committing or sending passwords, refresh tokens or tokens. Prefer isolated temporary credentials delivered through an approved secret mechanism; never use service-account JSON keys or hard-coded credentials. Auth test user creation without a safe token acquisition route does **not** complete this gate.
+
+**Gate 1 — immutable target:** ensure the active Google project is exactly `oldx-staging`, Firestore database exactly `(default)`, correct Mumbai region and project number `38472235077`, and production project `oldx-1c983` is excluded. Confirm Firestore client Rules remain deny-all without attempting to alter them. Never accept current gcloud default implicitly; require explicit project and database in every SDK initialization.
+
+**Gate 2 — narrow collision checks:** using separately authorized principal and exact lookups only, apply `adminAuth.getUser("synthetic-seller-a")`, `adminAuth.getUser("synthetic-buyer-b")` and `db.doc(exactPath).get()` for the two documents. For the Auth API, only an exact `auth/user-not-found` means vacant; any other error is STOP. Firestore `snapshot.exists===false` is required; permission denied/unknown is STOP. No queries over whole collections or population-wide listing. Protect IDs from a concurrent provisioning race by using create-only operations and treating `already-exists` as STOP.
+
+**Gate 3 — minimal creates:** only after separate approval, construct actual users with explicitly controlled synthetic UIDs and a reviewed safe sign-in/token method (the earlier `example.invalid` addresses are placeholders, not sign-in readiness). Create only the Actor and Product document schemas already reviewed above, with `db.doc(...).create(data)`; never `set`, merge, recursive delete or overwrite. Actor and private product contents must be synthetic, no telephone, IP, coordinate, photo or URL. Write no public projection or legacy product/store records. If one create fails, STOP and perform only pre-authorized exact-ID partial cleanup after verifying marker/ownership.
+
+**Gate 4 — verification without activation:** record four newly created resource IDs, UTC creation time, expected expiry within 24h, exact approved deletion scope, status of user/doc identities and maximum request/transaction count. Confirm owner and foreign identities differ; confirm no unexpected record creation. Do **not** run enabled Owner Read, mint impersonated service-account tokens, or activate Cloud Run at this gate. An owner-approved future runtime test is independent.
+
+**Gate 5 — safe cleanup:** at expiry or on STOP, use a second scoped owner approval or the separately pre-authorized cleanup mandate to verify each exact ID is still a test-owned fixture (including `ownerUid`, kind, ID, and known creation/audit marker) immediately before deletion, then delete by exact ID only. If contents changed, verification fails, quotas have unknown IDs, or a delete is denied, halt and record residue for manual review; never force a broad cleanup. Verify exact-document/user lookups return absent. Deleting both users can invalidate test tokens; no real-user accounts may be touched.
+
+**Costs and limits:** preparation is GitHub-only. Before any actual cloud step, re-confirm budget headroom and user-approved envelope. Budget alerts alone cannot cap spending. The separate runtime-test request remains bounded to 200 attempts / 60 minutes / 1,000 billed instance-seconds with zero-main-traffic revision and disabled baseline. A 24h lifetime is a proposed retention ceiling, **not** approval to run automation or delete on schedule.
+
+**Blockers still open:** approved real Firebase test ID-token acquisition method, actual cloud creation and cleanup permissions, data retention/cleanup authorization, effective service account IAM condition, least-privilege invoker and exact runtime activation/image/ingress decision. Do not change IAM or enable Policy Troubleshooter in this procedure.
+
+### Acceptance of procedure preparation
+
+This document is the **prepared procedure**. No live command or create/delete script is included to prevent accidental running under incomplete approvals. Before executing anything, the owner must see an explicit create/verify/cleanup script with immutable target and create-only guards and grant a **new, precise execution authorization**.
