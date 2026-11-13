@@ -586,3 +586,7 @@ The observed nonempty HTML 403 remains BLOCKED because IAM provenance was not es
 ## Phase B correlated anonymous denial
 
 Preflight now supports fresh trace-correlated Cloud Run request logs for nonempty HTML 403 on the pinned disabled tag. Historical owner evidence is context only. Node 24.22.3 focused mocked tests passed 12/12. Live trace propagation, Logging read permission, effective IAM and named invocation remain unverified. No hosted request, token minting or cloud change occurred. Production HOLD / NO-GO.
+
+## Phase B effective IAM read-only verification
+
+Added a dedicated verifier mode for direct staging bindings, access to the known denial log, and scoped database Policy Troubleshooter decisions if already enabled. Node 24 focused offline tests passed 13/13. The local workspace lacked gcloud, so no live IAM or Logging checks ran. Effective access remains UNVERIFIED pending operator evidence. Production HOLD / NO-GO.

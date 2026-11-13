@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {inspectPhaseBConfiguration, inspectPhaseBPreflight} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {inspectPhaseBConfiguration, inspectPhaseBPreflight, inspectPhaseBEffectiveIam} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const service = 'oldx-owner-read';
 const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
@@ -326,5 +326,46 @@ test('missing, duplicate, malformed and denied logging reads fail closed', async
     assert.equal(anonymousDenial.result, 'BLOCKED');
     assert.equal(anonymousDenial.loggingEvidence, reason);
     assert.doesNotMatch(JSON.stringify(anonymousDenial), /private credential/);
+  }
+});
+
+test('effective IAM uses overall policy evidence and rejects excess inherited access', () => {
+  for (const scenario of ['match', 'inherited-delete', 'unknown', 'missing-api', 'duplicate-log', 'duplicate-grant']) {
+    const fallback = preflightRead((command, data) => {
+      if (scenario === 'duplicate-grant' && command.startsWith('run services get-iam-policy')) {
+        data.bindings.push(data.bindings[0]);
+      }
+    });
+    let evaluations = 0;
+    const report = inspectPhaseBEffectiveIam((...args) => {
+      if (args[0] === 'logging') {
+        const row = {logName: 'projects/oldx-staging/logs/run.googleapis.com%2Frequests',
+          trace: 'projects/oldx-staging/traces/d29ad410c8cb446b9023cb960878e131',
+          timestamp: '2026-11-13T23:05:52.337034Z', textPayload: 'private log detail'};
+        return JSON.stringify(scenario === 'duplicate-log' ? [row, row] : [row]);
+      }
+      if (args[0] === 'services' && args.some((arg) => arg.includes('policytroubleshooter'))) {
+        return scenario === 'missing-api' ? '' : 'policytroubleshooter.googleapis.com';
+      }
+      if (args[0] !== 'policy-intelligence') return fallback(...args);
+      evaluations++;
+      const permission = args.find((arg) => arg.startsWith('--permission=')).split('=')[1];
+      const deleting = permission === 'datastore.entities.delete';
+      return JSON.stringify({
+        accessTuple: {fullResourceName: args[3], permission,
+          principal: 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com'},
+        overallAccessState: scenario === 'unknown' ? 'UNKNOWN_INFO' :
+          deleting && scenario !== 'inherited-delete' ? 'CANNOT_ACCESS' : 'CAN_ACCESS',
+        allowPolicyExplanation: {explainedPolicies: [{fullResourceName: '//cloudresourcemanager.googleapis.com/projects/oldx-staging'}]},
+      });
+    });
+    assert.equal(report.effectiveDatabaseIam, {
+      match: 'MATCH', 'inherited-delete': 'MISMATCH', unknown: 'UNVERIFIED',
+      'missing-api': 'UNVERIFIED', 'duplicate-log': 'MATCH', 'duplicate-grant': 'UNVERIFIED',
+    }[scenario]);
+    assert.equal(report.loggingRead, ['duplicate-log', 'duplicate-grant'].includes(scenario) ? 'UNVERIFIED' : 'MATCH');
+    assert.equal(evaluations, ['missing-api', 'duplicate-grant'].includes(scenario) ? 0 : 5);
+    assert.equal(report.leastPrivilegeInvoker, 'UNVERIFIED');
+    assert.doesNotMatch(JSON.stringify(report), /private log detail|explainedPolicies/);
   }
 });

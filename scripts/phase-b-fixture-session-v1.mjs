@@ -578,6 +578,66 @@ export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
   return report;
 }
 
+export function inspectPhaseBEffectiveIam(read = gcloud) {
+  const report = inspectPhaseBConfiguration(read, {preflight: true});
+  report.loggingRead = 'UNVERIFIED';
+  report.databasePermissions = {};
+  if (report.configuration !== 'MATCH') return report;
+
+  const scope = ['--project=' + project, '--account=' + operator, '--format=json', '--quiet'];
+  try {
+    const entries = JSON.parse(read('logging', 'read',
+      'logName="' + requestLog + '" AND trace="projects/oldx-staging/traces/d29ad410c8cb446b9023cb960878e131"' +
+        ' AND timestamp="2026-11-13T23:05:52.337034Z"',
+      '--limit=2', ...scope));
+    if (Array.isArray(entries) && entries.length === 1 &&
+        entries[0]?.logName === requestLog &&
+        entries[0].trace === 'projects/oldx-staging/traces/d29ad410c8cb446b9023cb960878e131' &&
+        entries[0].timestamp === '2026-11-13T23:05:52.337034Z') {
+      report.loggingRead = 'MATCH';
+    }
+  } catch {
+    // Missing access and unavailable evidence remain unverified.
+  }
+
+  const api = 'policytroubleshooter.googleapis.com';
+  try {
+    if (read('services', 'list', '--enabled', '--filter=config.name~^policytroubleshooter[.]googleapis[.]com$',
+      ...scope.slice(0, -2), '--quiet', '--format=value(config.name)').trim() !== api) return report;
+  } catch {
+    return report;
+  }
+  const resourceName = 'projects/' + project + '/databases/' + database;
+  const resource = '//firestore.googleapis.com/' + resourceName;
+  const principal = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
+  for (const [permission, expected] of Object.entries({
+    'datastore.databases.get': 'CAN_ACCESS',
+    'datastore.entities.get': 'CAN_ACCESS',
+    'datastore.entities.create': 'CAN_ACCESS',
+    'datastore.entities.update': 'CAN_ACCESS',
+    'datastore.entities.delete': 'CANNOT_ACCESS',
+  })) {
+    report.databasePermissions[permission] = 'UNVERIFIED';
+    try {
+      const evidence = JSON.parse(read('policy-intelligence', 'troubleshoot-policy', 'iam', resource,
+        '--principal-email=' + principal, '--permission=' + permission,
+        '--resource-name=' + resourceName, '--resource-service=firestore.googleapis.com',
+        '--resource-type=firestore.googleapis.com/Database', ...scope));
+      const tuple = evidence?.accessTuple;
+      if (tuple?.fullResourceName === resource && tuple.principal === principal && tuple.permission === permission &&
+          ['CAN_ACCESS', 'CANNOT_ACCESS'].includes(evidence.overallAccessState)) {
+        report.databasePermissions[permission] = evidence.overallAccessState === expected ? 'MATCH' : 'MISMATCH';
+      }
+    } catch {
+      // Never emit raw policy explanations.
+    }
+  }
+  const results = Object.values(report.databasePermissions);
+  if (results.includes('MISMATCH')) report.effectiveDatabaseIam = 'MISMATCH';
+  else if (results.every((status) => status === 'MATCH')) report.effectiveDatabaseIam = 'MATCH';
+  return report;
+}
+
 async function liveSend({method, url, body, publicRequest}) {
   guardOperator();
   const headers = {'Content-Type': 'application/json'};
@@ -654,6 +714,11 @@ async function main(args) {
     const report = inspectPhaseBConfiguration();
     console.log(JSON.stringify(report, null, 2));
     return report.configuration === 'MATCH' ? 0 : 3;
+  }
+  if (args.length === 1 && args[0] === '--check-effective-iam') {
+    const report = inspectPhaseBEffectiveIam();
+    console.log(JSON.stringify(report, null, 2));
+    return report.effectiveDatabaseIam === 'MATCH' && report.loggingRead === 'MATCH' ? 0 : 3;
   }
   if (args.length === 1 && args[0] === '--cloud-preflight') {
     const report = await inspectPhaseBPreflight();
