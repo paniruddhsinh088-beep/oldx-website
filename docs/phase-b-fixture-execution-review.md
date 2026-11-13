@@ -262,3 +262,21 @@ Only if Yasmin explicitly accepts this scope and risk, separately prepare/review
 **Disposition:** existing uploaded `--execute` must remain **NO-GO** pending (a) reviewed remediation for durable receipt and time-of-failure handling, (b) a supervised deletion/recovery process including exact commands, and (c) *fresh separate owner confirmation* immediately before first write. Existing owner approval authorizes the one-user test concept and requests command review; it did not authorize executing commands now. Do not use the full four-resource scope as fallback.
 
 **Immediate safe next step:** prepare an operator-readable redacted receipt template and exact read-only recovery commands. Do not create or delete any Auth user merely to test the recovery workflow. No IAM, Billing, Rules, Cloud Run or production changes.
+
+
+## 2026-11-14 — Live probe script code-level audit after 17 offline tests
+
+**Source-only audit, no Firebase mutation:** read actual previously delivered Python operator script `oldx_auth_crud_probe_REVIEW.py` (6,342 bytes) and recovery helper, compared with current Google Identity Platform REST [admin create](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects/accounts), [exact UID delete](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects.accounts/delete) and [lookup](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects.accounts/lookup). All 17 offline focused tests (11 receipt + 6 fake integration) have been confirmed PASS in Cloud Shell; **these do NOT test live Auth APIs**.
+
+**Concrete code-level gaps before any actual run:**
+
+1. The uploaded `--execute` script has **no call to `phase_b_auth_receipt_guard.py`**. Its `created_time` is in memory only; it does not generate a durable receipt before creation and cannot restart safely after process failure.
+2. It obtains the OAuth token **once** before all lookups/create/delete. A 401/403 or token expiry after create can prevent cleanup. A safe revised runner must reacquire a scoped token after an ambiguous interruption or before cleanup while preserving fixed project/operator checks.
+3. It catches API `HTTPError` but **does not persist a failure-state marker** when a request may have reached Google and timed out. Do not retry creates/deletes automatically.
+4. Its final post-delete lookup is not a guarantee: a network error after delete leaves the outcome unknown, and Auth deletion does not support an atomic creation-generation precondition. Do not infer success solely from a 200.
+5. The existing journal's locked transitions are offline only and **not a transaction with Google**. Before Create, commit `CREATE_UNKNOWN` locally; after verifying exact UID/email/disabled=true and receipt-createdAt, commit `CREATED_VERIFIED`; before Delete, commit `DELETE_UNKNOWN`; mark `CLEANUP_VERIFIED` only on exact-UID absence. A process crash can still leave the journal out of sync with the remote state; recovery must be read-only first, manual and fail-closed. A journal proving local prior intent alone is NOT independent proof of remote ownership.
+6. Manual confirmation after Create can leave an account. Confirm the cleanup operator is present **before** creating, and have an exact-ID Firebase Console fallback for read-only inspection. Any manual deletion requires new explicit review of the exact target and evidence.
+7. An API key is read via `getpass` for create, but appears in the request URL to Google; never print that URL, nor store key/token in journal or GitHub. API key identifies the project and does not itself grant IAM permissions.
+
+**Required next deliverable:** a reviewed, **versioned, self-contained** operator script that integrates the journal and read-only recovery, with `--review`/default-off execution gates and exact before/after command preview. It must be separately tested with transport fakes and code-reviewed *before* new owner authorization to run. The prior uploaded `oldx_auth_crud_probe_REVIEW.py --execute` is **NOT APPROVED FOR USE**. Do not change IAM, Rules, Billing, Cloud Run or production, and do not create the fifth user or any of the original four fixtures based on the current proof.
+
