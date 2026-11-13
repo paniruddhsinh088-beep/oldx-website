@@ -502,3 +502,7 @@ The v1 runner now inspects all four exact resources independently, checks sessio
 ## 2026-11-14 — Phase B acceptance source prepared
 
 Added the import-only Owner Read acceptance matrix and in-memory fixture hook for offline integration. The existing execution gate remains hard-off. The acceptance plan and Cloud Run gate now record the operator IAM checks, rollback and exact cleanup procedure. New focused offline tests await owner Cloud Shell execution. Effective database IAM, named least-privilege invoker, exact zero-traffic revision authorization, optional hosted quota/failure checks and supervised cleanup remain open. No Cloud changes. Production HOLD / NO-GO.
+
+## 2026-11-14 — Phase B integrated offline acceptance preparation
+
+The existing fixture runner now composes the Owner Read harness with the two in-memory sign-in identities and returns its result only after guarded cleanup and four absence checks. Probe failure preserves the journal for manual recovery. The composition accepts injected offline transports and remains outside the hard-disabled CLI. The new focused integration case awaits owner Cloud Shell execution. See the [Phase B go/no-go assessment](cloud-run-product-owner-read-staging-gate.md#phase-b-gono-go-assessment) for configuration evidence and the remaining effective IAM, invoker, runtime and cleanup gates. No Cloud changes. Production HOLD / NO-GO.

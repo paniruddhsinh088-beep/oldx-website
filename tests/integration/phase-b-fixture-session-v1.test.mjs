@@ -3,8 +3,8 @@ import {spawnSync} from 'node:child_process';
 import test from 'node:test';
 import {fileURLToPath} from 'node:url';
 import {authUids, firestoreDocs} from '../../scripts/phase-b-http-contract-review.mjs';
-import {offlinePayloads} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
-import {simulateFixtureSession} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {offlinePayloads, privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
+import {simulateFixtureSession, simulateFixtureAcceptance} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const prefix = 'projects/oldx-staging/databases/(default)/documents/';
 const time = '2026-11-14T00:00:00.000001Z';
@@ -94,7 +94,9 @@ function fake(intercept = () => undefined) {
     };
   }
 
-  return {run: () => simulateFixtureSession(send, openJournal), latest, requests, records,
+  return {run: () => simulateFixtureSession(send, openJournal),
+    accept: (acceptance) => simulateFixtureAcceptance({fixtureSend: send, openFakeJournal: openJournal, acceptance}),
+    latest, requests, records,
     get opened() { return opened; }, get closed() { return closed; }, get complete() { return complete; }};
 }
 
@@ -188,4 +190,52 @@ test('successful delete response with residual resource cannot complete session'
   });
   await assert.rejects(session.run(), /SIMULATION_STOPPED/);
   assert.ok(session.closed && !session.complete);
+});
+
+test('integrated Phase B acceptance binds fixture identities before guarded cleanup', async () => {
+  const root = '---oldx-owner-read-38472235077.asia-south1.run.app';
+  const error = (code) => ({ok: false, error: {code}});
+  const replies = {
+    'disabled-health': [200, {ok: true}],
+    'disabled-owner': [503, error('ENFORCEMENT_UNAVAILABLE')],
+    'invoker-denied': [403, undefined],
+    owner: [200, {ok: true, id: privateProduct.id, revision: 1, profile: privateProduct.profile,
+      published: false, publicationRevision: 0, receipt: null}],
+    'foreign-buyer': [403, error('DENIED')],
+    'missing-firebase': [401, error('AUTH_REQUIRED')],
+    'invalid-firebase': [401, error('AUTH_REQUIRED')],
+  };
+  for (const rejectOwner of [false, true]) {
+    const session = fake();
+    const seen = [];
+    const pending = session.accept({
+      disabledOrigin: 'https://healthcheck' + root,
+      enabledOrigin: 'https://phase-b-acceptance' + root,
+      enabledTag: 'phase-b-acceptance',
+      googleToken: 'fake.google.token',
+      send({caseId, headers}) {
+        seen.push(caseId);
+        assert.equal(session.records.length, 8);
+        const token = headers.Authorization?.split('.')[1];
+        if (['disabled-owner', 'owner', 'foreign-buyer'].includes(caseId)) {
+          const {sub} = JSON.parse(Buffer.from(token, 'base64url').toString('utf8'));
+          assert.equal(sub, authUids[caseId === 'foreign-buyer' ? 1 : 0]);
+        }
+        assert.equal(headers['X-Serverless-Authorization'],
+          caseId === 'invoker-denied' ? undefined : 'Bearer fake.google.token');
+        const [status, body] = replies[caseId];
+        return {status: rejectOwner && caseId === 'owner' ? 503 : status, body, cacheControl: 'private, no-store'};
+      },
+    });
+    if (rejectOwner) {
+      await assert.rejects(pending, /SIMULATION_STOPPED/);
+      assert.deepEqual(seen, Object.keys(replies).slice(0, 4));
+      assert.ok(session.closed && !session.complete);
+      assert.equal(session.records.length, 8);
+    } else {
+      assert.deepEqual((await pending).passed, Object.keys(replies));
+      assert.ok(session.closed && session.complete);
+      assert.equal(session.records.length, 16);
+    }
+  }
 });

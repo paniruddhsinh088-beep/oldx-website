@@ -8,6 +8,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {pathToFileURL} from 'node:url';
 import {authUids, database, firestoreDocs, project} from './phase-b-http-contract-review.mjs';
 import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
+import {runOwnerReadAcceptance} from './phase-b-owner-read-acceptance.mjs';
 
 const LIVE_EXECUTION_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
@@ -355,6 +356,16 @@ export function simulateFixtureSession(fakeSend, fakeJournal, afterSignIn) {
   // Fake sign-in key only. This path never imports credentials or calls liveSend.
   return runSession(transport(fakeSend, 'offline-test-key'), fakeJournal, afterSignIn)
     .catch(() => { throw new Error('SIMULATION_STOPPED'); });
+}
+
+// Offline composition only. The CLI cannot supply the callback or a Cloud Run transport.
+export async function simulateFixtureAcceptance({fixtureSend, openFakeJournal, acceptance}) {
+  let result;
+  await simulateFixtureSession(fixtureSend, openFakeJournal, async (ownerToken, buyerToken) => {
+    result = await runOwnerReadAcceptance({...acceptance, ownerToken, buyerToken});
+  });
+  // Return probe results only after the fixture runner verifies all four absent.
+  return result;
 }
 
 async function main(args) {
