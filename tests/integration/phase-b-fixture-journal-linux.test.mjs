@@ -120,7 +120,7 @@ test('Linux journal accepts a complete four-resource history but blocks a replay
     assert.equal(states.get(authUids[0]), 'DELETE_ACKNOWLEDGED');
     const path = join(home, '.oldx-phase-b-fixtures-v1', 'journal.jsonl');
     writeFileSync(path, readFileSync(path, 'utf8') +
-      JSON.stringify({resource: authUids[0], state: 'CREATE_UNKNOWN'}) + '\\n');
+      JSON.stringify({resource: authUids[0], state: 'CREATE_UNKNOWN'}) + '\n');
     assert.throws(() => journalStatus(), /ENTRY_AFTER_COMPLETION/);
   })
 );
