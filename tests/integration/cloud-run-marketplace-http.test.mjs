@@ -49,3 +49,18 @@ test('missing handler and thrown internal details fail closed',async()=>{
   assert.equal(failed.status,503);assert.doesNotMatch(await failed.text(),/private credential/);
  });
 });
+
+test('streaming oversized handler response is stopped before buffering unlimited output',async()=>{
+ let emitted=0, cancelled=false;
+ const listener=createCloudRunMarketplaceListener({enabled:true,handlers:{save:{fetch(){
+  const body=new ReadableStream({pull(controller){
+   emitted++; controller.enqueue(new Uint8Array(32768));
+  },cancel(){cancelled=true;}});
+  return new Response(body,{status:200});
+ }}}});
+ await withHost(listener,async base=>{
+  const r=await fetch(base+'/api/staging/marketplace/save',{method:'POST',body:'{}'});
+  assert.equal(r.status,503);assert.ok(emitted >= 3 && emitted <= 5);assert.equal(cancelled,true);
+  assert.equal(r.headers.get('cache-control'),'private, no-store');
+ });
+});
