@@ -219,3 +219,25 @@ The exact Firestore REST `createDocument` uses `documentId` on the create reques
 
 **No cloud writes have been made; this is not an executable procedure yet.** Prior scoped IAM `testIamPermissions` for Yasmin reported `firebaseauth.users.delete` GRANTED, but success of live Auth Delete and any safe rollback **cannot be independently proven with zero fixtures**. The safest next owner decision before the first write is whether to authorize a **single sacrificial, uniquely named synthetic Auth user created and deleted under direct supervision as a separate scoped operation**, accepting that a cleanup failure could temporarily leave that synthetic user. That fifth user is **not** covered by the currently approved four-resource scope, so it requires a new precise approval; alternatively do not conduct that proof and keep Phase B creation blocked. Do NOT silently create this user. Same-day cleanup requires owner presence and verified follow-up; no automatic scheduled deletion exists.
 
+
+
+## 2026-11-14 — Separate owner decision packet: single disposable Auth CRUD probe
+
+**Status: proposal only — no authority to create/delete an extra identity.** The user's generic “continue” authorizes further review work, not this fifth real Firebase Auth account. This proposal is strictly separate from the previously approved four-resource fixture plan, and no Cloud calls are made by documenting it.
+
+### Exact proposed boundary
+
+- Project: **`oldx-staging` only**, using Yasmin's verified `yasminparmar087@gmail.com` operator identity and the already working `X-Goog-User-Project: oldx-staging` header; no project/IAM/API/OAuth client/Rules/Billing/Cloud Run/production modification.
+- Proposed disposable Auth UID **`synthetic-auth-crud-probe-20261114`**; proposed isolated email **`oldx-auth-crud-probe-20261114@example.invalid`**. Confirm both UID/email do not exist using exact authorized lookups before any create. If an unexpected collision occurs, STOP and seek fresh approval; do not change names automatically.
+- **One** Auth create and, following successful exact-UID lookup/provenance verification, **one** Auth delete. No additional Firestore documents, uploads, messages, rate-limit writes, real emails, token sign-ins, Cloud Run traffic or live owner-read tests. No record enumeration.
+- Keep password in process memory via hidden prompt; do not save passwords, API key, OAuth token, Firebase user response body, identity token or refresh token in shell command history, repository, chat or diagnostics. Do not print raw API errors. No SA private keys.
+- For a supervised same-day session only: confirm explicit operator presence, local date/time and cutoff, current exact UID absent, Auth API key availability, create URL/auth header contract, **review exact executable command before running**, persist nonsecret minimal cleanup inventory and success/failure statuses, verify the returned UID and creation timestamp match, then attempt a single exact-UID delete. Re-lookup exact UID after deletion; **only absent** counts as cleaned.
+- If Auth create fails/returns ambiguous status, perform exact-UID lookup before any further action; no blind retries. If delete fails or has an ambiguous outcome, repeat the exact-ID lookup only, STOP and disclose the unresolved synthetic account. No force deletion of a UID that differs from session provenance.
+- **Irreducible limitation:** Auth delete has no Firestore `currentDocument.updateTime`/generation precondition. There is a narrow time-of-check/time-of-use race, and the first live create/delete probe cannot have its own deletion guaranteed in advance. Yasmin must explicitly accept this residual risk; a synthetic user could remain temporarily and require a separate recovery action. An operator-supervised same-day attempt does **not** equal automatic cleanup; **do not promise a guaranteed 24-hour removal**.
+- The approved four-resource Phase B run stays completely separate. A successful disposable probe would support Auth CRUD readiness, not approve actual four-resource creation or any Cloud Run activation.
+
+### Approval to request verbatim, BEFORE mutation
+
+“`oldx-staging`માં માત્ર **`synthetic-auth-crud-probe-20261114`** UIDવાળો એક વધારાનો નકલી Firebase Auth User બનાવી, તેની ઓળખ ચકાસીને **એ જ નિયંત્રિત Sessionમાં Delete કરવાનો પ્રયાસ** કરવા મને અલગ મંજૂરી છે. Cleanup નિષ્ફળ જાય તો User અસ્થાયી રીતે બાકી રહી શકે છે તે જોખમ સમજું છું. પહેલા સંપૂર્ણ Executable Commands બતાવો. IAM, Rules, Billing, Cloud Run, Production અથવા અન્ય Users/Documentsમાં ફેરફાર મંજૂર નથી.”
+
+Only if Yasmin explicitly accepts this scope and risk, separately prepare/review exact commands and confirm supervised operator presence; **approval does not by itself trigger execution**. Without it, **NO-GO for fifth user and existing four-resource run**.
