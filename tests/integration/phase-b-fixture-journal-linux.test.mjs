@@ -98,3 +98,29 @@ test('Linux journal refuses wrong evidence or premature all-absent marker', {ski
     assert.throws(() => journalStatus(), /DELETE_EVIDENCE_MISMATCH/);
   })
 );
+
+test('Linux journal accepts a complete four-resource history but blocks a replay', {skip: process.platform !== 'linux'}, () =>
+  isolatedHome((home) => {
+    const journal = fixtureJournal(home);
+    for (const doc of [...firestoreDocs].reverse()) {
+      journal.record(doc, 'DELETE_UNKNOWN', {updateTime});
+      journal.record(doc, 'DELETE_ACKNOWLEDGED');
+    }
+    for (const uid of authUids) {
+      journal.record(uid, 'DELETE_UNKNOWN', {
+        email: uid + '-synthetic-test@example.invalid', createdAt,
+      });
+      journal.record(uid, 'DELETE_ACKNOWLEDGED');
+    }
+    journal.complete();
+    journal.close();
+    const states = journalStatus();
+    assert.equal(states.completed, true);
+    assert.equal(states.size, 4);
+    assert.equal(states.get(authUids[0]), 'DELETE_ACKNOWLEDGED');
+    const path = join(home, '.oldx-phase-b-fixtures-v1', 'journal.jsonl');
+    writeFileSync(path, readFileSync(path, 'utf8') +
+      JSON.stringify({resource: authUids[0], state: 'CREATE_UNKNOWN'}) + '\\n');
+    assert.throws(() => journalStatus(), /ENTRY_AFTER_COMPLETION/);
+  })
+);
