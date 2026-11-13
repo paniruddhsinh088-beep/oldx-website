@@ -308,6 +308,10 @@ Prepared separate conversation-file helper `oldx_auth_probe_recovery_readonly.py
 
 **Next:** finish full operator review of creation/deletion implementation and separately approve actual execution in a supervised session with a safe recovery plan. Do not enable Cloud Run, touch other users or alter IAM/Rules/Billing/Production. Fixture execution and production remain HOLD/NO-GO.
 
+## 2026-11-14 — One-user probe execution blocked on durable cleanup receipt
+
+Inspected actual uploaded `oldx_auth_crud_probe_REVIEW.py` plus `oldx_auth_probe_recovery_readonly.py` source. Updated `docs/phase-b-fixture-execution-review.md` (commit `107b6dde`) with operational assessment: the CRUD script's in-memory creation timestamp is lost on Cloud Shell disconnect/timeout; recovery status saying `EXISTS` alone is NOT trustworthy creation provenance and is NOT permission to delete. A single OAuth token can expire before cleanup, create/delete outcomes can be ambiguous, the second confirm can be declined, and Auth user deletion has no generation precondition. Therefore **the uploaded `--execute` remains NO-GO**. New owner confirmation and an independently reviewed durable minimal receipt, fail-closed ambiguous-operation procedure, exact delete runbook and supervised cleanup are prerequisites. Existing `--review` succeeded earlier; do not repeat it. No new cloud work or fixture changes in this review. Owner Read default-off; production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
