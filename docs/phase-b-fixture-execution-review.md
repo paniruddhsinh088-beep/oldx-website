@@ -280,3 +280,35 @@ Only if Yasmin explicitly accepts this scope and risk, separately prepare/review
 
 **Required next deliverable:** a reviewed, **versioned, self-contained** operator script that integrates the journal and read-only recovery, with `--review`/default-off execution gates and exact before/after command preview. It must be separately tested with transport fakes and code-reviewed *before* new owner authorization to run. The prior uploaded `oldx_auth_crud_probe_REVIEW.py --execute` is **NOT APPROVED FOR USE**. Do not change IAM, Rules, Billing, Cloud Run or production, and do not create the fifth user or any of the original four fixtures based on the current proof.
 
+
+
+## 2026-11-14 — FINAL GO/NO-GO review packet for one disabled Auth CRUD proof
+
+**Owner-approved concept, still NOT approved to execute:** one disabled, passwordless `synthetic-auth-crud-probe-20261114` user, email `oldx-auth-crud-probe-20261114@example.invalid`, in `oldx-staging` only; supervised create → exact verify → delete → confirm absent, accepting potential cleanup failure. All other resources and cloud settings excluded. **Production HOLD/NO-GO.**
+
+**Google contract checked on 2026-11-14:** official `projects.accounts` supports Google OAuth admin-authenticated `localId`, `disabled=true` and requires project API key. `projects.accounts.delete` supports `localId` with permission `firebaseauth.users.delete` but has no UID-generation precondition. A prior read-only quota-project-header lookup succeeded, but no actual create/delete call has been observed. [Admin create](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects/accounts); [Admin delete](https://docs.cloud.google.com/identity-platform/docs/reference/rest/v1/projects.accounts/delete).
+
+**Source reviewed:** `scripts/phase_b_auth_probe_session_v1.py` and `scripts/phase_b_auth_receipt_guard.py`. The reviewed runner currently has **`LIVE_EXECUTION_ENABLED=False`**, so `--execute` fails before credential access or network calls. Its focused v1 offline transport tests **7/7 PASS**; prior 11 receipt + 6 fake integration tests PASS, totaling 24 offline focused tests, **not live CRUD validation**. Do NOT toggle the gate in Cloud Shell or modify the branch to enable execution under a generic “continue.”
+
+**Complete operator command preview (NOT authorization to run execution):**
+
+```bash
+# Review current version; zero Cloud requests
+cd ~/oldx-staging-build
+git pull --ff-only origin security-hardening-review
+python3 scripts/phase_b_auth_probe_session_v1.py --review
+
+# Read-only exact UID status query, if recovery is needed:
+python3 scripts/phase_b_auth_probe_session_v1.py --status
+
+# MUTATING RUN — DO NOT EXECUTE: currently hard-blocked by LIVE_EXECUTION_ENABLED=False.
+python3 scripts/phase_b_auth_probe_session_v1.py --execute
+```
+
+The future mutating command is shown solely for owner review; it cannot provision until a **separate versioned approved runner** is code-reviewed and its execution guard controlled under explicit consent. The exact proposed execution sequence is (1) operator/project check, (2) exact UID and email collision checks, (3) acceptance of one disabled orphan risk, (4) hidden staging Web API key input, (5) new `0600` journal with `CREATE_UNKNOWN` durable before request, (6) deliberate typed confirmation, (7) exact disabled anonymous-like user create with `localId` and email, (8) exact UID lookup and creation timestamp verify, (9) receipt `CREATED_VERIFIED`, (10) owner confirmation, (11) fresh exact UID+createdAt check, (12) persist `DELETE_UNKNOWN`, (13) exact UID delete request, (14) exact UID absence check, (15) journal `CLEANUP_VERIFIED`. No Firestore or Cloud Run calls.
+
+**Recovery stop decision (hard rule):** If a create/delete HTTP request times out or has unknown outcome, never retry automatically. An existing disabled user can be deleted manually ONLY after verifying exact UID, expected email, createdAt session evidence, and separate owner approval of the specific recovery action; Auth delete is not atomic with prior lookup. If journal says `CREATE_UNKNOWN` without verified createdAt, **STOP and escalate**, do not infer ownership from matching UID/email. `--status` is read-only only. If the journal or Cloud Shell disappears, do not make unverified destructive calls; verify exact UID in Firebase Console and escalate with minimal evidence. No automated 24h cleanup task exists.
+
+**GO gates that remain unchecked:** independent review of the final live-enabled runner including key/url handling; evidence of exact staging API key without disclosing its value; supervised Yasmin/operator presence and same-session cutoff; secure journal persistence/recovery; an explicit owner decision to run one real create/delete despite no preproven delete capability, and a designated manual recovery owner if it fails. Explicit create/delete execution approval MUST be requested only AFTER these are understood. Until then **NO-GO for the one user and all four principal fixtures**.
+
+**Do not repeat passing offline tests merely to generate activity.** Do not enable IAM/services, issue SA keys, or alter Firebase Rules, Cloud Run, Billing or Production. 
