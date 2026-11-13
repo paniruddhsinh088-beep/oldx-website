@@ -228,6 +228,14 @@ Created `scripts/phase-b-http-contract-review.mjs` and `tests/integration/phase-
 
 **Next:** obtain exact real Firestore synthetic fixture schema through existing local tests/docs, review live credentials/controlled create/delete wrapper with fail-closed response handling, and secure an owner-supervised same-day cleanup window and exact command preview. No user-data write/delete, runtime enable, IAM/Rules/Billing changes. Production HOLD/NO-GO.
 
+## 2026-11-13 — Exact Firestore typed Phase B fixture preview committed
+
+Inspected existing `docs/phase-b-owner-read-synthetic-acceptance-plan.md` and `tests/integration/phase-b-proposed-private-shape.test.mjs`. The already-tested candidate fields are actor `{uid:'synthetic-seller-a',canWrite:true,suspended:false}` and private product `{id:'synthetic-phase-b-read-01',kind:'product',ownerUid:'synthetic-seller-a',revision:1,archived:false,published:false,publicationRevision:0,publicProfile:null,profile:{title:'Synthetic Product',description:'Fictional staging-only listing',category:'cars',locationLabel:'Synthetic location',basePrice:100,isSold:false,storeId:null,photos:[]}}`. These are **review-only synthetic data**.
+
+Added `scripts/phase-b-firestore-typed-fixture-preview.mjs` (commit `d697cc3f`) that renders only two exact document JSON bodies in Firestore REST typed field format (stringValue, booleanValue, integerValue, nullValue, arrayValue, mapValue), completely offline, with no cloud or credential imports or execution toggle. Added `tests/integration/phase-b-firestore-typed-fixture-preview.test.mjs` (commit `8bc034dd`) to assert exact paths, typed decoding, repository `validateMarketplaceProfile` compatibility and absence of secret/external references. **New tests were committed but NOT yet run on Cloud Shell or CI**. No Cloud writes; no user/document created; these are not executable HTTP write scripts.
+
+**Next safe operator step:** execute only new focused offline `node --test tests/integration/phase-b-firestore-typed-fixture-preview.test.mjs` after updating review checkout, without rerunning previously passed checks. Review exact credential-safe Auth create/delete implementation and same-day cleanup before any live fixture. Owner Read default-off and production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
