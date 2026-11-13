@@ -87,6 +87,12 @@ Owner-provided Cloud Shell screenshot of the previously reviewed `cloudresourcem
 
 **Next gate:** verify Yasmin's own existing Firestore document get/create/delete permissions at `oldx-staging/(default)` using read-only IAM evaluation if supported; do not treat that evaluation as runtime-SA IAM condition proof. Then prepare exact bounded Auth/Firestore create and per-ID cleanup execution steps for a **new, specific owner approval**. Preserve default-off Cloud Run service and original traffic, no Firestore fixture writes, no IAM or Rules mutations, production HOLD / NO-GO.
 
+## 2026-11-13 22:09 IST — Yasmin Firestore IAM read-only check
+
+Owner-provided Google Cloud Shell screenshot confirms the `cloudresourcemanager.googleapis.com/v3/projects/oldx-staging:testIamPermissions` request as Yasmin's active account returned `GRANTED` for **`datastore.entities.get`, `datastore.entities.create`, `datastore.entities.delete`, `datastore.entities.update`** and `READ-ONLY CHECK COMPLETE`. Combined with the previously verified three Firebase Auth get/create/delete IAM permissions, **seven project-level permission queries** have now returned GRANTED for Yasmin. This is not database-level effective access proof, actual API mutation success, or permission validation for the dedicated Cloud Run runtime service account.
+
+No Firebase Auth user or Firestore document created, read or deleted; no IAM/Rules/Cloud Run changes. **Next step:** prepare exact-target staging fixture create/verify/cleanup execution proposal with per-ID non-overwrite, collision, run marker, account/token secrecy and reversible cleanup; obtain separate specific Yasmin approval for live creations AND exact-ID deletion before execution. Keep Owner Read default-off and production HOLD / NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
