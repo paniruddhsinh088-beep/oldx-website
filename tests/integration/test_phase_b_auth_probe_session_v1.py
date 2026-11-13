@@ -39,6 +39,9 @@ class SimulatedBackend:
 
 class TestOneSession(unittest.TestCase):
     def setUp(self):
+        self.live_gate_patch = patch.object(probe, 'LIVE_EXECUTION_ENABLED', True)
+        self.live_gate_patch.start()
+        self.addCleanup(self.live_gate_patch.stop)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = pathlib.Path(self.temp.name) / 'private' / 'receipt.json'
@@ -57,6 +60,13 @@ class TestOneSession(unittest.TestCase):
         for p in patches:
             p.start()
             self.addCleanup(p.stop)
+
+    def test_review_branch_defaults_to_blocked_without_cloud_call(self):
+        with patch.object(probe, 'LIVE_EXECUTION_ENABLED', False):
+            with self.assertRaisesRegex(probe.Stop, 'disabled'):
+                probe.execute()
+        self.assertFalse(self.path.exists())
+        self.assertEqual(self.fake.events, [])
 
     def test_fake_end_to_end_and_durable_receipt(self):
         self.assertEqual(probe.execute(), 0)
