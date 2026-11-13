@@ -87,3 +87,19 @@ This describes intended API choices; **not copy-paste runnable code**.
 ## Status / next action
 
 **Prepared and approved at planning level only. No actual cloud operation executed here.** Next independent source task: offline test the exact proposed actor/product document shapes against existing repository validation, without introducing production credentials or cloud operations. Next owner gate after that: a precise executable script and separate explicit approval for the four creates **and** exact-ID cleanup. Any enabled Cloud Run revision, IAM grants or live Firebase ID token acquisition remains independently gated.
+
+## Final owner decision — exact four-resource fixture approval
+
+**Evidence recorded 2026-11-13:** (a) Firebase Console exact-UID search showed no account for `synthetic-seller-a` and `synthetic-buyer-b`; (b) Firestore exact-document REST GET returned 404 for `marketplaceActors_v1/synthetic-seller-a` and `marketplacePrivate_v1/product_synthetic-phase-b-read-01`. These four results are **point-in-time**, not create authorization or proof that a later write cannot collide. The two Auth REST lookups returned 403, root cause unresolved; do not equate Console access with successful Admin SDK create/get.
+
+**Proposed permission to request distinctly (not yet granted):** Authorized Yasmin operator may, only on `oldx-staging` / `(default)`, create *exactly*:
+1. Firebase Auth test UID `synthetic-seller-a` (non-real test email with unique temporary password, never logged).
+2. Firebase Auth test UID `synthetic-buyer-b` (distinct credentials; no real recipient).
+3. Firestore `marketplaceActors_v1/synthetic-seller-a` (synthetic eligibility actor).
+4. Firestore `marketplacePrivate_v1/product_synthetic-phase-b-read-01` (draft unpublished synthetic profile; no images).
+
+**Separately identified but proposed for simultaneous owner approval:** After creation, perform read-only exact-ID verification and later cleanup of *these same four resources only*, provided provenance/marker and Firestore update-time safety checks pass. **Maximum lifetime proposed: 24h** from first successful creation, with an owner-operated cleanup step or an independently authorized scheduled mechanism; nothing is currently scheduled, and neither this repo nor chat guarantees automatic expiry. If deletion cannot be assured or pre-authorized, **do not create anything**. Do not retry partial create blindly; stop and inventory exact successes. No public collections, legacy stores/products, other Auth users or mass deletes. Quota-counter writes, login/token issuance, enabled Cloud Run, IAM grants, ingress, Rules, Billing and production explicitly **excluded** from this fixture-only approval.
+
+**Mandatory preflight immediately before execution:** validate active Yasmin account and project number, verify the two exact Auth UIDs using a supported and authorized lookup (Console alone is not an atomic create guard), verify two Firestore document paths absent, verify no email collision, use create-only operations for every resource; on any 403, ambiguous result, mismatch or collision **STOP**. Protect any temporary credential in ephemeral memory and never transmit it in output, repository, screenshots, shell history or logs. Review exact operation sequence, auth token source and cleanup capability *before* running.
+
+**Decision state:** WAITING FOR EXPLICIT EXECUTION AUTHORIZATION. A message such as “continue” or “OK” is not authority to create/delete cloud resources. Even after approval, require an executable script to be independently checked and show the user its exact run operation before mutation. The existing private Cloud Run revs stay default-off and production HOLD/NO-GO.
