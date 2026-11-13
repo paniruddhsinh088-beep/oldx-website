@@ -156,3 +156,23 @@ The exact future admin endpoint candidate is `POST /v1/projects/oldx-staging/acc
 **24-hour requirement:** Nothing currently schedules cleanup. The operator must explicitly select a supervised creation and deletion window, verify a working exact-target deletion identity/route **before creating anything**, and have an owner-approved means of following up within the retention limit. No obligation to keep the ephemeral shell/browser session open for 24h. A reminder alone is not automatic deletion. If guaranteed cleanup within 24h cannot be arranged, **NO-GO for any fixture creation**.
 
 **Approved scope remains:** four staging-only synthetic resources and same-ID cleanup, **conditional on pre-execution review of exact commands and verified cleanup**. This document is advisory/source-only; it does not provision any resource, create a credential, execute API requests or change Cloud settings.
+
+
+## Approved supervised same-day session plan
+
+**Owner decision (2026-11-13):** Yasmin explicitly approved a **single supervised test session with same-day cleanup**, rather than leaving synthetic accounts and documents present for days. The existing four-resource scope and creation/cleanup consent are subject to **pre-run review of exact commands and proven cleanup capability**. This decision does **not** approve enabled Cloud Run, runtime quotas/writes, public access, IAM, Rules, Billing or Production.
+
+**GO/NO-GO checklist — all mandatory before creating anything:**
+
+- [ ] Confirm a specific supervised window and a named human responsible for same-day cleanup. Log creation time and cutoff in IST; never assume an automation is running. If the operator cannot be present for cleanup, **NO-GO**.
+- [ ] Resolve exact chosen-UID Firebase Auth admin REST create semantics and verify the keyless OAuth principal works for read-only lookup **and has an evidenced safe deletion path**. Existing scoped `testIamPermissions` and one successful lookup are insufficient proof of deletion.
+- [ ] Prepare separately inspectable and redacted executable scripts for exact-UID Auth user create/verify/delete, exact-path Firestore create-only/verify/conditional-delete, with a nonsecret run marker and local protected creation inventory. **Show commands before any execute.** Fail closed on unknown API responses and conflicting UIDs.
+- [ ] Verify stable synthetic email/address handling (no real recipients), protected in-memory ephemeral passwords and no tokens/secrets in shell history, GitHub, logs or chat. No service-account key.
+- [ ] At start of the actual authorized session, freshly verify the two fixed UIDs and two document paths absent. Treat prior Console/REST results as historical, not durable authorization to overwrite.
+- [ ] Have explicit permission **for any extra runtime features**, rate-limit counter writes, least-privilege invoker, trial limits and rollback. If absent, run **fixture-only create/verify/cleanup**, NOT a live Owner Read test; do not label this backend acceptance.
+- [ ] Keep an exact-ID cleanup method and manual rollback for partial creation or ambiguous failures; delete only records verified to be created in this session, with Firestore `updateTime` preconditions. Verify all four gone before declaring completion.
+- [ ] STOP and disclose residual resources if API access or cleanup fails; no broad account listing, collection-wide deletion or force-overwrite. Retention goal = cleanup during the same supervised session, **never later than 24h**.
+
+**Execution order once *all* gates are met:** preflight → exact collision check → create only approved four fixtures → verify exact four → run only separately approved tests → disable/stop test access → conditional exact-ID cleanup → verify absence → record redacted outcomes in this handoff. No run is currently scheduled; no fixture has been created by this approval alone.
+
+**Next safe work:** prepare the exact reviewed script and prove correct Auth UID semantics and cleanup behavior without using live OLDX data. Code review/tests in `security-hardening-review` are allowed within existing preparation scope. No Cloud write/delete until commands have been shown and all gates resolved.
