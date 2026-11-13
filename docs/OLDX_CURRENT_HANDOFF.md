@@ -69,6 +69,12 @@ The plan also now requires exact UID/document collision checks, a creation manif
 
 **Next safe task:** prepare/review a dedicated **read-only source/config preflight** for determining whether staging Email/Password is already enabled and whether the named operator has approved necessary Auth create/delete permissions, without calling Auth user enumerations or creating test data. Then request exact create/delete authorization for the two users and two documents, including cleanup scope, before any cloud writes. Do not rerun passed Node preflight tests.
 
+## 2026-11-13 22:00 IST — Auth config read-only 403
+
+Owner-provided Google Cloud Shell screenshot confirms a read-only `GET https://identitytoolkit.googleapis.com/admin/v2/projects/oldx-staging/config` with Yasmin's gcloud access token returned **HTTP 403**. The script printed `CHECK BLOCKED: HTTP 403`, `No configuration changed`. This is NOT evidence that Email/Password sign-in is disabled; it indicates that the attempted principal/API request could not read the configuration. The response body was intentionally not exposed; do not assert the precise cause as proven.
+
+**Next action:** Yasmin may inspect Firebase Console → select `oldx-staging` → Authentication → Sign-in method → Email/Password provider **status only**. Do not press Enable/Edit/Save or change providers. Capture whether it is Enabled, Disabled, or Console Access Denied; only a redacted screenshot/status is needed. No repetition of the failed admin API request, no new IAM permission grant, no Identity Platform API enablement and no users created. Phase B token provision and live test remain blocked pending verified provider status and separately approved user/document creation. Production HOLD / NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
