@@ -49,6 +49,12 @@ Yasmin explicitly approved preparation of the safe two-synthetic-Auth-user and t
 
 **Next owner action:** review the documented execution scope and approve a separately produced exact-target create/verify/cleanup script **before running any cloud writes**; resolve real Firebase test token acquisition and cleanup permissions first. Until then, perform only local/source work. Keep Phase A disabled Cloud Run revisions/traffic unchanged and production HOLD/NO-GO.
 
+## 2026-11-13 — Phase B offline preflight script prepared
+
+Yasmin's approval remains **procedure preparation only**, not cloud creation/deletion or activation. A strictly local guard now exists at `scripts/phase-b-offline-fixture-preflight.mjs`, with new assertions at `tests/integration/phase-b-offline-fixture-preflight.test.mjs`. It reads the previously approved local fixture manifest, rejects wrong project/database, changed synthetic users/documents or false implied approval, and outputs a review-only action checklist. It **does not import Firebase, use a credential or call any cloud API**, and only accepts `--dry-run`. New targeted tests **have not yet been executed/verified**.
+
+**Immediate safe next step:** In the existing Cloud Shell checkout `~/oldx-staging-build`, fast-forward pull `security-hardening-review`, run `node scripts/phase-b-offline-fixture-preflight.mjs --dry-run` plus `node --test tests/integration/phase-b-offline-fixture-preflight.test.mjs` inside already available Node 24 Docker container (read-only bind). Record the results here, not a new broad rerun. Do not run any Firebase Auth/Firestore operation; real-world identity acquisition and exact-ID cleanup approvals remain blocking. Existing `oldx-owner-read` revisions/traffic and production HOLD/NO-GO unchanged.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
