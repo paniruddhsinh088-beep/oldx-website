@@ -262,6 +262,12 @@ Added `scripts/phase-b-offline-cleanup-guard.mjs` (commit `5163531e`) and six sc
 
 **Remaining gate:** An actual supervised create/cleanup workflow with secure secret handling, full exact commands shown for owner review, and effective Auth deletion must be validated before any cloud fixture creation; same-day cleanup approval does not activate runtime or create resources. Do not rerun previously passed tests. Cloud Run remains default-off; production HOLD/NO-GO.
 
+## 2026-11-14 00:02 IST — Cleanup guard offline 6/6 PASS
+
+Owner's Cloud Shell screenshot shows `git pull --ff-only origin security-hardening-review` fast-forwarded from `0028eb9` to `bbd0fbb`, then `node --test tests/integration/phase-b-offline-cleanup-guard.test.mjs` completed with **6 tests, 6 pass, 0 fail, 0 skipped**. Passing scenarios: exact four targets yield descriptions, unexpected/missing inventory fails closed, wrong session fails closed, Auth creation time or UID mismatch fails closed, Firestore provenance marker or updateTime missing fails closed, and missing target/unexpected changes fail closed. This is an **offline-only simulation** with no Cloud requests, no actual Auth/Firestore deletions and no evidence of ability to guarantee real cleanup. No cloud resources changed.
+
+No need to repeat this passing test without new changes. Next substantive gate: prepare/review runnable fail-closed, credential-protected exact-UID Admin Auth create/delete and conditional document operations; independently verify cleanup capability and supervised same-day window before any fixture creation, then show owner exact commands. Remain fixture execution NO-GO, Owner Read default-off, production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
