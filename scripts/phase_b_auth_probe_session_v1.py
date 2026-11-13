@@ -18,10 +18,23 @@ import sys
 import uuid
 from urllib import error, parse, request
 
-from scripts.phase_b_auth_receipt_guard import (
-    UID, EMAIL, PROJECT, new_receipt, save_new, read_receipt,
-    transition_receipt, classify_recovery,
-)
+# Supports both "python3 -m scripts.phase_b_auth_probe_session_v1" and
+# "python3 scripts/phase_b_auth_probe_session_v1.py" from the review checkout.
+if __package__:
+    from .phase_b_auth_receipt_guard import (
+        UID, EMAIL, PROJECT, new_receipt, save_new, read_receipt,
+        transition_receipt, classify_recovery,
+    )
+else:
+    from phase_b_auth_receipt_guard import (
+        UID, EMAIL, PROJECT, new_receipt, save_new, read_receipt,
+        transition_receipt, classify_recovery,
+    )
+
+# Review-branch safeguard: a prior conceptual approval is NOT live-run approval.
+# Tests may patch this flag using their fake backend, but this committed script
+# cannot send any write/delete requests in normal operator use.
+LIVE_EXECUTION_ENABLED = False
 
 OPERATOR = 'yasminparmar087@gmail.com'
 BASE = 'https://identitytoolkit.googleapis.com/v1/projects/' + PROJECT
@@ -140,6 +153,8 @@ def confirm(phrase):
 
 
 def execute():
+    if not LIVE_EXECUTION_ENABLED:
+        raise Stop('STOP: live execution disabled in review branch')
     guard_identity()
     if receipt_status() is not None:
         raise Stop('STOP: previous receipt exists; inspect --status before any new create')
