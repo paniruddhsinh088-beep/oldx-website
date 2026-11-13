@@ -251,7 +251,9 @@ export function journalStatus() {
     }
     latest.set(resource, state);
   }
-  // No automatic recovery/delete is ever authorized by local journal metadata.
+  // Metadata is local-only and MUST be corroborated with remote per-ID records.
+  latest.evidence = evidence;
+  latest.completed = completed;
   return latest;
 }
 
@@ -306,10 +308,35 @@ async function main(args) {
   if (args.length === 1 && args[0] === '--status') {
     requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
     const journal = journalStatus();
-    const present = await inventory(transport(liveSend));
-    resources.forEach((resource, i) => console.log(resource, present[i] ? 'PRESENT' : 'ABSENT',
-      journal.get(resource) ?? 'NO_RECORDED_MUTATION'));
-    return present.some(Boolean) ? 3 : 0;
+    const api = transport(liveSend);
+    let unresolved = !journal.completed;
+    for (const resource of resources) {
+      const local = journal.get(resource) ?? 'NO_RECORDED_MUTATION';
+      const evidence = journal.evidence.get(resource);
+      let remote;
+      if (authUids.includes(resource)) remote = await api.lookup(resource);
+      else remote = await api.getDoc(resource);
+      let observation = 'ABSENT_AT_CHECK_TIME';
+      if (remote !== null) {
+        observation = 'PRESENT_UNVERIFIED';
+        try {
+          if (local !== 'CREATE_UNKNOWN' && evidence) {
+            if (authUids.includes(resource)) {
+              const actual = userEvidence(remote, resource, evidence.email);
+              if (actual === evidence.createdAt) observation = 'PRESENT_MATCHES_JOURNAL_NOT_DELETE_APPROVAL';
+            } else if (documentEvidence(remote, resource) === evidence.updateTime) {
+              observation = 'PRESENT_MATCHES_JOURNAL_NOT_DELETE_APPROVAL';
+            }
+          }
+        } catch {
+          // Never print remote content or raw errors. Only report unresolved.
+        }
+        unresolved = true;
+      }
+      console.log(resource, observation, local);
+    }
+    console.log(journal.completed ? 'JOURNAL_COMPLETE_RECORDED' : 'JOURNAL_INCOMPLETE_MANUAL_REVIEW_REQUIRED');
+    return unresolved ? 3 : 0;
   }
   requireSafe(args.length === 1 && args[0] === '--execute' && LIVE_EXECUTION_ENABLED, 'LIVE_EXECUTION_DISABLED');
   requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
