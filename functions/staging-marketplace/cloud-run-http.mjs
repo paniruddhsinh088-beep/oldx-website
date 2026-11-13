@@ -42,9 +42,21 @@ export function createCloudRunMarketplaceListener({enabled=false, handlers={}}={
       });
       const answer = await handler.fetch(request);
       if (!(answer instanceof Response)) throw Error('Invalid handler response');
-      // Marketplace responses are bounded JSON; do not buffer unlimited data.
-      const data = new Uint8Array(await answer.arrayBuffer());
-      if (data.byteLength > 65536) throw Error('Oversize handler response');
+      // Bound memory while reading, including streaming/unknown-length responses.
+      if (!answer.body) throw Error('Missing handler response');
+      const reader = answer.body.getReader();
+      const chunks = []; let total = 0;
+      try {
+        while (true) {
+          const {done, value} = await reader.read();
+          if (done) break;
+          total += value.byteLength;
+          if (total > 65536) throw Error('Oversize handler response');
+          chunks.push(value);
+        }
+      } finally { await reader.cancel().catch(()=>{}); }
+      const data = new Uint8Array(total); let offset = 0;
+      for (const chunk of chunks) { data.set(chunk,offset); offset += chunk.byteLength; }
       if (res.destroyed || cancel.signal.aborted) return;
       res.writeHead(answer.status,{
         'content-type':'application/json; charset=utf-8',
