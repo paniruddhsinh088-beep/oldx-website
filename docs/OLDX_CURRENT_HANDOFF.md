@@ -396,6 +396,16 @@ The disabled/passwordless user `synthetic-auth-crud-probe-20261114` was **absent
 
 **Next:** progress the existing Phase B 4-resource plan, review precise schema and fresh read-only absence/collision preflight, journal-guarded create/delete for only the four previously planned synthetic staging fixtures if separately explicitly approved. Don't repeat the successful one-user Auth CRUD proof. Verify whether the synthetic tester UID and private document cleanup are independently supported and how to recover if an interrupted session occurs. Preserve source-only review branch and minimize repeated tests/expense.
 
+## 2026-11-14 — Fast four-resource gate reuses existing exact read-only and typed schema tools
+
+After the **successful owner-supervised single disabled Auth create → verify → delete → absent** proof, progress the original Phase B four synthetic resources **without duplicating earlier tests**. Inspected `scripts/phase-b-staging-readonly-preflight.py` (exact two Auth UIDs and two Firestore paths, read-only, with project and operator guards) and `scripts/phase-b-firestore-typed-fixture-preview.mjs` (offline two-document schemas). Created consolidated single-command `scripts/phase_b_four_resource_gate.py` (commit `6fa0dc52`), which runs existing offline typed schema verification once and only then the exact four-resource read-only preflight. **It has no live create, update or delete path**, errors/collisions STOP, and it reports that four absent results are a moment-in-time observation, not permission to create.
+
+One scoped Cloud Shell command, only when ready for the next check: `cd ~/oldx-staging-build && git pull --ff-only origin security-hardening-review && python3 scripts/phase_b_four_resource_gate.py --check-read-only`. **Not run or observed yet**, so never claim PASS. It uses existing Node and Python; does not replay the 24 earlier focused offline tests.
+
+**Critical blocked item not resolved by the one-user CRUD proof:** a disabled passwordless Auth account cannot produce an end-user Firebase ID token for the enabled Owner Read acceptance test. The two original real synthetic test UIDs therefore need a separately approved safe sign-in/token minting method (and existing provider configuration verified) **before runtime authorization**. The Phase B acceptance also separately requires least-privilege Cloud Run invoker, effective IAM condition, privacy/cost/retention/cleanup approvals and explicitly gated default-off tagged revision. Current one-user Auth approval never authorized the four original Auth/Firestore creates. A general `aagal vadho` authorizes source prep and read-only inspection but does not authorize live provisioning.
+
+No Cloud changes made by this GitHub commit. Production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
