@@ -212,3 +212,21 @@ For the Rules gate, an approved operator can compare the two saved JSON response
 6. If any condition fails, disable the test route/stop new test traffic and, with authorization, remove the test-only tag/invoker or roll back. Keep evidence and capture actual read/write costs. Production remains **HOLD / NO-GO**.
 
 This checkpoint is intentionally source documentation only: no Cloud Run/IAM/Firestore write, no live data access, no Codex spend, no CI or emulator rerun. 
+
+## Phase B read-only IAM and invocation checklist
+
+After separate authorization for operator checks, record the UTC time and verify the following using existing read permissions. If denied, record BLOCKED and leave configuration intact.
+
+```sh
+gcloud projects describe oldx-staging --format='value(projectNumber)'
+gcloud run services describe oldx-owner-read --project=oldx-staging --region=asia-south1
+gcloud run services get-iam-policy oldx-owner-read --project=oldx-staging --region=asia-south1
+gcloud projects get-iam-policy oldx-staging
+gcloud iam roles describe oldxProductReadFirestore --project=oldx-staging
+gcloud iam roles describe oldxProductReadAuth --project=oldx-staging
+gcloud firestore databases describe --project=oldx-staging --database='(default)'
+```
+
+Keep raw policy and service output private. Confirm project number 38472235077 and the identity attached to each candidate revision, `oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com`. Compare Firestore permissions `datastore.databases.get`, `datastore.entities.get`, `datastore.entities.create` and `datastore.entities.update`, and Auth permission `firebaseauth.users.get`. Confirm condition `OLDX_Staging_Default_DB_Only` equals `resource.name == "projects/oldx-staging/databases/(default)"`. Evaluate inherited, group, conditional and deny policies using already available read-only tools. Role listings and database metadata do not prove effective access. If effective access cannot be evaluated with existing permissions, keep the gate BLOCKED. Never probe another database or private records to fill this gap.
+
+Confirm the named keyless, least-privilege Google caller has service-scoped invocation only as intended. Review effective grants for that caller, anonymous access and an unauthorized principal. Keep the existing ingress observation separate from IAM protection. Under approved runtime testing, expect disabled health 200 and owner 503 for the authorized caller, and edge denial for requests lacking invocation authorization. Anonymous denial alone does not prove denial for a named principal. Verify that principal separately before recording IAM acceptance. For tagged requests use the service's approved Google audience and keep the separate Firebase token in the application Authorization header.

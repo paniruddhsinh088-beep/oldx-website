@@ -492,3 +492,7 @@ Before any live execution, independently review the runner, verify the staging k
 ## 2026-11-14 — Phase B interrupted-session recovery
 
 The v1 runner now inspects all four exact resources independently, checks session-bound evidence, and flags changed, unverified or reappearing resources. It refuses malformed journal evidence, flags stale journals at 24 hours and requires all four successful absence reads for the absence report. A missing or invalid journal permits read-only observation with no provenance. The [interrupted-session runbook](phase-b-fixture-execution-review.md#interrupted-four-fixture-session-runbook) defines separate Yasmin approval for each manual cleanup, the Firestore original-updateTime precondition, and the Auth UID reuse limit. Live execution remains hard-disabled. The recovery and updated Linux journal tests await owner Cloud Shell execution. Production HOLD / NO-GO.
+
+## 2026-11-14 — Phase B acceptance source prepared
+
+Added the import-only Owner Read acceptance matrix and in-memory fixture hook for offline integration. The existing execution gate remains hard-off. The acceptance plan and Cloud Run gate now record the operator IAM checks, rollback and exact cleanup procedure. New focused offline tests await owner Cloud Shell execution. Effective database IAM, named least-privilege invoker, exact zero-traffic revision authorization, optional hosted quota/failure checks and supervised cleanup remain open. No Cloud changes. Production HOLD / NO-GO.

@@ -92,7 +92,7 @@ async function inventory(api) {
 }
 
 // Kept private so CLI callers cannot supply a transport or bypass the execution gate.
-async function runSession(api, openJournal) {
+async function runSession(api, openJournal, afterSignIn) {
   const sessionId = randomUUID();
   const emails = authUids.map((uid) => uid + '-' + sessionId + '@example.invalid');
   requireSafe((await inventory(api)).every((present) => !present), 'FIXTURE_COLLISION');
@@ -124,6 +124,7 @@ async function runSession(api, openJournal) {
       tokens.push(await api.signIn(uid, emails[i], passwords[i]));
       passwords[i] = null;
     }
+    if (afterSignIn) await afterSignIn(tokens[0], tokens[1]);
     tokens.length = 0;
     for (const path of [...firestoreDocs].reverse()) {
       const updateTime = documentEvidence(await api.getDoc(path), path);
@@ -350,9 +351,9 @@ async function liveSend({method, url, body, publicRequest}) {
   return {status: response.status, data: JSON.parse(Buffer.concat(chunks).toString('utf8'))};
 }
 
-export function simulateFixtureSession(fakeSend, fakeJournal) {
+export function simulateFixtureSession(fakeSend, fakeJournal, afterSignIn) {
   // Fake sign-in key only. This path never imports credentials or calls liveSend.
-  return runSession(transport(fakeSend, 'offline-test-key'), fakeJournal)
+  return runSession(transport(fakeSend, 'offline-test-key'), fakeJournal, afterSignIn)
     .catch(() => { throw new Error('SIMULATION_STOPPED'); });
 }
 
