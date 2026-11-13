@@ -39,6 +39,10 @@ Reviewed current official Google Cloud Firestore documentation: [Native database
 
 **Next safe gate:** separately approved bounded runtime test using the existing Cloud Run SA and the already planned synthetic, isolated Firestore fixtures, with exact read/write permissions, identity/token path, cleanup and rollback approved in advance. Do not attempt service-account impersonation, new IAM roles, enabling APIs, adding databases or any Firestore document operation under present approval. Preserve Phase A traffic and default-off state.
 
+## 2026-11-13 — Phase B cloud-data approval packet prepared
+
+The existing `docs/phase-b-owner-read-synthetic-acceptance-plan.md` now includes a specific future owner-decision section: propose two synthetic Firebase Auth identities, one actor document and one private product document with exact staging paths, no legacy/public writes, maximum 24h retention subject to explicit per-ID cleanup permission, and a secure real Firebase test-token provisioning method still to be identified. **Only documentation was updated; no approval to create users/documents or to activate Cloud Run has been granted.** The next authorization sought is narrowly scoped fixture preparation/provisioning, *not* IAM changes, owner-read activation, ingress change or traffic promotion. Stop before any writes if path collisions, permissions or cleanup are uncertain. Consult this packet rather than redoing previously completed Phase A and Node24 fixture work.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
