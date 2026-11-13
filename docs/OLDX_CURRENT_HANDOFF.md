@@ -254,6 +254,14 @@ Owner's Cloud Shell screenshot confirms a fast-forward pull to `0028eb9` and suc
 
 Do NOT repeat this successful check until immediately before a separately approved future create-only operation, because its point-in-time result can go stale. Continue reviewing the operator-authenticated exact-UID create/delete implementation and same-day manual cleanup safeguards; show executable commands and verify cleanup capability before actual fixture provisioning. Preserve Owner Read default-off, IAM/Rules/Billing/Cloud Run unchanged and production HOLD/NO-GO.
 
+## 2026-11-13 — Offline cleanup provenance guard and six test cases
+
+Verified current official Identity Platform admin REST contracts: `POST /v1/projects/oldx-staging/accounts` with properly authorized OAuth can set `localId` (and requires a project API key); `POST /v1/projects/oldx-staging/accounts:delete` accepts exact `localId` and requires `firebaseauth.users.delete`. Both accept cloud-platform OAuth scope. These are **documented endpoints only**, not a live create/delete test or evidence of cleanup capability.
+
+Added `scripts/phase-b-offline-cleanup-guard.mjs` (commit `5163531e`) and six scoped offline tests `tests/integration/phase-b-offline-cleanup-guard.test.mjs` (commit `481b736f`). The guard deliberately has **no network/client/API calls and no execution switch**. It models exactly four resource inventories and returns cleanup *descriptions* only if every resource was created in the same marked test session; it stops on missing/extra targets, Auth UID/creation evidence mismatches, ownership/session discrepancies, unexpected changes, and missing Firestore marker/updateTime. Firestore cleanup descriptions specify a fresh `currentDocument.updateTime` precondition; Auth still lacks an equivalent atomic precondition. **Six new tests are committed but not yet run in Cloud Shell; no PASS claim until operator execution.**
+
+**Remaining gate:** An actual supervised create/cleanup workflow with secure secret handling, full exact commands shown for owner review, and effective Auth deletion must be validated before any cloud fixture creation; same-day cleanup approval does not activate runtime or create resources. Do not rerun previously passed tests. Cloud Run remains default-off; production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
