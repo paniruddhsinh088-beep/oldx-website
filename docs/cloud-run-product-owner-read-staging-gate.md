@@ -290,3 +290,15 @@ For any future approved rollback, stop probes, compare the service mapping with 
 ### Hosted transport source checkpoint
 
 The acceptance module now has a hard-disabled hosted keyless adapter backed by IAM Credentials generateIdToken. The mocked suite exercised the mint request, separate credentials, timeout, wrong claims and unsafe responses. Effective IAM and live invocation remain UNVERIFIED. Confirm the named operator credential source, existing IAM Credentials API, exact audience and revision mapping, and the edge-denial response before separately approving execution. The adapter accepts an empty edge 403 body and stops on other bodies. Runtime activation, rollback and supervised cleanup remain separately gated. Production HOLD / NO-GO.
+
+### Consolidated read-only Cloud Shell preflight
+
+Run from the review checkout with Node 24 and the approved staging gcloud configuration:
+
+```sh
+cd ~/oldx-staging-build && git pull --ff-only origin security-hardening-review && node scripts/phase-b-fixture-session-v1.mjs --cloud-preflight
+```
+
+The JSON report contains `configuration` (MATCH, FAIL or BLOCKED), per-check labels, key counts by management type, the verified service audience and latest ready revision, and the anonymous denial status, media type and body classification. Configuration failure skips HTTP. The only HTTP probe is one anonymous GET to the pinned disabled health tag, with redirects refused and a five-second timeout. A nonblank denial body blocks the probe even if its status is 403. The acceptance harness is unchanged in this respect. No credential or response body is printed.
+
+The API listing and direct OpenID binding are configuration evidence. Effective token mint permission, Firestore IAM and invocation remain UNVERIFIED. Rollback baseline is configuration evidence only. The cleanup section describes fixed source safeguards and does not inspect or mutate fixtures. Exit 0 means the configuration and anonymous response matched; staging execution still reports NO_GO. Exit 3 means a check needs review. Hosted execution, rollback, supervised cleanup and any activation retain their separate approval gates.

@@ -4,7 +4,8 @@ import {privateProduct} from './phase-b-firestore-typed-fixture-preview.mjs';
 import {authUids, project} from './phase-b-http-contract-review.mjs';
 
 const route = '/api/staging/marketplace/owner';
-const audience = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+export const ownerReadAudience = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+const audience = ownerReadAudience;
 const invoker = 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com';
 const LIVE_HOSTED_ACCEPTANCE_ENABLED = false;
 const jwt = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
@@ -43,7 +44,7 @@ function checkGoogleInvocationAudience(token) {
   throw new Error('INVOCATION_AUDIENCE_UNVERIFIED');
 }
 
-async function readBounded(response) {
+export async function readBounded(response) {
   if (!response.body) return '';
   const chunks = [];
   let bytes = 0;

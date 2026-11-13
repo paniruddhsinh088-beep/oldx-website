@@ -8,7 +8,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {pathToFileURL} from 'node:url';
 import {authUids, database, firestoreDocs, project} from './phase-b-http-contract-review.mjs';
 import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
-import {runOwnerReadAcceptance} from './phase-b-owner-read-acceptance.mjs';
+import {runOwnerReadAcceptance, ownerReadAudience, readBounded} from './phase-b-owner-read-acceptance.mjs';
 
 const LIVE_EXECUTION_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
@@ -347,7 +347,7 @@ function guardOperator() {
 
 // Fixed read-only command list. Return labels and counts, never raw policy,
 // principal lists or revision environment values.
-export function inspectPhaseBConfiguration(read = gcloud) {
+export function inspectPhaseBConfiguration(read = gcloud, {preflight = false} = {}) {
   const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
   const invoker = 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com';
   const projectNumber = '38472235077';
@@ -381,6 +381,23 @@ export function inspectPhaseBConfiguration(read = gcloud) {
   check('projectNumber', () => json('projects', 'describe', project, ...scoped),
     (value) => value.projectId === project && String(value.projectNumber) === projectNumber);
   if (result.checks.projectNumber !== 'MATCH') return result;
+  if (preflight) {
+    result.operatorCredentialSource = 'GCLOUD_ACTIVE_ACCOUNT';
+    result.effectiveTokenMintPermission = 'UNVERIFIED';
+    check('iamCredentialsApi', () => json('services', 'list', '--enabled',
+      '--filter=config.name=iamcredentials.googleapis.com', '--limit=2', ...scoped),
+    (rows) => Array.isArray(rows) && rows.length === 1 &&
+      rows[0]?.config?.name === 'iamcredentials.googleapis.com' && rows[0]?.state === 'ENABLED');
+    for (const [label, email] of [['runtimeKeys', runtime], ['invokerKeys', invoker]]) {
+      check(label, () => json('iam', 'service-accounts', 'keys', 'list', '--iam-account=' + email, ...scoped), (keys) => {
+        requireSafe(Array.isArray(keys) && keys.every((key) =>
+          ['USER_MANAGED', 'SYSTEM_MANAGED'].includes(key.keyType)), 'INVALID_KEY_METADATA');
+        const userManaged = keys.filter((key) => key.keyType === 'USER_MANAGED').length;
+        result[label] = {userManaged, systemManaged: keys.length - userManaged};
+        return userManaged === 0;
+      });
+    }
+  }
 
   const roles = {
     oldxProductReadFirestore: ['datastore.databases.get', 'datastore.entities.create',
@@ -443,6 +460,17 @@ export function inspectPhaseBConfiguration(read = gcloud) {
     const annotations = value.metadata?.annotations;
     const traffic = value.status?.traffic;
     if (annotations?.['run.googleapis.com/ingress'] === 'all') result.ingress = 'INTERNET_REACHABLE';
+    if (preflight) {
+      const tag = traffic?.find?.((row) => row.tag === 'healthcheck');
+      const taggedOrigin = ownerReadAudience.replace('https://', 'https://healthcheck---');
+      result.checks.serviceAudience = value.status?.url === ownerReadAudience ? 'MATCH' : 'MISMATCH';
+      result.checks.latestReadyRevision = value.status?.latestReadyRevisionName === healthRevision ? 'MATCH' : 'MISMATCH';
+      result.checks.taggedUrl = tag?.url === taggedOrigin ? 'MATCH' : 'MISMATCH';
+      result.serviceBaseline = {
+        audience: result.checks.serviceAudience === 'MATCH' ? ownerReadAudience : 'UNVERIFIED',
+        latestReadyRevision: result.checks.latestReadyRevision === 'MATCH' ? healthRevision : 'UNVERIFIED',
+      };
+    }
     return value.metadata?.name === service && String(value.metadata?.namespace) === projectNumber &&
       result.ingress === 'INTERNET_REACHABLE' &&
       (annotations['run.googleapis.com/invoker-iam-disabled'] === undefined ||
@@ -465,6 +493,34 @@ export function inspectPhaseBConfiguration(read = gcloud) {
   if (Object.values(result.checks).every((status) => status === 'MATCH')) result.configuration = 'MATCH';
   else if (Object.values(result.checks).includes('MISMATCH')) result.configuration = 'FAIL';
   return result;
+}
+
+export async function inspectPhaseBPreflight(read = gcloud, request = fetch) {
+  const report = inspectPhaseBConfiguration(read, {preflight: true});
+  report.anonymousDenial = {result: 'BLOCKED', reason: 'CONFIGURATION_NOT_MATCHED'};
+  report.cleanupControls = {
+    scope: resources, firestore: 'ORIGINAL_UPDATE_TIME', auth: 'UID_EMAIL_CREATION_TIME',
+    authAtomicDelete: false, executionEnabled: LIVE_EXECUTION_ENABLED,
+  };
+  report.rollbackBaseline = report.configuration === 'MATCH' ? 'CONFIGURATION_MATCH' : 'UNVERIFIED';
+  if (report.configuration !== 'MATCH') return report;
+
+  const signal = AbortSignal.timeout(5000);
+  try {
+    const response = await request(ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health', {
+      method: 'GET', credentials: 'omit', redirect: 'error', signal,
+    });
+    const denial = {result: 'BLOCKED', httpStatus: response.status,
+      mediaType: ['text/html', 'text/plain', 'application/json'].find((type) =>
+        response.headers.get('content-type')?.split(';')[0].trim().toLowerCase() === type) ?? 'OTHER_OR_ABSENT'};
+    report.anonymousDenial = denial;
+    const body = await readBounded(response);
+    denial.body = body.length === 0 ? 'EMPTY' : body.trim() === '' ? 'WHITESPACE_ONLY' : 'NONEMPTY';
+    if (!signal.aborted && !response.redirected && response.status === 403 && body.trim() === '') denial.result = 'MATCH';
+  } catch {
+    report.anonymousDenial.reason = 'REQUEST_OR_BODY_UNVERIFIED';
+  }
+  return report;
 }
 
 async function liveSend({method, url, body, publicRequest}) {
@@ -543,6 +599,11 @@ async function main(args) {
     const report = inspectPhaseBConfiguration();
     console.log(JSON.stringify(report, null, 2));
     return report.configuration === 'MATCH' ? 0 : 3;
+  }
+  if (args.length === 1 && args[0] === '--cloud-preflight') {
+    const report = await inspectPhaseBPreflight();
+    console.log(JSON.stringify(report, null, 2));
+    return report.configuration === 'MATCH' && report.anonymousDenial.result === 'MATCH' ? 0 : 3;
   }
   requireSafe(args.length === 1 && args[0] === '--execute' && LIVE_EXECUTION_ENABLED, 'LIVE_EXECUTION_DISABLED');
   requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');

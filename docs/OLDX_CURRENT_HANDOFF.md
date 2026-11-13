@@ -558,3 +558,7 @@ Offline acceptance now checks the dedicated Google caller and exact staging Fire
 ## 2026-11-14 — Hosted keyless transport source
 
 Implemented the hard-disabled hosted Owner Read adapter and IAM Credentials token exchange in the existing acceptance module. Node 24 mocked suite: 7 passed, 0 failed, 0 skipped. No hosted requests, token minting, fixture operations or cloud changes occurred. The exact operator credential source, live audience, invoker and database IAM, revision mapping and edge denial format still need independent verification before supervised execution. Production HOLD / NO-GO.
+
+## 2026-11-14 — Consolidated Phase B read-only preflight
+
+The existing fixture CLI now provides `--cloud-preflight` for exact staging configuration, IAM Credentials API status, key metadata counts, service audience and revision mapping, and a single bounded anonymous health denial observation. See the [Cloud Shell command and report](cloud-run-product-owner-read-staging-gate.md#consolidated-read-only-cloud-shell-preflight). Focused offline configuration tests passed 6/6. No cloud preflight or hosted probe ran during coding. Effective permissions remain UNVERIFIED and both live execution gates remain disabled.

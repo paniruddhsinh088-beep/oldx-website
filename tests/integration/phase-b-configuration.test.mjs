@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {inspectPhaseBConfiguration} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {inspectPhaseBConfiguration, inspectPhaseBPreflight} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const service = 'oldx-owner-read';
 const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
@@ -105,6 +105,86 @@ test('public binding, IAM bypass, changed condition, traffic drift or failed rea
     }));
     assert.equal(report.configuration, check === 'runtimeIdentity' ? 'BLOCKED' : 'FAIL');
     assert.notEqual(report.checks[check], 'MATCH');
+    assert.ok(!JSON.stringify(report).includes('private detail'));
+  }
+});
+
+function preflightRead(mutate = () => {}) {
+  return (...args) => {
+    if (args[0] === 'services') {
+      const data = [{config: {name: 'iamcredentials.googleapis.com'}, state: 'ENABLED'}];
+      mutate('api', data);
+      return JSON.stringify(data);
+    }
+    if (args[2] === 'keys') {
+      const data = [{keyType: 'SYSTEM_MANAGED', name: 'private-key-metadata-id'}];
+      mutate('keys', data);
+      return JSON.stringify(data);
+    }
+    return fakeRead((command, data) => {
+      if (command.startsWith('run services describe')) {
+        data.status.url = 'https://oldx-owner-read-38472235077.asia-south1.run.app';
+        data.status.latestReadyRevisionName = health;
+        data.status.traffic[1].url = data.status.url.replace('https://', 'https://healthcheck---');
+      }
+      mutate(command, data);
+    })(...args);
+  };
+}
+
+test('consolidated preflight only sends one anonymous GET and leaves effective access unverified', async () => {
+  let calls = 0;
+  const report = await inspectPhaseBPreflight(preflightRead(), (url, options) => {
+    calls++;
+    assert.equal(url, 'https://healthcheck---oldx-owner-read-38472235077.asia-south1.run.app/health');
+    assert.equal(options.method, 'GET');
+    assert.equal(options.redirect, 'error');
+    assert.equal(options.credentials, 'omit');
+    assert.equal(options.headers, undefined);
+    return new Response(null, {status: 403});
+  });
+  assert.equal(calls, 1);
+  assert.equal(report.configuration, 'MATCH');
+  assert.equal(report.anonymousDenial.result, 'MATCH');
+  assert.equal(report.effectiveTokenMintPermission, 'UNVERIFIED');
+  assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
+  assert.equal(report.stagingExecution, 'NO_GO');
+  assert.deepEqual(report.runtimeKeys, {userManaged: 0, systemManaged: 1});
+  assert.ok(!JSON.stringify(report).includes('private-key-metadata-id'));
+});
+
+test('operator mismatch, missing API, key drift, wrong audience and broader Firestore permissions block HTTP', async () => {
+  for (const [match, patch, check] of [
+    ['api', (data) => { data.pop(); }, 'iamCredentialsApi'],
+    ['keys', (data) => { data.push({keyType: 'USER_MANAGED'}); }, 'runtimeKeys'],
+    ['run services describe', (data) => { data.status.url = 'https://unexpected.invalid'; }, 'serviceAudience'],
+    ['iam roles describe oldxProductReadFirestore', (data) => {
+      data.includedPermissions.push('datastore.entities.delete');
+    }, 'oldxProductReadFirestore'],
+  ]) {
+    const report = await inspectPhaseBPreflight(preflightRead((command, data) => {
+      if (command.startsWith(match)) patch(data);
+    }), () => assert.fail('Unexpected HTTP'));
+    assert.equal(report.checks[check], 'MISMATCH');
+    assert.equal(report.anonymousDenial.reason, 'CONFIGURATION_NOT_MATCHED');
+  }
+  const report = await inspectPhaseBPreflight((...args) => {
+    if (args[0] === 'config') return 'oldx-staging';
+    assert.equal(args[0], 'auth');
+    return 'other@example.invalid';
+  }, () => assert.fail('Unexpected HTTP'));
+  assert.equal(report.checks.operatorAndProject, 'MISMATCH');
+});
+
+test('anonymous denial status and body are classified without exposing body contents', async () => {
+  for (const [response, body] of [
+    [new Response('private detail', {status: 403, headers: {'content-type': 'text/html'}}), 'NONEMPTY'],
+    [new Response(null, {status: 200}), 'EMPTY'],
+  ]) {
+    const report = await inspectPhaseBPreflight(preflightRead(), () => response);
+    assert.equal(report.anonymousDenial.result, 'BLOCKED');
+    assert.equal(report.anonymousDenial.httpStatus, response.status);
+    assert.equal(report.anonymousDenial.body, body);
     assert.ok(!JSON.stringify(report).includes('private detail'));
   }
 });
