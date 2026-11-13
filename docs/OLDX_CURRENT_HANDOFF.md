@@ -93,6 +93,12 @@ Owner-provided Google Cloud Shell screenshot confirms the `cloudresourcemanager.
 
 No Firebase Auth user or Firestore document created, read or deleted; no IAM/Rules/Cloud Run changes. **Next step:** prepare exact-target staging fixture create/verify/cleanup execution proposal with per-ID non-overwrite, collision, run marker, account/token secrecy and reversible cleanup; obtain separate specific Yasmin approval for live creations AND exact-ID deletion before execution. Keep Owner Read default-off and production HOLD / NO-GO.
 
+## 2026-11-13 — Phase B exact-target execution review prepared
+
+Following owner permission to continue **preparation only**, created `docs/phase-b-fixture-execution-review.md` describing exact scope of two synthetic Firebase Auth UIDs and two private Firestore document IDs; proposed guarded exact-ID collision checks, create-only operations, protected ephemeral credentials and distinct Firebase user/Cloud Run identity tokens, per-ID verification, <=24-hour proposed retention, update-time-safe document deletion, independently approved cleanup, and stop conditions. Created new **source-only, unexecuted** `tests/integration/phase-b-proposed-private-shape.test.mjs` using existing `validateMarketplaceProfile` and offline manifest; it is not a live test or cloud provisioning tool.
+
+**IMMEDIATE SAFE NEXT ACTION:** Run only the new targeted test via the existing Node 24 Docker local container after `git pull --ff-only origin security-hardening-review`: `node --test tests/integration/phase-b-proposed-private-shape.test.mjs`. If the offline test fails, inspect and fix only the new proposal/test without weakening trusted product validation. Do not rerun previous passing preflight/Auth/IAM checks. After test evidence, separately approve actual four synthetic creates and exact-ID cleanup; no real user/doc create, deletion, Cloud Run activation, IAM change, Rules edit or production action under existing consent.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
