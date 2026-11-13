@@ -103,3 +103,25 @@ This describes intended API choices; **not copy-paste runnable code**.
 **Mandatory preflight immediately before execution:** validate active Yasmin account and project number, verify the two exact Auth UIDs using a supported and authorized lookup (Console alone is not an atomic create guard), verify two Firestore document paths absent, verify no email collision, use create-only operations for every resource; on any 403, ambiguous result, mismatch or collision **STOP**. Protect any temporary credential in ephemeral memory and never transmit it in output, repository, screenshots, shell history or logs. Review exact operation sequence, auth token source and cleanup capability *before* running.
 
 **Decision state:** WAITING FOR EXPLICIT EXECUTION AUTHORIZATION. A message such as “continue” or “OK” is not authority to create/delete cloud resources. Even after approval, require an executable script to be independently checked and show the user its exact run operation before mutation. The existing private Cloud Run revs stay default-off and production HOLD/NO-GO.
+
+
+## Execution readiness review — Firebase user credentials and cleanup blocker
+
+**2026-11-13 — read-only source/official documentation review, no cloud writes.** Yasmin approved the proposed four create-only fixture operations and cleanup *subject to reviewing exact executable commands and verifying cleanup first*. This is **not permission to execute unreviewed commands**. The user's screenshots show 2/2 absent Auth UIDs in Firebase Console and two absent Firestore document paths by direct REST GET; state can change. Existing project-level user-permission probes were `GRANTED` but exact Firebase Auth REST lookups with `gcloud auth print-access-token` returned HTTP 403. Reason has **not** been established.
+
+**Critical Firebase SDK caveat:** Firebase Admin documentation [Add Admin SDK to your server](https://firebase.google.com/docs/admin/setup) states Firebase Auth does **not** accept the default gcloud OAuth client ID's end-user ADC. For Firebase Auth via `gcloud auth application-default login` as a human operator, documentation calls for the operator's **own Desktop OAuth 2.0 client ID**, separate from the default gcloud OAuth client. Creating such a client, saving client credentials or granting new IAM is outside the current authorization. Do **not** suggest `gcloud auth application-default login` alone as a proven fix, use the Cloud Run runtime SA to create users, or use a service-account private-key JSON as a workaround. The Console may separately support user creation, but does not validate arbitrary UID assignment and race-safe deletion; do not claim the four-create procedure is ready without that evidence.
+
+**Cleanup readiness is still BLOCKED:** A four-resource manual cleanup may be possible with exact authorized SDK operations, but has not been validated on Yasmin's Auth API identity. Proposed 24h expiry is *not* automatic; it requires an authorized, scheduled and verified cleanup operator or an explicit supervised cleanup commitment, ideally before fixture creation. Firestore document cleanup must be exact-ID, provenance-checked and conditional on last-update-time; Auth cleanup must check exact UID and creation evidence. Partial failure leaves residues and must be surfaced rather than pretending atomicity across Auth and Firestore.
+
+**Verified non-mutating preflight, to run only if needed (no Auth/Firestore reads):**
+
+```bash
+set -euo pipefail
+test "$(gcloud config get-value project 2>/dev/null)" = "oldx-staging"
+test "$(gcloud auth list --filter=status:ACTIVE --format='value(account)')" = "yasminparmar087@gmail.com"
+echo "PROJECT_AND_OPERATOR_MATCH"
+gcloud auth application-default login --help >/dev/null
+echo "ADC_HELP_AVAILABLE_NOT_AUTH_VERIFIED"
+```
+
+This checks only selected operator context and SDK CLI documentation availability; it **does not prove** usable ADC or cleanup access. No need to repeat older 403 Auth requests. No executable `createUser`, `deleteUser`, `doc.create`, or `doc.delete` commands should be sent to the operator until an approved and verified Auth credential path plus cleanup are available. Keep Phase A default-off; production HOLD/NO-GO.
