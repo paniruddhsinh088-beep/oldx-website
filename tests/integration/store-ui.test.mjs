@@ -1,4 +1,18 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {fakeFirestoreSdk} from './fake-firestore-sdk.mjs';import {storeUiAcceptance} from './store-ui-acceptance.mjs';import {createStoreIntegration} from '../../features/marketplace/store-integration.mjs';
+import {createMarketplaceNavigation} from '../../features/marketplace/navigation-integration.mjs';
+
+test('linked Store navigation reports an unavailable storefront without loading its catalogue',async()=>{
+ const views=[];
+ let catalogueReads=0;
+ const store=createStoreIntegration({enabled:true,ports:{
+  detail:async()=>({ok:false,code:'UNAVAILABLE'}),
+  list:async()=>{catalogueReads++;return {ok:true,items:[],nextCursor:null};}
+ }});
+ const navigation=createMarketplaceNavigation({enabled:true,store,onView:view=>views.push(view.status)});
+ assert.equal(await navigation.go('store','withdrawn-store'),false);
+ assert.deepEqual(views,['loading','unavailable']);
+ assert.equal(catalogueReads,0);
+});
 test('Store existing-UI ports: owner create reload edit publish catalogue guest read foreign denial and withdrawal',async()=>{const f=fakeFirestoreSdk();await storeUiAcceptance({sdk:f.sdk,db:f.db,seed:(...a)=>f.seed(...a)});});
 test('Store remains off by default and unknown writes keep the same request key',async()=>{let calls=0;await createStoreIntegration({ports:{save:()=>calls++}}).save({});assert.equal(calls,0);const requests=[];let fail=true;const ui=createStoreIntegration({enabled:true,makeRequestId:()=> 'stable',ports:{save:r=>{requests.push(r);return fail?{ok:false,code:'OUTCOME_UNKNOWN'}:{ok:true,id:'store',revision:1};}}});ui.setSession({uid:'owner',sessionId:'session'});await ui.save({name:'Private fixture'});await ui.save({name:'Different'});fail=false;await ui.retry();assert.equal(requests.length,2);assert.deepEqual(requests[0],requests[1]);});
 test('real SDK accepts grouped directory filters with all reads replaced by isolated mock ports',async()=>{

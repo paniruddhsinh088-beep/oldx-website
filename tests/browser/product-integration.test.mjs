@@ -111,6 +111,8 @@ for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('shared main
  assert.equal(await page.locator('#productGrid button').count(),0);
  await page.evaluate(id=>host.go('store',id),storeId);
  assert.equal(await page.locator('#storePublicWrap button').count(),0);
+ assert.equal(await page.evaluate(()=>host.go('store','missing-store')),false);
+ assert.equal(await page.locator('#storePublicWrap h2').count(),0);
  await page.evaluate(async()=>{history.pushState(null,'','#store');await host.restoreRoute();});
  await page.evaluate(()=>host.setSession(null));assert.equal(await page.locator('#trustedStoreAddProduct').isVisible(),false);assert.equal(await page.locator('#productStoreDraftNotice').isVisible(),false);assert.equal(await page.locator('#fullChatMessages').textContent(),'');assert.equal(await page.evaluate(()=>providerSessions.at(-1)),null);await page.evaluate(()=>host.destroy());
  }finally{await context.close();}
