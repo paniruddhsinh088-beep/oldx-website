@@ -236,6 +236,12 @@ Added `scripts/phase-b-firestore-typed-fixture-preview.mjs` (commit `d697cc3f`) 
 
 **Next safe operator step:** execute only new focused offline `node --test tests/integration/phase-b-firestore-typed-fixture-preview.test.mjs` after updating review checkout, without rerunning previously passed checks. Review exact credential-safe Auth create/delete implementation and same-day cleanup before any live fixture. Owner Read default-off and production HOLD/NO-GO.
 
+## 2026-11-13 23:54 IST — Firestore typed fixture offline tests 3/3 PASS
+
+Yasmin's Cloud Shell screenshot shows successful `git pull --ff-only origin security-hardening-review` (fast-forward from `8037283` to `610e4ea`) followed by `node --test tests/integration/phase-b-firestore-typed-fixture-preview.test.mjs` from `~/oldx-staging-build`. **3 tests PASS, 0 FAIL**, namely exact authorized two Firestore documents previewed; typed REST product document matches existing repository profile validation; preview contains no credentials or external/network references. This is an **offline-only schema assertion**, not proof of actual Firestore write/create-only/conditional-delete behavior, Firebase Auth create/delete or safe cleanup. No cloud writes/deletes occurred.
+
+Do not rerun these passing tests without a relevant code change. Next substantive pending work remains review of a fail-closed, secure Auth + Firestore exact-ID execution/cleanup wrapper, verified Auth delete capability and owner-supervised same-day cleanup. Do not initiate cloud mutations or enable Owner Read without further explicit approved steps. Production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
