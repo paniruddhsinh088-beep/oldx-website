@@ -2,7 +2,7 @@ import unittest
 import tempfile
 import pathlib
 import os
-from scripts.phase_b_auth_receipt_guard import new_receipt,save_new,read_receipt,classify_recovery,UID,EMAIL
+from scripts.phase_b_auth_receipt_guard import new_receipt,save_new,read_receipt,classify_recovery,transition_receipt,UID,EMAIL
 
 class TestReceipt(unittest.TestCase):
     def test_exclusive_private(self):
@@ -33,5 +33,55 @@ class TestReceipt(unittest.TestCase):
             p=pathlib.Path(d)/'receipt.json';save_new(p,new_receipt('synthetic-session-123'))
             os.chmod(p,0o644)
             with self.assertRaises(ValueError):read_receipt(p)
+
+
+class TestTransitions(unittest.TestCase):
+    def test_safe_offline_state_cycle_and_permissions(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=pathlib.Path(d)/'receipt.json'
+            save_new(p,new_receipt('synthetic-session-123'))
+            self.assertEqual(transition_receipt(p,'INTENT_RECORDED','CREATE_UNKNOWN')['state'],'CREATE_UNKNOWN')
+            self.assertEqual(transition_receipt(p,'CREATE_UNKNOWN','CREATED_VERIFIED',created_at='123')['createdAt'],'123')
+            self.assertEqual(transition_receipt(p,'CREATED_VERIFIED','DELETE_UNKNOWN')['state'],'DELETE_UNKNOWN')
+            self.assertEqual(transition_receipt(p,'DELETE_UNKNOWN','CLEANUP_VERIFIED')['state'],'CLEANUP_VERIFIED')
+            self.assertEqual(p.stat().st_mode & 0o777,0o600)
+            self.assertEqual(read_receipt(p)['state'],'CLEANUP_VERIFIED')
+
+    def test_stale_state_must_not_override_journal(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=pathlib.Path(d)/'receipt.json'
+            save_new(p,new_receipt('synthetic-session-123'))
+            with self.assertRaisesRegex(ValueError,'STOP'):
+                transition_receipt(p,'CREATE_UNKNOWN','CREATED_VERIFIED',created_at='123')
+            self.assertEqual(read_receipt(p)['state'],'INTENT_RECORDED')
+
+    def test_missing_creation_evidence_must_stop(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=pathlib.Path(d)/'receipt.json'
+            save_new(p,new_receipt('synthetic-session-123'))
+            transition_receipt(p,'INTENT_RECORDED','CREATE_UNKNOWN')
+            with self.assertRaisesRegex(ValueError,'STOP'):
+                transition_receipt(p,'CREATE_UNKNOWN','CREATED_VERIFIED')
+            self.assertEqual(read_receipt(p)['state'],'CREATE_UNKNOWN')
+
+    def test_illegal_direct_to_cleanup_must_stop(self):
+        with tempfile.TemporaryDirectory() as d:
+            p=pathlib.Path(d)/'receipt.json'
+            save_new(p,new_receipt('synthetic-session-123'))
+            with self.assertRaisesRegex(ValueError,'STOP'):
+                transition_receipt(p,'INTENT_RECORDED','CLEANUP_VERIFIED')
+
+    def test_symlink_and_public_journal_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            folder=pathlib.Path(d)
+            p=folder/'receipt.json'
+            save_new(p,new_receipt('synthetic-session-123'))
+            os.chmod(p,0o644)
+            with self.assertRaisesRegex(ValueError,'STOP'):
+                transition_receipt(p,'INTENT_RECORDED','CREATE_UNKNOWN')
+            q=folder/'link.json'
+            q.symlink_to(p)
+            with self.assertRaisesRegex(ValueError,'STOP'):
+                transition_receipt(q,'INTENT_RECORDED','CREATE_UNKNOWN')
 
 if __name__=='__main__':unittest.main()
