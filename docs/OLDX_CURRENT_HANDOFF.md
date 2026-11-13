@@ -406,6 +406,12 @@ One scoped Cloud Shell command, only when ready for the next check: `cd ~/oldx-s
 
 No Cloud changes made by this GitHub commit. Production HOLD/NO-GO.
 
+## 2026-11-14 01:31 IST — Four-resource schema + exact-ID read-only preflight PASS
+
+Owner Cloud Shell screenshot confirms executing `cd ~/oldx-staging-build && git pull --ff-only origin security-hardening-review && python3 scripts/phase_b_four_resource_gate.py --check-read-only` on branch `security-hardening-review`, updated through `cc644e5`. Observed: `SCHEMA: PASS (offline)`; gcloud active project `oldx-staging`; exact Auth UID lookups `synthetic-seller-a ABSENT`, `synthetic-buyer-b ABSENT`; exact Firestore document GETs `marketplaceActors_v1/synthetic-seller-a ABSENT` and `marketplacePrivate_v1/product_synthetic-phase-b-read-01 ABSENT`; `PREFLIGHT: FOUR ABSENT AT CHECK TIME; CREATION REMAINS BLOCKED`; `READINESS: FOUR ABSENT AT CHECK TIME ONLY`; `CREATE/DELETE: NOT IMPLEMENTED OR AUTHORIZED BY THIS COMMAND`; `FIREBASE ID TOKEN + INVOKER + IAM/ACTIVATION GATES STILL OPEN`. No cloud data mutation. These absences are **point-in-time** and must be freshly checked before any future authorized create; they are NOT approval to create.
+
+Previously owner-supervised one-user disabled Auth CRUD proof had `CREATED_VERIFIED` and `CLEANUP VERIFIED`, so do not rerun it. Next engineering priority is one safe approved sign-in/token path for both synthetic owner and foreign-buyer Firebase ID tokens; merely creating disabled/passwordless test identities cannot yield sign-in tokens. Also require explicit scoped permission for original 4 fixture creates, per-ID cleanup/retention and separate gated test runtime IAM/invoker before any Owner Read activation. Keep staging default-off and production HOLD/NO-GO.
+
 ## The exact NEXT action at snapshot
 
 The prior Firestore metadata command **has now been completed**, with screenshot evidence recorded in the 21:41 IST checkpoint above. Do not ask the operator to repeat it. Continue only with effective IAM condition analysis using already enabled read-only capabilities, or other safe local preparation; do not enable APIs, impersonate identities or create data without separate approval. Do **not** repeat previously passed IAM custom-role listing, direct binding checks, anonymous Cloud Run 403 tests, Node fixture test or image rebuild without a concrete change.
