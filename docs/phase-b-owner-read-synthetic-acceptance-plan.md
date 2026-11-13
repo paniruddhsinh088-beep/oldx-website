@@ -145,3 +145,17 @@ All identifiers are staging-only, synthetic and proposed. They may not be used i
 ### Acceptance of procedure preparation
 
 This document is the **prepared procedure**. No live command or create/delete script is included to prevent accidental running under incomplete approvals. Before executing anything, the owner must see an explicit create/verify/cleanup script with immutable target and create-only guards and grant a **new, precise execution authorization**.
+
+
+## Offline dry-run implementation checkpoint
+
+Created `scripts/phase-b-offline-fixture-preflight.mjs` and `tests/integration/phase-b-offline-fixture-preflight.test.mjs` on `security-hardening-review`. This is **not a cloud provisioner**: it imports only Node built-ins, reads existing reviewed JSON, validates the fixed staging target and synthetic IDs, prints the two proposed Auth IDs and two private document paths, and lists create-only, collision-check and exact-ID cleanup requirements. It accepts only `--dry-run`; `--create`, `--verify`, `--cleanup` or extra arguments are rejected with exit status 2. No Firebase Admin SDK, Google client library, credentials, network or mutation implementation is present.
+
+Offline run after obtaining latest review-branch code (Node 24):
+
+```bash
+node scripts/phase-b-offline-fixture-preflight.mjs --dry-run
+node --test tests/integration/phase-b-offline-fixture-preflight.test.mjs
+```
+
+**These new tests have not been reported as executed yet.** This is an implementation checkpoint, not evidence of synthetic Firebase data being created, token acquisition, IAM enforcement, rollback or enabled runtime acceptance. A future create/verify/cleanup tool must remain a separate artifact and require another specific owner approval after the exact data retention, cleanup permission, identity/token path and access risks are closed.
