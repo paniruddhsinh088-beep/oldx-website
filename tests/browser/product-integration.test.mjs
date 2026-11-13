@@ -78,7 +78,7 @@ for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('shared main
  await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');
  assert.equal(await page.evaluate(()=>window.storeRestorations),1,'Back restores the Store through a single trusted read');
  await page.goForward();await page.waitForFunction(()=>document.querySelector('#detailTitle').textContent==='મૂળ Cafe\u0301');await page.reload();await boot(locale);await bootHost();assert.equal(await page.locator('#detailTitle').textContent(),'મૂળ Cafe\u0301');
- await page.evaluate(()=>host.go('home'));await page.locator('#trustedStoreBrowse').click();assert.equal(await page.evaluate(()=>location.hash),'#stores');await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.reload();await boot('hi');await bootHost();await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.locator('#homeStoresGrid button').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2'));
+ await page.evaluate(()=>host.go('home'));await page.locator('#trustedStoreBrowse').click();assert.equal(await page.evaluate(()=>location.hash),'#stores');await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.reload();await boot(locale);await bootHost();await page.waitForFunction(()=>document.querySelector('#homeStoresGrid button'));await page.locator('#homeStoresGrid button').click();await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2'));
  await page.evaluate(()=>host.go('home'));await page.locator('#homeServicesPreviewSection a[href*="mode=website"]').click();assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#services'});await page.evaluate(()=>{history.pushState(null,'','#provider/sp_public');return host.restoreRoute();});assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-preview.html',hash:'#provider/sp_public'});assert.equal(await page.evaluate(()=>host.go('conversation',{providerId:'sp_public',enquiryId:'enquiry'})),true);assert.deepEqual(await page.evaluate(()=>providerRoutes.at(-1)),{page:'service-conversation-preview.html',hash:'#conversation/buyer/sp_public/enquiry'});
 
  await page.evaluate(async()=>{history.pushState(null,'','#edit-browser-product');await host.restoreRoute();});
@@ -113,6 +113,22 @@ for(const [width,locale] of [[320,'gu'],[375,'hi'],[375,'en']])test('shared main
  assert.equal(await page.locator('#storePublicWrap button').count(),0);
  assert.equal(await page.evaluate(()=>host.go('store','missing-store')),false);
  assert.equal(await page.locator('#storePublicWrap h2').count(),0);
+ await page.evaluate(async id=>{
+  const detail=window.publicPorts.detail;
+  let failOnce=true;
+  window.publicPorts={...window.publicPorts,detail:(body,context)=>{
+   if(body.kind==='store'&&failOnce){failOnce=false;return {ok:false,code:'UNAVAILABLE'};}
+   return detail(body,context);
+  }};
+  await host.go('store',id);
+ },storeId);
+ const reload=page.locator('#trustedStoreReload');
+ assert.equal(await reload.textContent(),catalog['market.store.reloadPublic']);
+ await reload.press('Enter');
+ await page.waitForFunction(()=>document.querySelector('#storePublicWrap h2')?.textContent==='Shared Store');
+ assert.equal(await reload.isHidden(),true);
+ await page.waitForFunction(()=>document.activeElement===document.querySelector('#storePublicWrap h2'));
+ assert.equal(await page.evaluate(()=>location.hash),'#store-'+storeId);
  await page.evaluate(async()=>{history.pushState(null,'','#store');await host.restoreRoute();});
  await page.evaluate(()=>host.setSession(null));assert.equal(await page.locator('#trustedStoreAddProduct').isVisible(),false);assert.equal(await page.locator('#productStoreDraftNotice').isVisible(),false);assert.equal(await page.locator('#fullChatMessages').textContent(),'');assert.equal(await page.evaluate(()=>providerSessions.at(-1)),null);await page.evaluate(()=>host.destroy());
  }finally{await context.close();}

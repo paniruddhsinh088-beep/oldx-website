@@ -1,5 +1,6 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.store.reloadPublic": "Retry storefront",
   "website.services": "Services",
   "website.title": "OLDX · Service Providers",
   "website.notice": "Service Providers · Real-data integration is not active. No sample providers are shown here.",

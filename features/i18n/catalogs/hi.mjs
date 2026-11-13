@@ -1,5 +1,6 @@
 // Review-only Service UI catalog. Native-speaker review is pending.
 export default Object.freeze({
+  "market.store.reloadPublic": "स्टोर फिर खोलें",
   "website.services": "सेवाएँ",
   "website.title": "OLDX · सेवा प्रदाता",
   "website.notice": "सेवा प्रदाता · वास्तविक डेटा का जुड़ाव सक्रिय नहीं है। यहाँ नमूना प्रोफाइल नहीं दिखते।",

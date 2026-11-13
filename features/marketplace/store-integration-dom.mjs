@@ -16,6 +16,7 @@ export function mountStoreIntegration({root=document,enabled=false,ports,getCate
  const listen=(node,type,fn,capture=false)=>{node?.addEventListener(type,fn,capture);listeners.push(()=>node?.removeEventListener(type,fn,capture));};
  const oldStyle=root.body.dataset.oldxStore;root.body.dataset.oldxStore='true';restore.push(()=>{if(oldStyle===undefined)delete root.body.dataset.oldxStore;else root.body.dataset.oldxStore=oldStyle;});
  const addProduct=$('trustedStoreAddProduct'),marketing=$('trustedStoreMarketing'),cardButton=$('trustedStoreCardDownload');
+ const reload=$('trustedStoreReload');
  const canAddProduct=state=>view.location.hash==='#store'&&state.authenticated&&state.owner&&['ready','saved'].includes(state.status)&&typeof options.onAddProduct==='function';
  const model=createStoreIntegration({...options,enabled,ports,onOwnerSaved:profile=>{photos=[...profile.photos];},onOwnerDraft:value=>{photos=value?[...value.profile.photos]:[];loadedCategories=value?(value.profile.categories??[value.profile.category]):null;for(const input of root.querySelectorAll('input[name="storeCategory"]'))input.checked=!!loadedCategories?.includes(input.value);$('storeShopName').value=value?.profile.name??'';$('trustedStoreDescription').value=value?.profile.description??'';$('trustedStoreLocality').value=value?.profile.locationLabel??'';},onChange:state=>{
   if(!exiting)photoWorkflow?.setScope(photoSession&&state.owner?{...photoSession,parentId:state.owner.id,revision:state.owner.revision}:null);
@@ -25,6 +26,7 @@ export function mountStoreIntegration({root=document,enabled=false,ports,getCate
    if(!state.store){cardButton.disabled=false;$('trustedStoreCardStatus').textContent='';}
   }
   const status=$('trustedStoreStatus');status.hidden=false;status.style.display='block';status.textContent=translate('market.product.'+state.status);$('saveStoreBtn').disabled=!state.authenticated||state.status==='loading'||state.canRetry;for(const id of ['trustedStorePublish','trustedStoreWithdraw','trustedStoreLoad'])$(id).disabled=!state.authenticated||state.status==='loading'||state.canRetry;
+  if(reload)reload.hidden=!/^#store-[A-Za-z0-9_-]{1,100}$/.test(view.location.hash)||!['unavailable','error'].includes(state.status);
   $('trustedStoreRetry').disabled=!state.canRetry;$('trustedStoreNext').hidden=!state.store;$('trustedStoreNext').disabled=!state.nextCursor;
   const grid=$('homeStoresGrid');if(grid){grid.replaceChildren();for(const item of state.directory){const button=root.createElement('button');button.type='button';button.className='oldx-public-card';button.textContent=item.name;button.addEventListener('click',()=>api.open(item.id));grid.append(button);}if($('trustedDirectoryStatus')){$('trustedDirectoryStatus').hidden=state.directoryStatus==='idle';$('trustedDirectoryStatus').textContent=translate(state.directoryStatus==='ready'&&!state.directory.length?'market.store.noStores':'market.product.'+state.directoryStatus);}
    if($('homeStoresSection'))$('homeStoresSection').style.display='block';if($('trustedDirectoryNext'))$('trustedDirectoryNext').disabled=!state.directoryCursor;}
@@ -50,6 +52,19 @@ export function mountStoreIntegration({root=document,enabled=false,ports,getCate
   }
  });
  listen(addProduct,'click',()=>{const state=model.snapshot();if(canAddProduct(state))options.onAddProduct(state.owner.id);});
+ if(reload){
+  listen(reload,'click',async()=>{
+   if(reload.hidden)return;
+   const hash=view.location.hash;
+   const focused=root.activeElement===reload;
+   const opened=await route();
+   if(!focused||exiting||view.location.hash!==hash||root.activeElement!==root.body)return;
+   if(!reload.hidden){reload.focus();return;}
+   const heading=opened&&$('storePublicWrap').querySelector('h2');
+   if(heading){heading.tabIndex=-1;heading.focus();}
+  });
+  restore.push(()=>{reload.hidden=true;});
+ }
  listen($('trustedDirectoryNext'),'click',()=>model.nextDirectory());listen($('createStoreForm'),'submit',event=>{event.preventDefault();event.stopImmediatePropagation();save('draft');},true);for(const [id,publication]of [['trustedStorePublish','publish'],['trustedStoreWithdraw','withdraw']])listen($(id),'click',()=>save(publication));listen($('trustedStoreRetry'),'click',()=>model.retry());listen($('trustedStoreLoad'),'click',()=>model.loadOwner());listen($('trustedStoreNext'),'click',()=>model.nextPage());
  listen($('storeShareTopBtn'),'click',event=>{event.preventDefault();event.stopImmediatePropagation();const state=model.snapshot();if(state.store&&typeof share==='function')share({storeId:state.store.id,title:state.store.name,relativeUrl:'#store-'+state.store.id});},true);
  async function route(){const hash=view.location.hash;if(hash==='#store'||/^#store-[A-Za-z0-9_-]{1,100}$/.test(hash)){$('storePage').style.display='block';for(const id of ['homeView','sellWizardPage','productDetailView','fullChatPage'])if($(id))$(id).style.display='none';}if(hash==='#store'){revision++;model.changeScope();const ownerSession=model.snapshot().authenticated;$('storeFormWrap').style.display=ownerSession?'block':'none';$('storePublicWrap').style.display='none';if(ownerSession){view.renderStoreCategoryChoices?.();await model.loadOwner();}}else if(/^#store-[A-Za-z0-9_-]{1,100}$/.test(hash)){revision++;$('storeFormWrap').style.display='none';$('storePublicWrap').style.display='block';return model.open(hash.slice(7));}}
