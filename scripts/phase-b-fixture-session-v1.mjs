@@ -25,6 +25,23 @@ const payloads = offlinePayloads();
 const resources = Object.freeze([...authUids, ...firestoreDocs]);
 const states = new Set(['CREATE_UNKNOWN', 'CREATED_VERIFIED', 'UPDATE_UNKNOWN', 'UPDATED_VERIFIED', 'DELETE_UNKNOWN', 'DELETE_ACKNOWLEDGED']);
 
+// Deliberately reserves time for a separately supervised operator cleanup.
+// This budget never refreshes credentials or authorizes any additional write.
+export function runtimeSessionBudget(expiry, now = Date.now) {
+  const started = now();
+  requireSafe(Number.isFinite(expiry) && expiry - started > 90_000, 'RUNTIME_TOKEN_TOO_SHORT');
+  const creationCutoff = Math.min(started + 120_000, expiry - 90_000);
+  return Object.freeze({
+    beforeMutation() {
+      requireSafe(now() < creationCutoff, 'CREATION_PHASE_DEADLINE_EXCEEDED');
+    },
+    beforeRuntimeRequest() {
+      requireSafe(now() < creationCutoff && expiry - now() > 10_000,
+        'RUNTIME_TOKEN_OR_DEADLINE_TOO_CLOSE');
+    },
+  });
+}
+
 function requireSafe(condition, code) {
   if (!condition) throw new Error(code);
 }
@@ -121,7 +138,7 @@ async function inventory(api) {
 }
 
 // Kept private so CLI callers cannot supply a transport or bypass the execution gate.
-async function runSession(api, openJournal, afterSignIn, runtime = null) {
+async function runSession(api, openJournal, afterSignIn, runtime = null, budget = null) {
   const sessionId = randomUUID();
   const emails = authUids.map((uid) => uid + '-' + sessionId + '@example.invalid');
   requireSafe((await inventory(api)).every((present) => !present), 'FIXTURE_COLLISION');
@@ -135,6 +152,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null) {
   const fixtureApi = runtime ?? api;
   try {
     for (const [i, uid] of authUids.entries()) {
+      budget?.beforeMutation();
       const email = emails[i];
       const password = randomBytes(32).toString('base64url') + 'aA1!';
       passwords.push(password);
@@ -145,6 +163,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null) {
       created.set(uid, createdAt);
     }
     for (const path of firestoreDocs) {
+      budget?.beforeMutation();
       journal.record(path, 'CREATE_UNKNOWN', {marker: sessionId});
       const receipt = documentEvidence(await fixtureApi.createDoc(path, sessionId), path, sessionId);
       requireSafe(isDeepStrictEqual(documentEvidence(await fixtureApi.getDoc(path), path, sessionId), receipt),
@@ -153,6 +172,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null) {
       created.set(path, receipt);
     }
     for (const [i, uid] of authUids.entries()) {
+      budget?.beforeMutation();
       tokens.push(await api.signIn(uid, emails[i], passwords[i]));
       passwords[i] = null;
     }
@@ -162,6 +182,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null) {
       const path = firestoreDocs[1];
       const original = created.get(path);
       conditionalFixtureDelete(original, documentEvidence(await runtime.getDoc(path), path, sessionId));
+      budget?.beforeMutation();
       journal.record(path, 'UPDATE_UNKNOWN', original);
       const updated = documentEvidence(await runtime.updateProduct(path, original.updateTime), path, sessionId, true);
       requireSafe(updated.createTime === original.createTime && updated.updateTime !== original.updateTime &&
@@ -765,9 +786,10 @@ async function mintRuntimeCredential(read, call, onStatus) {
   return {token: data.accessToken, expiry};
 }
 
-function runtimeFixtureTransport(request, {token, expiry}) {
+function runtimeFixtureTransport(request, {token, expiry}, budget = null) {
   return transport(({method, url, body}) => {
-    requireSafe(expiry > Date.now() && firestoreDocs.some((path) => {
+    budget?.beforeRuntimeRequest();
+    requireSafe(expiry - Date.now() > 10_000 && firestoreDocs.some((path) => {
       const [collection, id] = path.split('/');
       return (method === 'GET' && url === firestore + path) ||
         (method === 'POST' && url === firestore + collection + '?documentId=' + id) ||
@@ -782,8 +804,10 @@ function runtimeFixtureTransport(request, {token, expiry}) {
 
 export function simulateRuntimeFixtureSession({projectId, databaseId, operatorSend, runtimeRequest, credential, journal}) {
   requireSafe(projectId === project && databaseId === database, 'RUNTIME_FIXTURE_SCOPE_DENIED');
+  const budget = runtimeSessionBudget(credential.expiry);
   return runSession(transport(operatorSend, 'offline-test-key'), journal, undefined,
-    runtimeFixtureTransport(runtimeRequest, credential)).catch(() => { throw new Error('SIMULATION_STOPPED'); });
+    runtimeFixtureTransport(runtimeRequest, credential, budget), budget)
+    .catch(() => { throw new Error('SIMULATION_STOPPED'); });
 }
 
 async function directFirestoreIam(read, request) {
@@ -962,8 +986,9 @@ async function main(args) {
     boundedPhaseBRequest(url, {method, redirect: 'error', signal: AbortSignal.timeout(5000),
       headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'X-Goog-User-Project': project},
       body: JSON.stringify(body)}));
+  const budget = runtimeSessionBudget(credential.expiry);
   await runSession(transport(liveSend, key), openJournal, undefined,
-    runtimeFixtureTransport(boundedPhaseBRequest, credential));
+    runtimeFixtureTransport(boundedPhaseBRequest, credential, budget), budget);
   console.log('All four exact resources absent at final check.');
   return 0;
 }
