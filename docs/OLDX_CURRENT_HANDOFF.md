@@ -704,3 +704,23 @@ This is owner-provided screenshot evidence, not an independently re-run check. T
 The screenshot also shows the Cloud Shell checkout on `security-hardening-review` at local and fetched remote commit `2d25a5273fd9b4579b76ec3de2e4b7e405bf04e3`. Two untracked Python cache directories were visible (`scripts/__pycache__/` and `tests/integration/__pycache__/`); leave them untouched. No additional verifier run, code/test run, IAM change, Firebase Rules change, Billing change, Cloud Run activation, fixture operation, or Production action is authorized or claimed by this evidence update.
 
 **Next safe task:** continue repository-only review of the already-existing Phase B fixture lifecycle, journal/recovery, exact-ID cleanup safeguards and offline test coverage. Do not create or read live Auth/Firestore fixtures. The earlier handoff instruction to run the direct verifier is superseded by this owner-reported result; do not repeat the one-shot run. Entity permissions and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
+
+
+## 2026-11-14 — Phase B offline schema/DTO/lifecycle source review
+
+Repository-only review at source baseline `2d25a5273fd9b4579b76ec3de2e4b7e405bf04e3`; no Cloud calls, tests, fixture reads/writes, or live operations were performed.
+
+**Existing work confirmed — do not recreate:**
+- `scripts/firebase-marketplace-repository.mjs` contains the existing `inspectProfile` validator and owner handler. The product profile allowlist is `title, description, category, locationLabel, basePrice, isSold, storeId, photos`; it validates bounded text, allowed category, photo references, numeric price, booleans and store ID.
+- `tests/integration/phase-b-proposed-private-shape.test.mjs` already validates the proposed profile and rejects unsafe values.
+- `scripts/phase-b-firestore-typed-fixture-preview.mjs` and `tests/integration/phase-b-firestore-typed-fixture-preview.test.mjs` already produce and validate exactly the two typed Firestore payloads and the actor fields `uid/canWrite/suspended`, without network or credentials.
+- The Owner handler returns an explicit DTO (`ok,id,revision,profile,published,publicationRevision,receipt`); the owner acceptance tests assert the exact response, reject extra response fields and require `private, no-store`.
+- `scripts/phase-b-fixture-session-v1.mjs` already has create-only fixture calls, preflight collision checks, journal transitions, exact-ID lookups, Firestore updateTime conditional deletion, Auth creation-time checks, no retry on ambiguous outcomes, and final exact absence checks. Related offline tests already exist in `tests/integration/phase-b-fixture-session-v1.test.mjs`, `phase-b-fixture-recovery.test.mjs`, and `phase-b-fixture-journal-linux.test.mjs`.
+
+**One concrete source inconsistency found — keep fixture execution NO-GO until resolved:**
+- The execution-review document requires a nonsecret per-run provenance marker on each Firestore fixture and checks it before deletion.
+- The actual fixture runner currently calls static `offlinePayloads()`, creates the documents without a run marker, and `documentEvidence` requires exact equality with those marker-free payloads.
+- The separate offline helper `scripts/phase-b-offline-cleanup-guard.mjs` requires `marker` and `createTime`, but the current runner/journal path does not call that helper or record those fields. Its tests exercise the helper in isolation, not integration with the real runner.
+- The repository validator/owner DTO uses explicit field projection, so an extra root-level marker appears unlikely to be exposed in the Owner response; however, this is not yet an implemented or tested contract. Do not add an arbitrary field or loosen exact document checks without a focused design and offline regression proving the marker is stored, verified, never projected, and bound to the same session.
+
+**Disposition:** no code or test reruns are justified merely to repeat the already-present schema/DTO coverage. Next permitted repository-only task is a narrowly scoped design/fix for the Firestore provenance-marker/journal mismatch plus focused tests, preserving the fixture and hosted execution gates as hard-disabled. Do not create or read live Auth/Firestore fixtures, enable Cloud Run, change IAM/Rules/Billing, or touch Production. Existing exact fixture IDs remain unprovisioned/unverified unless new owner evidence says otherwise. **Production HOLD / NO-GO.**
