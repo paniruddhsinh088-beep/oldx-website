@@ -11,7 +11,6 @@ import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
 import {runOwnerReadAcceptance, ownerReadAudience, readBounded, inspectAnonymousDenial} from './phase-b-owner-read-acceptance.mjs';
 
 const LIVE_EXECUTION_ENABLED = false;
-const LIVE_DIRECT_FIRESTORE_IAM_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
 const healthRevision = 'oldx-owner-read-00002-tid';
 const healthProbeUrl = ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health';
@@ -786,8 +785,13 @@ export function simulateDirectFirestoreIam(read, request) {
   return directFirestoreIam(read, request);
 }
 
-export async function runDirectFirestoreIam() {
-  requireSafe(LIVE_DIRECT_FIRESTORE_IAM_ENABLED, 'DIRECT_FIRESTORE_IAM_DISABLED');
+export function isDirectFirestoreIamOneShotInvocation(args, env = process.env) {
+  return Array.isArray(args) && args.length === 1 && args[0] === '--direct-firestore-iam' &&
+    env?.OLDX_DIRECT_FIRESTORE_IAM_APPROVAL === 'YASMIN_APPROVED_ONCE';
+}
+
+export async function runDirectFirestoreIam({ownerApprovedOnce = false} = {}) {
+  requireSafe(ownerApprovedOnce === true, 'DIRECT_FIRESTORE_IAM_DISABLED');
   return directFirestoreIam(gcloud, boundedPhaseBRequest);
 }
 
@@ -826,6 +830,17 @@ export async function simulateFixtureAcceptance({fixtureSend, openFakeJournal, a
 }
 
 async function main(args) {
+  if (args[0] === '--direct-firestore-iam') {
+    requireSafe(isDirectFirestoreIamOneShotInvocation(args), 'DIRECT_FIRESTORE_IAM_DISABLED');
+    requireSafe(process.platform === 'linux', 'CLOUD_SHELL_REQUIRED');
+    guardOperator();
+    const report = await runDirectFirestoreIam({ownerApprovedOnce: true});
+    console.log(JSON.stringify(report, null, 2));
+    const metadata = report.permissions['datastore.databases.getMetadata']?.result;
+    const transaction = report.permissions['datastore.databases.get']?.result;
+    return report.configuration === 'PASS' && report.credential === 'PASS' &&
+      metadata === 'PASS' && transaction === 'PASS' && report.transactionRollback === 'PASS' ? 0 : 3;
+  }
   if (args.length === 1 && args[0] === '--review') {
     console.log('Phase B v1', project, database, resources.join(', '));
     console.log('Live execution disabled. Status performs read-only exact lookups.');
