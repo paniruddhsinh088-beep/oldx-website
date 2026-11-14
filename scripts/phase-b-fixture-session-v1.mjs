@@ -598,7 +598,7 @@ function iamReadFailure(error) {
   return 'API_ERROR';
 }
 
-export function inspectPhaseBEffectiveIam(read = gcloud) {
+export function inspectPhaseBEffectiveIam(read = gcloud, {diagnostic = false} = {}) {
   const expectedPermissions = {
     'datastore.databases.get': 'CAN_ACCESS',
     'datastore.entities.get': 'CAN_ACCESS',
@@ -609,14 +609,15 @@ export function inspectPhaseBEffectiveIam(read = gcloud) {
   const report = inspectPhaseBConfiguration(read, {preflight: true});
   report.loggingRead = 'UNVERIFIED';
   report.policyTroubleshooter = 'CONFIGURATION_NOT_MATCHED';
-  report.databasePermissions = Object.fromEntries(Object.keys(expectedPermissions).map((permission) => [
+  const permissions = diagnostic ? ['datastore.databases.get'] : Object.keys(expectedPermissions);
+  report.databasePermissions = Object.fromEntries(permissions.map((permission) => [
     permission, {expected: expectedPermissions[permission], result: 'UNVERIFIED',
       evidence: 'NOT_EVALUATED', inheritedAllowPolicies: 'UNVERIFIED'},
   ]));
   if (report.configuration !== 'MATCH') return report;
 
   const scope = ['--project=' + project, '--account=' + operator, '--format=json', '--quiet'];
-  try {
+  if (!diagnostic) try {
     const entries = JSON.parse(read('logging', 'read',
       'logName="' + requestLog + '" AND trace="projects/oldx-staging/traces/d29ad410c8cb446b9023cb960878e131"' +
         ' AND timestamp="2026-11-13T23:05:52.337034Z"',
@@ -669,11 +670,21 @@ export function inspectPhaseBEffectiveIam(read = gcloud) {
       }
     } catch (error) {
       item.evidence = iamReadFailure(error);
+      if (diagnostic) {
+        const detail = String(error?.stderr ?? error?.message ?? '');
+        const field = /\b(fullResourceName|conditionContext|resource\.name|resource\.type|resource\.service|principal|permission)\b/i.exec(detail)?.[1]?.toLowerCase();
+        const code = /\bHTTP(?:Error)?[ :]+([45]\d{2})\b/i.exec(detail)?.[1];
+        item.diagnostic = {
+          httpCode: code ? Number(code) : null,
+          reason: item.evidence === 'HTTP_400' ? 'INVALID_REQUEST' : item.evidence,
+          fieldHint: field ?? null,
+        };
+      }
     }
   }
   const results = Object.values(report.databasePermissions).map(({result}) => result);
   if (results.includes('MISMATCH')) report.effectiveDatabaseIam = 'MISMATCH';
-  else if (results.every((status) => status === 'MATCH')) report.effectiveDatabaseIam = 'MATCH';
+  else if (!diagnostic && results.every((status) => status === 'MATCH')) report.effectiveDatabaseIam = 'MATCH';
   return report;
 }
 
@@ -758,6 +769,11 @@ async function main(args) {
     const report = inspectPhaseBEffectiveIam();
     console.log(JSON.stringify(report, null, 2));
     return report.effectiveDatabaseIam === 'MATCH' && report.loggingRead === 'MATCH' ? 0 : 3;
+  }
+  if (args.length === 1 && args[0] === '--diagnose-effective-iam') {
+    const report = inspectPhaseBEffectiveIam(gcloud, {diagnostic: true});
+    console.log(JSON.stringify(report, null, 2));
+    return report.databasePermissions['datastore.databases.get'].result === 'MATCH' ? 0 : 3;
   }
   if (args.length === 1 && args[0] === '--cloud-preflight') {
     const report = await inspectPhaseBPreflight();

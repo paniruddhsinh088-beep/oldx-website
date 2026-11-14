@@ -598,3 +598,7 @@ The read-only verifier now reports API_DISABLED, PERMISSION_DENIED, API_ERROR or
 ## Phase B Policy Troubleshooter diagnostics
 
 The prior API_ERROR did not establish an upstream cause. Offline regression now covers sanitized CLI, HTTP and malformed-response categories. Focused tests passed 15/15. No live call was made. Run the existing read-only --check-effective-iam mode to obtain the specific labels. Effective IAM remains UNVERIFIED until definitive scoped evidence. Production HOLD / NO-GO.
+
+## Phase B single-permission IAM diagnosis
+
+Owner evidence establishes HTTP_400 across all five staging checks. Added --diagnose-effective-iam to run one scoped permission evaluation and report only sanitized error labels. Exact rejected field and CLI wire request remain unverified. Focused offline tests passed 16/16. No Cloud operations ran during development. Production HOLD / NO-GO.

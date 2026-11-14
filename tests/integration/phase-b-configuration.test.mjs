@@ -423,3 +423,37 @@ test('Troubleshooter evaluation reports sanitized transport and response failure
     assert.doesNotMatch(JSON.stringify(report), /private credential|wrapper detail/);
   }
 });
+
+test('one-permission diagnostic redacts errors and never substitutes for the full IAM check', () => {
+  for (const rejected of [true, false]) {
+    const fallback = preflightRead();
+    let evaluations = 0;
+    const report = inspectPhaseBEffectiveIam((...args) => {
+      if (args[0] === 'logging') throw new Error('Unexpected log read');
+      if (args[0] === 'services' && args.some((arg) => arg.includes('policytroubleshooter'))) {
+        return 'policytroubleshooter.googleapis.com';
+      }
+      if (args[0] !== 'policy-intelligence') return fallback(...args);
+      evaluations++;
+      assert.ok(args.includes('--permission=datastore.databases.get'));
+      assert.ok(args.includes('--project=oldx-staging'));
+      assert.ok(args.includes('--principal-email=oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com'));
+      if (rejected) throw Object.assign(new Error('private token'), {
+        stderr: 'HTTPError 400 INVALID_ARGUMENT fullResourceName contains private data',
+      });
+      return JSON.stringify({overallAccessState: 'CAN_ACCESS', accessTuple: {
+        fullResourceName: args[3], permission: 'datastore.databases.get',
+        principal: 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com',
+      }});
+    }, {diagnostic: true});
+    assert.equal(evaluations, 1);
+    assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
+    assert.deepEqual(Object.keys(report.databasePermissions), ['datastore.databases.get']);
+    const item = report.databasePermissions['datastore.databases.get'];
+    assert.equal(item.result, rejected ? 'UNVERIFIED' : 'MATCH');
+    if (rejected) assert.deepEqual(item.diagnostic, {
+      httpCode: 400, reason: 'INVALID_REQUEST', fieldHint: 'fullresourcename',
+    });
+    assert.doesNotMatch(JSON.stringify(report), /private token|private data/);
+  }
+});
