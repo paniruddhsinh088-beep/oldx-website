@@ -84,3 +84,17 @@ No single approval in this matrix authorizes the entire sequence. No credential,
 - Owner Read Cloud Run activation and private invoker acceptance: **HOLD**.
 
 **No live operations were performed while preparing this matrix. Production HOLD / NO-GO.**
+
+## 7. No-change Policy Troubleshooter path for the OAuth token blocker
+
+Before considering any IAM grant, the operator can separately evaluate whether `yasminparmar087@gmail.com` currently has `iam.serviceAccounts.getAccessToken` on the exact runtime service-account resource using the documented gcloud Policy Troubleshooter command. This is an IAM policy evaluation, not token minting and not a Cloud/Firebase data-plane request:
+
+```bash
+gcloud policy-troubleshoot iam //iam.googleapis.com/projects/oldx-staging/serviceAccounts/oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com --principal-email=yasminparmar087@gmail.com --permission=iam.serviceAccounts.getAccessToken
+```
+
+Use only after confirming the active gcloud account and project. Do not add broader flags or substitute a project-level resource. Save only the sanitized access state and relevant explanation; never publish credentials or raw policy payloads. If the resource identifier is rejected, the result is inconclusive and remains UNVERIFIED. If access is GRANTED, this establishes only the permission evaluation for this exact service-account resource; it does not prove the IAM Credentials API is enabled, quota/project permissions are satisfied, the actual token exchange succeeds, or Firestore runtime permissions/database isolation work. If access is NOT_GRANTED, do not change IAM; request separate approval or leave the direct runtime verifier blocked.
+
+This targeted evaluation may avoid the previous Firestore database tuple/condition-context HTTP 400 because it checks a distinct IAM service-account resource and permission. It does **not** resolve the Firestore database Policy Troubleshooter issue. The Firestore database-scoped tuple remains UNVERIFIED until Google-supported resource/permission evaluation is available or a separately approved operation provides evidence.
+
+**No IAM change or token request is authorized by this step.** This is a read-only policy evaluation only. Official command syntax: https://docs.cloud.google.com/sdk/gcloud/reference/policy-troubleshoot/iam
