@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {inspectPhaseBConfiguration, inspectPhaseBPreflight, inspectPhaseBEffectiveIam, simulateDirectFirestoreIam, runDirectFirestoreIam} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {inspectPhaseBConfiguration, inspectPhaseBPreflight, inspectPhaseBEffectiveIam, simulateDirectFirestoreIam, runDirectFirestoreIam, isDirectFirestoreIamOneShotInvocation} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const service = 'oldx-owner-read';
 const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
@@ -482,8 +482,23 @@ test('explicit resource error reasons stay distinct and never trigger a project-
   }
 });
 
-test('direct Firestore IAM separates metadata and transaction permissions and preserves the closed live gate', async () => {
+test('direct Firestore IAM CLI requires the exact one-shot owner approval and remains off by default', async () => {
+  assert.equal(isDirectFirestoreIamOneShotInvocation([]), false);
+  assert.equal(isDirectFirestoreIamOneShotInvocation(['--direct-firestore-iam']), false);
+  assert.equal(isDirectFirestoreIamOneShotInvocation(['--direct-firestore-iam'], {
+    OLDX_DIRECT_FIRESTORE_IAM_APPROVAL: 'NO',
+  }), false);
+  assert.equal(isDirectFirestoreIamOneShotInvocation(['--direct-firestore-iam', '--execute'], {
+    OLDX_DIRECT_FIRESTORE_IAM_APPROVAL: 'YASMIN_APPROVED_ONCE',
+  }), false);
+  assert.equal(isDirectFirestoreIamOneShotInvocation(['--direct-firestore-iam'], {
+    OLDX_DIRECT_FIRESTORE_IAM_APPROVAL: 'YASMIN_APPROVED_ONCE',
+  }), true);
   await assert.rejects(runDirectFirestoreIam(), /DIRECT_FIRESTORE_IAM_DISABLED/);
+  await assert.rejects(runDirectFirestoreIam({ownerApprovedOnce: false}), /DIRECT_FIRESTORE_IAM_DISABLED/);
+});
+
+test('direct Firestore IAM separates metadata and transaction permissions and preserves the closed live gate', async () => {
   for (const scenario of ['success', 'token-denied', 'metadata-denied', 'rollback-denied', 'wrong-project', 'wrong-account']) {
     const fallback = preflightRead();
     const seen = [];
