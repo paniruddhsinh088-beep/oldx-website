@@ -673,3 +673,6 @@ After the focused test passes, the one approved invocation is:
 Run it once only from the approved `oldx-staging` Cloud Shell session authenticated as `yasminparmar087@gmail.com`. The command exits 0 only when configuration, token, metadata GET, read-only transaction and rollback all pass; otherwise it prints sanitized status and exits 3 (or blocks before requests). Do not repeat a failed/ambiguous run without a new owner decision. This CLI opt-in is not a Cloud Run or fixture activation.
 
 **Evidence boundary:** code and tests were updated on `security-hardening-review`; no live token request or Firestore probe has yet been executed. Metadata permission and transaction permission are separate evidence. Entity get/create/update/delete and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
+
+
+The review safety workflow `.github/workflows/oldx-review-safety.yml` now runs the focused Phase B configuration/verifier regression file with `node --test tests/integration/phase-b-configuration.test.mjs`. Workflow run `43540704414` was created for commit `7723c67dff6408173d2c96d0867d6f85ddb3b017`; its result is pending at the time of this handoff update. Do not treat the tests as passed until the run completes successfully.
