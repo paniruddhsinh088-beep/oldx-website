@@ -27,18 +27,28 @@ const states = new Set(['CREATE_UNKNOWN', 'CREATED_VERIFIED', 'UPDATE_UNKNOWN', 
 
 // Deliberately reserves time for a separately supervised operator cleanup.
 // This budget never refreshes credentials or authorizes any additional write.
-export function runtimeSessionBudget(expiry, now = Date.now) {
-  const started = now();
-  requireSafe(Number.isFinite(expiry) && expiry - started > 90_000, 'RUNTIME_TOKEN_TOO_SHORT');
-  const creationCutoff = Math.min(started + 120_000, expiry - 90_000);
+export function runtimeSessionBudget(expiry, now = Date.now, monotonic = () => performance.now()) {
+  const lifetime = expiry - now();
+  requireSafe(Number.isFinite(lifetime) && lifetime > 90_000, 'RUNTIME_TOKEN_TOO_SHORT');
+  const started = monotonic();
+  const creationCutoff = started + Math.min(120_000, lifetime - 90_000);
+  const sessionCutoff = creationCutoff + 90_000;
+  let cutoff = creationCutoff;
+  function remaining() {
+    const ms = Math.floor(cutoff - monotonic());
+    requireSafe(ms > 0, 'SESSION_DEADLINE_EXCEEDED');
+    return ms;
+  }
   return Object.freeze({
     beforeMutation() {
-      requireSafe(now() < creationCutoff, 'CREATION_PHASE_DEADLINE_EXCEEDED');
+      requireSafe(monotonic() < creationCutoff, 'CREATION_PHASE_DEADLINE_EXCEEDED');
     },
     beforeRuntimeRequest() {
-      requireSafe(now() < creationCutoff && expiry - now() > 10_000,
+      requireSafe(monotonic() < creationCutoff && expiry - now() > 10_000,
         'RUNTIME_TOKEN_OR_DEADLINE_TOO_CLOSE');
     },
+    beginCleanup() { cutoff = sessionCutoff; remaining(); },
+    timeout(limit) { return Math.min(remaining(), limit); },
   });
 }
 
@@ -191,6 +201,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null, budget 
       journal.record(path, 'UPDATED_VERIFIED', updated);
       created.set(path, updated);
     }
+    budget?.beginCleanup();
     for (const path of [...firestoreDocs].reverse()) {
       const receipt = created.get(path);
       const {currentDocument} = conditionalFixtureDelete(receipt,
@@ -207,6 +218,7 @@ async function runSession(api, openJournal, afterSignIn, runtime = null, budget 
       journal.record(uid, 'DELETE_ACKNOWLEDGED');
     }
     requireSafe((await inventory(api)).every((present) => !present), 'RESIDUAL_FIXTURES');
+    budget?.timeout(1);
     journal.complete();
   } finally {
     passwords.length = 0;
@@ -394,7 +406,11 @@ export async function inspectRecovery(send, journal) {
 }
 
 function gcloud(...args) {
-  return execFileSync('gcloud', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000}).trim();
+  return boundedGcloud(15_000, args);
+}
+
+function boundedGcloud(timeout, args) {
+  return execFileSync('gcloud', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout}).trim();
 }
 
 function guardGcloudEnvironment() {
@@ -403,10 +419,10 @@ function guardGcloudEnvironment() {
   'GCLOUD_OVERRIDE_BLOCKED');
 }
 
-function guardOperator() {
+function guardOperator(read = gcloud) {
   guardGcloudEnvironment();
-  requireSafe(gcloud('config', 'get-value', 'project') === project &&
-    gcloud('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)') === operator, 'WRONG_OPERATOR_OR_PROJECT');
+  requireSafe(read('config', 'get-value', 'project') === project &&
+    read('auth', 'list', '--filter=status:ACTIVE', '--format=value(account)') === operator, 'WRONG_OPERATOR_OR_PROJECT');
 }
 
 // Fixed read-only command list. Return labels and counts, never raw policy,
@@ -755,18 +771,19 @@ export function inspectPhaseBEffectiveIam(read = gcloud, {diagnostic = false} = 
   return report;
 }
 
-async function liveSend({method, url, body, publicRequest}) {
-  guardOperator();
+async function liveSend({method, url, body, publicRequest}, budget) {
+  const read = budget ? (...args) => boundedGcloud(budget.timeout(15_000), args) : gcloud;
+  guardOperator(read);
   const headers = {'Content-Type': 'application/json'};
   if (!publicRequest) {
-    const token = gcloud('auth', 'print-access-token', '--account=' + operator);
+    const token = read('auth', 'print-access-token', '--account=' + operator);
     requireSafe(Boolean(token), 'MISSING_OPERATOR_TOKEN');
     headers.Authorization = 'Bearer ' + token;
     headers['X-Goog-User-Project'] = project;
   }
   return boundedPhaseBRequest(url, {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body),
-    redirect: 'error', signal: AbortSignal.timeout(20_000),
+    redirect: 'error', signal: AbortSignal.timeout(budget?.timeout(20_000) ?? 20_000),
   });
 }
 
@@ -796,7 +813,7 @@ function runtimeFixtureTransport(request, {token, expiry}, budget = null) {
         (method === 'PATCH' && path === firestoreDocs[1] &&
           url.startsWith(firestore + path + '?updateMask.fieldPaths=revision&currentDocument.updateTime='));
     }), 'RUNTIME_FIXTURE_SCOPE_DENIED');
-    return request(url, {method, redirect: 'error', signal: AbortSignal.timeout(5000),
+    return request(url, {method, redirect: 'error', signal: AbortSignal.timeout(budget?.timeout(5000) ?? 5000),
       headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'X-Goog-User-Project': project},
       body: body === undefined ? undefined : JSON.stringify(body)});
   });
@@ -987,7 +1004,7 @@ async function main(args) {
       headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'X-Goog-User-Project': project},
       body: JSON.stringify(body)}));
   const budget = runtimeSessionBudget(credential.expiry);
-  await runSession(transport(liveSend, key), openJournal, undefined,
+  await runSession(transport((req) => liveSend(req, budget), key), openJournal, undefined,
     runtimeFixtureTransport(boundedPhaseBRequest, credential, budget), budget);
   console.log('All four exact resources absent at final check.');
   return 0;

@@ -329,7 +329,7 @@ test('runtime fixture path scopes identity, update and operator cleanup', async 
 
 test('runtime session budget reserves cleanup window and stops before runtime token expiry', () => {
   let now = 1_000_000;
-  const budget = runtimeSessionBudget(now + 300_000, () => now);
+  const budget = runtimeSessionBudget(now + 300_000, () => now, () => now);
   budget.beforeMutation();
   budget.beforeRuntimeRequest();
   now += 119_000;
@@ -350,4 +350,24 @@ test('short runtime credential refuses fixture creation before any journal or wr
   }), /RUNTIME_TOKEN_TOO_SHORT/);
   assert.equal(session.opened, false);
   assert.equal(session.requests.length, 0);
+});
+
+test('session deadline shares the cleanup time between credentials and HTTP and ignores wall-clock rollback', () => {
+  let wall = 1_000_000;
+  let elapsed = 0;
+  const budget = runtimeSessionBudget(wall + 300_000, () => wall, () => elapsed);
+  elapsed = 119_000;
+  assert.equal(budget.timeout(15_000), 1000);
+  wall -= 10_000;
+  elapsed += 1000;
+  assert.throws(() => budget.timeout(20_000), /SESSION_DEADLINE_EXCEEDED/);
+  budget.beginCleanup();
+  assert.equal(budget.timeout(20_000), 20_000);
+  elapsed = 205_000;
+  assert.equal(budget.timeout(15_000), 5000);
+  elapsed += 4000;
+  assert.equal(budget.timeout(20_000), 1000);
+  elapsed += 1000;
+  assert.throws(() => budget.timeout(20_000), /SESSION_DEADLINE_EXCEEDED/);
+  assert.throws(() => budget.beginCleanup(), /SESSION_DEADLINE_EXCEEDED/);
 });
