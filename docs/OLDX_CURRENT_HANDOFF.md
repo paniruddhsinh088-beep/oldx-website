@@ -633,3 +633,12 @@ Yasmin explicitly approved the proposed narrow remedy: create/use a custom role 
 Yasmin's Cloud Shell screenshot shows successful creation in project `oldx-staging` of custom role `projects/oldx-staging/roles/oldxServiceAccountAccessTokenCreator`, with the sole included permission `iam.serviceAccounts.getAccessToken` (stage GA). The screenshot also shows a successful service-account-level IAM policy update on `oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com`, binding `user:yasminparmar087@gmail.com` to that custom role. The existing `roles/iam.serviceAccountOpenIdTokenCreator` binding for the same principal remains present. No project-level member binding for the new custom role is shown or was intended.
 
 **Verification still pending:** run read-only `gcloud iam roles describe` and `gcloud iam service-accounts get-iam-policy` to confirm the exact single permission and exact service-account policy; separately inspect project IAM to ensure the custom role is not bound at project scope. Then rerun only the approved default-off direct Firestore IAM verifier/credential check as documented, preserving its hard-disabled execution gate unless the specific run is explicitly authorized. No Firebase Rules, Billing, Cloud Run activation, production, or fixture operations. Production HOLD / NO-GO.
+
+
+### Verification evidence update — 2026-11-14
+
+Yasmin's latest Cloud Shell screenshot confirms:
+- `gcloud iam roles describe oldxServiceAccountAccessTokenCreator --project=oldx-staging` returns the custom role with exactly one included permission: `iam.serviceAccounts.getAccessToken`.
+- `gcloud iam service-accounts get-iam-policy oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com --project=oldx-staging` returns both expected bindings for `user:yasminparmar087@gmail.com`: the new custom role `projects/oldx-staging/roles/oldxServiceAccountAccessTokenCreator` and the pre-existing `roles/iam.serviceAccountOpenIdTokenCreator`.
+
+This verifies the role definition and service-account-level bindings from the displayed output. It does **not** by itself prove that the custom role is absent from the project-level IAM policy; that remains a separate read-only check. No verifier execution is claimed yet.
