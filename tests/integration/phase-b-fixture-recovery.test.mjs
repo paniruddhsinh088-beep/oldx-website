@@ -79,3 +79,26 @@ test('missing journal never supplies provenance and all four successful absence 
   const denied = await inspectRecovery(({body}) => body ? ok({}) : {status: 403});
   assert.equal(denied.allAbsent, false);
 });
+
+test('legacy Firestore receipts preserve Auth recovery but cannot prove document provenance', async () => {
+  const entries = [{...header, version: 1}, intent, verified,
+    {resource: product, state: 'CREATE_UNKNOWN'},
+    {resource: product, state: 'CREATED_VERIFIED', evidence: {updateTime: at}}];
+  const journal = parseRecoveryJournal(encode(...entries), now);
+  assert.deepEqual(journal.evidence.get(product), {updateTime: at});
+  const result = await inspectRecovery(({method, url, body}) => {
+    if (method === 'POST') {
+      assert.ok(url.endsWith('/accounts:lookup'));
+      return body.localId[0] === uid ? ok({users: [{localId: uid, email, createdAt}]}) : ok({});
+    }
+    assert.equal(method, 'GET');
+    if (!url.endsWith(product)) return absent;
+    return ok({name: 'projects/oldx-staging/databases/(default)/documents/' + product,
+      createTime: at, updateTime: at, fields: {...offlinePayloads()[product].fields,
+        phaseBFixtureSessionId: {stringValue: sessionId}}});
+  }, journal);
+  assert.equal(result.observations[0].observation, 'PRESENT_MATCHES_JOURNAL_REQUIRES_OWNER_REVIEW');
+  assert.equal(result.observations[3].observation, 'PRESENT_PROVENANCE_MISMATCH');
+  assert.throws(() => parseRecoveryJournal(encode(...entries.slice(0, -1),
+    {...entries.at(-1), evidence: {updateTime: 'invalid'}}), now), /INVALID_CREATION_EVIDENCE/);
+});

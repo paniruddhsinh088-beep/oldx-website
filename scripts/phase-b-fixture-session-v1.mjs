@@ -286,7 +286,7 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
       requireSafe(authResource ?
         (ev?.email === evidence.get(resource)?.email &&
           typeof ev?.createdAt === 'string' && /^[1-9]\d{10,15}$/.test(ev.createdAt)) :
-        (header.version === 1 ? typeof ev?.updateTime === 'string' && /^d{4}-d{2}-d{2}Td{2}:d{2}:d{2}(.d{1,9})?Z$/.test(ev.updateTime) : validFirestoreReceipt(ev, header.sessionId)),
+        (header.version === 1 ? typeof ev?.updateTime === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(ev.updateTime) : validFirestoreReceipt(ev, header.sessionId)),
       'INVALID_CREATION_EVIDENCE');
       evidence.set(resource, ev);
     } else if (state === 'DELETE_UNKNOWN') {
