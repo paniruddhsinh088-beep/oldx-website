@@ -7,9 +7,11 @@ import {join} from 'node:path';
 import {isDeepStrictEqual} from 'node:util';
 import {pathToFileURL} from 'node:url';
 import {authUids, database, firestoreDocs, project} from './phase-b-http-contract-review.mjs';
+import {conditionalFixtureDelete, validFirestoreReceipt} from './phase-b-offline-cleanup-guard.mjs';
 import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
 import {runOwnerReadAcceptance, ownerReadAudience, readBounded, inspectAnonymousDenial} from './phase-b-owner-read-acceptance.mjs';
 
+const markerField = 'phaseBFixtureSessionId';
 const LIVE_EXECUTION_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
 const healthRevision = 'oldx-owner-read-00002-tid';
@@ -49,9 +51,9 @@ function transport(send, key, identityProject = project) {
     createUser: (uid, email, password) => call('POST', withKey(auth + 'accounts'), {
       localId: uid, email, password, disabled: false, emailVerified: false,
     }),
-    createDoc(path) {
+    createDoc(path, sessionId) {
       const [collection, id] = path.split('/');
-      return call('POST', firestore + collection + '?documentId=' + id, payloads[path]);
+      return call('POST', firestore + collection + '?documentId=' + id, fixturePayload(path, sessionId));
     },
     async signIn(uid, email, password) {
       // HTTPS response from the fixed Firebase endpoint. Claims are checked for project
@@ -85,7 +87,11 @@ function userEvidence(user, uid, email) {
   return user.createdAt;
 }
 
-function documentEvidence(doc, path) {
+function fixturePayload(path, sessionId) {
+  return {fields: {...payloads[path].fields, [markerField]: {stringValue: sessionId}}};
+}
+
+function documentEvidence(doc, path, sessionId) {
   const fields = doc?.fields;
   const profile = fields?.profile?.mapValue?.fields;
   // Firestore may omit the repeated values field for an empty array.
@@ -94,10 +100,10 @@ function documentEvidence(doc, path) {
     ...fields, profile: {...fields.profile, mapValue: {...fields.profile.mapValue,
       fields: {...profile, photos: {...profile.photos, arrayValue: {values: []}}}}},
   } : fields;
-  requireSafe(doc?.name === documentRoot + path &&
-    typeof doc.updateTime === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(doc.updateTime) &&
-    isDeepStrictEqual(normalized, payloads[path].fields), 'DOCUMENT_PROVENANCE_MISMATCH');
-  return doc.updateTime;
+  const receipt = {marker: fields?.[markerField]?.stringValue, createTime: doc?.createTime, updateTime: doc?.updateTime};
+  requireSafe(doc?.name === documentRoot + path && validFirestoreReceipt(receipt, sessionId) &&
+    isDeepStrictEqual(normalized, fixturePayload(path, sessionId).fields), 'DOCUMENT_PROVENANCE_MISMATCH');
+  return receipt;
 }
 
 async function inventory(api) {
@@ -131,11 +137,12 @@ async function runSession(api, openJournal, afterSignIn) {
       created.set(uid, createdAt);
     }
     for (const path of firestoreDocs) {
-      journal.record(path, 'CREATE_UNKNOWN');
-      const updateTime = documentEvidence(await api.createDoc(path), path);
-      requireSafe(documentEvidence(await api.getDoc(path), path) === updateTime, 'DOCUMENT_CREATE_NOT_VERIFIED');
-      journal.record(path, 'CREATED_VERIFIED', {updateTime});
-      created.set(path, updateTime);
+      journal.record(path, 'CREATE_UNKNOWN', {marker: sessionId});
+      const receipt = documentEvidence(await api.createDoc(path, sessionId), path, sessionId);
+      requireSafe(isDeepStrictEqual(documentEvidence(await api.getDoc(path), path, sessionId), receipt),
+        'DOCUMENT_CREATE_NOT_VERIFIED');
+      journal.record(path, 'CREATED_VERIFIED', receipt);
+      created.set(path, receipt);
     }
     for (const [i, uid] of authUids.entries()) {
       tokens.push(await api.signIn(uid, emails[i], passwords[i]));
@@ -144,10 +151,10 @@ async function runSession(api, openJournal, afterSignIn) {
     if (afterSignIn) await afterSignIn(tokens[0], tokens[1]);
     tokens.length = 0;
     for (const path of [...firestoreDocs].reverse()) {
-      const updateTime = documentEvidence(await api.getDoc(path), path);
-      requireSafe(updateTime === created.get(path), 'DOCUMENT_CHANGED');
-      journal.record(path, 'DELETE_UNKNOWN', {updateTime});
-      await api.deleteDoc(path, updateTime);
+      const receipt = created.get(path);
+      const {currentDocument} = conditionalFixtureDelete(receipt, documentEvidence(await api.getDoc(path), path, sessionId));
+      journal.record(path, 'DELETE_UNKNOWN', receipt);
+      await api.deleteDoc(path, currentDocument.updateTime);
       journal.record(path, 'DELETE_ACKNOWLEDGED');
     }
     for (const [i, uid] of authUids.entries()) {
@@ -183,7 +190,7 @@ export function openJournal(sessionId) {
       writeFileSync(file, JSON.stringify({...entry, at: new Date().toISOString()}) + '\n');
       fsyncSync(file);
     };
-    append({version: 1, project, database, sessionId});
+    append({version: 2, project, database, sessionId});
     fsyncSync(directory);
     const parent = openSync(homedir(), 'r');
     try { fsyncSync(parent); } finally { closeSync(parent); }
@@ -235,7 +242,7 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
   const lines = contents.slice(0, -1).split('\n');
   requireSafe(lines.length >= 1 && lines.length <= 40, 'INVALID_JOURNAL_LENGTH');
   const header = JSON.parse(lines.shift());
-  requireSafe(header.version === 1 && header.project === project &&
+  requireSafe([1, 2].includes(header.version) && header.project === project &&
     header.database === database &&
     typeof header.sessionId === 'string' &&
     /^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(header.sessionId),
@@ -273,21 +280,20 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
     if (state === 'CREATE_UNKNOWN') {
       requireSafe(authResource ?
         (ev?.email === resource + '-' + header.sessionId + '@example.invalid') :
-        ev === undefined, 'INVALID_CREATE_EVIDENCE');
+        (header.version === 1 ? ev === undefined : isDeepStrictEqual(ev, {marker: header.sessionId})), 'INVALID_CREATE_EVIDENCE');
       evidence.set(resource, ev);
     } else if (state === 'CREATED_VERIFIED') {
       requireSafe(authResource ?
         (ev?.email === evidence.get(resource)?.email &&
           typeof ev?.createdAt === 'string' && /^[1-9]\d{10,15}$/.test(ev.createdAt)) :
-        (typeof ev?.updateTime === 'string' &&
-          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(ev.updateTime)),
+        (header.version === 1 ? typeof ev?.updateTime === 'string' && /^d{4}-d{2}-d{2}Td{2}:d{2}:d{2}(.d{1,9})?Z$/.test(ev.updateTime) : validFirestoreReceipt(ev, header.sessionId)),
       'INVALID_CREATION_EVIDENCE');
       evidence.set(resource, ev);
     } else if (state === 'DELETE_UNKNOWN') {
       const old = evidence.get(resource);
       requireSafe(authResource ?
         ev?.email === old?.email && ev?.createdAt === old?.createdAt :
-        ev?.updateTime === old?.updateTime, 'DELETE_EVIDENCE_MISMATCH');
+        isDeepStrictEqual(ev, old), 'DELETE_EVIDENCE_MISMATCH');
     } else {
       requireSafe(ev === undefined, 'INVALID_DELETE_ACK');
     }
@@ -295,6 +301,7 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
   }
   // Metadata is local-only and MUST be corroborated with remote per-ID records.
   latest.evidence = evidence;
+  latest.sessionId = header.sessionId;
   latest.completed = completed;
   latest.stale = now - started >= 86_400_000;
   return latest;
@@ -318,7 +325,7 @@ export async function inspectRecovery(send, journal) {
         try {
           const matches = isAuth
             ? userEvidence(remote, resource, evidence.email) === evidence.createdAt
-            : documentEvidence(remote, resource) === evidence.updateTime;
+            : isDeepStrictEqual(documentEvidence(remote, resource, journal.sessionId), evidence);
           if (matches) observation = 'PRESENT_MATCHES_JOURNAL_REQUIRES_OWNER_REVIEW';
         } catch {
           // Keep the mismatch label and suppress all remote data.

@@ -20,8 +20,8 @@ function fixtureJournal() {
     journal.record(uid, 'CREATED_VERIFIED', {email, createdAt});
   }
   for (const doc of firestoreDocs) {
-    journal.record(doc, 'CREATE_UNKNOWN');
-    journal.record(doc, 'CREATED_VERIFIED', {updateTime});
+    journal.record(doc, 'CREATE_UNKNOWN', {marker: sessionId});
+    journal.record(doc, 'CREATED_VERIFIED', {marker: sessionId, createTime: updateTime, updateTime});
   }
   return {journal, sessionId};
 }
@@ -105,7 +105,7 @@ test('Linux journal accepts a complete four-resource history but blocks a replay
   isolatedHome((home) => {
     const {journal, sessionId} = fixtureJournal();
     for (const doc of [...firestoreDocs].reverse()) {
-      journal.record(doc, 'DELETE_UNKNOWN', {updateTime});
+      journal.record(doc, 'DELETE_UNKNOWN', {marker: sessionId, createTime: updateTime, updateTime});
       journal.record(doc, 'DELETE_ACKNOWLEDGED');
     }
     for (const uid of authUids) {

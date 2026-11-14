@@ -11,7 +11,7 @@ const [uid, buyer] = authUids;
 const [actor, product] = firestoreDocs;
 const email = uid + '-' + sessionId + '@example.invalid';
 const createdAt = String(now);
-const header = {version: 1, project: 'oldx-staging', database: '(default)', sessionId};
+const header = {version: 2, project: 'oldx-staging', database: '(default)', sessionId};
 const encode = (...entries) => entries.map((entry) => JSON.stringify({at, ...entry})).join('\n') + '\n';
 const absent = {status: 404, data: {error: {status: 'NOT_FOUND'}}};
 const ok = (data) => ({status: 200, data});
@@ -32,7 +32,7 @@ test('journal detects partial lines, stale or future timestamps and inconsistent
 test('recovery inspects all four IDs independently and reports ambiguous outcomes without exposing evidence', async () => {
   const journal = parseRecoveryJournal(encode(header, intent, verified,
     {resource: uid, state: 'DELETE_UNKNOWN', evidence: verified.evidence},
-    {resource: actor, state: 'CREATE_UNKNOWN'}), now);
+    {resource: actor, state: 'CREATE_UNKNOWN', evidence: {marker: sessionId}}), now);
   const seen = [];
   const result = await inspectRecovery(({method, url, body}) => {
     const id = body?.localId?.[0] ?? url.split('/documents/')[1];
@@ -59,13 +59,13 @@ test('changed Firestore revision and reappearing Auth UID remain unresolved', as
   const journal = parseRecoveryJournal(encode(header, intent, verified,
     {resource: uid, state: 'DELETE_UNKNOWN', evidence: verified.evidence},
     {resource: uid, state: 'DELETE_ACKNOWLEDGED'},
-    {resource: product, state: 'CREATE_UNKNOWN'},
-    {resource: product, state: 'CREATED_VERIFIED', evidence: {updateTime: at}}), now);
+    {resource: product, state: 'CREATE_UNKNOWN', evidence: {marker: sessionId}},
+    {resource: product, state: 'CREATED_VERIFIED', evidence: {marker: sessionId, createTime: at, updateTime: at}}), now);
   const result = await inspectRecovery(({url, body}) => {
     if (body) return ok({users: body.localId[0] === uid ? [{localId: uid, email, createdAt}] : []});
     if (!url.endsWith(product)) return absent;
     return ok({name: 'projects/oldx-staging/databases/(default)/documents/' + product,
-      updateTime: '2026-11-14T00:00:01Z', fields: offlinePayloads()[product].fields});
+      createTime: at, updateTime: '2026-11-14T00:00:01Z', fields: {...offlinePayloads()[product].fields, phaseBFixtureSessionId: {stringValue: sessionId}}});
   }, journal);
   assert.equal(result.observations[0].observation, 'PRESENT_AFTER_DELETE_ACK');
   assert.equal(result.observations[3].observation, 'PRESENT_PROVENANCE_MISMATCH');

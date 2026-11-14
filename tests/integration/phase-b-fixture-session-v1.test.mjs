@@ -21,6 +21,7 @@ function fake(intercept = () => undefined) {
   const requests = [];
   const passwords = new Set();
   const latest = (resource) => records.findLast((entry) => entry.resource === resource);
+  let sessionId;
   let opened = false;
   let closed = false;
   let complete = false;
@@ -76,8 +77,8 @@ function fake(intercept = () => undefined) {
       const id = path + '/' + url.searchParams.get('documentId');
       assert.ok(firestoreDocs.includes(id) && !docs.has(id));
       assert.equal(latest(id).state, 'CREATE_UNKNOWN');
-      assert.deepEqual(body, offlinePayloads()[id]);
-      const doc = {name: prefix + id, fields: structuredClone(body.fields), updateTime: time};
+      assert.deepEqual(body.fields, {...offlinePayloads()[id].fields, phaseBFixtureSessionId: {stringValue: sessionId}});
+      const doc = {name: prefix + id, fields: structuredClone(body.fields), createTime: time, updateTime: time};
       docs.set(id, doc);
       return ok(doc);
     }
@@ -90,7 +91,8 @@ function fake(intercept = () => undefined) {
     return {status: 204};
   }
 
-  function openJournal() {
+  function openJournal(id) {
+    sessionId = id;
     opened = true;
     return {
       record: (resource, state, evidence) => records.push({resource, state, evidence}),
@@ -174,12 +176,18 @@ test('wrong sign-in UID or token audience stops before deletion', async () => {
 });
 
 test('modified document or replaced Auth account blocks its deletion', async () => {
-  for (const kind of ['doc', 'auth']) {
-    const target = kind === 'doc' ? firestoreDocs[1] : authUids[0];
+  for (const kind of ['doc', 'marker', 'missing-marker', 'create-time', 'owner', 'auth']) {
+    const target = kind === 'auth' ? authUids[0] : firestoreDocs[1];
     const session = fake(({method, url, body}, {docs, users, latest}) => {
       if (latest(target)?.state !== 'CREATED_VERIFIED') return;
-      if (kind === 'doc' && method === 'GET' && url.endsWith(target)) {
-        return ok({...docs.get(target), updateTime: '2026-11-14T00:00:01Z'});
+      if (kind !== 'auth' && method === 'GET' && url.endsWith(target)) {
+        const changed = structuredClone(docs.get(target));
+        if (kind === 'doc') changed.updateTime = '2026-11-14T00:00:01Z';
+        if (kind === 'create-time') changed.createTime = '2026-11-14T00:00:01Z';
+        if (kind === 'marker') changed.fields.phaseBFixtureSessionId.stringValue = 'different-session';
+        if (kind === 'missing-marker') delete changed.fields.phaseBFixtureSessionId;
+        if (kind === 'owner') changed.fields.ownerUid.stringValue = 'unexpected-owner';
+        return ok(changed);
       }
       if (kind === 'auth' && body?.localId?.[0] === target) {
         return ok({users: [{...users.get(target), createdAt: '1794614400001'}]});

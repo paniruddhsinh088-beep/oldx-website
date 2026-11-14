@@ -33,15 +33,27 @@ export function planCleanup({inventory, observations}) {
       actions.push({type:'auth',id:target.id, operation:'EXACT_UID_DELETE_REQUIRES_OPERATOR_APPROVAL',
         note:'No atomic generation precondition; immediately reread; stop on ambiguity'});
     } else {
-      if (typeof current.updateTime !== 'string' || !current.updateTime ||
-          typeof own.createTime !== 'string' || own.createTime !== current.createTime ||
-          current.marker !== own.marker || !own.marker ||
-          current.hasUnexpectedChanges === true)
+      if (!validFirestoreReceipt(own, own.sessionId) || current.hasUnexpectedChanges === true)
         throw Error('STOP: Firestore provenance/updateTime unavailable');
       actions.push({type:'firestore',id:target.id,operation:'CONDITIONAL_DELETE_REQUIRES_OPERATOR_APPROVAL',
-        precondition:{currentDocument:{updateTime:current.updateTime}}});
+        precondition:conditionalFixtureDelete(own, current)});
     }
   }
   if (new Set(actions.map(x=>x.type+':'+x.id)).size !== 4) throw Error('STOP: unexpected target');
   return Object.freeze(actions);
+}
+
+const firestoreTimestamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/;
+
+export function validFirestoreReceipt(receipt, sessionId) {
+  return typeof sessionId === 'string' && receipt?.marker === sessionId &&
+    [receipt.createTime, receipt.updateTime].every(time =>
+      typeof time === 'string' && firestoreTimestamp.test(time) && Number.isFinite(Date.parse(time)));
+}
+
+export function conditionalFixtureDelete(original, observed) {
+  if (!validFirestoreReceipt(original, original?.marker) ||
+      original.marker !== observed?.marker || original.createTime !== observed.createTime ||
+      original.updateTime !== observed.updateTime) throw Error('STOP: Firestore provenance/updateTime unavailable');
+  return {currentDocument: {updateTime: original.updateTime}};
 }

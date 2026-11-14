@@ -6,7 +6,7 @@ function fixture() {
  const targets=[...EXACT_UIDS.map(id=>({type:'auth',id})),...EXACT_DOCS.map(id=>({type:'firestore',id}))];
  return {
   inventory:targets.map(x=>({...x,sessionId:'synthetic-run-1',createdByThisRun:true,creationTime:'2026-11-13T18:00:00Z',
-   createTime:'2026-11-13T18:00:00Z',marker:'synthetic-run-1'})),
+   createTime:'2026-11-13T18:00:00Z',marker:'synthetic-run-1',updateTime:'2026-11-13T18:01:00Z'})),
   observations:targets.map(x=>({...x,sessionId:'synthetic-run-1',exists:true,creationTime:'2026-11-13T18:00:00Z',
    createTime:'2026-11-13T18:00:00Z',marker:'synthetic-run-1',updateTime:'2026-11-13T18:01:00Z',exactUid:x.id}))
  };

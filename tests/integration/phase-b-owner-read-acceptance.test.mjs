@@ -63,7 +63,7 @@ test('unexpected data, caching or a transport failure stops immediately and stay
       if (caseId !== 'owner') return response;
       if (issue === 'transport') throw new Error('raw upstream detail');
       if (issue === 'cache') return {...response, cacheControl: 'public'};
-      return {...response, body: {...response.body, legacyRecord: 'unexpected'}};
+      return {...response, body: {...response.body, phaseBFixtureSessionId: 'unexpected'}};
     }}), {message: 'ACCEPTANCE_STOPPED_owner'});
     assert.deepEqual(seen, ['disabled-health', 'disabled-owner', 'invoker-denied', 'owner']);
   }
