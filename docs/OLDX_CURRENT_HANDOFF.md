@@ -606,3 +606,7 @@ Owner evidence establishes HTTP_400 across all five staging checks. Added --diag
 ## Phase B Firestore resource-name limitation
 
 Owner HTTP 400 points to fullResourceName. Database-level Troubleshooter support is unconfirmed. The exact database target and condition context remain pinned. Diagnostics now distinguish explicit resource-name and unsupported-type reasons without inferring either from the field hint. Offline tests passed 17/17. The staging gate documents the scoped alternative. No live calls or changes. Production HOLD / NO-GO.
+
+## Phase B direct Firestore IAM preparation
+
+The import-only, independently hard-disabled verifier separates getMetadata from empty read-only transaction/rollback evidence for databases.get. Mocked regression covered credential rejection, scope guards, separate permission outcomes, rollback failure and redaction. No live token or request. Write and delete-denial probes remain separately gated plans. Effective scope and untested permissions remain UNVERIFIED. Production HOLD / NO-GO.

@@ -11,6 +11,7 @@ import {offlinePayloads} from './phase-b-firestore-typed-fixture-preview.mjs';
 import {runOwnerReadAcceptance, ownerReadAudience, readBounded, inspectAnonymousDenial} from './phase-b-owner-read-acceptance.mjs';
 
 const LIVE_EXECUTION_ENABLED = false;
+const LIVE_DIRECT_FIRESTORE_IAM_ENABLED = false;
 const operator = 'yasminparmar087@gmail.com';
 const healthRevision = 'oldx-owner-read-00002-tid';
 const healthProbeUrl = ownerReadAudience.replace('https://', 'https://healthcheck---') + '/health';
@@ -707,6 +708,87 @@ async function liveSend({method, url, body, publicRequest}) {
     method, headers, body: body === undefined ? undefined : JSON.stringify(body),
     redirect: 'error', signal: AbortSignal.timeout(20_000),
   });
+}
+
+// No fixture or document access in this transport. The diagnostic only reads
+// database metadata and opens/closes an empty read-only transaction.
+async function directFirestoreIam(read, request) {
+  const account = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
+  const name = 'projects/' + project + '/databases/' + database;
+  const base = 'https://firestore.googleapis.com/v1/' + name;
+  const report = {
+    configuration: 'UNVERIFIED', credential: 'UNVERIFIED', transactionRollback: 'UNVERIFIED',
+    permissions: Object.fromEntries([
+      'datastore.databases.get', 'datastore.databases.getMetadata', 'datastore.entities.get',
+      'datastore.entities.create', 'datastore.entities.update', 'datastore.entities.delete',
+    ].map((key) => [key, {result: 'UNVERIFIED'}])),
+    databaseIsolation: 'UNVERIFIED', production: 'HOLD_NO_GO',
+  };
+  const config = inspectPhaseBConfiguration(read, {preflight: true});
+  report.configuration = config.configuration === 'MATCH' ? 'PASS' :
+    Object.values(config.checks).includes('MISMATCH') ? 'FAIL' : 'UNVERIFIED';
+  if (report.configuration !== 'PASS') return report;
+
+  const tokenSyntax = /^[A-Za-z0-9._~+/-]{1,8192}={0,2}$/;
+  async function call(url, method, credential, body) {
+    return request(url, {
+      method, redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: {Authorization: 'Bearer ' + credential, 'Content-Type': 'application/json',
+        'X-Goog-User-Project': project},
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  }
+
+  let runtimeToken;
+  try {
+    const operatorToken = read('auth', 'print-access-token', '--account=' + operator, '--quiet');
+    requireSafe(typeof operatorToken === 'string' && tokenSyntax.test(operatorToken), 'INVALID_OPERATOR_CREDENTIAL');
+    const {status, data} = await call(
+      'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' + account + ':generateAccessToken',
+      'POST', operatorToken, {scope: ['https://www.googleapis.com/auth/datastore'], lifetime: '300s'});
+    report.credentialHttpStatus = Number.isInteger(status) ? status : null;
+    const expiry = Date.parse(data?.expireTime);
+    requireSafe(status === 200 && typeof data?.accessToken === 'string' && tokenSyntax.test(data.accessToken) &&
+      data.accessToken !== operatorToken && expiry > Date.now() && expiry <= Date.now() + 305_000, 'TOKEN_UNVERIFIED');
+    runtimeToken = data.accessToken;
+    report.credential = 'PASS';
+  } catch {
+    return report;
+  }
+
+  const metadata = report.permissions['datastore.databases.getMetadata'];
+  try {
+    const {status, data} = await call(base, 'GET', runtimeToken);
+    metadata.httpStatus = Number.isInteger(status) ? status : null;
+    if (status === 200 && data?.name === name) metadata.result = 'PASS';
+    if (status === 403) metadata.result = 'FAIL'; // Request rejected; cause is not inferred.
+  } catch {
+    // Unavailable evidence remains unverified.
+  }
+  const transaction = report.permissions['datastore.databases.get'];
+  try {
+    const {status, data} = await call(base + '/documents:beginTransaction', 'POST', runtimeToken,
+      {options: {readOnly: {}}});
+    transaction.httpStatus = Number.isInteger(status) ? status : null;
+    if (status === 403) transaction.result = 'FAIL';
+    if (status !== 200 || typeof data?.transaction !== 'string' ||
+        !/^[A-Za-z0-9+/]{1,8192}={0,2}$/.test(data.transaction)) return report;
+    transaction.result = 'PASS';
+    const rollback = await call(base + '/documents:rollback', 'POST', runtimeToken, {transaction: data.transaction});
+    report.transactionRollback = rollback.status === 200 && isDeepStrictEqual(rollback.data, {}) ? 'PASS' : 'FAIL';
+  } catch {
+    // No retry, no document cleanup, no raw response or transaction ID.
+  }
+  return report;
+}
+
+export function simulateDirectFirestoreIam(read, request) {
+  return directFirestoreIam(read, request);
+}
+
+export async function runDirectFirestoreIam() {
+  requireSafe(LIVE_DIRECT_FIRESTORE_IAM_ENABLED, 'DIRECT_FIRESTORE_IAM_DISABLED');
+  return directFirestoreIam(gcloud, boundedPhaseBRequest);
 }
 
 // Shared wire parsing for the fixed OAuth REST requests and isolated tests.

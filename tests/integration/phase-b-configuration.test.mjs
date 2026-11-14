@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {inspectPhaseBConfiguration, inspectPhaseBPreflight, inspectPhaseBEffectiveIam} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {inspectPhaseBConfiguration, inspectPhaseBPreflight, inspectPhaseBEffectiveIam, simulateDirectFirestoreIam, runDirectFirestoreIam} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const service = 'oldx-owner-read';
 const runtime = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
@@ -479,5 +479,67 @@ test('explicit resource error reasons stay distinct and never trigger a project-
     assert.deepEqual(targets, ['//firestore.googleapis.com/projects/oldx-staging/databases/(default)']);
     assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
     assert.equal(report.databasePermissions['datastore.databases.get'].diagnostic.reason, reason);
+  }
+});
+
+test('direct Firestore IAM separates metadata and transaction permissions and preserves the closed live gate', async () => {
+  await assert.rejects(runDirectFirestoreIam(), /DIRECT_FIRESTORE_IAM_DISABLED/);
+  for (const scenario of ['success', 'token-denied', 'metadata-denied', 'rollback-denied', 'wrong-project', 'wrong-account']) {
+    const fallback = preflightRead();
+    const seen = [];
+    const base = 'https://firestore.googleapis.com/v1/projects/oldx-staging/databases/(default)';
+    const report = await simulateDirectFirestoreIam((...args) => {
+      if (args[0] === 'config' && scenario === 'wrong-project') return 'other-project';
+      if (args[0] === 'auth' && args[1] === 'list' && scenario === 'wrong-account') return 'other@example.invalid';
+      if (args[0] === 'auth' && args[1] === 'print-access-token') {
+        assert.ok(args.includes('--account=yasminparmar087@gmail.com'));
+        seen.push('credential');
+        return 'fake-operator-secret';
+      }
+      return fallback(...args);
+    }, (url, options) => {
+      seen.push(url);
+      assert.equal(options.redirect, 'error');
+      assert.equal(options.headers['X-Goog-User-Project'], 'oldx-staging');
+      if (seen.length === 2) {
+        assert.equal(url, 'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com:generateAccessToken');
+        assert.equal(options.headers.Authorization, 'Bearer fake-operator-secret');
+        assert.deepEqual(JSON.parse(options.body), {scope: ['https://www.googleapis.com/auth/datastore'], lifetime: '300s'});
+        return scenario === 'token-denied' ? {status: 403, data: {message: 'private detail'}} :
+          {status: 200, data: {accessToken: 'fake-runtime-secret', expireTime: new Date(Date.now() + 299_000).toISOString()}};
+      }
+      assert.equal(options.headers.Authorization, 'Bearer fake-runtime-secret');
+      if (url === base) {
+        assert.equal(options.method, 'GET');
+        return scenario === 'metadata-denied' ? {status: 403} : {status: 200, data: {
+          name: 'projects/oldx-staging/databases/(default)', extra: 'private detail',
+        }};
+      }
+      if (url === base + '/documents:beginTransaction') {
+        assert.deepEqual(JSON.parse(options.body), {options: {readOnly: {}}});
+        return {status: 200, data: {transaction: 'dHJhbnNhY3Rpb24='}};
+      }
+      assert.equal(url, base + '/documents:rollback');
+      assert.deepEqual(JSON.parse(options.body), {transaction: 'dHJhbnNhY3Rpb24='});
+      return scenario === 'rollback-denied' ? {status: 403} : {status: 200, data: {}};
+    });
+    if (scenario.startsWith('wrong-')) {
+      assert.equal(report.configuration, 'FAIL');
+      assert.deepEqual(seen, []);
+    } else if (scenario === 'token-denied') {
+      assert.equal(report.credentialHttpStatus, 403);
+      assert.equal(report.permissions['datastore.databases.get'].result, 'UNVERIFIED');
+      assert.equal(seen.length, 2);
+    } else {
+      assert.equal(seen.length, 5);
+      assert.equal(report.permissions['datastore.databases.get'].result, 'PASS');
+      assert.equal(report.permissions['datastore.databases.getMetadata'].result, scenario === 'metadata-denied' ? 'FAIL' : 'PASS');
+      assert.equal(report.transactionRollback, scenario === 'rollback-denied' ? 'FAIL' : 'PASS');
+    }
+    for (const permission of ['get', 'create', 'update', 'delete']) {
+      assert.equal(report.permissions['datastore.entities.' + permission].result, 'UNVERIFIED');
+    }
+    assert.equal(report.databaseIsolation, 'UNVERIFIED');
+    assert.doesNotMatch(JSON.stringify(report), /secret|private detail|dHJhbn/);
   }
 });
