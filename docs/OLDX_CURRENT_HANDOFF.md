@@ -651,3 +651,10 @@ Yasmin's latest Cloud Shell screenshot shows successful execution of:
 The command returned no matching output and returned to the shell prompt. This is evidence that the new custom role has no direct binding in the displayed project's IAM policy. Combined with the prior service-account policy screenshot, the intended binding is service-account-level only. No further IAM change is indicated.
 
 **Remaining gate:** the direct Firestore IAM verifier mints a short-lived OAuth access token using the newly granted permission and performs metadata/read-only-transaction probes. Treat running it as a separate credential-use action; obtain Yasmin's explicit confirmation for that verifier run before invoking it. Keep the verifier's existing default-off execution gate and all other live controls unchanged. Production HOLD / NO-GO.
+
+
+### Approved direct Firestore verifier run — blocked by hard-disabled source gate (2026-11-14)
+
+Yasmin explicitly approved one supervised run of the read-only direct Firestore IAM verifier after the narrowly scoped custom role and service-account binding were verified. Source reinspection found that `LIVE_DIRECT_FIRESTORE_IAM_ENABLED` is a literal `false`, and `main()` exposes no CLI argument for `runDirectFirestoreIam()`. Therefore the approved run cannot be invoked through the current CLI; the exported function itself throws `DIRECT_FIRESTORE_IAM_DISABLED`. **No attempt was made to bypass the gate and no verifier/token request ran.**
+
+Next safe step requires a minimal, reviewed, default-off invocation path for this single diagnostic, preserving the hard-disabled default and requiring an explicit one-run opt-in. Add focused tests proving default invocation is blocked and opt-in invokes only the read-only metadata GET plus empty read-only transaction begin/rollback. Do not change fixture execution, any other activation gate, IAM, Rules, Billing, Cloud Run, or Production. The owner's prior approval covers one verifier run, not general activation; any implementation must remain narrowly scoped to that run and be reviewed before use. Production HOLD / NO-GO.
