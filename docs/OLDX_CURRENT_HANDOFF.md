@@ -658,3 +658,18 @@ The command returned no matching output and returned to the shell prompt. This i
 Yasmin explicitly approved one supervised run of the read-only direct Firestore IAM verifier after the narrowly scoped custom role and service-account binding were verified. Source reinspection found that `LIVE_DIRECT_FIRESTORE_IAM_ENABLED` is a literal `false`, and `main()` exposes no CLI argument for `runDirectFirestoreIam()`. Therefore the approved run cannot be invoked through the current CLI; the exported function itself throws `DIRECT_FIRESTORE_IAM_DISABLED`. **No attempt was made to bypass the gate and no verifier/token request ran.**
 
 Next safe step requires a minimal, reviewed, default-off invocation path for this single diagnostic, preserving the hard-disabled default and requiring an explicit one-run opt-in. Add focused tests proving default invocation is blocked and opt-in invokes only the read-only metadata GET plus empty read-only transaction begin/rollback. Do not change fixture execution, any other activation gate, IAM, Rules, Billing, Cloud Run, or Production. The owner's prior approval covers one verifier run, not general activation; any implementation must remain narrowly scoped to that run and be reviewed before use. Production HOLD / NO-GO.
+
+
+### Minimal one-shot Direct Firestore IAM CLI opt-in added — 2026-11-14
+
+Following Yasmin's explicit approval for the minimal code change, `scripts/phase-b-fixture-session-v1.mjs` now exposes only the exact CLI entry `--direct-firestore-iam` and requires the same process to carry `OLDX_DIRECT_FIRESTORE_IAM_APPROVAL=YASMIN_APPROVED_ONCE`. The exported runner remains blocked unless passed its explicit owner-approved invocation flag. No default-on constant was introduced. The CLI also requires Linux Cloud Shell and verifies the active project/operator before running.
+
+The diagnostic itself is unchanged: it requests a 300-second datastore-scoped access token for the exact staging runtime service account, performs only Firestore database metadata GET and an empty read-only transaction begin/rollback, and reports no token, transaction ID, raw response body or document data. It does not access documents. The existing fixture `--execute` gate remains false and untouched; no fixture, Cloud Run, Rules, Billing, IAM or Production action is part of this code change.
+
+Added focused assertions in `tests/integration/phase-b-configuration.test.mjs` for default-off behavior, exact flag + exact approval environment value, and rejection of missing/wrong/extra arguments. Existing simulated verifier scenarios remain in place. **Tests have not yet been executed in a local checkout in this session**; run `node --test tests/integration/phase-b-configuration.test.mjs` from the review-branch checkout before the one approved Cloud Shell invocation.
+
+After the focused test passes, the one approved invocation is:
+`OLDX_DIRECT_FIRESTORE_IAM_APPROVAL=YASMIN_APPROVED_ONCE node scripts/phase-b-fixture-session-v1.mjs --direct-firestore-iam`
+Run it once only from the approved `oldx-staging` Cloud Shell session authenticated as `yasminparmar087@gmail.com`. The command exits 0 only when configuration, token, metadata GET, read-only transaction and rollback all pass; otherwise it prints sanitized status and exits 3 (or blocks before requests). Do not repeat a failed/ambiguous run without a new owner decision. This CLI opt-in is not a Cloud Run or fixture activation.
+
+**Evidence boundary:** code and tests were updated on `security-hardening-review`; no live token request or Firestore probe has yet been executed. Metadata permission and transaction permission are separate evidence. Entity get/create/update/delete and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
