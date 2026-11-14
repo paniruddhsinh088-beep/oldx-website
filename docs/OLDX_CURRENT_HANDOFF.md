@@ -642,3 +642,12 @@ Yasmin's latest Cloud Shell screenshot confirms:
 - `gcloud iam service-accounts get-iam-policy oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com --project=oldx-staging` returns both expected bindings for `user:yasminparmar087@gmail.com`: the new custom role `projects/oldx-staging/roles/oldxServiceAccountAccessTokenCreator` and the pre-existing `roles/iam.serviceAccountOpenIdTokenCreator`.
 
 This verifies the role definition and service-account-level bindings from the displayed output. It does **not** by itself prove that the custom role is absent from the project-level IAM policy; that remains a separate read-only check. No verifier execution is claimed yet.
+
+
+### Project-level binding exclusion check — 2026-11-14
+
+Yasmin's latest Cloud Shell screenshot shows successful execution of:
+`gcloud projects get-iam-policy oldx-staging --format=json | jq -r '.bindings[] | select(.role | contains("oldxServiceAccountAccessTokenCreator"))'`
+The command returned no matching output and returned to the shell prompt. This is evidence that the new custom role has no direct binding in the displayed project's IAM policy. Combined with the prior service-account policy screenshot, the intended binding is service-account-level only. No further IAM change is indicated.
+
+**Remaining gate:** the direct Firestore IAM verifier mints a short-lived OAuth access token using the newly granted permission and performs metadata/read-only-transaction probes. Treat running it as a separate credential-use action; obtain Yasmin's explicit confirmation for that verifier run before invoking it. Keep the verifier's existing default-off execution gate and all other live controls unchanged. Production HOLD / NO-GO.
