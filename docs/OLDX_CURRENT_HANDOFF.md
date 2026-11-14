@@ -676,3 +676,12 @@ Run it once only from the approved `oldx-staging` Cloud Shell session authentica
 
 
 The review safety workflow `.github/workflows/oldx-review-safety.yml` now runs the focused Phase B configuration/verifier regression file with `node --test tests/integration/phase-b-configuration.test.mjs`. Workflow run `43540704414` was created for commit `7723c67dff6408173d2c96d0867d6f85ddb3b017`; its result is pending at the time of this handoff update. Do not treat the tests as passed until the run completes successfully.
+
+
+### CI completion update — 2026-11-14
+
+Follow-up check confirms GitHub Actions run `43540736087` completed with conclusion **success** on review-branch HEAD `d69c044afcfcbb8498aeec1143da323992eec78d`. The previously observed in-progress state is superseded. Its focused Phase B regression step had passed; the workflow as a whole is now successful. No new workflow was triggered and no local tests were rerun.
+
+**Next action:** bring the existing Cloud Shell checkout to this exact review-branch commit only after confirming its current branch and clean/dirty state; preserve the untracked `.firebaserc` untouched. Then run the exact focused test from the updated checkout if it is not already covered by the successful CI (avoid duplicate work). Only after confirming the code and operator/project guards in that checkout, Yasmin may perform the already approved one-time read-only verifier invocation from her `oldx-staging` Cloud Shell session. Do not invoke it from Codex or another account/session. If the checkout cannot be updated safely, stop and report; do not overwrite local work.
+
+No live verifier has yet been run. Entity get/create/update/delete and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
