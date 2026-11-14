@@ -685,3 +685,22 @@ Follow-up check confirms GitHub Actions run `43540736087` completed with conclus
 **Next action:** bring the existing Cloud Shell checkout to this exact review-branch commit only after confirming its current branch and clean/dirty state; preserve the untracked `.firebaserc` untouched. Then run the exact focused test from the updated checkout if it is not already covered by the successful CI (avoid duplicate work). Only after confirming the code and operator/project guards in that checkout, Yasmin may perform the already approved one-time read-only verifier invocation from her `oldx-staging` Cloud Shell session. Do not invoke it from Codex or another account/session. If the checkout cannot be updated safely, stop and report; do not overwrite local work.
 
 No live verifier has yet been run. Entity get/create/update/delete and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
+
+
+## 2026-11-14 — Owner-reported one-shot direct Firestore IAM verifier result
+
+Yasmin supplied a Cloud Shell screenshot after the previously approved one-shot invocation. The displayed sanitized report records:
+- configuration: PASS
+- credential: PASS; credential HTTP status 200
+- `datastore.databases.get`: PASS (HTTP 200)
+- empty read-only transaction and rollback: PASS
+- `datastore.databases.getMetadata`: FAIL (HTTP 403)
+- `datastore.entities.get/create/update/delete`: UNVERIFIED
+- database isolation: UNVERIFIED
+- production: HOLD_NO_GO
+
+This is owner-provided screenshot evidence, not an independently re-run check. The metadata 403 confirms that this particular metadata request was rejected; it does not identify the exact policy/enforcement cause. Preserve the least-privilege decision: do not add `datastore.databases.getMetadata` solely to make the diagnostic exit zero, because the reviewed Owner Read runtime path does not require metadata GET. The successful transaction/rollback is separate evidence for `datastore.databases.get`.
+
+The screenshot also shows the Cloud Shell checkout on `security-hardening-review` at local and fetched remote commit `2d25a5273fd9b4579b76ec3de2e4b7e405bf04e3`. Two untracked Python cache directories were visible (`scripts/__pycache__/` and `tests/integration/__pycache__/`); leave them untouched. No additional verifier run, code/test run, IAM change, Firebase Rules change, Billing change, Cloud Run activation, fixture operation, or Production action is authorized or claimed by this evidence update.
+
+**Next safe task:** continue repository-only review of the already-existing Phase B fixture lifecycle, journal/recovery, exact-ID cleanup safeguards and offline test coverage. Do not create or read live Auth/Firestore fixtures. The earlier handoff instruction to run the direct verifier is superseded by this owner-reported result; do not repeat the one-shot run. Entity permissions and database isolation remain UNVERIFIED. Production HOLD / NO-GO.
