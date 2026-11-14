@@ -4,7 +4,7 @@ import test from 'node:test';
 import {fileURLToPath} from 'node:url';
 import {authUids, firestoreDocs} from '../../scripts/phase-b-http-contract-review.mjs';
 import {offlinePayloads, privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
-import {simulateFixtureSession, simulateFixtureAcceptance} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {simulateFixtureSession, simulateFixtureAcceptance, simulateRuntimeFixtureSession} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
 const prefix = 'projects/oldx-staging/databases/(default)/documents/';
@@ -107,7 +107,7 @@ function fake(intercept = () => undefined) {
 
   return {run: () => simulateFixtureSession(send, openJournal),
     accept: (acceptance) => simulateFixtureAcceptance({fixtureSend: send, openFakeJournal: openJournal, acceptance}),
-    latest, requests, records,
+    send, openJournal, latest, requests, records,
     get opened() { return opened; }, get closed() { return closed; }, get complete() { return complete; }};
 }
 
@@ -264,6 +264,64 @@ test('integrated Phase B acceptance binds fixture identities before guarded clea
       assert.deepEqual((await pending).passed, Object.keys(replies));
       assert.ok(session.closed && session.complete);
       assert.equal(session.records.length, 16);
+    }
+  }
+});
+
+test('runtime fixture path scopes identity, update and operator cleanup', async () => {
+  for (const mode of ['success', 'wrong-project', 'wrong-db', 'collision', 'stale', 'ambiguous', 'foreign']) {
+    const session = fake();
+    const patches = [];
+    let deletes = 0;
+    const options = {
+      projectId: mode === 'wrong-project' ? 'other' : 'oldx-staging',
+      databaseId: mode === 'wrong-db' ? 'other' : '(default)',
+      journal: session.openJournal,
+      credential: {token: 'fake-runtime', expiry: Date.now() + 60_000},
+      operatorSend(req) {
+        if (req.url.endsWith('/documents:commit')) {
+          deletes++;
+          if (deletes === 1) assert.equal(req.body.writes[0].currentDocument.updateTime, '2026-11-14T00:00:01Z');
+        }
+        assert.notEqual(req.method, 'PATCH');
+        return session.send(req);
+      },
+      async runtimeRequest(url, opts) {
+        assert.equal(opts.headers.Authorization, 'Bearer fake-runtime');
+        assert.equal(opts.redirect, 'error');
+        const req = {url, method: opts.method, body: opts.body && JSON.parse(opts.body)};
+        if (req.method === 'POST' && mode === 'collision') return {status: 409};
+        if (req.method === 'PATCH') {
+          patches.push(req);
+          const target = new URL(url);
+          assert.equal(target.searchParams.get('currentDocument.updateTime'), time);
+          assert.equal(target.searchParams.get('updateMask.fieldPaths'), 'revision');
+          assert.deepEqual(req.body, {fields: {revision: {integerValue: '2'}}});
+          if (mode === 'stale') return {status: 412};
+          if (mode === 'ambiguous') throw new Error('timeout');
+          const current = (await session.send({method: 'GET', url: target.origin + target.pathname})).data;
+          current.fields.revision.integerValue = '2';
+          current.updateTime = '2026-11-14T00:00:01Z';
+          return ok(current);
+        }
+        const result = await session.send(req);
+        if (mode === 'foreign' && req.method === 'POST') result.data = {...result.data, name: prefix + 'foreign'};
+        return result;
+      },
+    };
+    if (mode.startsWith('wrong-')) {
+      assert.throws(() => simulateRuntimeFixtureSession(options), /RUNTIME_FIXTURE_SCOPE_DENIED/);
+      assert.equal(session.opened, false);
+    } else if (mode === 'success') {
+      await simulateRuntimeFixtureSession(options);
+      assert.equal(deletes, 2);
+      assert.equal(patches.length, 1);
+      assert.equal(session.complete, true);
+    } else {
+      await assert.rejects(simulateRuntimeFixtureSession(options), /SIMULATION_STOPPED/);
+      assert.equal(deletes, 0);
+      assert.equal(patches.length, ['stale', 'ambiguous'].includes(mode) ? 1 : 0);
+      if (patches.length) assert.equal(session.latest(firestoreDocs[1]).state, 'UPDATE_UNKNOWN');
     }
   }
 });

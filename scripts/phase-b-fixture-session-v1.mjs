@@ -23,7 +23,7 @@ const documentRoot = 'projects/' + project + '/databases/' + database + '/docume
 const firestore = 'https://firestore.googleapis.com/v1/' + documentRoot;
 const payloads = offlinePayloads();
 const resources = Object.freeze([...authUids, ...firestoreDocs]);
-const states = new Set(['CREATE_UNKNOWN', 'CREATED_VERIFIED', 'DELETE_UNKNOWN', 'DELETE_ACKNOWLEDGED']);
+const states = new Set(['CREATE_UNKNOWN', 'CREATED_VERIFIED', 'UPDATE_UNKNOWN', 'UPDATED_VERIFIED', 'DELETE_UNKNOWN', 'DELETE_ACKNOWLEDGED']);
 
 function requireSafe(condition, code) {
   if (!condition) throw new Error(code);
@@ -54,6 +54,11 @@ function transport(send, key, identityProject = project) {
     createDoc(path, sessionId) {
       const [collection, id] = path.split('/');
       return call('POST', firestore + collection + '?documentId=' + id, fixturePayload(path, sessionId));
+    },
+    updateProduct(path, updateTime) {
+      requireSafe(path === firestoreDocs[1], 'UNEXPECTED_FIXTURE');
+      return call('PATCH', firestore + path + '?updateMask.fieldPaths=revision&currentDocument.updateTime=' +
+        encodeURIComponent(updateTime), {fields: {revision: {integerValue: '2'}}});
     },
     async signIn(uid, email, password) {
       // HTTPS response from the fixed Firebase endpoint. Claims are checked for project
@@ -91,7 +96,7 @@ function fixturePayload(path, sessionId) {
   return {fields: {...payloads[path].fields, [markerField]: {stringValue: sessionId}}};
 }
 
-function documentEvidence(doc, path, sessionId) {
+function documentEvidence(doc, path, sessionId, updated = false) {
   const fields = doc?.fields;
   const profile = fields?.profile?.mapValue?.fields;
   // Firestore may omit the repeated values field for an empty array.
@@ -101,8 +106,10 @@ function documentEvidence(doc, path, sessionId) {
       fields: {...profile, photos: {...profile.photos, arrayValue: {values: []}}}}},
   } : fields;
   const receipt = {marker: fields?.[markerField]?.stringValue, createTime: doc?.createTime, updateTime: doc?.updateTime};
+  const expected = fixturePayload(path, sessionId).fields;
+  if (updated) expected.revision = {integerValue: '2'};
   requireSafe(doc?.name === documentRoot + path && validFirestoreReceipt(receipt, sessionId) &&
-    isDeepStrictEqual(normalized, fixturePayload(path, sessionId).fields), 'DOCUMENT_PROVENANCE_MISMATCH');
+    isDeepStrictEqual(normalized, expected), 'DOCUMENT_PROVENANCE_MISMATCH');
   return receipt;
 }
 
@@ -114,7 +121,7 @@ async function inventory(api) {
 }
 
 // Kept private so CLI callers cannot supply a transport or bypass the execution gate.
-async function runSession(api, openJournal, afterSignIn) {
+async function runSession(api, openJournal, afterSignIn, runtime = null) {
   const sessionId = randomUUID();
   const emails = authUids.map((uid) => uid + '-' + sessionId + '@example.invalid');
   requireSafe((await inventory(api)).every((present) => !present), 'FIXTURE_COLLISION');
@@ -125,6 +132,7 @@ async function runSession(api, openJournal, afterSignIn) {
   const passwords = [];
   const tokens = [];
   const created = new Map();
+  const fixtureApi = runtime ?? api;
   try {
     for (const [i, uid] of authUids.entries()) {
       const email = emails[i];
@@ -138,8 +146,8 @@ async function runSession(api, openJournal, afterSignIn) {
     }
     for (const path of firestoreDocs) {
       journal.record(path, 'CREATE_UNKNOWN', {marker: sessionId});
-      const receipt = documentEvidence(await api.createDoc(path, sessionId), path, sessionId);
-      requireSafe(isDeepStrictEqual(documentEvidence(await api.getDoc(path), path, sessionId), receipt),
+      const receipt = documentEvidence(await fixtureApi.createDoc(path, sessionId), path, sessionId);
+      requireSafe(isDeepStrictEqual(documentEvidence(await fixtureApi.getDoc(path), path, sessionId), receipt),
         'DOCUMENT_CREATE_NOT_VERIFIED');
       journal.record(path, 'CREATED_VERIFIED', receipt);
       created.set(path, receipt);
@@ -150,9 +158,22 @@ async function runSession(api, openJournal, afterSignIn) {
     }
     if (afterSignIn) await afterSignIn(tokens[0], tokens[1]);
     tokens.length = 0;
+    if (runtime) {
+      const path = firestoreDocs[1];
+      const original = created.get(path);
+      conditionalFixtureDelete(original, documentEvidence(await runtime.getDoc(path), path, sessionId));
+      journal.record(path, 'UPDATE_UNKNOWN', original);
+      const updated = documentEvidence(await runtime.updateProduct(path, original.updateTime), path, sessionId, true);
+      requireSafe(updated.createTime === original.createTime && updated.updateTime !== original.updateTime &&
+        isDeepStrictEqual(documentEvidence(await runtime.getDoc(path), path, sessionId, true), updated),
+      'DOCUMENT_UPDATE_NOT_VERIFIED');
+      journal.record(path, 'UPDATED_VERIFIED', updated);
+      created.set(path, updated);
+    }
     for (const path of [...firestoreDocs].reverse()) {
       const receipt = created.get(path);
-      const {currentDocument} = conditionalFixtureDelete(receipt, documentEvidence(await api.getDoc(path), path, sessionId));
+      const {currentDocument} = conditionalFixtureDelete(receipt,
+        documentEvidence(await api.getDoc(path), path, sessionId, Boolean(runtime && path === firestoreDocs[1])));
       journal.record(path, 'DELETE_UNKNOWN', receipt);
       await api.deleteDoc(path, currentDocument.updateTime);
       journal.record(path, 'DELETE_ACKNOWLEDGED');
@@ -252,6 +273,7 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
   let previousTime = started;
   const latest = new Map();
   const evidence = new Map();
+  const updated = new Set();
   let completed = false;
   for (const line of lines) {
     const entry = JSON.parse(line);
@@ -268,10 +290,13 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
     if (completed) continue;
     requireSafe(resources.includes(resource) && states.has(state), 'INVALID_JOURNAL_ENTRY');
     const previous = latest.get(resource);
+    const canUpdate = header.version === 2 && resource === firestoreDocs[1];
     const next = {
       undefined: 'CREATE_UNKNOWN',
       CREATE_UNKNOWN: 'CREATED_VERIFIED',
-      CREATED_VERIFIED: 'DELETE_UNKNOWN',
+      CREATED_VERIFIED: canUpdate && state === 'UPDATE_UNKNOWN' ? 'UPDATE_UNKNOWN' : 'DELETE_UNKNOWN',
+      UPDATE_UNKNOWN: canUpdate ? 'UPDATED_VERIFIED' : undefined,
+      UPDATED_VERIFIED: 'DELETE_UNKNOWN',
       DELETE_UNKNOWN: 'DELETE_ACKNOWLEDGED',
     }[previous ?? 'undefined'];
     requireSafe(state === next, 'INVALID_JOURNAL_TRANSITION');
@@ -289,7 +314,13 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
         (header.version === 1 ? typeof ev?.updateTime === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$/.test(ev.updateTime) : validFirestoreReceipt(ev, header.sessionId)),
       'INVALID_CREATION_EVIDENCE');
       evidence.set(resource, ev);
-    } else if (state === 'DELETE_UNKNOWN') {
+    } else if (state === 'UPDATED_VERIFIED') {
+      const old = evidence.get(resource);
+      requireSafe(validFirestoreReceipt(ev, header.sessionId) && ev.createTime === old.createTime &&
+        ev.updateTime !== old.updateTime, 'INVALID_UPDATE_EVIDENCE');
+      evidence.set(resource, ev);
+      updated.add(resource);
+    } else if (state === 'DELETE_UNKNOWN' || state === 'UPDATE_UNKNOWN') {
       const old = evidence.get(resource);
       requireSafe(authResource ?
         ev?.email === old?.email && ev?.createdAt === old?.createdAt :
@@ -301,6 +332,7 @@ export function parseRecoveryJournal(contents, now = Date.now()) {
   }
   // Metadata is local-only and MUST be corroborated with remote per-ID records.
   latest.evidence = evidence;
+  latest.updated = updated;
   latest.sessionId = header.sessionId;
   latest.completed = completed;
   latest.stale = now - started >= 86_400_000;
@@ -319,13 +351,14 @@ export async function inspectRecovery(send, journal) {
       const remote = await (isAuth ? api.lookup(resource) : api.getDoc(resource));
       if (remote === null) observation = 'ABSENT_AT_CHECK_TIME';
       else if (local === 'DELETE_ACKNOWLEDGED') observation = 'PRESENT_AFTER_DELETE_ACK';
+      else if (local === 'UPDATE_UNKNOWN') observation = 'PRESENT_WITH_UNVERIFIED_UPDATE';
       else if (!evidence || local === 'CREATE_UNKNOWN') observation = 'PRESENT_WITHOUT_VERIFIED_CREATION';
       else {
         observation = 'PRESENT_PROVENANCE_MISMATCH';
         try {
           const matches = isAuth
             ? userEvidence(remote, resource, evidence.email) === evidence.createdAt
-            : isDeepStrictEqual(documentEvidence(remote, resource, journal.sessionId), evidence);
+            : isDeepStrictEqual(documentEvidence(remote, resource, journal.sessionId, journal.updated?.has(resource)), evidence);
           if (matches) observation = 'PRESENT_MATCHES_JOURNAL_REQUIRES_OWNER_REVIEW';
         } catch {
           // Keep the mismatch label and suppress all remote data.
@@ -718,8 +751,42 @@ async function liveSend({method, url, body, publicRequest}) {
 
 // No fixture or document access in this transport. The diagnostic only reads
 // database metadata and opens/closes an empty read-only transaction.
+async function mintRuntimeCredential(read, call, onStatus) {
+  const syntax = /^[A-Za-z0-9._~+/-]{1,8192}={0,2}$/;
+  const operatorToken = read('auth', 'print-access-token', '--account=' + operator, '--quiet');
+  requireSafe(typeof operatorToken === 'string' && syntax.test(operatorToken), 'INVALID_OPERATOR_CREDENTIAL');
+  const {status, data} = await call(
+    'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com:generateAccessToken',
+    'POST', operatorToken, {scope: ['https://www.googleapis.com/auth/datastore'], lifetime: '300s'});
+  onStatus?.(Number.isInteger(status) ? status : null);
+  const expiry = Date.parse(data?.expireTime);
+  requireSafe(status === 200 && typeof data?.accessToken === 'string' && syntax.test(data.accessToken) &&
+    data.accessToken !== operatorToken && expiry > Date.now() && expiry <= Date.now() + 305_000, 'TOKEN_UNVERIFIED');
+  return {token: data.accessToken, expiry};
+}
+
+function runtimeFixtureTransport(request, {token, expiry}) {
+  return transport(({method, url, body}) => {
+    requireSafe(expiry > Date.now() && firestoreDocs.some((path) => {
+      const [collection, id] = path.split('/');
+      return (method === 'GET' && url === firestore + path) ||
+        (method === 'POST' && url === firestore + collection + '?documentId=' + id) ||
+        (method === 'PATCH' && path === firestoreDocs[1] &&
+          url.startsWith(firestore + path + '?updateMask.fieldPaths=revision&currentDocument.updateTime='));
+    }), 'RUNTIME_FIXTURE_SCOPE_DENIED');
+    return request(url, {method, redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'X-Goog-User-Project': project},
+      body: body === undefined ? undefined : JSON.stringify(body)});
+  });
+}
+
+export function simulateRuntimeFixtureSession({projectId, databaseId, operatorSend, runtimeRequest, credential, journal}) {
+  requireSafe(projectId === project && databaseId === database, 'RUNTIME_FIXTURE_SCOPE_DENIED');
+  return runSession(transport(operatorSend, 'offline-test-key'), journal, undefined,
+    runtimeFixtureTransport(runtimeRequest, credential)).catch(() => { throw new Error('SIMULATION_STOPPED'); });
+}
+
 async function directFirestoreIam(read, request) {
-  const account = 'oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com';
   const name = 'projects/' + project + '/databases/' + database;
   const base = 'https://firestore.googleapis.com/v1/' + name;
   const report = {
@@ -735,7 +802,6 @@ async function directFirestoreIam(read, request) {
     Object.values(config.checks).includes('MISMATCH') ? 'FAIL' : 'UNVERIFIED';
   if (report.configuration !== 'PASS') return report;
 
-  const tokenSyntax = /^[A-Za-z0-9._~+/-]{1,8192}={0,2}$/;
   async function call(url, method, credential, body) {
     return request(url, {
       method, redirect: 'error', signal: AbortSignal.timeout(5000),
@@ -747,16 +813,9 @@ async function directFirestoreIam(read, request) {
 
   let runtimeToken;
   try {
-    const operatorToken = read('auth', 'print-access-token', '--account=' + operator, '--quiet');
-    requireSafe(typeof operatorToken === 'string' && tokenSyntax.test(operatorToken), 'INVALID_OPERATOR_CREDENTIAL');
-    const {status, data} = await call(
-      'https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/' + account + ':generateAccessToken',
-      'POST', operatorToken, {scope: ['https://www.googleapis.com/auth/datastore'], lifetime: '300s'});
-    report.credentialHttpStatus = Number.isInteger(status) ? status : null;
-    const expiry = Date.parse(data?.expireTime);
-    requireSafe(status === 200 && typeof data?.accessToken === 'string' && tokenSyntax.test(data.accessToken) &&
-      data.accessToken !== operatorToken && expiry > Date.now() && expiry <= Date.now() + 305_000, 'TOKEN_UNVERIFIED');
-    runtimeToken = data.accessToken;
+    ({token: runtimeToken} = await mintRuntimeCredential(read, call, (status) => {
+      report.credentialHttpStatus = status;
+    }));
     report.credential = 'PASS';
   } catch {
     return report;
@@ -897,7 +956,14 @@ async function main(args) {
   // descriptor, never argv, environment, a checked-in file or a terminal transcript.
   const key = readFileSync(3, 'utf8').trim();
   requireSafe(/^[A-Za-z0-9_-]{20,128}$/.test(key), 'INVALID_STAGING_WEB_KEY');
-  await runSession(transport(liveSend, key), openJournal);
+  requireSafe(inspectPhaseBConfiguration(gcloud, {preflight: true}).configuration === 'MATCH',
+    'RUNTIME_FIXTURE_CONFIGURATION_UNVERIFIED');
+  const credential = await mintRuntimeCredential(gcloud, (url, method, token, body) =>
+    boundedPhaseBRequest(url, {method, redirect: 'error', signal: AbortSignal.timeout(5000),
+      headers: {Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', 'X-Goog-User-Project': project},
+      body: JSON.stringify(body)}));
+  await runSession(transport(liveSend, key), openJournal, undefined,
+    runtimeFixtureTransport(boundedPhaseBRequest, credential));
   console.log('All four exact resources absent at final check.');
   return 0;
 }

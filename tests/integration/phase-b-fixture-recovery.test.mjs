@@ -102,3 +102,29 @@ test('legacy Firestore receipts preserve Auth recovery but cannot prove document
   assert.throws(() => parseRecoveryJournal(encode(...entries.slice(0, -1),
     {...entries.at(-1), evidence: {updateTime: 'invalid'}}), now), /INVALID_CREATION_EVIDENCE/);
 });
+
+test('runtime update recovery preserves previous evidence until a verified revision', async () => {
+  const original = {marker: sessionId, createTime: at, updateTime: at};
+  const entries = [header,
+    {resource: product, state: 'CREATE_UNKNOWN', evidence: {marker: sessionId}},
+    {resource: product, state: 'CREATED_VERIFIED', evidence: original},
+    {resource: product, state: 'UPDATE_UNKNOWN', evidence: original}];
+  const next = {...original, updateTime: '2026-11-14T00:00:01Z'};
+  const send = ({url, method}) => {
+    if (method === 'POST') return ok({});
+    if (!url.endsWith(product)) return absent;
+    return ok({name: 'projects/oldx-staging/databases/(default)/documents/' + product,
+      createTime: next.createTime, updateTime: next.updateTime,
+      fields: {...offlinePayloads()[product].fields, revision: {integerValue: '2'},
+        phaseBFixtureSessionId: {stringValue: sessionId}}});
+  };
+  const unknown = parseRecoveryJournal(encode(...entries), now);
+  assert.deepEqual(unknown.evidence.get(product), original);
+  assert.equal((await inspectRecovery(send, unknown)).observations[3].observation, 'PRESENT_WITH_UNVERIFIED_UPDATE');
+  assert.throws(() => parseRecoveryJournal(encode(...entries,
+    {resource: product, state: 'DELETE_UNKNOWN', evidence: original}), now), /INVALID_JOURNAL_TRANSITION/);
+  const updated = parseRecoveryJournal(encode(...entries,
+    {resource: product, state: 'UPDATED_VERIFIED', evidence: next}), now);
+  assert.equal((await inspectRecovery(send, updated)).observations[3].observation,
+    'PRESENT_MATCHES_JOURNAL_REQUIRES_OWNER_REVIEW');
+});
