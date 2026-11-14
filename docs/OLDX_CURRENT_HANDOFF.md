@@ -610,3 +610,12 @@ Owner HTTP 400 points to fullResourceName. Database-level Troubleshooter support
 ## Phase B direct Firestore IAM preparation
 
 The import-only, independently hard-disabled verifier separates getMetadata from empty read-only transaction/rollback evidence for databases.get. Mocked regression covered credential rejection, scope guards, separate permission outcomes, rollback failure and redaction. No live token or request. Write and delete-denial probes remain separately gated plans. Effective scope and untested permissions remain UNVERIFIED. Production HOLD / NO-GO.
+
+
+## 2026-11-14 — Direct Firestore IAM verifier blocked by token permission mismatch
+
+Independent review of the existing default-off `runDirectFirestoreIam` source found that it calls IAM Credentials `generateAccessToken` for `oldx-product-read-staging@oldx-staging.iam.gserviceaccount.com`, with a 300-second datastore-scoped OAuth access token. Google's method requires `iam.serviceAccounts.getAccessToken`. The approved/granted `roles/iam.serviceAccountOpenIdTokenCreator` provides only `iam.serviceAccounts.getOpenIdToken`, which is for OIDC ID tokens. Thus the current grant does **not** authorize the verifier's requested access token. This conclusion is supported by the official method and role references linked in `docs/cloud-run-product-owner-read-staging-gate.md`. No token request or Cloud check was attempted.
+
+Do not replace the access token with an ID token: Firestore REST direct database calls require OAuth access-token authentication. Do not grant the broader predefined Token Creator role. If the direct probe is still required, obtain a separate, explicit Yasmin decision for a custom role containing only `iam.serviceAccounts.getAccessToken`, bound only to the named runtime service account for the shortest supervised period; otherwise leave effective database IAM UNVERIFIED and use another separately approved proof path. The live verifier remains hard-disabled. No IAM/Rules/Billing/Cloud Run/fixture/Production changes were made. **Production HOLD / NO-GO.**
+
+**Next safe task:** decide whether a narrowly scoped `getAccessToken` custom permission is acceptable; until then, continue repository-only source review and do not run `--direct-firestore-iam` or change either live gate.
