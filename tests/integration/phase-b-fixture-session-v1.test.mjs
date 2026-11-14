@@ -4,7 +4,7 @@ import test from 'node:test';
 import {fileURLToPath} from 'node:url';
 import {authUids, firestoreDocs} from '../../scripts/phase-b-http-contract-review.mjs';
 import {offlinePayloads, privateProduct} from '../../scripts/phase-b-firestore-typed-fixture-preview.mjs';
-import {simulateFixtureSession, simulateFixtureAcceptance, simulateRuntimeFixtureSession} from '../../scripts/phase-b-fixture-session-v1.mjs';
+import {simulateFixtureSession, simulateFixtureAcceptance, simulateRuntimeFixtureSession, runtimeSessionBudget} from '../../scripts/phase-b-fixture-session-v1.mjs';
 
 const googleToken = ('fake.' + Buffer.from(JSON.stringify({aud: 'https://oldx-owner-read-lqpaz3pd5a-el.a.run.app', iss: 'https://accounts.google.com', exp: 4102444800, email: 'oldx-phase-b-invoker@oldx-staging.iam.gserviceaccount.com', email_verified: true})).toString('base64url') + '.token');
 const prefix = 'projects/oldx-staging/databases/(default)/documents/';
@@ -277,7 +277,7 @@ test('runtime fixture path scopes identity, update and operator cleanup', async 
       projectId: mode === 'wrong-project' ? 'other' : 'oldx-staging',
       databaseId: mode === 'wrong-db' ? 'other' : '(default)',
       journal: session.openJournal,
-      credential: {token: 'fake-runtime', expiry: Date.now() + 60_000},
+      credential: {token: 'fake-runtime', expiry: Date.now() + 300_000},
       operatorSend(req) {
         if (req.url.endsWith('/documents:commit')) {
           deletes++;
@@ -324,4 +324,30 @@ test('runtime fixture path scopes identity, update and operator cleanup', async 
       if (patches.length) assert.equal(session.latest(firestoreDocs[1]).state, 'UPDATE_UNKNOWN');
     }
   }
+});
+
+
+test('runtime session budget reserves cleanup window and stops before runtime token expiry', () => {
+  let now = 1_000_000;
+  const budget = runtimeSessionBudget(now + 300_000, () => now);
+  budget.beforeMutation();
+  budget.beforeRuntimeRequest();
+  now += 119_000;
+  budget.beforeMutation();
+  now += 1_000;
+  assert.throws(() => budget.beforeMutation(), /CREATION_PHASE_DEADLINE_EXCEEDED/);
+  assert.throws(() => budget.beforeRuntimeRequest(), /RUNTIME_TOKEN_OR_DEADLINE_TOO_CLOSE/);
+  assert.throws(() => runtimeSessionBudget(now + 85_000, () => now), /RUNTIME_TOKEN_TOO_SHORT/);
+});
+
+test('short runtime credential refuses fixture creation before any journal or write', () => {
+  const session = fake();
+  assert.throws(() => simulateRuntimeFixtureSession({
+    projectId: 'oldx-staging', databaseId: '(default)',
+    operatorSend: session.send, runtimeRequest: () => { throw Error('unexpected runtime request'); },
+    credential: {token: 'fake-runtime', expiry: Date.now() + 85_000},
+    journal: session.openJournal,
+  }), /RUNTIME_TOKEN_TOO_SHORT/);
+  assert.equal(session.opened, false);
+  assert.equal(session.requests.length, 0);
 });
