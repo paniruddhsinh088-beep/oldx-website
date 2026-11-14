@@ -674,9 +674,15 @@ export function inspectPhaseBEffectiveIam(read = gcloud, {diagnostic = false} = 
         const detail = String(error?.stderr ?? error?.message ?? '');
         const field = /\b(fullResourceName|conditionContext|resource\.name|resource\.type|resource\.service|principal|permission)\b/i.exec(detail)?.[1]?.toLowerCase();
         const code = /\bHTTP(?:Error)?[ :]+([45]\d{2})\b/i.exec(detail)?.[1];
+        let reason = item.evidence;
+        if (reason === 'HTTP_400') {
+          reason = /\b(?:UNSUPPORTED_RESOURCE_TYPE|RESOURCE_TYPE_NOT_SUPPORTED)\b/.test(detail)
+            ? 'UNSUPPORTED_RESOURCE_TYPE'
+            : /\bINVALID_RESOURCE_NAME\b/.test(detail) ? 'INVALID_RESOURCE_NAME' : 'INVALID_REQUEST';
+        }
         item.diagnostic = {
           httpCode: code ? Number(code) : null,
-          reason: item.evidence === 'HTTP_400' ? 'INVALID_REQUEST' : item.evidence,
+          reason,
           fieldHint: field ?? null,
         };
       }

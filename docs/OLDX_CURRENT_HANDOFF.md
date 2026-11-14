@@ -602,3 +602,7 @@ The prior API_ERROR did not establish an upstream cause. Offline regression now 
 ## Phase B single-permission IAM diagnosis
 
 Owner evidence establishes HTTP_400 across all five staging checks. Added --diagnose-effective-iam to run one scoped permission evaluation and report only sanitized error labels. Exact rejected field and CLI wire request remain unverified. Focused offline tests passed 16/16. No Cloud operations ran during development. Production HOLD / NO-GO.
+
+## Phase B Firestore resource-name limitation
+
+Owner HTTP 400 points to fullResourceName. Database-level Troubleshooter support is unconfirmed. The exact database target and condition context remain pinned. Diagnostics now distinguish explicit resource-name and unsupported-type reasons without inferring either from the field hint. Offline tests passed 17/17. The staging gate documents the scoped alternative. No live calls or changes. Production HOLD / NO-GO.

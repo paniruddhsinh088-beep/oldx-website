@@ -457,3 +457,27 @@ test('one-permission diagnostic redacts errors and never substitutes for the ful
     assert.doesNotMatch(JSON.stringify(report), /private token|private data/);
   }
 });
+
+test('explicit resource error reasons stay distinct and never trigger a project-level retry', () => {
+  for (const [message, reason] of [
+    ['INVALID_ARGUMENT fullResourceName', 'INVALID_REQUEST'],
+    ['INVALID_RESOURCE_NAME fullResourceName', 'INVALID_RESOURCE_NAME'],
+    ['UNSUPPORTED_RESOURCE_TYPE fullResourceName', 'UNSUPPORTED_RESOURCE_TYPE'],
+  ]) {
+    const fallback = preflightRead();
+    const targets = [];
+    const report = inspectPhaseBEffectiveIam((...args) => {
+      if (args[0] === 'services' && args.some((arg) => arg.includes('policytroubleshooter'))) {
+        return 'policytroubleshooter.googleapis.com';
+      }
+      if (args[0] !== 'policy-intelligence') return fallback(...args);
+      targets.push(args[3]);
+      assert.ok(args.includes('--resource-service=firestore.googleapis.com'));
+      assert.ok(args.includes('--resource-type=firestore.googleapis.com/Database'));
+      throw Object.assign(new Error('private message'), {stderr: 'HTTP 400 ' + message});
+    }, {diagnostic: true});
+    assert.deepEqual(targets, ['//firestore.googleapis.com/projects/oldx-staging/databases/(default)']);
+    assert.equal(report.effectiveDatabaseIam, 'UNVERIFIED');
+    assert.equal(report.databasePermissions['datastore.databases.get'].diagnostic.reason, reason);
+  }
+});
